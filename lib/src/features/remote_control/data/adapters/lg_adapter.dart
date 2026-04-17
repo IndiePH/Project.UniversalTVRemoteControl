@@ -8,20 +8,22 @@ import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.da
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 class LgAdapter implements TvBrandAdapter {
-  LgAdapter({
-    CommandKeyMap? keyMap,
-  }) : _keyMap = keyMap ?? const _LgCommandKeyMap();
+  LgAdapter({CommandKeyMap? keyMap})
+    : _keyMap = keyMap ?? const _LgCommandKeyMap();
 
   @override
   TvBrand get brand => TvBrand.lg;
 
   @override
-  bool get supportsTextInput => true;
+  bool get supportsTextInput => false;
 
   @override
   Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
 
   final CommandKeyMap _keyMap;
+
+  @override
+  Future<void> preparePairing({required TvDevice device}) async {}
 
   @override
   Future<void> sendCommand({
@@ -40,9 +42,8 @@ class LgAdapter implements TvBrandAdapter {
     required TvDevice device,
     required String text,
   }) async {
-    log(
-      'LgAdapter sendText -> ${device.displayName}: "$text"',
-      name: 'tv_brand_adapter',
+    throw UnsupportedError(
+      'LG text input transport is not implemented yet for ${device.displayName}.',
     );
   }
 }

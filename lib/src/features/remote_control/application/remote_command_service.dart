@@ -3,6 +3,8 @@ import 'package:one_remote/src/features/remote_control/domain/models/remote_comm
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 abstract class RemoteCommandService {
+  Future<CommandDispatchResult> preparePairing({required TvDevice device});
+
   Future<CommandDispatchResult> sendCommand({
     required TvDevice device,
     required RemoteCommand command,

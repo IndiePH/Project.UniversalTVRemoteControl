@@ -8,9 +8,8 @@ import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.da
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 class HisenseAdapter implements TvBrandAdapter {
-  HisenseAdapter({
-    CommandKeyMap? keyMap,
-  }) : _keyMap = keyMap ?? const _HisenseCommandKeyMap();
+  HisenseAdapter({CommandKeyMap? keyMap})
+    : _keyMap = keyMap ?? const _HisenseCommandKeyMap();
 
   @override
   TvBrand get brand => TvBrand.hisense;
@@ -22,6 +21,9 @@ class HisenseAdapter implements TvBrandAdapter {
   Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
 
   final CommandKeyMap _keyMap;
+
+  @override
+  Future<void> preparePairing({required TvDevice device}) async {}
 
   @override
   Future<void> sendCommand({

@@ -15,6 +15,7 @@ import 'package:one_remote/src/features/remote_control/data/adapters/lg_adapter.
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/data/in_memory_device_repository.dart';
+import 'package:one_remote/src/features/remote_control/data/in_memory_remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
@@ -38,100 +39,98 @@ void main() {
     expect(find.text('VOL'), findsOneWidget);
   });
 
-  testWidgets(
-    'pairs to discovered TV and sends command from remote',
-    (WidgetTester tester) async {
-      final commandService = BrandRoutedRemoteCommandService(
-        adapters: [
-          SamsungAdapter(),
-          LgAdapter(),
-          HisenseAdapter(),
-        ],
-      );
+  testWidgets('pairs to discovered TV and sends command from remote', (
+    WidgetTester tester,
+  ) async {
+    final commandService = BrandRoutedRemoteCommandService(
+      adapters: [SamsungAdapter(), LgAdapter(), HisenseAdapter()],
+    );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: RemoteHomePage(
-            commandService: commandService,
-            deviceRepository: InMemoryDeviceRepository(),
-            discoveryService: _StaticDiscoveryService(),
-            layoutRepository: _InMemoryLayoutRepository(),
-          ),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RemoteHomePage(
+          commandService: commandService,
+          deviceRepository: InMemoryDeviceRepository(),
+          discoveryService: _StaticDiscoveryService(),
+          layoutRepository: _InMemoryLayoutRepository(),
         ),
-      );
-      await tester.pump();
+      ),
+    );
+    await tester.pump();
 
-      // Open pairing via Wi-Fi button.
-      await tester.tap(find.byIcon(Icons.wifi));
-      await tester.pumpAndSettle();
-      expect(find.text('Pair TV'), findsOneWidget);
+    // Open pairing via Wi-Fi button.
+    await tester.tap(find.byIcon(Icons.wifi));
+    await tester.pumpAndSettle();
+    expect(find.text('Pair TV'), findsOneWidget);
 
-      await tester.pumpAndSettle();
-      final discoveredTile = find.widgetWithText(ListTile, 'LG OLED - Bedroom');
-      final listTile = tester.widget<ListTile>(discoveredTile);
-      listTile.onTap?.call();
-      await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
+    final discoveredTile = find.widgetWithText(ListTile, 'LG OLED - Bedroom');
+    final listTile = tester.widget<ListTile>(discoveredTile);
+    listTile.onTap?.call();
+    await tester.pumpAndSettle();
 
-      expect(find.textContaining('Paired: LG OLED - Bedroom'), findsOneWidget);
+    expect(find.textContaining('Connected: LG OLED - Bedroom'), findsOneWidget);
 
-      // Verify remote controls now dispatch command to the selected TV context.
-      await tester.tap(find.byIcon(Icons.power_settings_new));
-      await tester.pump();
-      expect(find.text('Sent: power'), findsOneWidget);
-    },
-  );
+    // Verify remote controls now dispatch command to the selected TV context.
+    await tester.tap(find.byIcon(Icons.power_settings_new));
+    await tester.pump();
+    expect(find.text('Sent: power'), findsOneWidget);
+  });
 
-  testWidgets(
-    'removes active saved device after REMOVE confirmation',
-    (WidgetTester tester) async {
-      final repository = InMemoryDeviceRepository();
-      const seededDevice = TvDevice(
-        id: 'samsung-living-room',
-        displayName: 'Living Room TV',
-        brand: TvBrand.samsung,
-        capabilities: {
-          DeviceCapability.keyCommands,
-          DeviceCapability.textInput,
-          DeviceCapability.powerControl,
-        },
-      );
-      await repository.saveDevice(seededDevice);
-      await repository.setLastUsedDevice(seededDevice.id);
-      await repository.setLastSuccessfulPairingAt(
-        deviceId: seededDevice.id,
-        timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-      );
+  testWidgets('removes active saved device after REMOVE confirmation', (
+    WidgetTester tester,
+  ) async {
+    final repository = InMemoryDeviceRepository();
+    const seededDevice = TvDevice(
+      id: 'samsung-living-room',
+      displayName: 'Living Room TV',
+      brand: TvBrand.samsung,
+      capabilities: {
+        DeviceCapability.keyCommands,
+        DeviceCapability.textInput,
+        DeviceCapability.powerControl,
+      },
+    );
+    await repository.saveDevice(seededDevice);
+    await repository.setLastUsedDevice(seededDevice.id);
+    await repository.setLastSuccessfulPairingAt(
+      deviceId: seededDevice.id,
+      timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
+    );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: PairingPage(
-            discoveryService: _StaticDiscoveryService(),
-            deviceRepository: repository,
-            activeDeviceId: 'samsung-living-room',
-          ),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PairingPage(
+          commandService: InMemoryRemoteCommandService(),
+          discoveryService: _StaticDiscoveryService(),
+          deviceRepository: repository,
+          activeDeviceId: 'samsung-living-room',
         ),
-      );
-      await tester.pumpAndSettle();
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      expect(find.text('Living Room TV'), findsOneWidget);
+    expect(find.text('Living Room TV'), findsOneWidget);
 
-      final savedTile = find.widgetWithText(ListTile, 'Living Room TV');
-      final listTile = tester.widget<ListTile>(savedTile);
-      final deleteButton = listTile.trailing! as IconButton;
-      deleteButton.onPressed?.call();
-      await tester.pumpAndSettle();
+    final savedTile = find.widgetWithText(ListTile, 'Living Room TV');
+    final listTile = tester.widget<ListTile>(savedTile);
+    final deleteButton = listTile.trailing! as IconButton;
+    deleteButton.onPressed?.call();
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+    await tester.pumpAndSettle();
 
-      await tester.enterText(find.widgetWithText(TextField, 'Type REMOVE'), 'REMOVE');
-      await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
-      await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Type REMOVE'),
+      'REMOVE',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('Living Room TV'), findsNothing);
-      expect(find.textContaining('Removed Living Room TV'), findsOneWidget);
-    },
-  );
+    expect(find.text('Living Room TV'), findsNothing);
+    expect(find.textContaining('Removed Living Room TV'), findsOneWidget);
+  });
 }
 
 class _InMemoryLayoutRepository implements LayoutRepository {
@@ -163,7 +162,6 @@ class _StaticDiscoveryService implements DeviceDiscoveryService {
       brand: TvBrand.lg,
       capabilities: {
         DeviceCapability.keyCommands,
-        DeviceCapability.textInput,
         DeviceCapability.powerControl,
       },
     ),

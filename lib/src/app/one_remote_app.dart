@@ -17,9 +17,9 @@ import 'package:one_remote/src/theme/app_theme.dart';
 class OneRemoteApp extends StatelessWidget {
   const OneRemoteApp({super.key});
 
-  static const bool _useRealSamsungTransport = bool.fromEnvironment(
-    'USE_REAL_SAMSUNG_TRANSPORT',
-    defaultValue: true,
+  static const bool _useFakeSamsungTransport = bool.fromEnvironment(
+    'USE_FAKE_SAMSUNG_TRANSPORT',
+    defaultValue: false,
   );
   static const String _samsungTvHost = String.fromEnvironment('SAMSUNG_TV_HOST');
 
@@ -50,7 +50,10 @@ class OneRemoteApp extends StatelessWidget {
   }
 
   SamsungAdapter _buildSamsungAdapter() {
-    if (!_useRealSamsungTransport) {
+    // Default runtime uses real Samsung transport for physical-TV testing.
+    // Opt in to fake transport only for local debugging with:
+    // --dart-define=USE_FAKE_SAMSUNG_TRANSPORT=true
+    if (_useFakeSamsungTransport) {
       return SamsungAdapter();
     }
 

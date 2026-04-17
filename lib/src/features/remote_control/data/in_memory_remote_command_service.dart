@@ -7,6 +7,19 @@ import 'package:one_remote/src/features/remote_control/domain/models/tv_device.d
 
 class InMemoryRemoteCommandService implements RemoteCommandService {
   @override
+  Future<CommandDispatchResult> preparePairing({
+    required TvDevice device,
+  }) async {
+    log(
+      'Mock preparePairing -> ${device.displayName}',
+      name: 'remote_command_service',
+    );
+    return CommandDispatchResult.success(
+      'Pairing approved for ${device.displayName}.',
+    );
+  }
+
+  @override
   Future<CommandDispatchResult> sendCommand({
     required TvDevice device,
     required RemoteCommand command,

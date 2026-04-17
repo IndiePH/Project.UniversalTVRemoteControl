@@ -9,11 +9,32 @@ import 'package:one_remote/src/features/remote_control/domain/models/tv_device.d
 ///
 /// Capability checks are enforced here so UI code can stay brand-agnostic.
 class BrandRoutedRemoteCommandService implements RemoteCommandService {
-  BrandRoutedRemoteCommandService({
-    required List<TvBrandAdapter> adapters,
-  }) : _adapters = {for (final adapter in adapters) adapter.brand: adapter};
+  BrandRoutedRemoteCommandService({required List<TvBrandAdapter> adapters})
+    : _adapters = {for (final adapter in adapters) adapter.brand: adapter};
 
   final Map<TvBrand, TvBrandAdapter> _adapters;
+
+  @override
+  Future<CommandDispatchResult> preparePairing({
+    required TvDevice device,
+  }) async {
+    final adapter = _adapterFor(device.brand);
+    if (adapter == null) {
+      return CommandDispatchResult.unsupported(
+        'No adapter configured for ${device.brand.name}.',
+      );
+    }
+    try {
+      await adapter.preparePairing(device: device);
+      return CommandDispatchResult.success(
+        'Pairing approved for ${device.displayName}.',
+      );
+    } catch (error) {
+      return CommandDispatchResult.failure(
+        'Failed to pair ${device.displayName}: $error',
+      );
+    }
+  }
 
   @override
   Future<CommandDispatchResult> sendCommand({

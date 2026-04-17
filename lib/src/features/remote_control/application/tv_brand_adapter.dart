@@ -7,13 +7,12 @@ abstract class TvBrandAdapter {
   bool get supportsTextInput;
   Set<RemoteCommand> get supportedCommands;
 
+  Future<void> preparePairing({required TvDevice device}) async {}
+
   Future<void> sendCommand({
     required TvDevice device,
     required RemoteCommand command,
   });
 
-  Future<void> sendText({
-    required TvDevice device,
-    required String text,
-  });
+  Future<void> sendText({required TvDevice device, required String text});
 }

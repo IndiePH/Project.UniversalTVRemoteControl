@@ -62,6 +62,10 @@ MVP implementation priority (current baseline):
 
     * Scan local network for TVs
     * Current MVP implementation uses SSDP-based discovery on local network (with manual IP fallback)
+    * Pairing UX behavior (current baseline):
+        * selecting a TV starts a blocking pairing state on the pairing page
+        * the app does not return to the remote screen until pairing succeeds
+        * Samsung pairing explicitly waits for TV-side approval before success is reported
     * Support in MVP:
 
         * Samsung (Tizen)
@@ -89,7 +93,7 @@ MVP implementation priority (current baseline):
 #### Brand Selection System
 
 * Manual brand/protocol selection for Wi-Fi pairing
-* Save working configuration after successful command test
+* Save working configuration only after successful protocol-level pairing confirmation
 * "Does this work?" signal-testing flow for IR remains Post-MVP
 * Prioritize tested presets for Samsung, LG, and Hisense first
 
@@ -152,6 +156,8 @@ MVP implementation priority (current baseline):
     * Select brand/protocol manually
 3. Discover and select TV
 4. Pair/connect to selected TV
+   - keep user on pairing screen with blocking loading state while pairing is in progress
+   - for Samsung, wait for TV authorization prompt approval before marking success
 5. Test core commands (power/volume/navigation)
 6. Verify text input works using in-app keyboard
 7. Save device
@@ -240,6 +246,8 @@ Control rendering details:
 
 * Support sending text payloads for search and form entry on compatible TVs.
 * If a device/protocol does not support text input, show a clear fallback message.
+* Remote screen keyboard behavior should keep main layout stable (keyboard overlays content rather than resizing the remote canvas).
+* Current implementation baseline: Samsung carries the in-app keyboard text path; LG webOS text send is still pending, so LG devices should not advertise in-app text capability until that transport lands.
 
 #### Brand Adapter Strategy (MVP -> Post-MVP)
 
@@ -256,8 +264,8 @@ Control rendering details:
 
 | Brand | MVP Target | Protocol Maturity | Current Readiness | Validation Gate |
 | --- | --- | --- | --- | --- |
-| Samsung | Yes | High (well-known Tizen WebSocket patterns) | Ready for core implementation | Validate pairing + key commands + text input on physical TV |
-| LG | Yes | Medium-High (webOS WebSocket patterns available) | Ready for core implementation | Validate SSL pairing flow + key commands + text input |
+| Samsung | Yes | High (well-known Tizen WebSocket patterns) | Core flow implemented; needs broader model verification | Validate TV-side approval prompt flow + token-auth reconnect + key commands + text input on physical TV |
+| LG | Yes | Medium-High (webOS WebSocket patterns available) | Core command path still stubbed in-app; text input not wired yet (capability off until transport exists) | Validate SSL pairing + key commands on physical TV; add webOS text send then re-enable text input in UX |
 | Hisense | Yes (best-effort) | Medium-Low (VIDAA implementations less standardized) | Experimental | Validate protocol compatibility per model before claiming support |
 | Android TV/Google TV | No (Post-MVP) | High | Backlog candidate | Re-prioritize when hardware/tester bandwidth is available |
 

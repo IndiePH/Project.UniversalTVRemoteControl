@@ -12,9 +12,7 @@ import 'package:one_remote/src/features/remote_control/domain/models/tv_device.d
 /// This keeps MVP discovery lightweight and dependency-free while still
 /// finding common UPnP/SSDP-advertised devices for Samsung/LG/Hisense.
 class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
-  SsdpDeviceDiscoveryService({
-    this.timeout = const Duration(seconds: 3),
-  });
+  SsdpDeviceDiscoveryService({this.timeout = const Duration(seconds: 3)});
 
   final Duration timeout;
 
@@ -51,7 +49,8 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
         if (brand == null) {
           return;
         }
-        final ip = _extractHostFromLocation(headers['location']) ??
+        final ip =
+            _extractHostFromLocation(headers['location']) ??
             datagram.address.address;
         candidatesByIp[ip] = _DiscoveryCandidate(ip: ip, brand: brand);
       });
@@ -73,18 +72,19 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
       socket?.close();
     }
 
-    final devices = candidatesByIp.values
-        .map(
-          (candidate) => TvDevice(
-            id: '${candidate.brand.name}-${candidate.ip}',
-            displayName:
-                '${_brandName(candidate.brand)} TV (${candidate.ip})',
-            brand: candidate.brand,
-            capabilities: _capabilitiesForBrand(candidate.brand),
-          ),
-        )
-        .toList()
-      ..sort((a, b) => a.displayName.compareTo(b.displayName));
+    final devices =
+        candidatesByIp.values
+            .map(
+              (candidate) => TvDevice(
+                id: '${candidate.brand.name}-${candidate.ip}',
+                displayName:
+                    '${_brandName(candidate.brand)} TV (${candidate.ip})',
+                brand: candidate.brand,
+                capabilities: _capabilitiesForBrand(candidate.brand),
+              ),
+            )
+            .toList()
+          ..sort((a, b) => a.displayName.compareTo(b.displayName));
 
     return devices;
   }
@@ -137,16 +137,16 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
   }
 
   Set<DeviceCapability> _capabilitiesForBrand(TvBrand brand) {
-    if (brand == TvBrand.hisense) {
-      return const {
+    return switch (brand) {
+      TvBrand.samsung => const {
+        DeviceCapability.keyCommands,
+        DeviceCapability.textInput,
+        DeviceCapability.powerControl,
+      },
+      TvBrand.lg || TvBrand.hisense => const {
         DeviceCapability.keyCommands,
         DeviceCapability.powerControl,
-      };
-    }
-    return const {
-      DeviceCapability.keyCommands,
-      DeviceCapability.textInput,
-      DeviceCapability.powerControl,
+      },
     };
   }
 
@@ -175,10 +175,7 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
 }
 
 class _DiscoveryCandidate {
-  const _DiscoveryCandidate({
-    required this.ip,
-    required this.brand,
-  });
+  const _DiscoveryCandidate({required this.ip, required this.brand});
 
   final String ip;
   final TvBrand brand;

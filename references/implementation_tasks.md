@@ -30,12 +30,26 @@ As product specs evolve, update this document and re-prioritize tasks.
     - recent manual IP shortcuts
     - saved device quick-reconnect section
     - remove saved device flow (with active-device extra confirmation)
-    - explicit pairing behavior notice (new successful pair switches active TV; prior saved devices remain until removed)
+    - pairing behavior per spec (successful new pair becomes active; saved devices persist until removed); top-of-page pairing banner removed from UI
+  - Moved pairing persistence and final success decision into pairing flow:
+    - pairing page now remains visible until pairing attempt finishes
+    - user input is blocked during pairing busy state
+    - page only returns after successful pairing completion
 - Milestone 1 / Task 1.5 (partial):
   - Persist/select last used device
   - Track and surface `lastSuccessfulPairingAt` metadata
   - Removed seeded in-memory placeholder saved device (app now starts with no paired TV by default)
+- Milestone 1 / Task 1.1 (partial):
+  - Samsung pairing handshake reliability improvements:
+    - trigger TV approval popup during pairing (no first-command workaround)
+    - require token-authenticated Samsung session before treating pairing as successful
+- Milestone 1 / Task 1.4 (partial):
+  - Corrected Samsung text-input command sequence:
+    - fixed `SendInputString` payload format
+    - added IME priming and explicit input-end send
+  - LG: discovery/manual device capabilities and `LgAdapter.supportsTextInput` aligned (no in-app text send until webOS text transport exists)
 - Milestone 3 / Task 3.1 (partial):
+  - Updated remote keyboard behavior so IME overlays remote screen instead of pushing layout upward
   - Added settings-driven grid layout editor with drag/drop + swap behavior
   - Added layout persistence and default-layout reset flow
   - Fixed multi-cell drag anchor behavior for d-pad (grab-point independent)
@@ -44,6 +58,9 @@ As product specs evolve, update this document and re-prioritize tasks.
   - Added directional visual padding tuning for d-pad arrows (up/down/left/right)
   - Increased editable/control grid from `5x8` to `5x9`
   - Updated default control coordinates for the latest baseline layout
+  - Layout editor: toggling edit mode no longer overwrites `_status` (status row is not shown while editing); layout reset uses a snackbar for visible confirmation
+- Developer ergonomics:
+  - README "Current Runtime Modes": default real Samsung WebSocket transport; `USE_FAKE_SAMSUNG_TRANSPORT` opt-in; `SAMSUNG_TV_HOST` override; optional `SAMSUNG_TRANSPORT_DEBUG` logcat tag (`samsung_transport`)
 
 ### In Progress
 - Milestone 1 / Task 1.6:
@@ -53,14 +70,22 @@ As product specs evolve, update this document and re-prioritize tasks.
     - return to remote
     - send command via remote control
   - Added active-device remove confirmation regression coverage (`REMOVE` path)
+  - Added pairing flow regression updates for moved pairing persistence/flow control
   - Broader scenario tests and network edge-case validation pending
+- Milestone 1 / Task 1.1:
+  - Broaden physical-device validation for Samsung approval/pairing variants:
+    - first-time approval
+    - previously approved token reuse
+    - rejection/timeout recovery UX
 - Milestone 3 / Task 3.1:
   - Continue usability polish for edit mode visual affordances and small-screen readability
 
 ### Next Up
-- Connect pairing output to real protocol handshake/verification per brand
+- Implement LG webOS text-input transport and then re-enable `DeviceCapability.textInput` + `supportsTextInput` for LG
+- Connect pairing output to real protocol handshake/verification per non-Samsung brands
 - Expand tests:
   - pairing success/failure paths
+  - Samsung approval timeout/rejection handling paths
   - adapter capability unsupported flows
   - saved-device remove/last-used fallback paths
 - Add focused widget tests for:
@@ -220,7 +245,7 @@ As product specs evolve, update this document and re-prioritize tasks.
 ## Definition of Done (Current)
 
 - Android user can discover, pair, and control Samsung/LG TVs reliably.
-- Android user can send text input to compatible TVs for search/forms.
+- Android user can send text input from the app keyboard to Samsung TVs where the model supports the WebSocket IME path; LG webOS text send remains a follow-up once transport exists.
 - User can relaunch app and control last connected TV quickly.
 - Samsung and LG support work with shared remote command set.
 - Hisense support is delivered when protocol validation succeeds on physical devices.

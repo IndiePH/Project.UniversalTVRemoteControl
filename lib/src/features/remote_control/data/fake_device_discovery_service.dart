@@ -23,7 +23,6 @@ class FakeDeviceDiscoveryService implements DeviceDiscoveryService {
       brand: TvBrand.lg,
       capabilities: {
         DeviceCapability.keyCommands,
-        DeviceCapability.textInput,
         DeviceCapability.powerControl,
       },
     ),

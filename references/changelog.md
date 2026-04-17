@@ -3,6 +3,38 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-04-18
+
+### Changed
+- Updated pairing behavior and Samsung authorization flow:
+  - pairing now stays on `PairingPage` until async pairing completes (no early return to remote page)
+  - pairing page now blocks user input while busy and shows a loading modal
+  - Samsung pairing now triggers TV authorization prompt during pairing flow (no extra manual button press required)
+  - pairing success is now gated by Samsung token-authenticated session readiness, not just initial socket connect
+- Updated remote screen keyboard behavior:
+  - set remote `Scaffold` to avoid body resize on IME open so keyboard overlays the app instead of pushing the layout
+- Updated Samsung text-input payload flow:
+  - corrected `SendInputString` payload shape (`Cmd`=base64 text, `DataOfCmd`=`base64`)
+  - added IME priming event and input-end message for broader Samsung model compatibility
+
+### Verification
+- `flutter analyze` passes after transport, pairing, and UI changes
+- `flutter test` passes after updating pairing status expectations and constructor wiring
+
+### Added
+- Optional Samsung transport diagnostics behind `--dart-define=SAMSUNG_TRANSPORT_DEBUG=true`:
+  - logs outbound text IME frames (summarized) and inbound WebSocket messages (tag: `samsung_transport`)
+
+### Changed (UX + docs alignment)
+- Pairing page: removed the top explanatory banner; pairing rules unchanged (spec / implementation_tasks still describe active-switch + saved devices behavior)
+- Layout editor: entering or leaving settings/edit mode no longer overwrites the remote `_status` line (it is not visible while editing); layout reset uses a snackbar for confirmation
+- LG: device capabilities and adapter now agree that in-app text send is not implemented yet (avoids false “text sent” when nothing reaches the TV)
+- Default Samsung transport is real unless `USE_FAKE_SAMSUNG_TRANSPORT=true` (documented in `README.md`)
+
+### Synced Planning
+- Refreshed `references/implementation_tasks.md` status tracker and definition of done for LG text-input follow-up
+- Updated `references/product_specs.md` brand readiness row for LG vs current code reality
+
 ## 2026-04-17
 
 ### Changed

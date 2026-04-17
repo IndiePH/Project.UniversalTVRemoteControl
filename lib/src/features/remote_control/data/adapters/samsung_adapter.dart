@@ -28,6 +28,16 @@ class SamsungAdapter implements TvBrandAdapter {
   final CommandKeyMap _keyMapper;
 
   @override
+  Future<void> preparePairing({required TvDevice device}) async {
+    final keyCodes = _keyMapper.keyCodesFor(RemoteCommand.back);
+    final triggerKeyCode = keyCodes.isNotEmpty ? keyCodes.first : 'KEY_RETURN';
+    await _transportClient.requestPairingApproval(
+      deviceId: device.id,
+      triggerKeyCode: triggerKeyCode,
+    );
+  }
+
+  @override
   Future<void> sendCommand({
     required TvDevice device,
     required RemoteCommand command,

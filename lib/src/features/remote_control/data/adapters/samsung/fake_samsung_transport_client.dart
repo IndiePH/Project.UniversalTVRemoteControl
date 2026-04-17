@@ -7,11 +7,22 @@ class FakeSamsungTransportClient implements SamsungTransportClient {
   final Set<String> _connectedDeviceIds = <String>{};
 
   @override
-  Future<void> connect({
-    required String deviceId,
-  }) async {
+  Future<void> connect({required String deviceId}) async {
     _connectedDeviceIds.add(deviceId);
     log('Samsung transport connected: $deviceId', name: 'samsung_transport');
+  }
+
+  @override
+  Future<void> requestPairingApproval({
+    required String deviceId,
+    required String triggerKeyCode,
+    Duration approvalTimeout = const Duration(seconds: 45),
+  }) async {
+    await _ensureConnected(deviceId);
+    log(
+      'Samsung transport requestPairingApproval: $deviceId via $triggerKeyCode',
+      name: 'samsung_transport',
+    );
   }
 
   @override
