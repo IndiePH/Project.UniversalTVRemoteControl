@@ -1,6 +1,6 @@
 {
-    "name": "universal_tv_remove_control",
-    "short_name": "universal_tv_remove_control",
+    "name": "OneRemote",
+    "short_name": "OneRemote",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

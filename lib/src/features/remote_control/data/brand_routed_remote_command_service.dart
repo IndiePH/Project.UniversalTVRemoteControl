@@ -1,9 +1,9 @@
-import 'package:universal_tv_remove_control/src/features/remote_control/application/command_dispatch_result.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/application/remote_command_service.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/application/tv_brand_adapter.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/remote_command.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/tv_brand.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/src/features/remote_control/application/command_dispatch_result.dart';
+import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
+import 'package:one_remote/src/features/remote_control/application/tv_brand_adapter.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/remote_command.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 /// Routes generic remote actions to a brand-specific adapter.
 ///
@@ -34,9 +34,9 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
     try {
       await adapter.sendCommand(device: device, command: command);
       return CommandDispatchResult.success('Sent: ${command.name}');
-    } catch (_) {
+    } catch (error) {
       return CommandDispatchResult.failure(
-        'Failed to send ${command.name} for ${device.brand.name}.',
+        'Failed to send ${command.name} for ${device.brand.name}: $error',
       );
     }
   }
@@ -60,9 +60,9 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
     try {
       await adapter.sendText(device: device, text: text);
       return CommandDispatchResult.success('Text sent: "$text"');
-    } catch (_) {
+    } catch (error) {
       return CommandDispatchResult.failure(
-        'Failed to send text for ${device.brand.name}.',
+        'Failed to send text for ${device.brand.name}: $error',
       );
     }
   }

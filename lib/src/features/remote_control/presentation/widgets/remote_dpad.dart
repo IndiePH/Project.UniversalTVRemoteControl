@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/presentation/widgets/remote_button.dart';
+import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_button.dart';
 
 class RemoteDpad extends StatelessWidget {
   const RemoteDpad({

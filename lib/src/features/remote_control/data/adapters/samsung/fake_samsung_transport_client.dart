@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:universal_tv_remove_control/src/features/remote_control/data/adapters/samsung/samsung_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 
 /// Placeholder transport used until the real Samsung socket/auth client is wired.
 class FakeSamsungTransportClient implements SamsungTransportClient {

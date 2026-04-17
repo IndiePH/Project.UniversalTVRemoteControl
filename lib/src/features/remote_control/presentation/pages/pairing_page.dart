@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/application/device_discovery_service.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/application/device_repository.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/device_capability.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/tv_brand.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/src/features/remote_control/application/device_repository.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 /// Pairing flow entry point.
 ///
@@ -178,40 +178,67 @@ class _PairingPageState extends State<PairingPage> {
     return showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Confirm active device removal'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'To continue, type REMOVE. This helps prevent accidental disconnects.',
+        String? inputError;
+
+        bool isValidInput() {
+          return controller.text.trim().toUpperCase() == expectedText;
+        }
+
+        void trySubmit(StateSetter setDialogState) {
+          if (isValidInput()) {
+            Navigator.of(context).pop(true);
+            return;
+          }
+          setDialogState(() {
+            inputError = 'Type REMOVE exactly to confirm.';
+          });
+        }
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Confirm active device removal'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'To continue, type REMOVE. This helps prevent accidental disconnects.',
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: 'Type REMOVE',
+                      border: const OutlineInputBorder(),
+                      errorText: inputError,
+                    ),
+                    textInputAction: TextInputAction.done,
+                    onChanged: (_) {
+                      if (inputError == null) {
+                        return;
+                      }
+                      setDialogState(() {
+                        inputError = null;
+                      });
+                    },
+                    onSubmitted: (_) => trySubmit(setDialogState),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Type REMOVE',
-                  border: OutlineInputBorder(),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
                 ),
-                textInputAction: TextInputAction.done,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final isValid = controller.text.trim().toUpperCase() == expectedText;
-                Navigator.of(context).pop(isValid);
-              },
-              child: const Text('Confirm'),
-            ),
-          ],
+                FilledButton(
+                  onPressed: () => trySubmit(setDialogState),
+                  child: const Text('Confirm'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -276,6 +303,8 @@ class _PairingPageState extends State<PairingPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            _buildPairingBehaviorNotice(context),
+            const SizedBox(height: 12),
             _buildSavedDevicesSection(),
             const SizedBox(height: 12),
             RemoteActionButton(
@@ -295,6 +324,22 @@ class _PairingPageState extends State<PairingPage> {
             _buildManualAddSection(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPairingBehaviorNotice(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF2D3138), width: 1),
+      ),
+      child: const Text(
+        'Pairing a new TV will switch active control to that TV after successful pairing. '
+        'Previously paired TVs stay saved until you remove them.',
       ),
     );
   }

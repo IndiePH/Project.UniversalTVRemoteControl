@@ -61,6 +61,7 @@ MVP implementation priority (current baseline):
 * **Wi-Fi Mode**
 
     * Scan local network for TVs
+    * Current MVP implementation uses SSDP-based discovery on local network (with manual IP fallback)
     * Support in MVP:
 
         * Samsung (Tizen)
@@ -112,6 +113,10 @@ MVP implementation priority (current baseline):
 
 * Save multiple TVs *(Phase 2 target)*
 * Quick switching between devices *(Phase 2 target)*
+* Pairing a new TV is allowed while another TV is active:
+    * on successful pair, active control switches to the newly paired TV
+    * previously paired TVs remain saved until user removes them
+* Active saved-device removal requires explicit typed confirmation (`REMOVE`)
 
 ---
 
@@ -162,6 +167,7 @@ MVP implementation priority (current baseline):
 3. If connected, open remote interface immediately
 4. If auto-connect fails, return to device select/reconnect flow
 5. User can access Settings from remote screen to adjust layout anytime
+6. If no device has been paired yet, remote opens in "no TV connected" state until first successful pairing
 
 ---
 

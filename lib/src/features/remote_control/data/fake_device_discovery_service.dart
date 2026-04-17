@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:universal_tv_remove_control/src/features/remote_control/application/device_discovery_service.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/device_capability.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/tv_brand.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 class FakeDeviceDiscoveryService implements DeviceDiscoveryService {
   static const List<TvDevice> _devices = [

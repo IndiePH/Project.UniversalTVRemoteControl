@@ -1,4 +1,4 @@
-package com.xentwil.universal_tv_remove_control
+package com.xentwil.one_remote
 
 import io.flutter.embedding.android.FlutterActivity
 

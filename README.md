@@ -1,4 +1,4 @@
-# universal_tv_remove_control
+# one_remote
 
 A new Flutter project.
 

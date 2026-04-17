@@ -2,17 +2,17 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/application/device_discovery_service.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/application/device_repository.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/application/layout_repository.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/application/remote_command_service.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/device_capability.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/remote_command.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/tv_device.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/presentation/widgets/remote_circular_dpad.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/presentation/widgets/remote_icon_circle_button.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/presentation/widgets/remote_vertical_rocker.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/presentation/pages/pairing_page.dart';
+import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/src/features/remote_control/application/device_repository.dart';
+import 'package:one_remote/src/features/remote_control/application/layout_repository.dart';
+import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/remote_command.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_circular_dpad.dart';
+import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_icon_circle_button.dart';
+import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_vertical_rocker.dart';
+import 'package:one_remote/src/features/remote_control/presentation/pages/pairing_page.dart';
 
 /// Main remote screen.
 ///
@@ -50,11 +50,13 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   String _status = 'Ready';
   bool _isLayoutEditMode = false;
   bool _isDraggingLayoutItem = false;
+  bool _isPairingInProgress = false;
 
   static List<_LayoutEditItem> _initialLayoutItems() {
     return [
       _LayoutEditItem(id: 'power', icon: Icons.power_settings_new, col: 0, row: 0, isPower: true),
       _LayoutEditItem(id: 'pair', icon: Icons.wifi, col: 4, row: 0),
+      _LayoutEditItem(id: 'menu', label: 'MENU', col: 2, row: 0),
       _LayoutEditItem(
         id: 'volume',
         label: 'VOL',
@@ -111,24 +113,29 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     await _loadLayoutForDevice(lastUsed.id);
   }
 
-  Future<void> _send(RemoteCommand command) async {
+  Future<bool> _send(RemoteCommand command) async {
     final device = _activeDevice;
     if (device == null) {
       setState(() {
         _status = 'No device selected.';
       });
-      return;
+      _showToast('No device selected.', isError: true);
+      return false;
     }
     final result = await widget.commandService.sendCommand(
       device: device,
       command: command,
     );
     if (!mounted) {
-      return;
+      return false;
     }
     setState(() {
       _status = result.message;
     });
+    if (!result.isSuccess) {
+      _showToast(result.message, isError: true);
+    }
+    return result.isSuccess;
   }
 
   Future<void> _sendText() async {
@@ -138,18 +145,21 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       setState(() {
         _status = 'No device selected.';
       });
+      _showToast('No device selected.', isError: true);
       return;
     }
     if (text.isEmpty) {
       setState(() {
         _status = 'Enter text before sending.';
       });
+      _showToast('Enter text before sending.', isError: true);
       return;
     }
     if (!device.capabilities.contains(DeviceCapability.textInput)) {
       setState(() {
         _status = 'Text input is not supported on this device.';
       });
+      _showToast('Text input is not supported on this device.', isError: true);
       return;
     }
 
@@ -163,9 +173,30 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         _textController.clear();
       }
     });
+    if (!result.isSuccess) {
+      _showToast(result.message, isError: true);
+    }
+  }
+
+  void _showToast(String message, {bool isError = false}) {
+    if (!mounted) {
+      return;
+    }
+    final colorScheme = Theme.of(context).colorScheme;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? colorScheme.error : null,
+        ),
+      );
   }
 
   Future<void> _openPairing() async {
+    if (_isPairingInProgress) {
+      return;
+    }
     // Pairing returns a selected device (or null on cancel). Persist then switch context.
     final selectedDevice = await Navigator.of(context).push<TvDevice>(
       MaterialPageRoute(
@@ -179,18 +210,33 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (!mounted || selectedDevice == null) {
       return;
     }
-    await widget.deviceRepository.saveDevice(selectedDevice);
-    await widget.deviceRepository.setLastUsedDevice(selectedDevice.id);
-    final pairedAt = DateTime.now();
-    await widget.deviceRepository.setLastSuccessfulPairingAt(
-      deviceId: selectedDevice.id,
-      timestamp: pairedAt,
-    );
     setState(() {
-      _activeDevice = selectedDevice;
-      _status = _statusForPairedDevice(selectedDevice.displayName, pairedAt);
+      _isPairingInProgress = true;
+      _status = 'Pairing ${selectedDevice.displayName}...';
     });
-    await _loadLayoutForDevice(selectedDevice.id);
+    try {
+      await widget.deviceRepository.saveDevice(selectedDevice);
+      await widget.deviceRepository.setLastUsedDevice(selectedDevice.id);
+      final pairedAt = DateTime.now();
+      await widget.deviceRepository.setLastSuccessfulPairingAt(
+        deviceId: selectedDevice.id,
+        timestamp: pairedAt,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _activeDevice = selectedDevice;
+        _status = _statusForPairedDevice(selectedDevice.displayName, pairedAt);
+      });
+      await _loadLayoutForDevice(selectedDevice.id);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPairingInProgress = false;
+        });
+      }
+    }
   }
 
   String _statusForConnectedDevice(String deviceName, DateTime? lastPairedAt) {
@@ -373,11 +419,11 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Drag buttons to new positions. Grid: 5x8. D-pad uses 3x3 cells.',
+          'Drag buttons to new positions. Grid: 5x9. D-pad uses 3x3 cells.',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
-        _buildLayoutGridCanvas(),
+        Expanded(child: _buildLayoutGridCanvas()),
       ],
     );
   }
@@ -386,16 +432,20 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
-        final cellSize =
-            (maxWidth - ((_gridColumns - 1) * _gridGap)) / _gridColumns;
+        final maxHeight = constraints.maxHeight;
+        final cellSize = _fitCellSize(
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
+        );
         final gridWidth = (_gridColumns * cellSize) + ((_gridColumns - 1) * _gridGap);
         final gridHeight = (_gridRows * cellSize) + ((_gridRows - 1) * _gridGap);
 
-        return SizedBox(
-          width: gridWidth,
-          height: gridHeight,
-          child: Stack(
-            children: [
+        return Center(
+          child: SizedBox(
+            width: gridWidth,
+            height: gridHeight,
+            child: Stack(
+              children: [
               for (var row = 0; row < _gridRows; row++)
                 for (var col = 0; col < _gridColumns; col++)
                   Positioned(
@@ -502,11 +552,11 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                       },
                     ),
                   ),
-              for (final item in _layoutItems)
-                Positioned(
-                  left: item.col * (cellSize + _gridGap),
-                  top: item.row * (cellSize + _gridGap),
-                  child: IgnorePointer(
+                for (final item in _layoutItems)
+                  Positioned(
+                    left: item.col * (cellSize + _gridGap),
+                    top: item.row * (cellSize + _gridGap),
+                    child: IgnorePointer(
                     // While dragging, let grid DragTargets receive hit tests.
                     ignoring: _isDraggingLayoutItem,
                     child: Draggable<String>(
@@ -546,9 +596,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                         child: _buildGridItemTile(item: item, cellSize: cellSize),
                       ),
                     ),
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -574,19 +625,36 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         color: background,
         border: Border.all(color: const Color(0xFF2D3138), width: 1.2),
       ),
-      child: item.icon != null
-          ? Icon(item.icon, size: math.min(width, height) * 0.45, color: Colors.white)
-          : Center(
-              child: Text(
-                item.label ?? '',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
+      child: item.id == 'playPause'
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.play_arrow,
+                  size: math.min(width, height) * 0.34,
                   color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
                 ),
-              ),
-            ),
+                SizedBox(width: math.max(1, math.min(width, height) * 0.04)),
+                Icon(
+                  Icons.pause,
+                  size: math.min(width, height) * 0.30,
+                  color: Colors.white,
+                ),
+              ],
+            )
+          : item.icon != null
+              ? Icon(item.icon, size: math.min(width, height) * 0.45, color: Colors.white)
+              : Center(
+                  child: Text(
+                    item.label ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
     );
   }
 
@@ -594,27 +662,43 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
-        final cellSize =
-            (maxWidth - ((_gridColumns - 1) * _gridGap)) / _gridColumns;
+        final maxHeight = constraints.maxHeight;
+        final cellSize = _fitCellSize(
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
+        );
         final gridWidth = (_gridColumns * cellSize) + ((_gridColumns - 1) * _gridGap);
         final gridHeight = (_gridRows * cellSize) + ((_gridRows - 1) * _gridGap);
 
-        return SizedBox(
-          width: gridWidth,
-          height: gridHeight,
-          child: Stack(
-            children: [
+        return Center(
+          child: SizedBox(
+            width: gridWidth,
+            height: gridHeight,
+            child: Stack(
+              children: [
               for (final item in _layoutItems)
                 Positioned(
                   left: item.col * (cellSize + _gridGap),
                   top: item.row * (cellSize + _gridGap),
                   child: _buildRemoteLayoutItem(item: item, cellSize: cellSize),
                 ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
+  }
+
+  double _fitCellSize({
+    required double maxWidth,
+    required double maxHeight,
+  }) {
+    final widthLimited =
+        (maxWidth - ((_gridColumns - 1) * _gridGap)) / _gridColumns;
+    final heightLimited =
+        (maxHeight - ((_gridRows - 1) * _gridGap)) / _gridRows;
+    return math.max(1, math.min(widthLimited, heightLimited));
   }
 
   Widget _buildRemoteLayoutItem({
@@ -756,6 +840,33 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       );
     }
 
+    if (item.id == 'pair') {
+      final hasActiveDevice = _activeDevice != null;
+      return SizedBox(
+        width: width,
+        height: height,
+        child: RemoteIconCircleButton(
+          icon: item.icon,
+          label: item.label,
+          onPressed: _openPairing,
+          backgroundColor: hasActiveDevice ? Colors.green.shade600 : null,
+          foregroundColor: Colors.white,
+        ),
+      );
+    }
+
+    if (item.id == 'mute') {
+      return SizedBox(
+        width: width,
+        height: height,
+        child: RemoteIconCircleButton(
+          icon: item.icon,
+          label: item.label,
+          onPressed: () => _send(RemoteCommand.mute),
+        ),
+      );
+    }
+
     final onPressed = _actionForItem(item.id);
     return SizedBox(
       width: width,
@@ -776,6 +887,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       'pair' => _openPairing,
       'back' => () => _send(RemoteCommand.back),
       'playPause' => () => _send(RemoteCommand.playPause),
+      'menu' => () => _send(RemoteCommand.menu),
       'www' => () => _send(RemoteCommand.web),
       'netflix' => () => _send(RemoteCommand.netflix),
       'prime' => () => _send(RemoteCommand.primeVideo),
@@ -787,13 +899,52 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     };
   }
 
+  Widget _buildPairingBusyOverlay() {
+    if (!_isPairingInProgress) {
+      return const SizedBox.shrink();
+    }
+    return Positioned.fill(
+      child: ColoredBox(
+        color: Colors.black54,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1B1D22),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF2D3138), width: 1.2),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Pairing device...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final deviceName = _activeDevice?.displayName ?? 'No TV connected';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RemoteOne'),
+        title: const Text('OneRemote'),
         actions: [
           IconButton(
             onPressed: _toggleLayoutEditMode,
@@ -803,23 +954,31 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: _isLayoutEditMode
-              ? _buildLayoutEditor(context)
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      deviceName,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(_status),
-                    const SizedBox(height: 16),
-                    _buildRemoteLayoutCanvas(),
-                  ],
-                ),
+        child: Stack(
+          children: [
+            IgnorePointer(
+              ignoring: _isPairingInProgress,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: _isLayoutEditMode
+                    ? _buildLayoutEditor(context)
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            deviceName,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(_status),
+                          const SizedBox(height: 16),
+                          Expanded(child: _buildRemoteLayoutCanvas()),
+                        ],
+                      ),
+              ),
+            ),
+            _buildPairingBusyOverlay(),
+          ],
         ),
       ),
     );

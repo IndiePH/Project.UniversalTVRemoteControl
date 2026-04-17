@@ -24,15 +24,17 @@ As product specs evolve, update this document and re-prioritize tasks.
   - Added non-throwing dispatch results for UI-safe error handling
 - Milestone 1 / Task 1.2 (partial):
   - Added pairing screen with:
-    - fake discovery scan
+    - scan flow wired to local-network SSDP discovery
     - manual brand + IP add
     - IPv4 validation
     - recent manual IP shortcuts
     - saved device quick-reconnect section
     - remove saved device flow (with active-device extra confirmation)
+    - explicit pairing behavior notice (new successful pair switches active TV; prior saved devices remain until removed)
 - Milestone 1 / Task 1.5 (partial):
   - Persist/select last used device
   - Track and surface `lastSuccessfulPairingAt` metadata
+  - Removed seeded in-memory placeholder saved device (app now starts with no paired TV by default)
 - Milestone 3 / Task 3.1 (partial):
   - Added settings-driven grid layout editor with drag/drop + swap behavior
   - Added layout persistence and default-layout reset flow
@@ -44,17 +46,18 @@ As product specs evolve, update this document and re-prioritize tasks.
   - Updated default control coordinates for the latest baseline layout
 
 ### In Progress
-- Milestone 1 / Task 1.1:
-  - Discovery UX/state is implemented with fake provider
-  - Real local network discovery integration pending
 - Milestone 1 / Task 1.6:
   - Basic widget test coverage is in place
-  - End-to-end flow verification and broader scenario tests pending
+  - Added full-loop widget pass:
+    - pair to newly discovered TV
+    - return to remote
+    - send command via remote control
+  - Added active-device remove confirmation regression coverage (`REMOVE` path)
+  - Broader scenario tests and network edge-case validation pending
 - Milestone 3 / Task 3.1:
   - Continue usability polish for edit mode visual affordances and small-screen readability
 
 ### Next Up
-- Replace fake discovery service with real network discovery adapters
 - Connect pairing output to real protocol handshake/verification per brand
 - Expand tests:
   - pairing success/failure paths

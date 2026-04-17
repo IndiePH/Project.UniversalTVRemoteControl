@@ -6,6 +6,20 @@ Keep entries short and append new updates at the top.
 ## 2026-04-17
 
 ### Changed
+- Pairing and saved-device behavior updates:
+  - switched scan path from fake provider wiring to local-network SSDP discovery service
+  - clarified UX behavior: pairing a new TV switches active control; previously paired TVs remain saved
+  - improved active-device remove flow confirmation UX and validated `REMOVE` regression path
+  - removed seeded in-memory placeholder saved device (default startup now has no paired TV)
+
+### Verification
+- Added/updated widget coverage for:
+  - full loop pass (pair discovered TV -> return -> send command)
+  - active saved-device removal with typed confirmation
+
+## 2026-04-17
+
+### Changed
 - Updated remote layout/editor baseline and status:
   - increased grid from `5x8` to `5x9`
   - updated default control coordinates to the latest requested arrangement

@@ -1,33 +1,17 @@
-import 'package:universal_tv_remove_control/src/features/remote_control/application/device_repository.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/device_capability.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/tv_brand.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/src/features/remote_control/application/device_repository.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 /// In-memory repository used during early development and widget testing.
 ///
 /// This keeps behavior deterministic while persistence/network layers are not
 /// implemented yet.
 class InMemoryDeviceRepository implements DeviceRepository {
-  InMemoryDeviceRepository()
-    : _devices = const [
-        TvDevice(
-          id: 'samsung-living-room',
-          displayName: 'Living Room TV',
-          brand: TvBrand.samsung,
-          capabilities: {
-            DeviceCapability.keyCommands,
-            DeviceCapability.textInput,
-            DeviceCapability.powerControl,
-          },
-        ),
-      ];
+  InMemoryDeviceRepository() : _devices = [];
 
   final List<TvDevice> _devices;
   final List<String> _recentManualIps = [];
-  final Map<String, DateTime> _lastSuccessfulPairingByDeviceId = {
-    'samsung-living-room': DateTime.now().subtract(const Duration(minutes: 5)),
-  };
-  String _lastUsedDeviceId = 'samsung-living-room';
+  final Map<String, DateTime> _lastSuccessfulPairingByDeviceId = {};
+  String _lastUsedDeviceId = '';
 
   @override
   Future<List<TvDevice>> getSavedDevices() async => List.unmodifiable(_devices);

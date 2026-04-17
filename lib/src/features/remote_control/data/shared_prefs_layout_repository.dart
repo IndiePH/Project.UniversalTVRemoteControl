@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:universal_tv_remove_control/src/features/remote_control/application/layout_repository.dart';
+import 'package:one_remote/src/features/remote_control/application/layout_repository.dart';
 
 class SharedPrefsLayoutRepository implements LayoutRepository {
   static const String _keyPrefix = 'remote_layout_v1_';

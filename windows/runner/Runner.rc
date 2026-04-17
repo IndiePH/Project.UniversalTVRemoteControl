@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.xentwil" "\0"
-            VALUE "FileDescription", "universal_tv_remove_control" "\0"
+            VALUE "FileDescription", "OneRemote" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "universal_tv_remove_control" "\0"
+            VALUE "InternalName", "OneRemote" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.xentwil. All rights reserved." "\0"
-            VALUE "OriginalFilename", "universal_tv_remove_control.exe" "\0"
-            VALUE "ProductName", "universal_tv_remove_control" "\0"
+            VALUE "OriginalFilename", "OneRemote.exe" "\0"
+            VALUE "ProductName", "OneRemote" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

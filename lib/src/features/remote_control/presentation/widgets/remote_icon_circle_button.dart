@@ -7,12 +7,16 @@ class RemoteIconCircleButton extends StatelessWidget {
     this.icon,
     this.label,
     this.isPower = false,
+    this.backgroundColor,
+    this.foregroundColor,
   });
 
   final IconData? icon;
   final String? label;
   final VoidCallback onPressed;
   final bool isPower;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +25,11 @@ class RemoteIconCircleButton extends StatelessWidget {
       'Either icon or label must be provided.',
     );
     final colorScheme = Theme.of(context).colorScheme;
-    final background = isPower ? Colors.red.shade600 : const Color(0xFF1B1D22);
-    final iconColor = isPower ? Colors.white : colorScheme.onSurface;
+    final background =
+        backgroundColor ??
+        (isPower ? Colors.red.shade600 : const Color(0xFF1B1D22));
+    final iconColor =
+        foregroundColor ?? (isPower ? Colors.white : colorScheme.onSurface);
     final child = icon != null
         ? Icon(icon, color: iconColor, size: 34)
         : Text(
