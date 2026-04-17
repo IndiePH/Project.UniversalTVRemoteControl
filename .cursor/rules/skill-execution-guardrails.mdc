@@ -1,0 +1,15 @@
+---
+description: Guardrails for using local skills correctly
+alwaysApply: true
+---
+
+# Skill Execution Guardrails
+
+- Treat `*-meta` skills as analysis-only: no file edits, no command execution.
+- Use `*-execution` skills for implementation/verification work.
+- Default to human-readable responses for normal interactive work.
+- Use strict JSON only when machine-consumable output is needed (loops, verification pipelines, batch automation) or explicitly required by the active skill.
+- For debug loops, apply one minimal fix per iteration with hypothesis + verification.
+- For verification, never claim success if required checks were not run.
+- Never commit unless the user explicitly asks.
+- Use `skill-creator` only when the user explicitly asks to create/edit a skill.

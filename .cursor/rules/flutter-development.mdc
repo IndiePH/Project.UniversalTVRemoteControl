@@ -1,0 +1,16 @@
+---
+description: Concise Flutter and Dart development standards
+globs: **/*.dart
+alwaysApply: false
+---
+
+# Flutter Development
+
+- Prefer widget composition over deep inheritance.
+- Keep widget inputs immutable (`final` fields, `const` constructors when possible).
+- Keep `build()` side-effect free; no I/O, logging loops, or mutation in `build()`.
+- Use `setState()` only for local UI state; move shared/business state out of widgets.
+- Prefer `async`/`await` over chained `then()`/`catchError()`.
+- Respect null safety; avoid `!` unless correctness is proven by control flow.
+- Keep code formatter/lints clean (`dart format`, `flutter_lints`).
+- Add or update tests for behavior changes (`test/`, widget tests for UI logic).
