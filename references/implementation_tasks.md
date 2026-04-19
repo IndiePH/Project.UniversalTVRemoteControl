@@ -98,6 +98,24 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - Re-validate **Hisense discovery on Android APK** after multicast-lock change (empty scan vs AP isolation vs SSDP headers); consider optional fallback discovery (e.g. guided manual IP / `TV_HOST_OVERRIDE`, future port `36669` sweep) if SSDP still misses hardware
 - Milestone 3 / Task 3.1:
   - Continue usability polish for edit mode visual affordances and small-screen readability
+  - SRP follow-up in progress for remote page composition:
+    - extracted focused presentation widgets from `RemoteHomePage`:
+      - `RemoteTextEntrySheet` (keyboard send bottom-sheet UI)
+      - `RemoteHomeStatusPanel` (device/status header block)
+      - `RemoteHomeAppBarActions` (edit/debug app-bar controls)
+      - `RemoteHomeDebugSheet` (debug settings bottom-sheet content)
+    - extracted keyboard availability policy to
+      `remote_keyboard_availability.dart` (`RemoteKeyboardAvailability`)
+    - remaining decomposition: remote-grid builder paths and pairing/debug action orchestration still live in `_RemoteHomePageState`
+
+### SRP Refactor Checklist (Tracked)
+- [x] Extract keyboard-availability policy out of `_RemoteHomePageState` into a focused helper (`remote_keyboard_availability.dart`) and route keyboard press/send guards through it.
+- [ ] Split `RemoteHomePage` into page-shell + dedicated widgets/handlers for remote grid, pairing/debug actions, and text-entry sheet flow.
+  - In progress: extracted `RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`, and `RemoteHomeDebugSheet`; keyboard availability policy moved to `RemoteKeyboardAvailability` in `remote_keyboard_availability.dart`.
+  - Remaining: remote-grid builder/action decomposition and extraction of pairing/debug orchestration from `_RemoteHomePageState`.
+- [ ] Split `PairingPage` orchestration from widget rendering (scan/reconnect/manual pair handlers vs UI sections).
+- [ ] Partition `RealSamsungTransportClient` into focused collaborators (socket/session lifecycle, pairing/token flow, IME/text protocol, transport logging).
+- [ ] Break `RemoteLayoutEditor` interaction/painter logic into smaller units with explicit responsibilities.
 
 ### Next Up
 - Run parallel per-brand validation tracks (Samsung, LG, Hisense):

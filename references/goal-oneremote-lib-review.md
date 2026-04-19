@@ -73,6 +73,13 @@ page-level orchestration (device, commands, layout load/save) focused.
 
 Fallback remains explicit (`_noopAction`).
 
+**Follow-up 2026-04-20 (SRP continuation):** `RemoteHomePage` kept the map-based routing from Task 3 and
+further moved presentational sections into focused widgets:
+`RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`, and `RemoteHomeDebugSheet`.
+Keyboard availability checks were centralized in `RemoteKeyboardAvailability`.
+Page-level orchestration remains in `_RemoteHomePageState` and is tracked in
+`references/implementation_tasks.md` (SRP checklist).
+
 - **Risk:** MEDIUM
 - **Deps:** Task 2 complete
 

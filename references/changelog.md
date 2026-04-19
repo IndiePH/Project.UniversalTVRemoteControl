@@ -6,11 +6,23 @@ Keep entries short and append new updates at the top.
 ## 2026-04-20
 
 ### Changed
+- Remote-home SRP decomposition pass:
+  - extracted focused presentation widgets from `RemoteHomePage`:
+    `RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`,
+    and `RemoteHomeDebugSheet`
+  - extracted keyboard-availability policy into
+    `remote_keyboard_availability.dart` (`RemoteKeyboardAvailability`) and
+    kept a shared user-facing unavailable message + concise debug log mapping
+  - behavior is preserved; refactor reduces `RemoteHomePage` UI/build concerns
 - Layout editor: drag/drop and swap resolution live in `RemoteLayoutDropResolver` (`remote_layout_drop_resolver.dart`); swap keeps the dragged control at the dropped cell and chooses a non-overlapping footprint-aware placement for the displaced control (direction-prioritized edge candidates around moved/origin footprints).
 - Layout editor: removed swap-result snackbars and the copy-last-drag debug header button.
+- Docs sync:
+  - updated `references/implementation_tasks.md` status tracker + SRP checklist
+  - updated `references/goal-oneremote-lib-review.md` Task 3 follow-up note
 
 ### Verification
 - `dart analyze` on touched layout files and `flutter test` pass after the updates.
+- `dart analyze` on touched remote-home refactor files (`remote_home_page.dart` + extracted widgets/helpers) passes.
 
 ## 2026-04-19
 

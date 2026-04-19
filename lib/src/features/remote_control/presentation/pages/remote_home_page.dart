@@ -14,11 +14,16 @@ import 'package:one_remote/src/features/remote_control/domain/models/remote_comm
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/src/features/remote_control/presentation/formatting/two_digit_format.dart';
 import 'package:one_remote/src/features/remote_control/presentation/pages/pairing_page.dart';
+import 'package:one_remote/src/features/remote_control/presentation/pages/remote_keyboard_availability.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_circular_dpad.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_icon_circle_button.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/layout_edit_item.dart';
+import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_home_app_bar_actions.dart';
+import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_home_debug_sheet.dart';
+import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_home_status_panel.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_layout_editor.dart';
+import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_text_entry_sheet.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_vertical_rocker.dart';
 import 'package:one_remote/src/theme/app_theme.dart';
 
@@ -63,10 +68,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   static const int _gridRows = 9;
   static const double _gridGap = 6;
   static const VoidCallback _noopAction = _emptyAction;
-
-  /// Toast/status when the TV cannot take remote keyboard entry (missing capability or IME).
   static const String _keyboardUnavailableMessage =
-      "Remote keyboard can't be used on this screen or with this TV.";
+      RemoteKeyboardAvailability.unavailableMessage;
 
   final TextEditingController _textController = TextEditingController();
   final List<LayoutEditItem> _layoutItems = buildInitialRemoteLayoutItems();
@@ -206,11 +209,16 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       _showToast('Enter text before sending.', isError: true);
       return;
     }
-    if (!device.capabilities.contains(DeviceCapability.textInput)) {
-      setState(() => _status = _keyboardUnavailableMessage);
-      _showToast(_keyboardUnavailableMessage, isError: true);
-      debugPrint(
-        '[OneRemote] keyboard send: no textInput capability device=${device.id}',
+    final availability = RemoteKeyboardAvailability.evaluate(
+      device: device,
+      remoteTextInputReady: _remoteTextInputReady,
+      requireImeReady: false,
+    );
+    if (!availability.isAvailable) {
+      _reportKeyboardUnavailable(
+        device: device,
+        action: 'send',
+        availability: availability,
       );
       return;
     }
@@ -353,53 +361,22 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Debug',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    if (widget.onUseFakeTransportsChanged != null) ...[
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Use fake transports'),
-                        subtitle: Text(
-                          widget.useFakeTransports
-                              ? 'Fake SSDP and Samsung/Hisense transports.'
-                              : 'Real SSDP and real Samsung/Hisense transports.',
-                        ),
-                        value: widget.useFakeTransports,
-                        onChanged: (value) async {
-                          await widget.onUseFakeTransportsChanged!(value);
-                          setModalState(() {});
-                        },
-                      ),
-                      Text(
-                        'Compile-time default: '
-                        '${widget.compileTimeUseFakeTransports ? "fake" : "real"} '
-                        '(USE_FAKE_TRANSPORTS)',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.copy),
-                      title: const Text('Copy Samsung text logs'),
-                      onTap: () {
-                        Navigator.pop(sheetContext);
-                        unawaited(_copyLatestSamsungTextLog());
-                      },
-                    ),
-                  ],
-                ),
-              ),
+            return RemoteHomeDebugSheet(
+              showTransportToggle: widget.onUseFakeTransportsChanged != null,
+              useFakeTransports: widget.useFakeTransports,
+              compileTimeUseFakeTransports: widget.compileTimeUseFakeTransports,
+              onUseFakeTransportsChanged: (value) async {
+                final changeMode = widget.onUseFakeTransportsChanged;
+                if (changeMode == null) {
+                  return;
+                }
+                await changeMode(value);
+                setModalState(() {});
+              },
+              onCopySamsungTextLogs: () {
+                Navigator.pop(sheetContext);
+                unawaited(_copyLatestSamsungTextLog());
+              },
             );
           },
         );
@@ -618,23 +595,32 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       _showToast('No device selected.', isError: true);
       return;
     }
-    if (!device.capabilities.contains(DeviceCapability.textInput)) {
-      setState(() => _status = _keyboardUnavailableMessage);
-      _showToast(_keyboardUnavailableMessage, isError: true);
-      debugPrint(
-        '[OneRemote] keyboard press: no textInput capability device=${device.id}',
-      );
-      return;
-    }
-    if (!_remoteTextInputReady) {
-      setState(() => _status = _keyboardUnavailableMessage);
-      _showToast(_keyboardUnavailableMessage, isError: true);
-      debugPrint(
-        '[OneRemote] keyboard press: remote IME not ready device=${device.id}',
+    final availability = RemoteKeyboardAvailability.evaluate(
+      device: device,
+      remoteTextInputReady: _remoteTextInputReady,
+      requireImeReady: true,
+    );
+    if (!availability.isAvailable) {
+      _reportKeyboardUnavailable(
+        device: device,
+        action: 'press',
+        availability: availability,
       );
       return;
     }
     _openTextEntrySheet();
+  }
+
+  void _reportKeyboardUnavailable({
+    required TvDevice device,
+    required String action,
+    required RemoteKeyboardAvailability availability,
+  }) {
+    setState(() => _status = _keyboardUnavailableMessage);
+    _showToast(_keyboardUnavailableMessage, isError: true);
+    debugPrint(
+      availability.toDebugLog(action: action, deviceId: device.id),
+    );
   }
 
   void _openTextEntrySheet() {
@@ -646,48 +632,12 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       showDragHandle: true,
       isScrollControlled: true,
       builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Send text to TV',
-                    style: Theme.of(sheetContext).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _textController,
-                    autofocus: true,
-                    decoration: const InputDecoration(
-                      hintText: 'Search or enter text',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.text,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) {
-                      Navigator.pop(sheetContext);
-                      unawaited(_sendText());
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: () {
-                      Navigator.pop(sheetContext);
-                      unawaited(_sendText());
-                    },
-                    child: const Text('Send'),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return RemoteTextEntrySheet(
+          controller: _textController,
+          onSend: () async {
+            Navigator.pop(sheetContext);
+            await _sendText();
+          },
         );
       },
     );
@@ -801,15 +751,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       appBar: AppBar(
         title: const Text('OneRemote'),
         actions: [
-          IconButton(
-            onPressed: _toggleLayoutEditMode,
-            icon: Icon(_isLayoutEditMode ? Icons.check : Icons.edit_outlined),
-            tooltip: _isLayoutEditMode ? 'Done editing layout' : 'Edit layout',
-          ),
-          IconButton(
-            onPressed: _showTransportDebugSheet,
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Debug settings',
+          RemoteHomeAppBarActions(
+            isLayoutEditMode: _isLayoutEditMode,
+            onToggleLayoutEditMode: _toggleLayoutEditMode,
+            onShowDebugSettings: _showTransportDebugSheet,
           ),
         ],
       ),
@@ -826,18 +771,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                   onResetLayout: _resetLayoutForActiveDevice,
                   onPersistLayout: _persistLayoutForActiveDevice,
                 )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      deviceName,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(_status),
-                    const SizedBox(height: 16),
-                    Expanded(child: _buildRemoteLayoutCanvas()),
-                  ],
+              : RemoteHomeStatusPanel(
+                  deviceName: deviceName,
+                  status: _status,
+                  child: _buildRemoteLayoutCanvas(),
                 ),
         ),
       ),
