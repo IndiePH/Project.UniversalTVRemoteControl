@@ -64,6 +64,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   static const double _gridGap = 6;
   static const VoidCallback _noopAction = _emptyAction;
 
+  /// Toast/status when the TV cannot take remote keyboard entry (missing capability or IME).
+  static const String _keyboardUnavailableMessage =
+      "Remote keyboard can't be used on this screen or with this TV.";
+
   final TextEditingController _textController = TextEditingController();
   final List<LayoutEditItem> _layoutItems = buildInitialRemoteLayoutItems();
   TvDevice? _activeDevice;
@@ -203,10 +207,11 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       return;
     }
     if (!device.capabilities.contains(DeviceCapability.textInput)) {
-      setState(() {
-        _status = 'Text input is not supported on this device.';
-      });
-      _showToast('Text input is not supported on this device.', isError: true);
+      setState(() => _status = _keyboardUnavailableMessage);
+      _showToast(_keyboardUnavailableMessage, isError: true);
+      debugPrint(
+        '[OneRemote] keyboard send: no textInput capability device=${device.id}',
+      );
       return;
     }
 
@@ -614,25 +619,18 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       return;
     }
     if (!device.capabilities.contains(DeviceCapability.textInput)) {
-      setState(() {
-        _status = 'Text input is not supported on this device.';
-      });
-      _showToast('Text input is not supported on this device.', isError: true);
+      setState(() => _status = _keyboardUnavailableMessage);
+      _showToast(_keyboardUnavailableMessage, isError: true);
       debugPrint(
-        '[OneRemote] keyboard: text input not supported for device ${device.id}',
+        '[OneRemote] keyboard press: no textInput capability device=${device.id}',
       );
       return;
     }
     if (!_remoteTextInputReady) {
-      const message =
-          'Keyboard is not available on the TV in this screen. Open a text field first.';
-      setState(() {
-        _status = message;
-      });
-      _showToast(message, isError: true);
+      setState(() => _status = _keyboardUnavailableMessage);
+      _showToast(_keyboardUnavailableMessage, isError: true);
       debugPrint(
-        '[OneRemote] keyboard: remote text input not ready (device=${device.id}) — '
-        'TV may not be showing a text field compatible with remote keyboard',
+        '[OneRemote] keyboard press: remote IME not ready device=${device.id}',
       );
       return;
     }

@@ -18,7 +18,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - Implemented remote surface with custom controls:
     - power, mute, d-pad + OK, channel rocker, volume rocker
     - text input field + send action
-    - search/keyboard layout control stays interactable when unpaired or when remote text is unavailable: same `No device selected.` toast as other keys when there is no active device; distinct user-facing message plus `debugPrint` when the device lacks text input or the TV has not signaled remote IME readiness
+    - search/keyboard layout control stays interactable when unpaired or when remote text is unavailable: same `No device selected.` toast as other keys when there is no active device; unsupported text input or IME-not-ready uses shared `_keyboardUnavailableMessage` ("Remote keyboard can't be used on this screen or with this TV.") for toast and status row, with `debugPrint` lines tagged `keyboard press:` / `keyboard send:` plus reason and `device.id`
   - Added responsive sizing fixes for control cluster
 - Milestone 1 / Task 1.4 (partial):
   - Implemented command pipeline with brand-specific routing
