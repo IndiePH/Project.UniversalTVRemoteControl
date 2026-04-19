@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/src/theme/app_theme.dart';
 
 class RemoteCircularDpad extends StatelessWidget {
   const RemoteCircularDpad({
@@ -18,6 +19,7 @@ class RemoteCircularDpad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = AppTheme.colorsOf(context);
     return SizedBox(
       width: 240,
       height: 240,
@@ -29,8 +31,8 @@ class RemoteCircularDpad extends StatelessWidget {
             height: 240,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF111317),
-              border: Border.all(color: const Color(0xFF2D3138), width: 1.4),
+              color: appColors.remoteSurface,
+              border: Border.all(color: appColors.remoteOutline, width: 1.4),
             ),
           ),
           _ArrowButton(
@@ -62,8 +64,8 @@ class RemoteCircularDpad extends StatelessWidget {
             height: 120,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF1B1D22),
-              border: Border.all(color: const Color(0xFF2D3138), width: 1.4),
+              color: appColors.remoteRaisedSurface,
+              border: Border.all(color: appColors.remoteOutline, width: 1.4),
             ),
             child: TextButton(
               onPressed: onOk,

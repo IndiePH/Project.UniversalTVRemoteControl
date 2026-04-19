@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/src/theme/app_theme.dart';
 
 class RemoteVerticalRocker extends StatelessWidget {
   const RemoteVerticalRocker({
@@ -18,6 +19,7 @@ class RemoteVerticalRocker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = AppTheme.colorsOf(context);
     final textStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
       fontWeight: FontWeight.w700,
       letterSpacing: 1.1,
@@ -27,9 +29,9 @@ class RemoteVerticalRocker extends StatelessWidget {
       width: 78,
       height: 300,
       decoration: BoxDecoration(
-        color: const Color(0xFF111317),
+        color: appColors.remoteSurface,
         borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: const Color(0xFF2D3138), width: 1.4),
+        border: Border.all(color: appColors.remoteOutline, width: 1.4),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

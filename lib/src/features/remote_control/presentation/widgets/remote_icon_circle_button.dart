@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/src/theme/app_theme.dart';
 
 class RemoteIconCircleButton extends StatelessWidget {
   const RemoteIconCircleButton({
@@ -13,7 +14,8 @@ class RemoteIconCircleButton extends StatelessWidget {
 
   final IconData? icon;
   final String? label;
-  final VoidCallback onPressed;
+  /// When null, the button is shown in a disabled (non-interactive) state.
+  final VoidCallback? onPressed;
   final bool isPower;
   final Color? backgroundColor;
   final Color? foregroundColor;
@@ -25,9 +27,10 @@ class RemoteIconCircleButton extends StatelessWidget {
       'Either icon or label must be provided.',
     );
     final colorScheme = Theme.of(context).colorScheme;
+    final appColors = AppTheme.colorsOf(context);
     final background =
         backgroundColor ??
-        (isPower ? Colors.red.shade600 : const Color(0xFF1B1D22));
+        (isPower ? Colors.red.shade600 : appColors.remoteSurface);
     final iconColor =
         foregroundColor ?? (isPower ? Colors.white : colorScheme.onSurface);
     final child = icon != null
@@ -47,7 +50,7 @@ class RemoteIconCircleButton extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: background,
-        border: Border.all(color: const Color(0xFF2D3138), width: 1.2),
+        border: Border.all(color: appColors.remoteOutline, width: 1.2),
       ),
       child: IconButton(
         onPressed: onPressed,
