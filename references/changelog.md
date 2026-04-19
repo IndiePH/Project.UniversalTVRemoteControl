@@ -3,6 +3,31 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-04-20
+
+### Changed
+- Layout editor: drag/drop and swap resolution live in `RemoteLayoutDropResolver` (`remote_layout_drop_resolver.dart`); swap keeps the dragged control at the dropped cell and chooses a non-overlapping footprint-aware placement for the displaced control (direction-prioritized edge candidates around moved/origin footprints).
+- Layout editor: removed swap-result snackbars and the copy-last-drag debug header button.
+
+### Verification
+- `dart analyze` on touched layout files and `flutter test` pass after the updates.
+
+## 2026-04-19
+
+### Changed
+- Remote app bar controls were clarified:
+  - layout edit uses a pencil/check affordance (`Edit layout` / done)
+  - debug options moved under a dedicated cog settings action
+- Added runtime debug transport override (no rebuild needed):
+  - settings sheet can switch fake vs real transport/discovery wiring
+  - selected mode persists in `SharedPreferences` and overrides compile-time default when set
+- Completed April 2026 lib review dedupe follow-ups:
+  - Task 4: brand capabilities now centralized via `TvBrand.defaultCapabilities`
+  - Task 5: shared `formatTwoDigits` helper used by both remote and pairing timestamp rendering
+
+### Verification
+- `flutter analyze lib` and `flutter test test/widget_test.dart` pass after task updates.
+
 ## 2026-04-18
 
 ### Added

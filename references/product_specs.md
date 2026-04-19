@@ -103,7 +103,7 @@ MVP implementation priority (current baseline)—same **platform** stance as §1
 
 * Settings access on remote screen toggles an in-place layout editor
 * Grid-based layout customization (`5x9`) with drag-and-drop repositioning
-* Occupied-cell drop swaps controls instead of rejecting the move
+* When a drop overlaps another control, the editor attempts a **swap**: the dragged control lands at the dropped cell; the displaced control is placed using **footprint-aware** rules (validation footprints: d-pad `3x3`, channel/volume rockers `1x3`, others from control size) so unrelated controls are not overlapped. If no valid placement exists, the drop is **rejected**
 * Multi-cell control support:
     * D-pad occupies `3x3`
     * Search control occupies `5x1` (`4x1` text field + `1x1` right-side icon action)
@@ -248,6 +248,8 @@ Control rendering details:
 * If a device/protocol does not support text input, show a clear fallback message.
 * Remote screen keyboard behavior should keep main layout stable (keyboard overlays content rather than resizing the remote canvas).
 * Current implementation baseline: Samsung carries the in-app keyboard text path; LG webOS text send is still pending, so LG devices should not advertise in-app text capability until that transport lands.
+
+**Validation focus (living):** Physical and integration effort so far has centered on **Samsung**. **LG** adapter and pairing/text behavior are **not fixed**—they are expected to **change** once dedicated webOS transport work begins. **Hisense** is **mid-development**; MQTT/VIDAA wiring and UX may **change** as we learn from real TVs and protocol behavior.
 
 #### Brand Adapter Strategy (MVP -> Post-MVP)
 
