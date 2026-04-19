@@ -10,6 +10,7 @@ Smart TV control uses each vendor’s APIs or protocols. **Commercial shipping**
 
 - **`mqtt_client`** (pub.dev, MIT): used for **Hisense VIDAA** local MQTT (`RealHisenseTransportClient`). Preserve upstream copyright notice per MIT when shipping.
 - **`flutter_multicast_lock`** (pub.dev, MIT): used on **Android** during SSDP discovery to acquire `WifiManager.MulticastLock` for the scan. Preserve upstream copyright notice per MIT when shipping.
+- **`crypto`** (pub.dev, BSD-3-Clause): SHA-256 fingerprints for Samsung WSS trust-on-first-use (`SamsungTlsTrustStore`). Preserve upstream copyright notice when shipping.
 - Samsung / LG transports remain project-owned code paths (no third-party TV protocol SDK beyond `mqtt_client` for Hisense).
 - This tracker is retained for future evaluations and release audit traceability.
 
@@ -30,7 +31,7 @@ This project currently relies on internal adapter implementations.
 
 ## Current Project State
 
-- `pubspec.yaml` includes **`mqtt_client`** for Hisense MQTT and **`flutter_multicast_lock`** for Android SSDP discovery, as above.
+- `pubspec.yaml` includes **`mqtt_client`** for Hisense MQTT, **`flutter_multicast_lock`** for Android SSDP discovery, and **`crypto`** for Samsung TLS TOFU fingerprints, as above.
 - Brand routing remains internal adapter architecture:
   - `SamsungAdapter` (WebSocket)
   - `LgAdapter` (stub / future webOS)

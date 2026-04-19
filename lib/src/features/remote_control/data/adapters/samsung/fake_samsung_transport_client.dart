@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_client.dart';
@@ -5,10 +6,20 @@ import 'package:one_remote/src/features/remote_control/data/adapters/samsung/sam
 /// Placeholder transport used until the real Samsung socket/auth client is wired.
 class FakeSamsungTransportClient implements SamsungTransportClient {
   final Set<String> _connectedDeviceIds = <String>{};
+  final Map<String, StreamController<bool>> _imeReadyBroadcasters =
+      <String, StreamController<bool>>{};
+
+  void _notifyImeReady(String deviceId, bool value) {
+    final c = _imeReadyBroadcasters[deviceId];
+    if (c != null && !c.isClosed) {
+      c.add(value);
+    }
+  }
 
   @override
   Future<void> connect({required String deviceId}) async {
     _connectedDeviceIds.add(deviceId);
+    _notifyImeReady(deviceId, true);
     log('Samsung transport connected: $deviceId', name: 'samsung_transport');
   }
 
@@ -47,6 +58,25 @@ class FakeSamsungTransportClient implements SamsungTransportClient {
       'Samsung transport sendText: $deviceId -> "$text"',
       name: 'samsung_transport',
     );
+  }
+
+  @override
+  Stream<bool> watchRemoteTextInputReady(String deviceId) {
+    return Stream<bool>.multi((controller) {
+      controller.add(_connectedDeviceIds.contains(deviceId));
+      final broadcaster = _imeReadyBroadcasters.putIfAbsent(
+        deviceId,
+        () => StreamController<bool>.broadcast(),
+      );
+      late final StreamSubscription<bool> sub;
+      sub = broadcaster.stream.listen(
+        controller.add,
+        onError: controller.addError,
+      );
+      controller.onCancel = () {
+        sub.cancel();
+      };
+    });
   }
 
   Future<void> _ensureConnected(String deviceId) async {
