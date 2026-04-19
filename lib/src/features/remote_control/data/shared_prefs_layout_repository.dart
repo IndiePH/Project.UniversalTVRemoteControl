@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:one_remote/src/features/remote_control/application/layout_repository.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/layout_position.dart';
 
 class SharedPrefsLayoutRepository implements LayoutRepository {
   static const String _keyPrefix = 'remote_layout_v1_';
