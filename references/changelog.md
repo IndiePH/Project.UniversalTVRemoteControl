@@ -6,6 +6,11 @@ Keep entries short and append new updates at the top.
 ## 2026-04-20
 
 ### Changed
+- Layout editor SRP pass: `RemoteLayoutEditor` delegates to `RemoteLayoutEditorGridGeometry`
+  (cell sizing + occupancy + validation footprints), `RemoteLayoutEditGridPainter` (grid lines),
+  `RemoteLayoutEditorItemPreview` (dpad/rocker/icon tiles), and `RemoteLayoutEditorDragSession`
+  (anchors, hover highlight, drop resolution wiring); the stateful widget keeps the `Stack` /
+  `DragTarget` / `Draggable` tree and header chrome.
 - Samsung real transport SRP pass: `RealSamsungTransportClient` now composes
   `RealSamsungPairingTokenStore` (host token + TV-approval waiters),
   `RealSamsungRemoteTextSession` (IME / app-context state + `watchRemoteTextInputReady`),
@@ -35,6 +40,7 @@ Keep entries short and append new updates at the top.
 - `dart analyze` on touched layout files and `flutter test` pass after the updates.
 - `dart analyze` on touched remote-home and pairing refactor modules passes.
 - `dart analyze` (whole project) after Samsung transport partition passes.
+- `dart analyze` + `flutter test test/widget_test.dart` after layout editor SRP split pass.
 
 ## 2026-04-19
 

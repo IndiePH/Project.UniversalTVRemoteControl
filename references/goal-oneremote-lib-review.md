@@ -85,6 +85,10 @@ Keyboard availability checks were centralized in `RemoteKeyboardAvailability`.
 Page-level orchestration remains in `_RemoteHomePageState` and is tracked in
 `references/implementation_tasks.md` (SRP checklist).
 
+**Follow-up 2026-04-20 (layout editor SRP):** `RemoteLayoutEditor` was split so geometry, grid
+painting, per-item previews, and drag-session state live in dedicated types next to
+`RemoteLayoutDropResolver`; the editor widget retains gesture targets and layout chrome.
+
 **Follow-up 2026-04-20 (pairing SRP):** `PairingPage` orchestration and UI sections were split into
 `PairingPageCoordinator`, `PairingPageData`, `PairingPageDialogs`, `PairingPageViewState`, and
 `lib/.../widgets/pairing_page_sections.dart`; see the same SRP checklist in `implementation_tasks.md`.
