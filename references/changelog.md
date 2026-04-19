@@ -6,6 +6,12 @@ Keep entries short and append new updates at the top.
 ## 2026-04-20
 
 ### Changed
+- Samsung real transport SRP pass: `RealSamsungTransportClient` now composes
+  `RealSamsungPairingTokenStore` (host token + TV-approval waiters),
+  `RealSamsungRemoteTextSession` (IME / app-context state + `watchRemoteTextInputReady`),
+  `RealSamsungTransportLogging` (logcat + file outbound summaries),
+  `RealSamsungWsHandshake` (connect completer), and `samsung_transport_authorization.dart`;
+  socket open/bind/close and outbound key/text framing stay in the client.
 - Remote-home SRP decomposition pass:
   - extracted focused presentation widgets from `RemoteHomePage`:
     `RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`,
@@ -28,6 +34,7 @@ Keep entries short and append new updates at the top.
 ### Verification
 - `dart analyze` on touched layout files and `flutter test` pass after the updates.
 - `dart analyze` on touched remote-home and pairing refactor modules passes.
+- `dart analyze` (whole project) after Samsung transport partition passes.
 
 ## 2026-04-19
 

@@ -38,6 +38,10 @@ this tracker) were applied where imports or verification required it.
 `SharedPreferences` (`samsung_tls_trust_store.dart`). First connect pins the cert; later connects must
 match or handshake fails (MITM / TV cert change). Clear app data resets pins.
 
+**Follow-up 2026-04-20 (SRP):** Pairing/token waiters, IME session state, debug logging, and WSS handshake
+completion were extracted from `real_samsung_transport_client.dart` into focused types under the same
+`samsung/` adapter folder; the client keeps socket lifecycle and outbound framing.
+
 - **Risk:** HIGH (security-sensitive) — mitigated vs unconditional accept; TOFU still trusts first sighting.
 - **Deps:** `crypto` (see `references/third_party_licenses.md`)
 

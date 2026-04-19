@@ -72,6 +72,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - Swap behavior: moving item stays at the dropped anchor cell; displaced control uses footprint-aware placement (validation footprints for dpad `3x3`, volume/channel `1x3`, others from item size) with edge-adjacent candidates ordered **toward the moving control’s original direction**, then opposite, then other adjacents; swap is rejected when no placement avoids overlap with unrelated controls
   - Removed swap-result snackbars and the “copy last drag/drop log” debug button from the layout editor header
   - SRP decomposition (remote + pairing presentation): `RemoteHomePage` delegates to `RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`, `RemoteHomeDebugSheet`, `RemoteHomeRemoteGrid`, `RemoteHomeActions`, and `RemoteKeyboardAvailability`; `PairingPage` delegates to `PairingPageCoordinator`, `PairingPageData`, `PairingPageDialogs`, `PairingPageViewState`, and `pairing_page_sections.dart` (see SRP checklist)
+  - SRP decomposition (Samsung real transport): `RealSamsungTransportClient` orchestrates `RealSamsungPairingTokenStore`, `RealSamsungRemoteTextSession`, `RealSamsungTransportLogging`, `RealSamsungWsHandshake`, and `samsung_transport_authorization.dart` (socket lifecycle + wire-up remain in the client; see SRP checklist)
 - Developer ergonomics:
   - README "Current Runtime Modes": default **real** Samsung + Hisense transports for APK/physical-TV testing; fake transports opt-in via dart-define; host overrides documented; Samsung log tag `samsung_transport` (see README)
   - Implementation plan: **Brand transport defaults** section (real-by-default policy; do not regress)
@@ -107,7 +108,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [x] Split `PairingPage` orchestration from widget rendering (scan/reconnect/manual pair handlers vs UI sections).
   - Implemented via `PairingPageCoordinator`, `PairingPageData`, `PairingPageDialogs`, `PairingPageViewState`, and `pairing_page_sections.dart` (`PairingSavedDevicesSection`, `PairingDiscoveryList`, `PairingManualAddSection`, `PairingBusyOverlay`, `PairingActionButton`).
   - Hisense PIN dialog UI builder is now delegated through `PairingPageDialogs.promptHisensePairingPin`.
-- [ ] Partition `RealSamsungTransportClient` into focused collaborators (socket/session lifecycle, pairing/token flow, IME/text protocol, transport logging).
+- [x] Partition `RealSamsungTransportClient` into focused collaborators (socket/session lifecycle, pairing/token flow, IME/text protocol, transport logging).
 - [ ] Break `RemoteLayoutEditor` interaction/painter logic into smaller units with explicit responsibilities.
 
 ### Next Up

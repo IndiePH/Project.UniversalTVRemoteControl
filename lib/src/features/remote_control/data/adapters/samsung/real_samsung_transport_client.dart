@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' show log;
 import 'dart:io';
 
-import 'package:one_remote/src/features/remote_control/application/text_input_compatibility_exception.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_pairing_token_store.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_remote_text_session.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_transport_logging.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_ws_handshake.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_tls_trust_store.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_file_logger.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 
 /// WebSocket transport scaffold for Samsung TVs.
@@ -15,16 +17,11 @@ import 'package:one_remote/src/features/remote_control/data/adapters/samsung/sam
 /// - It currently assumes modern Samsung remote-control channel format.
 /// - Device host lookup is delegated to [hostResolver] until repository models
 ///   carry explicit network endpoint metadata.
+///
+/// Implementation is split across focused types: [RealSamsungPairingTokenStore],
+/// [RealSamsungRemoteTextSession], [RealSamsungTransportLogging], and
+/// [RealSamsungWsHandshake].
 class RealSamsungTransportClient implements SamsungTransportClient {
-  /// When true, logs outbound text-related frames and inbound socket messages
-  /// (filter logcat by name `samsung_transport`).
-  ///
-  /// Enable for a build with:
-  /// `--dart-define=SAMSUNG_TRANSPORT_DEBUG=true`
-  static const bool _debugTransport = bool.fromEnvironment(
-    'SAMSUNG_TRANSPORT_DEBUG',
-    defaultValue: true,
-  );
   static const bool _sendInputEndAfterEachText = bool.fromEnvironment(
     'SAMSUNG_SEND_INPUT_END_PER_TEXT',
     defaultValue: false,
@@ -36,52 +33,31 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     this.connectTimeout = const Duration(seconds: 8),
     this.handshakeTimeout = const Duration(seconds: 30),
     this.keyDelay = const Duration(milliseconds: 200),
-  }) : _hostResolver = hostResolver;
+    RealSamsungTransportLogging? transportLogging,
+    RealSamsungPairingTokenStore? pairingTokenStore,
+    RealSamsungRemoteTextSession? remoteTextSession,
+  }) : _hostResolver = hostResolver,
+       _logging = transportLogging ?? RealSamsungTransportLogging(),
+       _pairing = pairingTokenStore ?? RealSamsungPairingTokenStore(),
+       _text = remoteTextSession ?? RealSamsungRemoteTextSession();
 
   final String Function(String deviceId) _hostResolver;
   final String clientName;
   final Duration connectTimeout;
   final Duration handshakeTimeout;
   final Duration keyDelay;
+  final RealSamsungTransportLogging _logging;
+  final RealSamsungPairingTokenStore _pairing;
+  final RealSamsungRemoteTextSession _text;
+
   final Map<String, WebSocket> _socketsByDeviceId = <String, WebSocket>{};
   final Map<String, StreamSubscription<dynamic>> _subscriptionsByDeviceId =
       <String, StreamSubscription<dynamic>>{};
-  final Map<String, String> _tokenByHost = <String, String>{};
   final Map<String, DateTime> _lastSendAtByDeviceId = <String, DateTime>{};
-  final Map<String, Set<Completer<void>>> _pendingPairingByHost =
-      <String, Set<Completer<void>>>{};
-  final Map<String, bool> _isImeActiveByDeviceId = <String, bool>{};
-  final Map<String, bool> _isImeSessionPrimedByDeviceId = <String, bool>{};
-  final Map<String, String> _appContextByDeviceId = <String, String>{};
-  final Map<String, StreamController<bool>> _imeReadyBroadcasters =
-      <String, StreamController<bool>>{};
-  final SamsungTransportFileLogger _fileLogger = SamsungTransportFileLogger();
-
-  void _notifyImeReadyListeners(String deviceId) {
-    final value = _isImeActiveByDeviceId[deviceId] ?? false;
-    final controller = _imeReadyBroadcasters[deviceId];
-    if (controller != null && !controller.isClosed) {
-      controller.add(value);
-    }
-  }
 
   @override
   Stream<bool> watchRemoteTextInputReady(String deviceId) {
-    return Stream<bool>.multi((controller) {
-      controller.add(_isImeActiveByDeviceId[deviceId] ?? false);
-      final broadcaster = _imeReadyBroadcasters.putIfAbsent(
-        deviceId,
-        () => StreamController<bool>.broadcast(),
-      );
-      late final StreamSubscription<bool> sub;
-      sub = broadcaster.stream.listen(
-        controller.add,
-        onError: controller.addError,
-      );
-      controller.onCancel = () {
-        sub.cancel();
-      };
-    });
+    return _text.watchRemoteTextInputReady(deviceId);
   }
 
   @override
@@ -95,21 +71,18 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     if (host.isEmpty) {
       throw StateError('Samsung host resolver returned an empty host.');
     }
-    final secureToken = _tokenByHost[host];
+    final secureToken = _pairing.tokenForHost(host);
     final encodedName = base64Encode(utf8.encode(clientName));
 
     final uriCandidates = <Uri>[
-      // Prefer secure channel with known token when available.
       if (secureToken != null && secureToken.isNotEmpty)
         Uri.parse(
           'wss://$host:8002/api/v2/channels/samsung.remote.control'
           '?name=$encodedName&token=$secureToken',
         ),
-      // Secure endpoint first so first-time pairing can receive auth token.
       Uri.parse(
         'wss://$host:8002/api/v2/channels/samsung.remote.control?name=$encodedName',
       ),
-      // Common LAN WebSocket endpoint for local control.
       Uri.parse(
         'ws://$host:8001/api/v2/channels/samsung.remote.control?name=$encodedName',
       ),
@@ -145,8 +118,8 @@ class RealSamsungTransportClient implements SamsungTransportClient {
           );
         }
         await _resetConnection(deviceId);
-        if (_isAuthorizationError(error)) {
-          _tokenByHost.remove(host);
+        if (SamsungTransportAuthorization.isAuthorizationError(error)) {
+          _pairing.clearTokenForHost(host);
         }
       }
     }
@@ -170,20 +143,14 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     final deadline = DateTime.now().add(approvalTimeout);
 
     await SamsungTlsTrustStore.instance.ensureLoaded();
-    // Drop any prior pin so a TV cert change or stale TOFU state cannot block pairing.
     await SamsungTlsTrustStore.instance.clearEndpoint(host, 8002);
 
-    // Force an unauthenticated connection first so the TV can prompt approval.
     await _resetConnection(deviceId);
     await _connectWithoutToken(deviceId: deviceId, host: host);
 
-    if ((_tokenByHost[host] ?? '').isEmpty) {
+    if (!_pairing.hasNonEmptyToken(host)) {
       final completer = Completer<void>();
-      final pending = _pendingPairingByHost.putIfAbsent(
-        host,
-        () => <Completer<void>>{},
-      );
-      pending.add(completer);
+      _pairing.registerPendingApproval(host, completer);
 
       try {
         await sendKey(deviceId: deviceId, keyCode: triggerKeyCode);
@@ -194,23 +161,17 @@ class RealSamsungTransportClient implements SamsungTransportClient {
           ),
         );
       } finally {
-        final current = _pendingPairingByHost[host];
-        current?.remove(completer);
-        if (current != null && current.isEmpty) {
-          _pendingPairingByHost.remove(host);
-        }
+        _pairing.unregisterPendingApproval(host, completer);
       }
     }
 
-    // Pairing is only considered successful once token-authenticated connection
-    // is usable. This avoids returning to home before TV approval is complete.
     while (DateTime.now().isBefore(deadline)) {
       try {
         await _resetConnection(deviceId);
         await _connectWithKnownToken(deviceId: deviceId, host: host);
         return;
       } on Object catch (error) {
-        if (!_isAuthorizationError(error)) {
+        if (!SamsungTransportAuthorization.isAuthorizationError(error)) {
           rethrow;
         }
         await Future<void>.delayed(const Duration(milliseconds: 700));
@@ -249,14 +210,12 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     required String text,
   }) async {
     final socket = await _socketFor(deviceId);
-    if (_debugTransport) {
-      _logDebug(
+    if (_logging.enabled) {
+      _logging.logDebug(
         '[$deviceId] sendText: chars=${text.length} utf8Bytes=${utf8.encode(text).length}',
       );
     }
 
-    // Many Samsung sets require IME priming (`custom.remote.textReceived`)
-    // before accepting SendInputString frames. Prime once per IME session.
     await _waitForImeState(
       deviceId,
       timeout: const Duration(milliseconds: 500),
@@ -266,23 +225,8 @@ class RealSamsungTransportClient implements SamsungTransportClient {
       deviceId,
       timeout: const Duration(milliseconds: 600),
     );
-    if (!(_isImeActiveByDeviceId[deviceId] ?? false)) {
-      final appContext = _appContextByDeviceId[deviceId];
-      final buffer = StringBuffer(
-        'Typing from this phone is not available on this TV screen or app. ',
-      )
-        ..write(
-          'Use the TV on-screen keyboard and direction buttons to enter text.',
-        );
-      if (appContext != null && appContext.isNotEmpty) {
-        buffer.write(' (TV reports app context: $appContext)');
-      }
-      throw TextInputCompatibilityException(buffer.toString());
-    }
+    _text.ensureImeActiveForSendText(deviceId);
 
-    // SendInputString uses the same envelope as other remote commands, but the
-    // base64 payload belongs in Cmd and DataOfCmd is the literal "base64"
-    // (not the encoded bytes — this matches reference Samsung WS clients).
     final encodedText = base64Encode(utf8.encode(text));
     await _applyKeyPacing(deviceId);
     final inputPayload = jsonEncode(<String, dynamic>{
@@ -293,12 +237,10 @@ class RealSamsungTransportClient implements SamsungTransportClient {
         'TypeOfRemote': 'SendInputString',
       },
     });
-    _logOutbound(deviceId, inputPayload);
+    _logging.logOutbound(deviceId, inputPayload);
     socket.add(inputPayload);
     _lastSendAtByDeviceId[deviceId] = DateTime.now();
 
-    // Some models behave better when SendInputEnd is not sent immediately
-    // after every text payload. Keep it opt-in for diagnostics/fallback.
     if (_sendInputEndAfterEachText) {
       await _sendInputEnd(deviceId: deviceId, socket: socket);
     }
@@ -356,7 +298,7 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     required String deviceId,
     required String host,
   }) async {
-    final token = _tokenByHost[host]?.trim() ?? '';
+    final token = _pairing.trimmedTokenForHost(host);
     if (token.isEmpty) {
       throw StateError('Samsung pairing token is not available yet.');
     }
@@ -404,9 +346,7 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     Completer<void>? handshakeCompleter,
   }) {
     _socketsByDeviceId[deviceId] = socket;
-    _isImeActiveByDeviceId[deviceId] = false;
-    _isImeSessionPrimedByDeviceId[deviceId] = false;
-    _notifyImeReadyListeners(deviceId);
+    _text.onSocketBound(deviceId);
     _subscriptionsByDeviceId[deviceId]?.cancel();
     _subscriptionsByDeviceId[deviceId] = socket.listen(
       (message) {
@@ -414,17 +354,19 @@ class RealSamsungTransportClient implements SamsungTransportClient {
           return;
         }
         final decoded = _tryDecodeMessage(message);
-        _captureAppContext(deviceId: deviceId, decoded: decoded);
-        _captureImeSessionState(deviceId: deviceId, decoded: decoded);
-        _completeHandshakeIfReady(
+        _text.ingestDecoded(
+          deviceId,
+          decoded,
+          onImeDebugLog: _logging.enabled ? _logging.logDebug : null,
+        );
+        RealSamsungWsHandshake.tryComplete(
           decoded: decoded,
           handshakeCompleter: handshakeCompleter,
         );
-        _captureSamsungTokenIfPresent(
-          deviceId: deviceId,
-          host: host,
-          decoded: decoded,
-        );
+        final pairingOutcome = _pairing.handleDecoded(host, decoded);
+        if (pairingOutcome == SamsungPairingFrameOutcome.unauthorized) {
+          unawaited(_resetConnection(deviceId));
+        }
       },
       onDone: () {
         if (handshakeCompleter != null && !handshakeCompleter.isCompleted) {
@@ -434,11 +376,7 @@ class RealSamsungTransportClient implements SamsungTransportClient {
         }
         _subscriptionsByDeviceId.remove(deviceId)?.cancel();
         _socketsByDeviceId.remove(deviceId);
-        _isImeActiveByDeviceId[deviceId] = false;
-        _notifyImeReadyListeners(deviceId);
-        _isImeActiveByDeviceId.remove(deviceId);
-        _isImeSessionPrimedByDeviceId.remove(deviceId);
-        _appContextByDeviceId.remove(deviceId);
+        _text.onSocketLost(deviceId);
       },
       onError: (Object error, StackTrace stackTrace) {
         if (handshakeCompleter != null && !handshakeCompleter.isCompleted) {
@@ -446,11 +384,7 @@ class RealSamsungTransportClient implements SamsungTransportClient {
         }
         _subscriptionsByDeviceId.remove(deviceId)?.cancel();
         _socketsByDeviceId.remove(deviceId);
-        _isImeActiveByDeviceId[deviceId] = false;
-        _notifyImeReadyListeners(deviceId);
-        _isImeActiveByDeviceId.remove(deviceId);
-        _isImeSessionPrimedByDeviceId.remove(deviceId);
-        _appContextByDeviceId.remove(deviceId);
+        _text.onSocketLost(deviceId);
       },
       cancelOnError: false,
     );
@@ -460,7 +394,7 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     required String deviceId,
     required WebSocket socket,
   }) async {
-    if (_isImeSessionPrimedByDeviceId[deviceId] ?? false) {
+    if (_text.isImeSessionPrimed(deviceId)) {
       return;
     }
     await _applyKeyPacing(deviceId);
@@ -471,10 +405,10 @@ class RealSamsungTransportClient implements SamsungTransportClient {
         'to': 'broadcast',
       },
     });
-    _logOutbound(deviceId, emitPayload);
+    _logging.logOutbound(deviceId, emitPayload);
     socket.add(emitPayload);
     _lastSendAtByDeviceId[deviceId] = DateTime.now();
-    _isImeSessionPrimedByDeviceId[deviceId] = true;
+    _text.markImeSessionPrimed(deviceId);
   }
 
   Future<void> _sendInputEnd({
@@ -486,7 +420,7 @@ class RealSamsungTransportClient implements SamsungTransportClient {
       'method': 'ms.remote.control',
       'params': <String, dynamic>{'TypeOfRemote': 'SendInputEnd'},
     });
-    _logOutbound(deviceId, endPayload);
+    _logging.logOutbound(deviceId, endPayload);
     socket.add(endPayload);
     _lastSendAtByDeviceId[deviceId] = DateTime.now();
   }
@@ -497,7 +431,7 @@ class RealSamsungTransportClient implements SamsungTransportClient {
   }) async {
     final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
-      if (_isImeActiveByDeviceId[deviceId] ?? false) {
+      if (_text.isImeActive(deviceId)) {
         return;
       }
       await Future<void>.delayed(const Duration(milliseconds: 120));
@@ -516,177 +450,6 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     return null;
   }
 
-  void _captureAppContext({
-    required String deviceId,
-    required Map<String, dynamic>? decoded,
-  }) {
-    if (decoded == null) {
-      return;
-    }
-    final method = decoded['method'];
-    if (method is String && method.isNotEmpty) {
-      _appContextByDeviceId[deviceId] = 'method=$method';
-    }
-    final data = decoded['data'];
-    if (data is! Map<String, dynamic>) {
-      return;
-    }
-    final appId = data['appId'] ?? data['id'];
-    if (appId is String && appId.trim().isNotEmpty) {
-      final trimmed = appId.trim();
-      final event = decoded['event'];
-      if (event is String && event.isNotEmpty) {
-        _appContextByDeviceId[deviceId] = 'event=$event appId=$trimmed';
-      } else {
-        _appContextByDeviceId[deviceId] = 'appId=$trimmed';
-      }
-    }
-  }
-
-  void _captureImeSessionState({
-    required String deviceId,
-    required Map<String, dynamic>? decoded,
-  }) {
-    if (decoded == null) {
-      return;
-    }
-    final event = decoded['event'];
-    if (event is! String) {
-      return;
-    }
-    final eventLower = event.toLowerCase();
-    if (!eventLower.contains('ime')) {
-      return;
-    }
-    if (eventLower.contains('start')) {
-      _isImeActiveByDeviceId[deviceId] = true;
-      _isImeSessionPrimedByDeviceId[deviceId] = false;
-      _notifyImeReadyListeners(deviceId);
-      if (_debugTransport) {
-        _logDebug('[$deviceId] RX: IME start');
-      }
-      return;
-    }
-    if (eventLower.contains('end')) {
-      _isImeActiveByDeviceId[deviceId] = false;
-      _isImeSessionPrimedByDeviceId[deviceId] = false;
-      _notifyImeReadyListeners(deviceId);
-      if (_debugTransport) {
-        _logDebug('[$deviceId] RX: IME end');
-      }
-    }
-  }
-
-  void _completeHandshakeIfReady({
-    required Map<String, dynamic>? decoded,
-    required Completer<void>? handshakeCompleter,
-  }) {
-    if (handshakeCompleter == null ||
-        handshakeCompleter.isCompleted ||
-        decoded == null) {
-      return;
-    }
-    final event = decoded['event'];
-    if (event is! String) {
-      return;
-    }
-    if (event == 'ms.channel.connect' || event == 'ms.channel.ready') {
-      handshakeCompleter.complete();
-      return;
-    }
-    if (event == 'ms.channel.unauthorized') {
-      handshakeCompleter.completeError(
-        _SamsungAuthorizationException(
-          'Samsung TV rejected remote-control authorization.',
-        ),
-      );
-      return;
-    }
-
-    final data = decoded['data'];
-    if (data is Map<String, dynamic>) {
-      final message = data['message'];
-      if (message is String && message.toLowerCase().contains('unauthorized')) {
-        handshakeCompleter.completeError(
-          _SamsungAuthorizationException(
-            'Samsung TV rejected remote-control authorization.',
-          ),
-        );
-      }
-    }
-  }
-
-  void _captureSamsungTokenIfPresent({
-    required String deviceId,
-    required String host,
-    required Map<String, dynamic>? decoded,
-  }) {
-    if (decoded == null) {
-      return;
-    }
-    if (_isUnauthorizedFrame(decoded)) {
-      _failPendingPairingApprovals(
-        host: host,
-        error: _SamsungAuthorizationException(
-          'Samsung TV rejected remote-control authorization.',
-        ),
-      );
-      unawaited(_resetConnection(deviceId));
-      return;
-    }
-    final data = decoded['data'];
-    if (data is! Map<String, dynamic>) {
-      return;
-    }
-    final token = data['token'];
-    if (token is String && token.trim().isNotEmpty) {
-      _tokenByHost[host] = token.trim();
-      _completePendingPairingApprovals(host);
-    }
-  }
-
-  bool _isUnauthorizedFrame(Map<String, dynamic> decoded) {
-    final event = decoded['event'];
-    if (event is String && event == 'ms.channel.unauthorized') {
-      return true;
-    }
-    final data = decoded['data'];
-    if (data is Map<String, dynamic>) {
-      final message = data['message'];
-      if (message is String && message.toLowerCase().contains('unauthorized')) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  void _completePendingPairingApprovals(String host) {
-    final pending = _pendingPairingByHost.remove(host);
-    if (pending == null) {
-      return;
-    }
-    for (final completer in pending) {
-      if (!completer.isCompleted) {
-        completer.complete();
-      }
-    }
-  }
-
-  void _failPendingPairingApprovals({
-    required String host,
-    required Object error,
-  }) {
-    final pending = _pendingPairingByHost.remove(host);
-    if (pending == null) {
-      return;
-    }
-    for (final completer in pending) {
-      if (!completer.isCompleted) {
-        completer.completeError(error);
-      }
-    }
-  }
-
   Future<void> _applyKeyPacing(String deviceId) async {
     final lastSentAt = _lastSendAtByDeviceId[deviceId];
     if (lastSentAt == null) {
@@ -699,69 +462,11 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     await Future<void>.delayed(keyDelay - elapsed);
   }
 
-  bool _isAuthorizationError(Object error) {
-    if (error is _SamsungAuthorizationException) {
-      return true;
-    }
-    return error.toString().toLowerCase().contains('authorization');
-  }
-
-  void _logOutbound(String deviceId, String payload) {
-    if (!_debugTransport) {
-      return;
-    }
-    _logDebug('[$deviceId] TX: ${_summarizeOutboundPayload(payload)}');
-  }
-
-  void _logDebug(String message) {
-    log(message, name: 'samsung_transport');
-    _fileLogger.write(message);
-  }
-
-  String _summarizeOutboundPayload(String payload) {
-    try {
-      final decoded = jsonDecode(payload);
-      if (decoded is! Map<String, dynamic>) {
-        return _truncate(payload, 500);
-      }
-      final method = decoded['method'];
-      final params = decoded['params'];
-      if (params is Map<String, dynamic>) {
-        final type = params['TypeOfRemote'];
-        if (type == 'SendInputString' && params['Cmd'] is String) {
-          final cmd = params['Cmd'] as String;
-          final preview = cmd.length > 56 ? '${cmd.substring(0, 56)}...' : cmd;
-          return 'method=$method SendInputString cmdLen=${cmd.length} cmdPreview=$preview';
-        }
-        if (type == 'SendInputEnd') {
-          return 'method=$method SendInputEnd';
-        }
-      }
-      if (method == 'ms.channel.emit') {
-        return 'method=$method params=${_truncate(jsonEncode(params), 280)}';
-      }
-      return _truncate(payload, 500);
-    } catch (_) {
-      return _truncate(payload, 500);
-    }
-  }
-
-  String _truncate(String value, int max) {
-    if (value.length <= max) {
-      return value;
-    }
-    return '${value.substring(0, max)}...';
-  }
-
   Future<void> _resetConnection(String deviceId) async {
     await _subscriptionsByDeviceId.remove(deviceId)?.cancel();
     final socket = _socketsByDeviceId.remove(deviceId);
     _lastSendAtByDeviceId.remove(deviceId);
-    _isImeActiveByDeviceId[deviceId] = false;
-    _notifyImeReadyListeners(deviceId);
-    _isImeActiveByDeviceId.remove(deviceId);
-    _isImeSessionPrimedByDeviceId.remove(deviceId);
-    _appContextByDeviceId.remove(deviceId);
+    _text.onSocketLost(deviceId);
     if (socket == null) {
       return;
     }
@@ -771,13 +476,4 @@ class RealSamsungTransportClient implements SamsungTransportClient {
       // Ignore close failures for broken sockets.
     }
   }
-}
-
-final class _SamsungAuthorizationException implements Exception {
-  const _SamsungAuthorizationException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
 }
