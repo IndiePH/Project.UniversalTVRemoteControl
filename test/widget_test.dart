@@ -17,6 +17,7 @@ import 'package:one_remote/src/features/remote_control/data/brand_routed_remote_
 import 'package:one_remote/src/features/remote_control/data/in_memory_device_repository.dart';
 import 'package:one_remote/src/features/remote_control/data/in_memory_remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/layout_position.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/src/features/remote_control/presentation/pages/pairing_page.dart';
@@ -34,7 +35,7 @@ void main() {
     expect(find.byIcon(Icons.power_settings_new), findsOneWidget);
     expect(find.byIcon(Icons.home_outlined), findsOneWidget);
     expect(find.byIcon(Icons.wifi), findsOneWidget);
-    expect(find.byIcon(Icons.search), findsAtLeastNWidgets(1));
+    expect(find.byIcon(Icons.keyboard_outlined), findsOneWidget);
     expect(find.text('CH'), findsOneWidget);
     expect(find.text('VOL'), findsOneWidget);
   });
