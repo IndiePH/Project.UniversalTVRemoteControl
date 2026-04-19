@@ -20,4 +20,7 @@ abstract class RemoteCommandService {
     required TvDevice device,
     required String text,
   });
+
+  /// Whether the TV UI is ready to accept remote-typed text (brand-specific; e.g. Samsung IME).
+  Stream<bool> watchRemoteTextInputReady({required TvDevice device});
 }

@@ -2,6 +2,7 @@ import 'package:one_remote/src/features/remote_control/application/command_dispa
 import 'package:one_remote/src/features/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/application/tv_brand_adapter.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
@@ -117,6 +118,21 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
         'Failed to send text for ${device.brand.name}: $error',
       );
     }
+  }
+
+  @override
+  Stream<bool> watchRemoteTextInputReady({required TvDevice device}) {
+    final adapter = _adapterFor(device.brand);
+    if (adapter == null) {
+      return Stream<bool>.value(false);
+    }
+    if (!adapter.supportsTextInput) {
+      return Stream<bool>.value(false);
+    }
+    if (!device.capabilities.contains(DeviceCapability.textInput)) {
+      return Stream<bool>.value(false);
+    }
+    return adapter.watchRemoteTextInputReady(device);
   }
 
   TvBrandAdapter? _adapterFor(TvBrand brand) => _adapters[brand];

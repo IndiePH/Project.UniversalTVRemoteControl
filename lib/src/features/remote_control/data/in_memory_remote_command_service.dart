@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:one_remote/src/features/remote_control/application/command_dispatch_result.dart';
@@ -56,4 +57,8 @@ class InMemoryRemoteCommandService implements RemoteCommandService {
     );
     return CommandDispatchResult.success('Text sent: "$text"');
   }
+
+  @override
+  Stream<bool> watchRemoteTextInputReady({required TvDevice device}) =>
+      Stream<bool>.value(true);
 }

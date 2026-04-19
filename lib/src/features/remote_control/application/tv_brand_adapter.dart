@@ -25,4 +25,8 @@ abstract class TvBrandAdapter {
   });
 
   Future<void> sendText({required TvDevice device, required String text});
+
+  /// Whether the TV UI currently accepts remote-typed text (IME / protocol-specific).
+  Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
+      Stream<bool>.value(false);
 }

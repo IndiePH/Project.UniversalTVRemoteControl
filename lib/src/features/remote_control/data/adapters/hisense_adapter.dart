@@ -72,6 +72,13 @@ class HisenseAdapter implements TvBrandAdapter {
   }
 
   @override
+  Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
+      Stream<bool>.value(false);
+
+  /// Hisense uses VIDAA/MQTT keying and app launch; a separate “type text from phone”
+  /// path may land later and will not mirror LG’s webOS approach. Until then,
+  /// [supportsTextInput] stays false and we throw so callers never treat sends as no-ops.
+  @override
   Future<void> sendText({
     required TvDevice device,
     required String text,
