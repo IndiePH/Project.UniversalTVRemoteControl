@@ -1,18 +1,16 @@
 # 📺 Universal TV Remote App — Product Specification
 
+**Naming:** **OneRemote** = app / product name (store, UI, marketing). **Universal TV Remote** = internal / working name—same product; use either in specs unless a context needs the store string (metadata, legal).
+
 ## 1. Product Overview
 
-**Working Name:** RemoteOne
-**Platform:** Android (MVP), iOS (Post-MVP)
-**Category:** Utility / Smart Home
+**Platform:** Flutter · **Android and iOS compatible** · **release** timelines may differ · Utility / Smart Home
 
 ### Goal
 
-Create a mobile app that allows users to control TVs using:
+Control TVs from the phone using IR (where available), Wi‑Fi smart-TV protocols, and optionally cloud pairing *(Post-MVP exploration)*.
 
-* Infrared (IR blaster phones)
-* Wi-Fi (Smart TVs via local network)
-* Optional cloud pairing for remote access *(Post-MVP exploration)*
+**Scope note:** MVP vs later = **features**, not OS choice. Background: `references/universal-tv-remote-info-and-req.md`. Store checklist: `references/compliance-and-release-requirements.md`.
 
 ### Core Value Proposition
 
@@ -21,6 +19,8 @@ One app to control almost any TV—fast, simple, and no setup headaches.
 ### Current Planning Baseline
 
 This specification is a living document. It is the current source of truth, but scope and sequencing may evolve as implementation feedback is gathered.
+
+**Target launch:** **End of May 2026**; earlier if the product is ready sooner (see `references/implementation_tasks.md` Planning Notes).
 
 ---
 
@@ -43,13 +43,12 @@ This specification is a living document. It is the current source of truth, but 
 
 ### 3.1 Core Features (MVP)
 
-MVP implementation priority (current baseline):
+MVP implementation priority (current baseline)—same **platform** stance as §1:
 
-1. Android app
-2. Wi-Fi TV control
-3. Samsung, LG, and Hisense support (hardware-available first)
-4. iOS-compatible architecture decisions during Android development
-5. Fast, reliable core remote experience
+1. Wi-Fi TV control
+2. Samsung, LG, and Hisense parallel implementation tracks (hardware-available first)
+3. Clear platform boundaries and shared Flutter abstractions (both OSes)
+4. Fast, reliable core remote experience
 
 #### Device Connection
 
@@ -57,11 +56,12 @@ MVP implementation priority (current baseline):
 
     * Detect IR blaster availability *(Post-MVP implementation; keep hooks only in MVP architecture)*
     * Use brand-based presets *(Post-MVP)*
+    * iOS has no built-in IR hardware; a future IR path for iPhone users would rely on an external IR hub on the LAN (for example Broadlink RM4, SwitchBot Hub) blasting IR on behalf of the app—same Post-MVP bucket as phone IR on Android
 
 * **Wi-Fi Mode**
 
     * Scan local network for TVs
-    * Current MVP implementation uses SSDP-based discovery on local network (with manual IP fallback)
+    * Current MVP implementation uses SSDP-based discovery on local network (with manual IP fallback); on Android, discovery uses a Wi‑Fi multicast lock for the scan window so multicast responses are delivered reliably where the OS would otherwise filter them
     * Pairing UX behavior (current baseline):
         * selecting a TV starts a blocking pairing state on the pairing page
         * the app does not return to the remote screen until pairing succeeds
@@ -69,8 +69,8 @@ MVP implementation priority (current baseline):
     * Support in MVP:
 
         * Samsung (Tizen)
-        * LG (webOS)
         * Hisense (VIDAA, capability permitting)
+        * LG (webOS)
     * Additional TV brands are enabled as protocol adapters mature and testing becomes available
 
 ---
@@ -95,7 +95,7 @@ MVP implementation priority (current baseline):
 * Manual brand/protocol selection for Wi-Fi pairing
 * Save working configuration only after successful protocol-level pairing confirmation
 * "Does this work?" signal-testing flow for IR remains Post-MVP
-* Prioritize tested presets for Samsung, LG, and Hisense first
+* Prioritize tested presets for Samsung, Hisense, and LG based on available physical test devices
 
 ---
 
@@ -251,7 +251,7 @@ Control rendering details:
 
 #### Brand Adapter Strategy (MVP -> Post-MVP)
 
-* MVP brand focus: Samsung, LG, Hisense (based on physically available test devices)
+* MVP brand focus: Samsung, LG, and Hisense with brand-specific parallel tracks based on available physical test devices
 * Expand to additional brands when either:
     * in-house test hardware is available, or
     * verified external testers are available
@@ -310,33 +310,51 @@ Brand → Model → Button → IR Code / API Command
     * Automation
     * Custom remotes
 
+**Monetization alignment:** Store policy requires digital goods (including “remove ads” and Pro unlocks) to use **Apple In-App Purchase** and **Google Play Billing** only—no external card/checkout for in-app digital purchases. The product may ship a **non-consumable** one-time Pro purchase (see `references/marketing_strategy.md` for positioning: no ads, custom layouts, premium themes). Broader “Pro” capabilities (voice, automation, custom remotes) remain Post-MVP unless explicitly folded into the same IAP scope in a future revision.
+
 ---
 
 ## 8. Risks & Challenges
 
-### IR Hardware Limitation
+### Functional and product risks
+
+#### IR hardware limitation
 
 * Many modern phones lack IR support
 
-### TV Compatibility
+#### TV compatibility
 
 * Different brands use different protocols
 
-### Network Dependency
+#### Network dependency
 
 * Requires same Wi-Fi network
 
-### Permissions Friction
+#### Permissions friction
 
 * Especially on iOS (local network permissions)
+
+### Compliance, privacy, and store submission
+
+These items are **release gates** for public distribution. **Actionable checklist:** `references/compliance-and-release-requirements.md`. Extra risk table: `references/universal-tv-remote-info-and-req.md` §7.
+
+* **Privacy policy:** Publicly hosted URL required when showing ads or collecting data; link it in both store listings.
+* **iOS App Tracking Transparency (ATT):** Request before loading personalized ads; omission is a common rejection reason.
+* **GDPR / CCPA:** Consent flows (for example Google UMP via the ads stack) before serving ads in applicable regions.
+* **In-app purchases:** All digital purchases only through Apple IAP and Google Play Billing.
+* **COPPA / age:** Declare target age appropriately in listings; adjust ad targeting if children may use the app.
+* **Manufacturer APIs:** Review Samsung, LG, Hisense (and future) developer terms before commercial reliance; record outcomes in `references/third_party_licenses.md` (see manufacturer section there).
+
+### Commercial and revenue risks
+
+* Platform **IAP fees** (typically 15–30% depending on program/tier) affect net revenue from Pro pricing—account for this when setting price points (`references/marketing_strategy.md`).
 
 ---
 
 ## 9. MVP Scope Recommendation
 
-Start lean:
+Lean **product** scope (platform/release: §1):
 
-* Android only
 * Wi-Fi only (skip IR initially)
 * Support:
 
@@ -351,11 +369,10 @@ Start lean:
     * Save and auto-reconnect last used device
     * Settings access with per-device editable grid layout persistence
 
-Explicitly out of MVP:
+Explicitly out of **initial lean** milestone:
 
 * IR signal database and "Does this work?" IR testing flow
 * Cloud remote access
-* iOS app release
 * Voice/gesture controls
 * Widgets/wearables
 
@@ -384,7 +401,7 @@ Out of scope for this project:
 
 ### Phase 1 — Vertical Slice
 
-* Samsung + LG core command coverage
+* Samsung + LG + Hisense core command coverage
 * Basic controls (power, volume, navigation)
 * Text input keyboard for search
 * Settings button and layout preset selection
@@ -394,8 +411,8 @@ Out of scope for this project:
 
 ### Phase 2 — Expansion
 
-* Add/refine Hisense support with protocol validation gate
-* Expand compatibility within Samsung/LG models
+* Add/refine per-brand protocol support with validation gates
+* Expand compatibility within Samsung/LG/Hisense models
 * Improve connection flow
 * Save devices
 * Multi-device quick switching
@@ -417,7 +434,9 @@ Focus on:
 Speed to market over perfection
 
 Start with:
-Android MVP with Samsung/LG first, then Hisense validation
+Samsung/LG/Hisense in parallel brand-specific tracks (§1 platform stance)
 
 Before expanding into:
 Universal Remote for every TV available
+
+

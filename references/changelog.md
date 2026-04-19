@@ -5,6 +5,17 @@ Keep entries short and append new updates at the top.
 
 ## 2026-04-18
 
+### Added
+- Dart documentation convention: `///` class/type purpose where helpful; targeted comments for non-obvious logic, algorithms, and protocol/platform behavior.
+- `flutter_multicast_lock`: hold an Android Wi‑Fi multicast lock for the SSDP scan window so M-SEARCH responses on `239.255.255.250` are less likely to be dropped on real devices/APKs.
+
+### Changed
+- `SsdpDeviceDiscoveryService`: broader Hisense SSDP hints (`hiview`, `NT` in header probe), extra M-SEARCH `urn:schemas-upnp-org:device:MediaServer:1`; class doc notes Android multicast behavior.
+- Planning/docs: `references/implementation_tasks.md` status tracker, `README.md` discovery note, `references/product_specs.md` Wi‑Fi discovery bullet, `references/third_party_licenses.md` for `flutter_multicast_lock`.
+
+### Verification
+- `flutter analyze` and `flutter test` pass after multicast-lock integration.
+
 ### Changed
 - Updated pairing behavior and Samsung authorization flow:
   - pairing now stays on `PairingPage` until async pairing completes (no early return to remote page)
@@ -29,11 +40,15 @@ Keep entries short and append new updates at the top.
 - Pairing page: removed the top explanatory banner; pairing rules unchanged (spec / implementation_tasks still describe active-switch + saved devices behavior)
 - Layout editor: entering or leaving settings/edit mode no longer overwrites the remote `_status` line (it is not visible while editing); layout reset uses a snackbar for confirmation
 - LG: device capabilities and adapter now agree that in-app text send is not implemented yet (avoids false “text sent” when nothing reaches the TV)
-- Default Samsung transport is real unless `USE_FAKE_SAMSUNG_TRANSPORT=true` (documented in `README.md`)
+- Default real transports are used unless `USE_FAKE_TRANSPORTS=true` (documented in `README.md`)
 
 ### Synced Planning
-- Refreshed `references/implementation_tasks.md` status tracker and definition of done for LG text-input follow-up
+- Refreshed `references/implementation_tasks.md` status tracker and definition of done for LG text-input implementation
 - Updated `references/product_specs.md` brand readiness row for LG vs current code reality
+- Re-aligned planning to Samsung/LG/Hisense parallel brand-specific tracks
+- Added a final release legal/compliance gate in `references/implementation_tasks.md`:
+  - license/attribution pass
+  - go/no-go record in `references/third_party_licenses.md`
 
 ## 2026-04-17
 
@@ -195,3 +210,4 @@ Keep entries short and append new updates at the top.
   - protocol/device support changes
   - milestone order changes
   - acceptance criteria are tightened or relaxed
+

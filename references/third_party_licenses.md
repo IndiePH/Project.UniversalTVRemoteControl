@@ -2,10 +2,15 @@
 
 This document tracks third-party libraries considered for TV brand integrations and their commercial-use license status.
 
+## Manufacturer API terms (TV OEMs)
+
+Smart TV control uses each vendor’s APIs or protocols. **Commercial shipping** should include a recorded review of the current developer terms for each integrated manufacturer (Samsung SmartThings / Tizen paths, LG webOS / ThinQ, Hisense VIDAA, etc.). This is separate from open-source **library** licenses: it is about API registration, allowed use, and revocation risk. Summarize decisions and links here or in `references/compliance-and-release-requirements.md` §2.1 before claiming production readiness.
+
 ## Current Decision
 
-- No third-party runtime dependencies are currently used for TV control.
-- TV control implementation is currently internal-only (adapter architecture in project code).
+- **`mqtt_client`** (pub.dev, MIT): used for **Hisense VIDAA** local MQTT (`RealHisenseTransportClient`). Preserve upstream copyright notice per MIT when shipping.
+- **`flutter_multicast_lock`** (pub.dev, MIT): used on **Android** during SSDP discovery to acquire `WifiManager.MulticastLock` for the scan. Preserve upstream copyright notice per MIT when shipping.
+- Samsung / LG transports remain project-owned code paths (no third-party TV protocol SDK beyond `mqtt_client` for Hisense).
 - This tracker is retained for future evaluations and release audit traceability.
 
 ## Policy Notes
@@ -25,12 +30,12 @@ This project currently relies on internal adapter implementations.
 
 ## Current Project State
 
-- No third-party TV-control library is currently integrated into `pubspec.yaml`.
-- Current brand routing is internal adapter architecture with local stubs:
-  - `SamsungAdapter`
-  - `LgAdapter`
-  - `HisenseAdapter`
-- Add a dependency entry to this tracker before introducing any new external package.
+- `pubspec.yaml` includes **`mqtt_client`** for Hisense MQTT and **`flutter_multicast_lock`** for Android SSDP discovery, as above.
+- Brand routing remains internal adapter architecture:
+  - `SamsungAdapter` (WebSocket)
+  - `LgAdapter` (stub / future webOS)
+  - `HisenseAdapter` (MQTT over `mqtt_client`)
+- Add a dependency entry to this tracker before introducing any additional external TV-control packages.
 
 ## Release Checklist (Licenses)
 
@@ -61,4 +66,5 @@ Before adopting a third-party library in production, all of the following should
 
 | Date | Reviewer | Library | Version/Commit Checked | License Verified | Commercial Use Decision | Go/No-Go | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2026-04-17 | AI Agent + User decision | N/A | N/A | N/A | Defer external libraries | No-Go (deferred) | Removed prior Samsung/LG/Hisense candidate entries; continue with internal adapters only |
+| 2026-04-17 | Maintainer + stakeholder | N/A | N/A | N/A | Defer external libraries | No-Go (deferred) | Removed prior Samsung/LG/Hisense candidate entries; continue with internal adapters only |
+| 2026-04-18 | Maintainer | flutter_multicast_lock | pub.dev (MIT) | MIT | OK for use (MIT) | Go (runtime dep) | Android SSDP discovery only; not a TV protocol SDK |

@@ -1,7 +1,8 @@
-# RemoteOne Implementation Tasks (Living Plan)
+# OneRemote — Implementation Tasks (Living Plan)
 
-This task list is derived from `references/product_specs.md` and is intended to be iterative.  
-As product specs evolve, update this document and re-prioritize tasks.
+**Naming:** See `references/product_specs.md` (title block).
+
+Living plan derived from `references/product_specs.md`—update both when scope shifts.
 
 ## Status Tracker (Current)
 
@@ -43,6 +44,10 @@ As product specs evolve, update this document and re-prioritize tasks.
   - Samsung pairing handshake reliability improvements:
     - trigger TV approval popup during pairing (no first-command workaround)
     - require token-authenticated Samsung session before treating pairing as successful
+  - Hisense pairing UX fallback:
+    - if initial pair attempt fails, pairing flow now offers a 4-digit TV PIN dialog
+    - entered PIN is submitted through the adapter/service pairing-code path before final failure
+    - invalid PIN now shows a retry fallback loop; temporary accepted dev PIN is `1234` (fake + real transport paths)
 - Milestone 1 / Task 1.4 (partial):
   - Corrected Samsung text-input command sequence:
     - fixed `SendInputString` payload format
@@ -60,7 +65,13 @@ As product specs evolve, update this document and re-prioritize tasks.
   - Updated default control coordinates for the latest baseline layout
   - Layout editor: toggling edit mode no longer overwrites `_status` (status row is not shown while editing); layout reset uses a snackbar for visible confirmation
 - Developer ergonomics:
-  - README "Current Runtime Modes": default real Samsung WebSocket transport; `USE_FAKE_SAMSUNG_TRANSPORT` opt-in; `SAMSUNG_TV_HOST` override; optional `SAMSUNG_TRANSPORT_DEBUG` logcat tag (`samsung_transport`)
+  - README "Current Runtime Modes": default **real** Samsung + Hisense transports for APK/physical-TV testing; fake transports opt-in via dart-define; host overrides documented; Samsung log tag `samsung_transport` (see README)
+  - Implementation plan: **Brand transport defaults** section (real-by-default policy; do not regress)
+  - Dart documentation convention: public types lead with `///` stating purpose/role; add brief `//` or `///` for non-obvious algorithms, protocol steps, platform behavior, and invariants (not line-by-line narration)
+- Milestone 1 / Task 1.1 (discovery hardening):
+  - Android APK SSDP: acquire Wi‑Fi **multicast lock** for the scan window (`flutter_multicast_lock`); manifest already declared `CHANGE_WIFI_MULTICAST_STATE` / `ACCESS_WIFI_STATE` / `INTERNET` — runtime lock was the missing piece for reliable multicast receive
+  - Hisense-oriented SSDP tuning: extra M-SEARCH `urn:schemas-upnp-org:device:MediaServer:1`, include `NT` in fingerprint probe, match `hiview` where firmware omits `hisense`/`vidaa` in headers
+  - Note: community Hisense MQTT docs (e.g. mqtt-hisensetv) assume **manual IP** + port `36669`; SSDP remains best-effort for VIDAA/DLNA fingerprints
 
 ### In Progress
 - Milestone 1 / Task 1.6:
@@ -77,17 +88,21 @@ As product specs evolve, update this document and re-prioritize tasks.
     - first-time approval
     - previously approved token reuse
     - rejection/timeout recovery UX
+  - Re-validate **Hisense discovery on Android APK** after multicast-lock change (empty scan vs AP isolation vs SSDP headers); consider optional fallback discovery (e.g. guided manual IP / `TV_HOST_OVERRIDE`, future port `36669` sweep) if SSDP still misses hardware
 - Milestone 3 / Task 3.1:
   - Continue usability polish for edit mode visual affordances and small-screen readability
 
 ### Next Up
-- Implement LG webOS text-input transport and then re-enable `DeviceCapability.textInput` + `supportsTextInput` for LG
+- Run parallel per-brand validation tracks (Samsung, LG, Hisense):
+  - complete pairing verification and physical-device command validation per brand
+  - confirm SSDP scan finds expected TVs on common home routers (multicast + client isolation)
 - Connect pairing output to real protocol handshake/verification per non-Samsung brands
 - Expand tests:
   - pairing success/failure paths
   - Samsung approval timeout/rejection handling paths
   - adapter capability unsupported flows
   - saved-device remove/last-used fallback paths
+- Implement missing per-brand text-input transports and re-enable capability flags after validation
 - Add focused widget tests for:
   - drag/drop swap behavior (including multi-cell items)
   - layout persistence and default reset behavior
@@ -98,12 +113,43 @@ As product specs evolve, update this document and re-prioritize tasks.
 - Current source of truth: `references/product_specs.md`
 - Delivery principle: speed to market over perfection
 - Initial implementation focus:
-  - Flutter app architecture
-  - Android-first support
+  - Flutter app architecture (`product_specs.md` §1 for platform/release)
   - Wi-Fi control first
-  - Samsung/LG/Hisense-first compatibility based on available hardware
-  - iOS-safe architecture for Post-MVP rollout
+  - Samsung/LG/Hisense parallel compatibility tracks based on available hardware
 - Scope can change as we learn from implementation and testing.
+- **Target launch:** **End of May 2026**; shipping earlier is welcome if the build is ready.
+
+## Team & work split (two people, agent-assisted)
+
+**Shape:** Two-person team; both use AI agents (**Cursor** vs **Claude** as the primary assistant in each lane). **Brand-scoped code** reduces merge overlap (each person owns distinct adapter/transport files). **Shared surfaces** (`one_remote_app.dart`, router, `pairing_page.dart` shell, `brand_routed_remote_command_service.dart`) will still conflict sometimes—that is **expected**; coordinate with small, frequent merges or explicit handoff.
+
+| Lane | Primary owner | Focus |
+| --- | --- | --- |
+| **A — Cursor** | UI / presentation + Samsung & Hisense | `lib/**/presentation/**` (remote, pairing, layout editor, shared remote widgets), app theme/shell, UX polish. **Brand code:** **Samsung** and **Hisense** — `samsung_adapter.dart`, `samsung/**`, `hisense_adapter.dart`, `hisense/**`, Hisense/Samsung pairing and command paths, Hisense-related discovery fingerprints where tied to those adapters. |
+| **B — Claude** | Docs & reference artifacts + LG | `references/**` (specs, gap analysis, compliance notes, review-style writeups like the former **library** branch), changelog alignment, proposed tasks in `references/goal-oneremote-lib-review.md`. **Brand code:** **LG** only — `lg_adapter.dart`, LG webOS transport/pairing work. |
+
+**Rules of thumb**
+
+- Touch **only** your brand’s adapter/transport tree when changing protocol behavior; ping before editing the other person’s brand files.
+- **Shared** layers (domain contracts, `TvBrand`, command dispatch): either owner may propose changes—prefer a short sync or sequential PRs to avoid silent drift.
+- **Docs (B)** should not block **code (A)** on the critical path; ship doc updates as parallel PRs.
+- Revisit this split if load is uneven (e.g. Samsung+Hisense + UI on **A** vs LG + docs on **B**).
+
+## Brand transport defaults (physical TV & APK) — do not regress
+
+**Policy:** For every brand where a **real** network transport exists in code, the **default** `OneRemoteApp` wiring must use that real implementation (`bool.fromEnvironment(..., defaultValue: false)` for fake toggles). Release and internal APK builds should **not** require extra `--dart-define` flags to talk to a real TV on the LAN.
+
+**Rationale:** The primary validation surface is an APK on a phone hitting a physical TV. Defaulting to fake transport silently hides integration bugs.
+
+**Concrete rules:**
+
+1. **Global fake toggle only:** Use a single flag `USE_FAKE_TRANSPORTS` (default `false`) to switch all adapters to fake transports for offline/lab work.
+2. **Samsung/Hisense default:** When `USE_FAKE_TRANSPORTS` is `false`, wire `SamsungAdapter` to `RealSamsungTransportClient` and `HisenseAdapter` to `RealHisenseTransportClient`.
+3. **LG and future brands:** When a real transport exists, follow the same global toggle behavior — do not introduce per-brand fake flags.
+4. **New brands / transports:** Copy this pattern: one global fake switch for test doubles; real by default for APK testing.
+5. **Documentation:** Keep `README.md` “Current Runtime Modes” in sync whenever transport toggles or host overrides change.
+
+**Review trigger:** Any PR that touches `one_remote_app.dart` adapter factories or introduces a new `Fake*Transport` must confirm defaults still favor real transports for APK testing.
 
 ## Milestone 0 - Project Foundation
 
@@ -127,10 +173,10 @@ As product specs evolve, update this document and re-prioritize tasks.
   - Saved device profile
 - Define serialization contracts for local persistence.
 
-## Milestone 1 - Vertical Slice (Samsung + LG first)
+## Milestone 1 - Vertical Slice (Samsung + LG + Hisense)
 
-### Task 1.1 - Implement Samsung/LG discovery
-- Build local network discovery flow for Samsung and LG targets.
+### Task 1.1 - Implement Samsung/LG/Hisense discovery
+- Build local network discovery flow for Samsung, LG, and Hisense targets.
 - Show discovery results with loading, empty, and error states.
 - Add retry behavior and timeout handling.
 
@@ -147,7 +193,7 @@ As product specs evolve, update this document and re-prioritize tasks.
   - Back/Home
   - Text input keyboard for search/forms
 - Wire controls to Android TV command adapter.
-- Wire controls to Samsung/LG command adapters.
+- Wire controls to Samsung/LG/Hisense command adapters.
 - Provide immediate press feedback (visual + optional haptic hook).
 
 ### Task 1.4 - Build command execution pipeline
@@ -168,11 +214,11 @@ As product specs evolve, update this document and re-prioritize tasks.
   - app launch -> auto-connect -> immediate remote use
 - Add integration/widget tests for critical paths.
 
-## Milestone 2 - Expansion (Hisense + multi-device)
+## Milestone 2 - Expansion (Multi-device + compatibility hardening)
 
-### Task 2.1 - Add/validate Hisense protocol adapter
-- Implement Hisense TV connection and command transport (best-effort).
-- Map shared command set to Hisense-specific commands where supported.
+### Task 2.1 - Add/validate per-brand protocol adapters
+- Implement/refine Samsung, LG, and Hisense connection and command transports where gaps remain.
+- Map shared command set to brand-specific commands where supported.
 - Add protocol-specific error handling and reconnection behavior.
 
 ### Task 2.2 - Upgrade discovery and device type identification
@@ -220,11 +266,11 @@ As product specs evolve, update this document and re-prioritize tasks.
 
 ### Task C3 - Platform considerations
 - Android:
-  - prioritize all MVP features
-  - prep optional IR capability behind feature flag
+  - LAN discovery: multicast lock + manifest multicast-related permissions for dependable SSDP (Task 1.1)
+  - optional IR behind feature flag
 - iOS:
-  - design Wi-Fi/local network permission handling during Android development
-  - keep iOS implementation behind staged rollout gates
+  - Wi‑Fi / local network permissions and entitlements per Apple requirements
+  - **Compatible** with `product_specs.md` §1; **release** timing may differ from Android
 
 ### Task C4 - Backlog candidates (Post-MVP)
 - IR mode and brand signal testing flow.
@@ -244,13 +290,27 @@ As product specs evolve, update this document and re-prioritize tasks.
 
 ## Definition of Done (Current)
 
-- Android user can discover, pair, and control Samsung/LG TVs reliably.
-- Android user can send text input from the app keyboard to Samsung TVs where the model supports the WebSocket IME path; LG webOS text send remains a follow-up once transport exists.
-- User can relaunch app and control last connected TV quickly.
-- Samsung and LG support work with shared remote command set.
-- Hisense support is delivered when protocol validation succeeds on physical devices.
-- Multiple TVs can be saved and switched.
-- Core flows are covered by automated tests and pass CI checks.
+- User can discover, pair, and control Samsung/LG/Hisense TVs reliably on **Android** (current validation focus).
+- Text input from the app keyboard to Samsung TVs where the WebSocket IME path works on the model.
+- Per-brand text transport/capability flags only after implementation + validation on physical TVs.
+- Relaunch → quick control of last TV; multi-device save/switch; shared command set across brands.
+- Core flows covered by automated tests; CI green.
+- **iOS:** extend the same acceptance criteria when an iOS store release is in scope (parity with §1).
+
+## Final Release Gate (Legal & Compliance)
+
+- Run a legal/license pass for any adopted external protocol references or copied logic before release.
+- Confirm third-party notices/attributions and license text obligations are satisfied in-app/repository.
+- Record final go/no-go license status in `references/third_party_licenses.md`.
+- Block release if any unresolved copyleft or attribution obligations remain.
+- **Store submission blockers** (expanded checklist: `references/compliance-and-release-requirements.md`):
+  - Privacy policy at a live public URL; linked in App Store Connect and Play Console.
+  - iOS: App Tracking Transparency integrated; prompt before first ad load.
+  - EU/California: consent (for example UMP via `google_mobile_ads`) before ads where required.
+  - Pro / remove-ads: **non-consumable** IAP via Apple IAP + Google Play Billing only (`in_app_purchase`).
+  - Developer accounts and signing: Apple Developer Program, Google Play developer account, AdMob as needed before ads go live.
+- **Physical-device validation:** Do not claim store support for a brand until pairing and core commands are verified on at least one real TV of that brand (complements the brand readiness matrix in `references/product_specs.md`).
+- **Deferred code-quality/security follow-ups** from the April 2026 lib review (no code until individually confirmed): `references/goal-oneremote-lib-review.md`.
 
 ## Change Control Notes
 
@@ -260,3 +320,5 @@ As product specs evolve, update this document and re-prioritize tasks.
   - acceptance expectations
   - test coverage targets
 - Prefer incremental delivery with working slices over broad unfinished features.
+
+

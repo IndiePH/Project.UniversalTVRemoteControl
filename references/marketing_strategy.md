@@ -1,13 +1,15 @@
-# 📱 OneRemote – Product & Monetization Strategy (Play Store Ready)
+# 📱 OneRemote – Product & Monetization Strategy (Play listing examples; mirror structure for App Store)
 
 ---
 
 # 1. 🧠 Brand Identity
 
+**Naming:** `references/product_specs.md` (title block). **Identifiers:** e.g. `com.oneremote.tv`, `OneRemoteApp`.
+
 ## App Name (Store Title)
 OneRemote – Smart TV Remote
 
-## Brand Name (Internal / Logo / Package)
+## Brand Name (Logo / Package)
 OneRemote
 
 ## Package Name (recommended)
@@ -33,13 +35,15 @@ Control your TV directly from your phone with an easy-to-use interface.
 ---
 
 ### 📺 Supported TVs
-OneRemote works with:
+MVP development targets **Samsung, LG, and Hisense** (Wi‑Fi) per `references/product_specs.md`. Store listing copy must match what the **shipped** build actually supports—do not name brands that are not yet implemented or validated.
+
+Example positioning (adjust to match release reality):
 - Samsung Smart TVs  
 - LG Smart TVs  
-- Sony Android TVs  
-- Other WiFi-enabled Smart TVs  
+- Hisense VIDAA / compatible smart TVs (where supported)  
+- Other Wi‑Fi-enabled TVs as compatibility expands  
 
-Use it as a **Samsung TV remote**, **LG remote app**, or universal **smart TV controller**.
+Use it as a **Samsung TV remote**, **LG remote app**, or universal **smart TV controller**. Roadmap brands (for example Roku, broader Android TV, additional OEMs) belong in roadmap/comms only until shipped.
 
 ---
 
@@ -103,6 +107,10 @@ $1.99 USD (~₱99 PHP)
 - 🎨 Custom layouts  
 - 🌈 Premium themes & colors  
 - ⚡ Cleaner UI experience  
+
+**IAP rule:** Pro must be sold with **Apple In-App Purchase** (iOS) and **Google Play Billing** (Android)—no external payment links for digital unlocks inside the app.
+
+**Scope note:** `references/product_specs.md` also lists broader Post-MVP “Premium” ideas (voice, automation, custom remotes). Keep marketing promises aligned with what is actually in the Pro SKU at release.
 
 ---
 
