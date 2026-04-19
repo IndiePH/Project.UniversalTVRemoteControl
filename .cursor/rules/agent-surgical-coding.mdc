@@ -1,0 +1,16 @@
+---
+description: Always-on coding discipline. Minimal diff, explicit assumptions, verifiable done. Optional examples in .cursor/references/agent_surgical_coding_examples.md.
+alwaysApply: true
+---
+
+# agent-surgical-coding
+
+MODE: ALWAYS_ON
+RULES:
+- pre-code: state assumptions; uncertain=>ask; ambiguity=>list options (no silent pick); simpler path=>say; blocked=>name gap
+- scope: asked-only; no speculative abstractions/config; no impossible-case handlers; collapse obvious bloat
+- edits: request-scoped only; no adjacent churn; match local conventions; unrelated dead=>mention not delete; remove only orphans your diff created
+- done: imperative=>testable (bug=>repro then fix; refactor=>before/after checks); multi-step uses `step -> verify:`
+- signal: small diffs; clarify before implementation; fewer rewrites
+
+EXAMPLES_OPTIONAL: `.cursor/references/agent_surgical_coding_examples.md`

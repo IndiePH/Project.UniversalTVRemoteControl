@@ -1,79 +1,35 @@
 ---
 name: skill-creator
-description: >
-  Manual-only. Use only when the user explicitly asks to create or edit a skill.
-  Script-driven skill authoring guide for generating, validating, and packaging
-  solid skills across developer stacks.
+description: ONLY on explicit user ask: create/edit/package skills. Script-driven.
 license: Complete terms in LICENSE.txt
 ---
 
-# Skill Creator
+# skill-creator
 
-Script-first workflow: use Python tooling to scaffold, validate, and package skills.
+MODE: CREATE_OR_EDIT_SKILL_ONLY
 
-## Core Intent
-- Preserve the script-driven skill-creator workflow.
-- Produce reliable, concise skills with clear triggers and constraints.
-- Keep references stack-aware to avoid generic ambiguity.
+REF_PATHS
+- references/stack-flutter.md
+- references/stack-unity.md
+- references/stack-unreal.md
+- references/shared-execution.md
+- references/shared-meta-consultation.md
+- references/workflows.md
+- references/output-patterns.md
 
-## Independence Model
-- This folder is self-contained and can be copied to other projects as-is.
-- All required guidance lives under `skill-creator/references/*`.
-- No dependency on external shared reference directories is required.
+WORKFLOW
+1 classify stack + skill_type(meta|execution|reference)
+2 `python scripts/init_skill.py <skill-name> --path <output-directory>`
+3 author SKILL.md using stack + workflow + output patterns
+4 `python scripts/quick_validate.py <path/to/skill-folder>`
+5 `python scripts/package_skill.py <path/to/skill-folder> [output-directory]`
+6 iterate until validation passes
 
-## Stack References (Primary)
-- `references/stack-flutter.md` for Flutter/mobile/app scenarios.
-- `references/stack-unity.md` for Unity gameplay/editor/tooling scenarios.
-- `references/stack-unreal.md` for Unreal gameplay/systems/C++/Blueprint scenarios.
-- `references/shared-execution.md` for generic execution-skill constraints/output policy.
-- `references/shared-meta-consultation.md` for generic meta-skill consultation flow.
-- `references/workflows.md` for sequence/branch authoring patterns.
-- `references/output-patterns.md` for output templates and example-driven quality.
+TEMPLATES
+- meta: compact machine-first directives; NO_EDITS NO_CMDS; include parseable OUTPUT_ONLY_JSON when structured output required
+- execution: compact directives + hard constraints + parseable OUTPUT_ONLY_JSON when required
+- reference: concise standards; examples only when materially improving correctness
 
-## Script-Driven Workflow (Required)
-1. Identify stack and skill type (`meta`, `execution`, `reference`).
-2. Scaffold:
-   ```bash
-   python scripts/init_skill.py <skill-name> --path <output-directory>
-   ```
-3. Author `SKILL.md` using the stack reference + workflow/output references.
-4. Validate:
-   ```bash
-   python scripts/quick_validate.py <path/to/skill-folder>
-   ```
-5. Package:
-   ```bash
-   python scripts/package_skill.py <path/to/skill-folder> [output-directory]
-   ```
-6. Iterate until validation passes and instructions are unambiguous.
-
-## Skill Shapes To Generate
-
-### Meta Skill
-- Title: `# <Name> Skill (Meta)`
-- Sections: Purpose, Responsibilities, Hard Constraints, Required Output, Algorithm
-- Behavior: analyze/route only; no edits or execution
-
-### Execution Skill
-- Title: `# <Name> Skill (Execution)`
-- Sections: Responsibilities, Hard Constraints, Required JSON Output, Algorithm
-- Behavior: minimal scoped proposals, no unrelated refactors, explicit confidence/risk
-
-### Reference Skill
-- Compact standards guide (2-5 sections)
-- Add examples only if they increase correctness
-- No forced JSON schema unless machine output is required
-
-## Quality Bar
-- Frontmatter is valid and trigger description is specific.
-- Language is concise, imperative, and non-ambiguous.
-- Constraints block unsafe or out-of-scope behavior.
-- Output contract is parseable when structured output is required.
-- Instructions are consistent with selected stack reference.
-
-## Output Requirement For This Skill
-When asked to create or edit a skill, provide:
-1. generated or updated `SKILL.md`
-2. stack-specific reference links used
-3. validation result from `quick_validate.py`
-4. packaging readiness (or `.skill` artifact path if packaged)
+QUALITY_BAR: valid frontmatter; specific trigger; unambiguous imperative language; constraints prevent unsafe scope; output contract parseable when present
+DELIVERABLES: updated SKILL.md + refs used + quick_validate result + package path (or blocked reason)
+PORTABLE: self-contained under skill-creator/references/*

@@ -1,50 +1,17 @@
 ---
 name: core-prompt-iteration-meta
-description: >
-  Use when prior agent output was incomplete or off-target. Refines Flutter
-  prompts into tighter instructions with constraints, context, and success tests.
+description: Prior agent output bad/incomplete -> tighter next prompt + constraints + validation. JSON only. NO_EDITS NO_CMDS.
 license: Complete terms in LICENSE.txt
 ---
 
-# Core Prompt Iteration Skill (Meta)
+# core-prompt-iteration-meta
 
-## Purpose
+MODE: PROMPT_REWRITE NO_EDITS NO_CMDS
+RULES: preserve user intent; include measurable acceptance; one independent goal per revised prompt.
 
-Improve prompt quality between attempts so the next execution pass is narrower, safer, and more likely to succeed.
-
-## Responsibilities
-
-- Diagnose why prior output failed (scope, context, constraints, validation gaps).
-- Rewrite the next prompt with explicit target files and done criteria.
-- Add guardrails to prevent repeated failure modes.
-- Recommend the smallest next attempt needed to confirm progress.
-
-## Hard Constraints
-
-- Analyze and author prompts only; do not edit code or execute commands.
-- Preserve user intent; improve clarity without changing requested outcome.
-- Include verifiable acceptance criteria in every revised prompt.
-- Avoid overloading a single prompt with multiple independent goals.
-
-## Required Output
-
-Return only this JSON object:
-
+OUTPUT_ONLY_JSON
 ```json
-{
-  "failure_diagnosis": ["string"],
-  "revised_prompt": "string",
-  "added_constraints": ["string"],
-  "required_context": ["string"],
-  "validation_expectations": ["string"],
-  "recommended_next_skill": "string"
-}
+{"failure_diagnosis":["string"],"revised_prompt":"string","added_constraints":["string"],"required_context":["string"],"validation_expectations":["string"],"recommended_next_skill":"string"}
 ```
 
-## Algorithm
-
-1. Compare requested outcome versus previous result.
-2. Isolate the most likely instruction gap causing failure.
-3. Rewrite prompt with explicit scope, files, exclusions, and validation.
-4. Add one-step confirmation criteria for the next attempt.
-5. Route to the most appropriate execution or meta skill.
+PIPELINE: compare requested outcome vs last output -> identify failure mode -> rewrite with scope/files/exclusions/validation -> route next skill
