@@ -75,10 +75,15 @@ Fallback remains explicit (`_noopAction`).
 
 **Follow-up 2026-04-20 (SRP continuation):** `RemoteHomePage` kept the map-based routing from Task 3 and
 further moved presentational sections into focused widgets:
-`RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`, and `RemoteHomeDebugSheet`.
+`RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`, `RemoteHomeDebugSheet`,
+`RemoteHomeRemoteGrid`, and `RemoteHomeActions`.
 Keyboard availability checks were centralized in `RemoteKeyboardAvailability`.
 Page-level orchestration remains in `_RemoteHomePageState` and is tracked in
 `references/implementation_tasks.md` (SRP checklist).
+
+**Follow-up 2026-04-20 (pairing SRP):** `PairingPage` orchestration and UI sections were split into
+`PairingPageCoordinator`, `PairingPageData`, `PairingPageDialogs`, `PairingPageViewState`, and
+`lib/.../widgets/pairing_page_sections.dart`; see the same SRP checklist in `implementation_tasks.md`.
 
 - **Risk:** MEDIUM
 - **Deps:** Task 2 complete

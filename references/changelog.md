@@ -9,11 +9,16 @@ Keep entries short and append new updates at the top.
 - Remote-home SRP decomposition pass:
   - extracted focused presentation widgets from `RemoteHomePage`:
     `RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`,
-    and `RemoteHomeDebugSheet`
+    `RemoteHomeDebugSheet`, `RemoteHomeRemoteGrid`, and `RemoteHomeActions`
   - extracted keyboard-availability policy into
     `remote_keyboard_availability.dart` (`RemoteKeyboardAvailability`) and
     kept a shared user-facing unavailable message + concise debug log mapping
   - behavior is preserved; refactor reduces `RemoteHomePage` UI/build concerns
+- Pairing-page SRP decomposition pass:
+  - `PairingPageCoordinator`, `PairingPageData`, `PairingPageDialogs` (including Hisense PIN prompt),
+    `PairingPageViewState`, and `pairing_page_sections.dart` (`PairingSavedDevicesSection`,
+    `PairingDiscoveryList`, `PairingManualAddSection`, `PairingBusyOverlay`, `PairingActionButton`)
+  - `RemoteActionButton` renamed to `PairingActionButton` and colocated with pairing sections
 - Layout editor: drag/drop and swap resolution live in `RemoteLayoutDropResolver` (`remote_layout_drop_resolver.dart`); swap keeps the dragged control at the dropped cell and chooses a non-overlapping footprint-aware placement for the displaced control (direction-prioritized edge candidates around moved/origin footprints).
 - Layout editor: removed swap-result snackbars and the copy-last-drag debug header button.
 - Docs sync:
@@ -22,7 +27,7 @@ Keep entries short and append new updates at the top.
 
 ### Verification
 - `dart analyze` on touched layout files and `flutter test` pass after the updates.
-- `dart analyze` on touched remote-home refactor files (`remote_home_page.dart` + extracted widgets/helpers) passes.
+- `dart analyze` on touched remote-home and pairing refactor modules passes.
 
 ## 2026-04-19
 

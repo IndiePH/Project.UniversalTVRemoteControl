@@ -71,6 +71,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - Layout editor drag/drop resolution extracted to `RemoteLayoutDropResolver` (`remote_layout_drop_resolver.dart`) so the editor widget stays UI-focused
   - Swap behavior: moving item stays at the dropped anchor cell; displaced control uses footprint-aware placement (validation footprints for dpad `3x3`, volume/channel `1x3`, others from item size) with edge-adjacent candidates ordered **toward the moving control’s original direction**, then opposite, then other adjacents; swap is rejected when no placement avoids overlap with unrelated controls
   - Removed swap-result snackbars and the “copy last drag/drop log” debug button from the layout editor header
+  - SRP decomposition (remote + pairing presentation): `RemoteHomePage` delegates to `RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`, `RemoteHomeDebugSheet`, `RemoteHomeRemoteGrid`, `RemoteHomeActions`, and `RemoteKeyboardAvailability`; `PairingPage` delegates to `PairingPageCoordinator`, `PairingPageData`, `PairingPageDialogs`, `PairingPageViewState`, and `pairing_page_sections.dart` (see SRP checklist)
 - Developer ergonomics:
   - README "Current Runtime Modes": default **real** Samsung + Hisense transports for APK/physical-TV testing; fake transports opt-in via dart-define; host overrides documented; Samsung log tag `samsung_transport` (see README)
   - Implementation plan: **Brand transport defaults** section (real-by-default policy; do not regress)
@@ -98,22 +99,14 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - Re-validate **Hisense discovery on Android APK** after multicast-lock change (empty scan vs AP isolation vs SSDP headers); consider optional fallback discovery (e.g. guided manual IP / `TV_HOST_OVERRIDE`, future port `36669` sweep) if SSDP still misses hardware
 - Milestone 3 / Task 3.1:
   - Continue usability polish for edit mode visual affordances and small-screen readability
-  - SRP follow-up in progress for remote page composition:
-    - extracted focused presentation widgets from `RemoteHomePage`:
-      - `RemoteTextEntrySheet` (keyboard send bottom-sheet UI)
-      - `RemoteHomeStatusPanel` (device/status header block)
-      - `RemoteHomeAppBarActions` (edit/debug app-bar controls)
-      - `RemoteHomeDebugSheet` (debug settings bottom-sheet content)
-    - extracted keyboard availability policy to
-      `remote_keyboard_availability.dart` (`RemoteKeyboardAvailability`)
-    - remaining decomposition: remote-grid builder paths and pairing/debug action orchestration still live in `_RemoteHomePageState`
 
 ### SRP Refactor Checklist (Tracked)
 - [x] Extract keyboard-availability policy out of `_RemoteHomePageState` into a focused helper (`remote_keyboard_availability.dart`) and route keyboard press/send guards through it.
-- [ ] Split `RemoteHomePage` into page-shell + dedicated widgets/handlers for remote grid, pairing/debug actions, and text-entry sheet flow.
-  - In progress: extracted `RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`, and `RemoteHomeDebugSheet`; keyboard availability policy moved to `RemoteKeyboardAvailability` in `remote_keyboard_availability.dart`.
-  - Remaining: remote-grid builder/action decomposition and extraction of pairing/debug orchestration from `_RemoteHomePageState`.
-- [ ] Split `PairingPage` orchestration from widget rendering (scan/reconnect/manual pair handlers vs UI sections).
+- [x] Split `RemoteHomePage` into page-shell + dedicated widgets/handlers for remote grid, pairing/debug actions, and text-entry sheet flow.
+  - Implemented via extracted components/helpers: `RemoteTextEntrySheet`, `RemoteHomeStatusPanel`, `RemoteHomeAppBarActions`, `RemoteHomeDebugSheet`, `RemoteHomeRemoteGrid`, `RemoteKeyboardAvailability`, and `RemoteHomeActions`.
+- [x] Split `PairingPage` orchestration from widget rendering (scan/reconnect/manual pair handlers vs UI sections).
+  - Implemented via `PairingPageCoordinator`, `PairingPageData`, `PairingPageDialogs`, `PairingPageViewState`, and `pairing_page_sections.dart` (`PairingSavedDevicesSection`, `PairingDiscoveryList`, `PairingManualAddSection`, `PairingBusyOverlay`, `PairingActionButton`).
+  - Hisense PIN dialog UI builder is now delegated through `PairingPageDialogs.promptHisensePairingPin`.
 - [ ] Partition `RealSamsungTransportClient` into focused collaborators (socket/session lifecycle, pairing/token flow, IME/text protocol, transport logging).
 - [ ] Break `RemoteLayoutEditor` interaction/painter logic into smaller units with explicit responsibilities.
 

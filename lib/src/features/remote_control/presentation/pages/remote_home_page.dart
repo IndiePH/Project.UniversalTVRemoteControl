@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/src/features/remote_control/application/device_repository.dart';
 import 'package:one_remote/src/features/remote_control/application/layout_repository.dart';
@@ -13,19 +11,15 @@ import 'package:one_remote/src/features/remote_control/domain/models/layout_posi
 import 'package:one_remote/src/features/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/src/features/remote_control/presentation/formatting/two_digit_format.dart';
-import 'package:one_remote/src/features/remote_control/presentation/pages/pairing_page.dart';
+import 'package:one_remote/src/features/remote_control/presentation/pages/remote_home_actions.dart';
 import 'package:one_remote/src/features/remote_control/presentation/pages/remote_keyboard_availability.dart';
-import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_circular_dpad.dart';
-import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_icon_circle_button.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_home_app_bar_actions.dart';
-import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_home_debug_sheet.dart';
+import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_home_remote_grid.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_home_status_panel.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_layout_editor.dart';
 import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_text_entry_sheet.dart';
-import 'package:one_remote/src/features/remote_control/presentation/widgets/remote_vertical_rocker.dart';
-import 'package:one_remote/src/theme/app_theme.dart';
 
 /// Main remote screen.
 ///
@@ -67,7 +61,6 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   static const int _gridColumns = 5;
   static const int _gridRows = 9;
   static const double _gridGap = 6;
-  static const VoidCallback _noopAction = _emptyAction;
   static const String _keyboardUnavailableMessage =
       RemoteKeyboardAvailability.unavailableMessage;
 
@@ -78,32 +71,6 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   bool _isLayoutEditMode = false;
   StreamSubscription<bool>? _remoteTextReadySub;
   bool _remoteTextInputReady = false;
-
-  late final Map<String, RemoteCommand> _commandByItemId = <String, RemoteCommand>{
-    'home': RemoteCommand.home,
-    'power': RemoteCommand.power,
-    'back': RemoteCommand.back,
-    'menu': RemoteCommand.menu,
-    'www': RemoteCommand.web,
-    'netflix': RemoteCommand.netflix,
-    'prime': RemoteCommand.primeVideo,
-    'disney': RemoteCommand.disneyPlus,
-    'mute': RemoteCommand.mute,
-  };
-
-  late final Map<String, VoidCallback> _customActionByItemId = <String, VoidCallback>{
-    'pair': _openPairing,
-  };
-
-  late final Map<String, Widget Function(LayoutEditItem, double)>
-      _customBuilderByItemId = <String, Widget Function(LayoutEditItem, double)>{
-    'dpad': _buildDpadItem,
-    'searchInput': _buildSearchInputItem,
-    'playPause': _buildPlayPauseItem,
-    'channel': _buildChannelItem,
-    'volume': _buildVolumeItem,
-    'pair': _buildPairItem,
-  };
 
   @override
   void initState() {
@@ -280,16 +247,12 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   }
 
   Future<void> _openPairing() async {
-    // Pairing page handles persistence and blocking busy state before returning.
-    final selectedDevice = await Navigator.of(context).push<TvDevice>(
-      MaterialPageRoute(
-        builder: (_) => PairingPage(
-          commandService: widget.commandService,
-          discoveryService: widget.discoveryService,
-          deviceRepository: widget.deviceRepository,
-          activeDeviceId: _activeDevice?.id,
-        ),
-      ),
+    final selectedDevice = await RemoteHomeActions.openPairing(
+      context: context,
+      commandService: widget.commandService,
+      discoveryService: widget.discoveryService,
+      deviceRepository: widget.deviceRepository,
+      activeDeviceId: _activeDevice?.id,
     );
     if (!mounted || selectedDevice == null) {
       return;
@@ -339,48 +302,27 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   }
 
   Future<void> _copyLatestSamsungTextLog() async {
-    final logs = await widget.transportLogReader.readLatestSamsungLogForSharing();
+    final didCopy = await RemoteHomeActions.copyLatestSamsungTextLog(
+      transportLogReader: widget.transportLogReader,
+    );
     if (!mounted) {
       return;
     }
-    if (logs == null || logs.trim().isEmpty) {
+    if (!didCopy) {
       _showToast('No Samsung transport log found yet.', isError: true);
-      return;
-    }
-    await Clipboard.setData(ClipboardData(text: logs));
-    if (!mounted) {
       return;
     }
     _showToast('Copied Samsung transport log to clipboard.');
   }
 
   void _showTransportDebugSheet() {
-    showModalBottomSheet<void>(
+    RemoteHomeActions.showTransportDebugSheet(
       context: context,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return RemoteHomeDebugSheet(
-              showTransportToggle: widget.onUseFakeTransportsChanged != null,
-              useFakeTransports: widget.useFakeTransports,
-              compileTimeUseFakeTransports: widget.compileTimeUseFakeTransports,
-              onUseFakeTransportsChanged: (value) async {
-                final changeMode = widget.onUseFakeTransportsChanged;
-                if (changeMode == null) {
-                  return;
-                }
-                await changeMode(value);
-                setModalState(() {});
-              },
-              onCopySamsungTextLogs: () {
-                Navigator.pop(sheetContext);
-                unawaited(_copyLatestSamsungTextLog());
-              },
-            );
-          },
-        );
-      },
+      showTransportToggle: widget.onUseFakeTransportsChanged != null,
+      useFakeTransports: widget.useFakeTransports,
+      compileTimeUseFakeTransports: widget.compileTimeUseFakeTransports,
+      onUseFakeTransportsChanged: widget.onUseFakeTransportsChanged,
+      onCopySamsungTextLogs: _copyLatestSamsungTextLog,
     );
   }
 
@@ -471,119 +413,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     return true;
   }
 
-  Widget _buildRemoteLayoutCanvas() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
-        final maxHeight = constraints.maxHeight;
-        final cellSize = _fitCellSize(maxWidth: maxWidth, maxHeight: maxHeight);
-        final gridWidth =
-            (_gridColumns * cellSize) + ((_gridColumns - 1) * _gridGap);
-        final gridHeight =
-            (_gridRows * cellSize) + ((_gridRows - 1) * _gridGap);
-
-        return Center(
-          child: SizedBox(
-            width: gridWidth,
-            height: gridHeight,
-            child: Stack(
-              children: [
-                for (final item in _layoutItems)
-                  Positioned(
-                    left: item.col * (cellSize + _gridGap),
-                    top: item.row * (cellSize + _gridGap),
-                    child: _buildRemoteLayoutItem(
-                      item: item,
-                      cellSize: cellSize,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  double _fitCellSize({required double maxWidth, required double maxHeight}) {
-    final widthLimited =
-        (maxWidth - ((_gridColumns - 1) * _gridGap)) / _gridColumns;
-    final heightLimited =
-        (maxHeight - ((_gridRows - 1) * _gridGap)) / _gridRows;
-    return math.max(1, math.min(widthLimited, heightLimited));
-  }
-
-  Widget _buildRemoteLayoutItem({
-    required LayoutEditItem item,
-    required double cellSize,
-  }) {
-    final width = (item.width * cellSize) + ((item.width - 1) * _gridGap);
-    final height = (item.height * cellSize) + ((item.height - 1) * _gridGap);
-
-    final customBuilder = _customBuilderByItemId[item.id];
-    if (customBuilder != null) {
-      return customBuilder(item, cellSize);
-    }
-
-    final onPressed = _actionForItem(item.id);
-    return SizedBox(
-      width: width,
-      height: height,
-      child: RemoteIconCircleButton(
-        icon: item.icon,
-        label: item.label,
-        isPower: item.isPower,
-        onPressed: onPressed,
-      ),
-    );
-  }
-
-  VoidCallback _actionForItem(String id) {
-    final customAction = _customActionByItemId[id];
-    if (customAction != null) {
-      return customAction;
-    }
-    final command = _commandByItemId[id];
-    if (command == null) {
-      return _noopAction;
-    }
-    return () => _send(command);
-  }
-
-  Widget _buildDpadItem(LayoutEditItem item, double cellSize) {
-    final width = (item.width * cellSize) + ((item.width - 1) * _gridGap);
-    final height = (item.height * cellSize) + ((item.height - 1) * _gridGap);
-    return SizedBox(
-      width: width,
-      height: height,
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: RemoteCircularDpad(
-          onUp: () => _send(RemoteCommand.dpadUp),
-          onDown: () => _send(RemoteCommand.dpadDown),
-          onLeft: () => _send(RemoteCommand.dpadLeft),
-          onRight: () => _send(RemoteCommand.dpadRight),
-          onOk: () => _send(RemoteCommand.dpadOk),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchInputItem(LayoutEditItem item, double cellSize) {
-    final width = (item.width * cellSize) + ((item.width - 1) * _gridGap);
-    final height = (item.height * cellSize) + ((item.height - 1) * _gridGap);
-    final definition = kRemoteLayoutItemDefinitionById[item.id];
-    final keyboardIcon = definition?.icon ?? item.icon ?? Icons.keyboard_outlined;
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Center(
-        child: RemoteIconCircleButton(
-          icon: keyboardIcon,
-          onPressed: _onSearchInputKeyboardPressed,
-        ),
-      ),
-    );
+  void _sendCommandFromGrid(RemoteCommand command) {
+    unawaited(_send(command));
   }
 
   void _onSearchInputKeyboardPressed() {
@@ -643,103 +474,6 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     );
   }
 
-  Widget _buildPlayPauseItem(LayoutEditItem item, double cellSize) {
-    final appColors = AppTheme.colorsOf(context);
-    final width = (item.width * cellSize) + ((item.width - 1) * _gridGap);
-    final height = (item.height * cellSize) + ((item.height - 1) * _gridGap);
-    final glyphSize = math.min(width, height) * 0.24;
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Material(
-        color: appColors.remoteSurface,
-        borderRadius: BorderRadius.circular(height / 2),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(height / 2),
-          onTap: () => _send(RemoteCommand.playPause),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(height / 2),
-              border: Border.all(color: appColors.remoteOutline, width: 1.2),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.play_arrow,
-                  color: Colors.white,
-                  size: glyphSize + 2,
-                ),
-                SizedBox(width: math.max(1, glyphSize * 0.08)),
-                Icon(Icons.pause, color: Colors.white, size: glyphSize + 1),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChannelItem(LayoutEditItem item, double cellSize) {
-    final width = (item.width * cellSize) + ((item.width - 1) * _gridGap);
-    final height = (item.height * cellSize) + ((item.height - 1) * _gridGap);
-    return SizedBox(
-      width: width,
-      height: height,
-      child: FittedBox(
-        fit: BoxFit.fill,
-        child: RemoteVerticalRocker(
-          topText: '+',
-          centerText: 'CH',
-          bottomText: '-',
-          onTopTap: () => _send(RemoteCommand.channelUp),
-          onBottomTap: () => _send(RemoteCommand.channelDown),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVolumeItem(LayoutEditItem item, double cellSize) {
-    final width = (item.width * cellSize) + ((item.width - 1) * _gridGap);
-    final height = (item.height * cellSize) + ((item.height - 1) * _gridGap);
-    return SizedBox(
-      width: width,
-      height: height,
-      child: FittedBox(
-        fit: BoxFit.fill,
-        child: RemoteVerticalRocker(
-          topText: '+',
-          centerText: 'VOL',
-          bottomText: '-',
-          onTopTap: () => _send(RemoteCommand.volumeUp),
-          onBottomTap: () => _send(RemoteCommand.volumeDown),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPairItem(LayoutEditItem item, double cellSize) {
-    final width = (item.width * cellSize) + ((item.width - 1) * _gridGap);
-    final height = (item.height * cellSize) + ((item.height - 1) * _gridGap);
-    final hasActiveDevice = _activeDevice != null;
-    return SizedBox(
-      width: width,
-      height: height,
-      child: RemoteIconCircleButton(
-        icon: item.icon,
-        label: item.label,
-        onPressed: _openPairing,
-        backgroundColor: hasActiveDevice
-            ? Colors.green.shade600
-            : AppTheme.colorsOf(context).remoteSurface,
-        foregroundColor: Colors.white,
-      ),
-    );
-  }
-
-  static void _emptyAction() {}
-
   @override
   Widget build(BuildContext context) {
     final deviceName = _activeDevice?.displayName ?? 'No TV connected';
@@ -774,7 +508,16 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
               : RemoteHomeStatusPanel(
                   deviceName: deviceName,
                   status: _status,
-                  child: _buildRemoteLayoutCanvas(),
+                  child: RemoteHomeRemoteGrid(
+                    layoutItems: _layoutItems,
+                    gridColumns: _gridColumns,
+                    gridRows: _gridRows,
+                    gridGap: _gridGap,
+                    hasActiveDevice: _activeDevice != null,
+                    onSendCommand: _sendCommandFromGrid,
+                    onOpenPairing: _openPairing,
+                    onSearchInputPressed: _onSearchInputKeyboardPressed,
+                  ),
                 ),
         ),
       ),
