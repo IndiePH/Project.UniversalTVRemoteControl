@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/src/theme/app_theme.dart';
 
 /// Busy overlay shown while waiting for TV-side pairing confirmation.
 class PairingBusyOverlay extends StatelessWidget {
@@ -16,32 +17,39 @@ class PairingBusyOverlay extends StatelessWidget {
     if (!visible) {
       return const SizedBox.shrink();
     }
+    final appColors = AppTheme.colorsOf(context);
     return Stack(
       children: [
-        const Positioned.fill(
-          child: ModalBarrier(dismissible: false, color: Colors.black54),
+        Positioned.fill(
+          child: ModalBarrier(
+            dismissible: false,
+            color: appColors.pairingModalBarrier,
+          ),
         ),
         Center(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1B1D22),
+              color: appColors.remoteRaisedSurface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF2D3138), width: 1.2),
+              border: Border.all(color: appColors.remoteOutline, width: 1.2),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: appColors.pairingBusyOnCard,
+                  ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Text(
                   'Waiting for TV approval...',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: appColors.pairingBusyOnCard,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

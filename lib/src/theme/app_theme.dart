@@ -6,22 +6,80 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.remoteSurface,
     required this.remoteRaisedSurface,
     required this.remoteOutline,
+    required this.remoteGlyphOnRemote,
+    required this.remotePowerFill,
+    required this.remoteGlyphOnPower,
+    required this.remoteActionSuccessFill,
+    required this.remoteActionSuccessOnFill,
+    required this.layoutEditorDropValid,
+    required this.layoutEditorDropInvalid,
+    required this.pairingModalBarrier,
+    required this.pairingBusyOnCard,
   });
 
   final Color remoteSurface;
   final Color remoteRaisedSurface;
   final Color remoteOutline;
 
+  /// Icons and text drawn on [remoteSurface] / [remoteRaisedSurface] (e.g. play/pause, d-pad).
+  final Color remoteGlyphOnRemote;
+
+  /// Power control fill (distinct from neutral remote tiles).
+  final Color remotePowerFill;
+
+  /// Icon/label on top of [remotePowerFill].
+  final Color remoteGlyphOnPower;
+
+  /// Accent when a “connected” shortcut applies (e.g. pair control while a device is active).
+  final Color remoteActionSuccessFill;
+
+  /// Foreground on [remoteActionSuccessFill].
+  final Color remoteActionSuccessOnFill;
+
+  /// Layout editor: drop target outline when the resolver accepts placement.
+  final Color layoutEditorDropValid;
+
+  /// Layout editor: drop target outline when placement is rejected.
+  final Color layoutEditorDropInvalid;
+
+  /// Dimming behind modal-style overlays (e.g. pairing busy).
+  final Color pairingModalBarrier;
+
+  /// Text / progress on the pairing busy card ([remoteRaisedSurface] background).
+  final Color pairingBusyOnCard;
+
   @override
   AppColors copyWith({
     Color? remoteSurface,
     Color? remoteRaisedSurface,
     Color? remoteOutline,
+    Color? remoteGlyphOnRemote,
+    Color? remotePowerFill,
+    Color? remoteGlyphOnPower,
+    Color? remoteActionSuccessFill,
+    Color? remoteActionSuccessOnFill,
+    Color? layoutEditorDropValid,
+    Color? layoutEditorDropInvalid,
+    Color? pairingModalBarrier,
+    Color? pairingBusyOnCard,
   }) {
     return AppColors(
       remoteSurface: remoteSurface ?? this.remoteSurface,
       remoteRaisedSurface: remoteRaisedSurface ?? this.remoteRaisedSurface,
       remoteOutline: remoteOutline ?? this.remoteOutline,
+      remoteGlyphOnRemote: remoteGlyphOnRemote ?? this.remoteGlyphOnRemote,
+      remotePowerFill: remotePowerFill ?? this.remotePowerFill,
+      remoteGlyphOnPower: remoteGlyphOnPower ?? this.remoteGlyphOnPower,
+      remoteActionSuccessFill:
+          remoteActionSuccessFill ?? this.remoteActionSuccessFill,
+      remoteActionSuccessOnFill:
+          remoteActionSuccessOnFill ?? this.remoteActionSuccessOnFill,
+      layoutEditorDropValid:
+          layoutEditorDropValid ?? this.layoutEditorDropValid,
+      layoutEditorDropInvalid:
+          layoutEditorDropInvalid ?? this.layoutEditorDropInvalid,
+      pairingModalBarrier: pairingModalBarrier ?? this.pairingModalBarrier,
+      pairingBusyOnCard: pairingBusyOnCard ?? this.pairingBusyOnCard,
     );
   }
 
@@ -31,11 +89,58 @@ final class AppColors extends ThemeExtension<AppColors> {
       return this;
     }
     return AppColors(
-      remoteSurface: Color.lerp(remoteSurface, other.remoteSurface, t) ?? remoteSurface,
+      remoteSurface:
+          Color.lerp(remoteSurface, other.remoteSurface, t) ?? remoteSurface,
       remoteRaisedSurface:
           Color.lerp(remoteRaisedSurface, other.remoteRaisedSurface, t) ??
-          remoteRaisedSurface,
-      remoteOutline: Color.lerp(remoteOutline, other.remoteOutline, t) ?? remoteOutline,
+              remoteRaisedSurface,
+      remoteOutline:
+          Color.lerp(remoteOutline, other.remoteOutline, t) ?? remoteOutline,
+      remoteGlyphOnRemote:
+          Color.lerp(remoteGlyphOnRemote, other.remoteGlyphOnRemote, t) ??
+              remoteGlyphOnRemote,
+      remotePowerFill:
+          Color.lerp(remotePowerFill, other.remotePowerFill, t) ??
+              remotePowerFill,
+      remoteGlyphOnPower:
+          Color.lerp(remoteGlyphOnPower, other.remoteGlyphOnPower, t) ??
+              remoteGlyphOnPower,
+      remoteActionSuccessFill: Color.lerp(
+            remoteActionSuccessFill,
+            other.remoteActionSuccessFill,
+            t,
+          ) ??
+          remoteActionSuccessFill,
+      remoteActionSuccessOnFill: Color.lerp(
+            remoteActionSuccessOnFill,
+            other.remoteActionSuccessOnFill,
+            t,
+          ) ??
+          remoteActionSuccessOnFill,
+      layoutEditorDropValid: Color.lerp(
+            layoutEditorDropValid,
+            other.layoutEditorDropValid,
+            t,
+          ) ??
+          layoutEditorDropValid,
+      layoutEditorDropInvalid: Color.lerp(
+            layoutEditorDropInvalid,
+            other.layoutEditorDropInvalid,
+            t,
+          ) ??
+          layoutEditorDropInvalid,
+      pairingModalBarrier: Color.lerp(
+            pairingModalBarrier,
+            other.pairingModalBarrier,
+            t,
+          ) ??
+          pairingModalBarrier,
+      pairingBusyOnCard: Color.lerp(
+            pairingBusyOnCard,
+            other.pairingBusyOnCard,
+            t,
+          ) ??
+          pairingBusyOnCard,
     );
   }
 }
@@ -51,12 +156,31 @@ final class AppTheme {
           remoteSurface: Color(0xFFF2F4F8),
           remoteRaisedSurface: Colors.white,
           remoteOutline: Color(0xFFD8DDE6),
+          // Matches pre-theme-audit remote tiles (white glyphs on light-gray surfaces).
+          remoteGlyphOnRemote: Color(0xFFFFFFFF),
+          remotePowerFill: Color(0xFFE53935),
+          remoteGlyphOnPower: Color(0xFFFFFFFF),
+          remoteActionSuccessFill: Color(0xFF43A047),
+          remoteActionSuccessOnFill: Color(0xFFFFFFFF),
+          layoutEditorDropValid: Color(0xFF4CAF50),
+          layoutEditorDropInvalid: Color(0xFFFF9800),
+          pairingModalBarrier: Color(0x8A000000),
+          pairingBusyOnCard: Color(0xFF1A1D24),
         );
       case Brightness.dark:
         return const AppColors(
           remoteSurface: Color(0xFF111317),
           remoteRaisedSurface: Color(0xFF1B1D22),
           remoteOutline: Color(0xFF2D3138),
+          remoteGlyphOnRemote: Color(0xFFFFFFFF),
+          remotePowerFill: Color(0xFFE53935),
+          remoteGlyphOnPower: Color(0xFFFFFFFF),
+          remoteActionSuccessFill: Color(0xFF43A047),
+          remoteActionSuccessOnFill: Color(0xFFFFFFFF),
+          layoutEditorDropValid: Color(0xFF4CAF50),
+          layoutEditorDropInvalid: Color(0xFFFF9800),
+          pairingModalBarrier: Color(0x8A000000),
+          pairingBusyOnCard: Color(0xFFFFFFFF),
         );
     }
   }

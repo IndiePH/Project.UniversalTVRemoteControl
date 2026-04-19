@@ -189,11 +189,15 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
               children: [
                 Icon(
                   Icons.play_arrow,
-                  color: Colors.white,
+                  color: appColors.remoteGlyphOnRemote,
                   size: glyphSize + 2,
                 ),
                 SizedBox(width: math.max(1, glyphSize * 0.08)),
-                Icon(Icons.pause, color: Colors.white, size: glyphSize + 1),
+                Icon(
+                  Icons.pause,
+                  color: appColors.remoteGlyphOnRemote,
+                  size: glyphSize + 1,
+                ),
               ],
             ),
           ),
@@ -245,6 +249,7 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     LayoutEditItem item,
     double cellSize,
   ) {
+    final appColors = AppTheme.colorsOf(context);
     final width = (item.width * cellSize) + ((item.width - 1) * gridGap);
     final height = (item.height * cellSize) + ((item.height - 1) * gridGap);
     return SizedBox(
@@ -255,9 +260,9 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
         label: item.label,
         onPressed: onOpenPairing,
         backgroundColor: hasActiveDevice
-            ? Colors.green.shade600
-            : AppTheme.colorsOf(context).remoteSurface,
-        foregroundColor: Colors.white,
+            ? appColors.remoteActionSuccessFill
+            : appColors.remoteSurface,
+        foregroundColor: appColors.remoteGlyphOnRemote,
       ),
     );
   }

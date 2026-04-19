@@ -30,9 +30,9 @@ class RemoteIconCircleButton extends StatelessWidget {
     final appColors = AppTheme.colorsOf(context);
     final background =
         backgroundColor ??
-        (isPower ? Colors.red.shade600 : appColors.remoteSurface);
-    final iconColor =
-        foregroundColor ?? (isPower ? Colors.white : colorScheme.onSurface);
+        (isPower ? appColors.remotePowerFill : appColors.remoteSurface);
+    final iconColor = foregroundColor ??
+        (isPower ? appColors.remoteGlyphOnPower : colorScheme.onSurface);
     final child = icon != null
         ? Icon(icon, color: iconColor, size: 34)
         : Text(

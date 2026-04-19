@@ -166,8 +166,8 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
                           final borderColor = !highlightDrop
                               ? slotBorderColor
                               : (hoverCanDrop
-                                  ? const Color(0xFF4CAF50)
-                                  : const Color(0xFFFF9800));
+                                  ? appColors.layoutEditorDropValid
+                                  : appColors.layoutEditorDropInvalid);
                           final borderWidth = highlightDrop ? 2.0 : 1.0;
                           return Container(
                             width: cellSize,

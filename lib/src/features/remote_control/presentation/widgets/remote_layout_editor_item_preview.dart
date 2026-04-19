@@ -77,7 +77,7 @@ class RemoteLayoutEditorItemPreview extends StatelessWidget {
     }
 
     final appColors = AppTheme.colorsOf(context);
-    final background = isPower ? Colors.red.shade600 : appColors.remoteSurface;
+    final background = isPower ? appColors.remotePowerFill : appColors.remoteSurface;
 
     return RepaintBoundary(
       child: Container(
@@ -104,11 +104,15 @@ class RemoteLayoutEditorItemPreview extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.play_arrow,
-                        color: Colors.white,
+                        color: appColors.remoteGlyphOnRemote,
                         size: glyphSize + 2,
                       ),
                       SizedBox(width: math.max(1, glyphSize * 0.08)),
-                      Icon(Icons.pause, color: Colors.white, size: glyphSize + 1),
+                      Icon(
+                        Icons.pause,
+                        color: appColors.remoteGlyphOnRemote,
+                        size: glyphSize + 1,
+                      ),
                     ],
                   ),
                 );
@@ -125,14 +129,14 @@ class RemoteLayoutEditorItemPreview extends StatelessWidget {
               ? Icon(
                   icon,
                   size: math.min(width, height) * 0.45,
-                  color: Colors.white,
+                  color: appColors.remoteGlyphOnRemote,
                 )
               : Center(
                   child: Text(
                     label ?? '',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: appColors.remoteGlyphOnRemote,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),
