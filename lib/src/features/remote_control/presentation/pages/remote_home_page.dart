@@ -592,20 +592,51 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     final height = (item.height * cellSize) + ((item.height - 1) * _gridGap);
     final definition = kRemoteLayoutItemDefinitionById[item.id];
     final keyboardIcon = definition?.icon ?? item.icon ?? Icons.keyboard_outlined;
-    final canSendRemoteText =
-        _activeDevice != null &&
-        _activeDevice!.capabilities.contains(DeviceCapability.textInput) &&
-        _remoteTextInputReady;
     return SizedBox(
       width: width,
       height: height,
       child: Center(
         child: RemoteIconCircleButton(
           icon: keyboardIcon,
-          onPressed: canSendRemoteText ? _openTextEntrySheet : null,
+          onPressed: _onSearchInputKeyboardPressed,
         ),
       ),
     );
+  }
+
+  void _onSearchInputKeyboardPressed() {
+    final device = _activeDevice;
+    if (device == null) {
+      setState(() {
+        _status = 'No device selected.';
+      });
+      _showToast('No device selected.', isError: true);
+      return;
+    }
+    if (!device.capabilities.contains(DeviceCapability.textInput)) {
+      setState(() {
+        _status = 'Text input is not supported on this device.';
+      });
+      _showToast('Text input is not supported on this device.', isError: true);
+      debugPrint(
+        '[OneRemote] keyboard: text input not supported for device ${device.id}',
+      );
+      return;
+    }
+    if (!_remoteTextInputReady) {
+      const message =
+          'Keyboard is not available on the TV in this screen. Open a text field first.';
+      setState(() {
+        _status = message;
+      });
+      _showToast(message, isError: true);
+      debugPrint(
+        '[OneRemote] keyboard: remote text input not ready (device=${device.id}) — '
+        'TV may not be showing a text field compatible with remote keyboard',
+      );
+      return;
+    }
+    _openTextEntrySheet();
   }
 
   void _openTextEntrySheet() {

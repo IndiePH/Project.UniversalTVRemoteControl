@@ -128,10 +128,22 @@ class RealSamsungTransportClient implements SamsungTransportClient {
           handshakeCompleter: handshakeCompleter,
         );
         await handshakeCompleter.future.timeout(handshakeTimeout);
+        if (uri.scheme == 'wss') {
+          SamsungTlsTrustStore.instance.commitPendingPins(
+            host: host,
+            port: uri.port,
+          );
+        }
         return;
       } on Object catch (error, stackTrace) {
         lastError = error;
         lastStackTrace = stackTrace;
+        if (uri.scheme == 'wss') {
+          SamsungTlsTrustStore.instance.abandonPendingPins(
+            host: host,
+            port: uri.port,
+          );
+        }
         await _resetConnection(deviceId);
         if (_isAuthorizationError(error)) {
           _tokenByHost.remove(host);
@@ -156,6 +168,10 @@ class RealSamsungTransportClient implements SamsungTransportClient {
       throw StateError('Samsung host resolver returned an empty host.');
     }
     final deadline = DateTime.now().add(approvalTimeout);
+
+    await SamsungTlsTrustStore.instance.ensureLoaded();
+    // Drop any prior pin so a TV cert change or stale TOFU state cannot block pairing.
+    await SamsungTlsTrustStore.instance.clearEndpoint(host, 8002);
 
     // Force an unauthenticated connection first so the TV can prompt approval.
     await _resetConnection(deviceId);
@@ -313,15 +329,27 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     final uri = Uri.parse(
       'wss://$host:8002/api/v2/channels/samsung.remote.control?name=$encodedName',
     );
-    final socket = await _openSocket(uri).timeout(connectTimeout);
-    final handshakeCompleter = Completer<void>();
-    _bindSocket(
-      deviceId: deviceId,
-      host: host,
-      socket: socket,
-      handshakeCompleter: handshakeCompleter,
-    );
-    await handshakeCompleter.future.timeout(handshakeTimeout);
+    try {
+      final socket = await _openSocket(uri).timeout(connectTimeout);
+      final handshakeCompleter = Completer<void>();
+      _bindSocket(
+        deviceId: deviceId,
+        host: host,
+        socket: socket,
+        handshakeCompleter: handshakeCompleter,
+      );
+      await handshakeCompleter.future.timeout(handshakeTimeout);
+      SamsungTlsTrustStore.instance.commitPendingPins(
+        host: host,
+        port: uri.port,
+      );
+    } on Object {
+      SamsungTlsTrustStore.instance.abandonPendingPins(
+        host: host,
+        port: uri.port,
+      );
+      rethrow;
+    }
   }
 
   Future<void> _connectWithKnownToken({
@@ -337,15 +365,27 @@ class RealSamsungTransportClient implements SamsungTransportClient {
       'wss://$host:8002/api/v2/channels/samsung.remote.control'
       '?name=$encodedName&token=$token',
     );
-    final socket = await _openSocket(uri).timeout(connectTimeout);
-    final handshakeCompleter = Completer<void>();
-    _bindSocket(
-      deviceId: deviceId,
-      host: host,
-      socket: socket,
-      handshakeCompleter: handshakeCompleter,
-    );
-    await handshakeCompleter.future.timeout(handshakeTimeout);
+    try {
+      final socket = await _openSocket(uri).timeout(connectTimeout);
+      final handshakeCompleter = Completer<void>();
+      _bindSocket(
+        deviceId: deviceId,
+        host: host,
+        socket: socket,
+        handshakeCompleter: handshakeCompleter,
+      );
+      await handshakeCompleter.future.timeout(handshakeTimeout);
+      SamsungTlsTrustStore.instance.commitPendingPins(
+        host: host,
+        port: uri.port,
+      );
+    } on Object {
+      SamsungTlsTrustStore.instance.abandonPendingPins(
+        host: host,
+        port: uri.port,
+      );
+      rethrow;
+    }
   }
 
   Future<WebSocket> _socketFor(String deviceId) async {

@@ -18,6 +18,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - Implemented remote surface with custom controls:
     - power, mute, d-pad + OK, channel rocker, volume rocker
     - text input field + send action
+    - search/keyboard layout control stays interactable when unpaired or when remote text is unavailable: same `No device selected.` toast as other keys when there is no active device; distinct user-facing message plus `debugPrint` when the device lacks text input or the TV has not signaled remote IME readiness
   - Added responsive sizing fixes for control cluster
 - Milestone 1 / Task 1.4 (partial):
   - Implemented command pipeline with brand-specific routing
@@ -44,6 +45,9 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - Samsung pairing handshake reliability improvements:
     - trigger TV approval popup during pairing (no first-command workaround)
     - require token-authenticated Samsung session before treating pairing as successful
+  - Samsung WSS TLS trust-on-first-use (TOFU) hardening:
+    - queue fingerprints seen during TLS for `host:8002`, commit only after a successful WSS channel handshake; abandon pending data when connect/handshake fails (covers multi-cert / chain quirks and half-failed attempts)
+    - clear stored pins for that endpoint when starting Samsung pairing so stale pins or TV cert changes cannot block re-pairing after TLS work
   - Hisense pairing UX fallback:
     - if initial pair attempt fails, pairing flow now offers a 4-digit TV PIN dialog
     - entered PIN is submitted through the adapter/service pairing-code path before final failure
