@@ -70,4 +70,15 @@ class SamsungAdapter implements TvBrandAdapter {
     await _transportClient.connect(deviceId: device.id);
     await _transportClient.sendText(deviceId: device.id, text: text);
   }
+
+  @override
+  Stream<bool> watchRemoteTextInputReady(TvDevice device) async* {
+    try {
+      await _transportClient.connect(deviceId: device.id);
+    } catch (_) {
+      yield false;
+      return;
+    }
+    yield* _transportClient.watchRemoteTextInputReady(device.id);
+  }
 }
