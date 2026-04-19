@@ -11,6 +11,11 @@ Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — 
 - Optional fake transport mode for all brand adapters (single switch):
   - run with `--dart-define=USE_FAKE_TRANSPORTS=true`
   - also switches discovery to fake scan data (includes a mock Hisense TV)
+- In-app debug settings toggle (no rebuild required):
+  - Remote screen top-right cog opens debug settings
+  - `Use fake transports` switches discovery + Samsung/Hisense transport wiring at runtime
+  - selection is persisted via `SharedPreferences` (`debug_use_fake_transports`)
+  - if no saved override exists, compile-time `USE_FAKE_TRANSPORTS` remains the default
 - Optional host override for all transports (single TV target):
   - `--dart-define=TV_HOST_OVERRIDE=<tv-ip>`
 - Hisense MQTT topic client segment (must match what the TV expects after pairing; default `OneRemote`):

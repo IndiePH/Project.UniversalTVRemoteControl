@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/src/app/transport_debug_settings.dart';
 import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
-import 'package:one_remote/src/features/remote_control/application/device_repository.dart';
-import 'package:one_remote/src/features/remote_control/application/layout_repository.dart';
 import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense/real_hisense_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
 import 'package:one_remote/src/features/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/data/fake_device_discovery_service.dart';
 import 'package:one_remote/src/features/remote_control/data/in_memory_device_repository.dart';
@@ -16,22 +16,50 @@ import 'package:one_remote/src/features/remote_control/data/ssdp_device_discover
 import 'package:one_remote/src/features/remote_control/presentation/pages/remote_home_page.dart';
 import 'package:one_remote/src/theme/app_theme.dart';
 
-class OneRemoteApp extends StatelessWidget {
+class OneRemoteApp extends StatefulWidget {
   const OneRemoteApp({super.key});
 
-  static const bool _useFakeTransports = bool.fromEnvironment(
+  @override
+  State<OneRemoteApp> createState() => _OneRemoteAppState();
+}
+
+class _OneRemoteAppState extends State<OneRemoteApp> {
+  static const bool _compileUseFakeTransports = bool.fromEnvironment(
     'USE_FAKE_TRANSPORTS',
     defaultValue: false,
   );
   static const String _tvHostOverride = String.fromEnvironment('TV_HOST_OVERRIDE');
 
+  late final InMemoryDeviceRepository _deviceRepository = InMemoryDeviceRepository();
+  late final SharedPrefsLayoutRepository _layoutRepository = SharedPrefsLayoutRepository();
+
+  bool _useFakeTransports = _compileUseFakeTransports;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransportOverride();
+  }
+
+  Future<void> _loadTransportOverride() async {
+    final stored = await TransportDebugSettings.readUseFakeTransportsOverride();
+    if (!mounted) return;
+    setState(() {
+      _useFakeTransports = stored ?? _compileUseFakeTransports;
+    });
+  }
+
+  Future<void> _setUseFakeTransports(bool value) async {
+    await TransportDebugSettings.writeUseFakeTransports(value);
+    if (!mounted) return;
+    setState(() => _useFakeTransports = value);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final DeviceRepository deviceRepository = InMemoryDeviceRepository();
     final DeviceDiscoveryService discoveryService = _useFakeTransports
         ? FakeDeviceDiscoveryService()
         : SsdpDeviceDiscoveryService();
-    final LayoutRepository layoutRepository = SharedPrefsLayoutRepository();
     final RemoteCommandService commandService = BrandRoutedRemoteCommandService(
       adapters: [
         _buildSamsungAdapter(),
@@ -46,17 +74,18 @@ class OneRemoteApp extends StatelessWidget {
       theme: AppTheme.darkTheme(),
       home: RemoteHomePage(
         commandService: commandService,
-        deviceRepository: deviceRepository,
+        deviceRepository: _deviceRepository,
         discoveryService: discoveryService,
-        layoutRepository: layoutRepository,
+        layoutRepository: _layoutRepository,
+        transportLogReader: const SamsungTransportLogReader(),
+        useFakeTransports: _useFakeTransports,
+        compileTimeUseFakeTransports: _compileUseFakeTransports,
+        onUseFakeTransportsChanged: _setUseFakeTransports,
       ),
     );
   }
 
   SamsungAdapter _buildSamsungAdapter() {
-    // Real transport is the default for APK/physical-TV testing.
-    // Use one global fake toggle only for offline/lab runs:
-    // --dart-define=USE_FAKE_TRANSPORTS=true
     if (_useFakeTransports) {
       return SamsungAdapter();
     }
@@ -68,8 +97,6 @@ class OneRemoteApp extends StatelessWidget {
     );
   }
 
-  /// Default APK/runtime wiring uses real Hisense MQTT (VIDAA). This follows
-  /// the same global fake switch used by Samsung for offline/test runs.
   HisenseAdapter _buildHisenseAdapter() {
     if (_useFakeTransports) {
       return HisenseAdapter();
