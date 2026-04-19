@@ -1,15 +1,19 @@
-import 'dart:developer';
-
 import 'package:one_remote/src/features/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/command_key_map.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/hisense/fake_hisense_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/hisense/hisense_key_mapper.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 class HisenseAdapter implements TvBrandAdapter {
-  HisenseAdapter({CommandKeyMap? keyMap})
-    : _keyMap = keyMap ?? const _HisenseCommandKeyMap();
+  HisenseAdapter({
+    HisenseTransportClient? transportClient,
+    CommandKeyMap? keyMap,
+  }) : _transportClient = transportClient ?? FakeHisenseTransportClient(),
+       _keyMap = keyMap ?? const HisenseKeyMapper();
 
   @override
   TvBrand get brand => TvBrand.hisense;
@@ -20,20 +24,50 @@ class HisenseAdapter implements TvBrandAdapter {
   @override
   Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
 
+  final HisenseTransportClient _transportClient;
   final CommandKeyMap _keyMap;
 
   @override
-  Future<void> preparePairing({required TvDevice device}) async {}
+  Future<void> preparePairing({required TvDevice device}) async {
+    await _transportClient.connect(deviceId: device.id);
+  }
+
+  @override
+  Future<void> submitPairingCode({
+    required TvDevice device,
+    required String fourDigitPin,
+  }) async {
+    await _transportClient.submitAuthenticationCode(
+      deviceId: device.id,
+      fourDigitPin: fourDigitPin,
+    );
+  }
 
   @override
   Future<void> sendCommand({
     required TvDevice device,
     required RemoteCommand command,
   }) async {
-    final keyCode = _keyMap.primaryKeyCodeFor(command) ?? command.name;
-    log(
-      'HisenseAdapter sendCommand -> ${device.displayName}: $command ($keyCode)',
-      name: 'tv_brand_adapter',
+    final launch = _vidaaLaunchSpec(command);
+    if (launch != null) {
+      await _transportClient.connect(deviceId: device.id);
+      await _transportClient.launchVidaaApp(
+        deviceId: device.id,
+        displayName: launch.$1,
+        url: launch.$2,
+      );
+      return;
+    }
+
+    final keyCodes = _keyMap.keyCodesFor(command);
+    if (keyCodes.isEmpty) {
+      throw UnsupportedError('No Hisense mapping for command: $command');
+    }
+
+    await _transportClient.connect(deviceId: device.id);
+    await _transportClient.sendKey(
+      deviceId: device.id,
+      keyName: keyCodes.first,
     );
   }
 
@@ -42,16 +76,20 @@ class HisenseAdapter implements TvBrandAdapter {
     required TvDevice device,
     required String text,
   }) async {
-    log(
-      'HisenseAdapter sendText -> ${device.displayName}: "$text"',
-      name: 'tv_brand_adapter',
+    throw UnsupportedError(
+      'Hisense VIDAA text input from the phone is not implemented yet.',
     );
   }
-}
 
-final class _HisenseCommandKeyMap extends CommandKeyMap {
-  const _HisenseCommandKeyMap();
-
-  @override
-  List<String> keyCodesFor(RemoteCommand command) => <String>[command.name];
+  /// Returns `(displayName, url)` for MQTT `launchapp` when [command] is an
+  /// app shortcut; otherwise `null` (handled via `sendkey`).
+  (String, String)? _vidaaLaunchSpec(RemoteCommand command) {
+    return switch (command) {
+      RemoteCommand.netflix => ('Netflix', 'netflix'),
+      RemoteCommand.primeVideo => ('Amazon', 'amazon'),
+      RemoteCommand.disneyPlus => ('Disney+', 'disneyplus'),
+      RemoteCommand.web => ('YouTube', 'youtube'),
+      _ => null,
+    };
+  }
 }

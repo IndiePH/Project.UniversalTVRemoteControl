@@ -1,4 +1,5 @@
 import 'package:one_remote/src/features/remote_control/application/command_dispatch_result.dart';
+import 'package:one_remote/src/features/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/remote_command.dart';
@@ -32,6 +33,34 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
     } catch (error) {
       return CommandDispatchResult.failure(
         'Failed to pair ${device.displayName}: $error',
+      );
+    }
+  }
+
+  @override
+  Future<CommandDispatchResult> submitPairingCode({
+    required TvDevice device,
+    required String fourDigitPin,
+  }) async {
+    final adapter = _adapterFor(device.brand);
+    if (adapter == null) {
+      return CommandDispatchResult.unsupported(
+        'No adapter configured for ${device.brand.name}.',
+      );
+    }
+    try {
+      await adapter.submitPairingCode(
+        device: device,
+        fourDigitPin: fourDigitPin,
+      );
+      return CommandDispatchResult.success(
+        'Pairing code accepted for ${device.displayName}.',
+      );
+    } on UnsupportedError catch (error) {
+      return CommandDispatchResult.unsupported(error.message?.toString() ?? '$error');
+    } catch (error) {
+      return CommandDispatchResult.failure(
+        'Failed to submit pairing code for ${device.brand.name}: $error',
       );
     }
   }
@@ -81,6 +110,8 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
     try {
       await adapter.sendText(device: device, text: text);
       return CommandDispatchResult.success('Text sent: "$text"');
+    } on TextInputCompatibilityException catch (error) {
+      return CommandDispatchResult.compatibility(error.userMessage);
     } catch (error) {
       return CommandDispatchResult.failure(
         'Failed to send text for ${device.brand.name}: $error',

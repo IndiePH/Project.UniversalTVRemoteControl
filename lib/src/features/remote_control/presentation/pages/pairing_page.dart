@@ -145,7 +145,13 @@ class _PairingPageState extends State<PairingPage> {
         device: device,
       );
       if (!pairingResult.isSuccess) {
-        throw StateError(pairingResult.message);
+        final didCompleteViaPin = await _attemptHisensePinFallback(
+          device: device,
+          pairingMessage: pairingResult.message,
+        );
+        if (!didCompleteViaPin) {
+          throw StateError(pairingResult.message);
+        }
       }
       if (manualIpToSave != null && manualIpToSave.isNotEmpty) {
         await widget.deviceRepository.saveRecentManualIp(manualIpToSave);
@@ -180,6 +186,139 @@ class _PairingPageState extends State<PairingPage> {
         });
       }
     }
+  }
+
+  /// For some VIDAA firmware builds, pairing is incomplete until the user
+  /// enters a 4-digit code shown on the TV. Offer that recovery step only for
+  /// Hisense when the first pairing attempt failed.
+  Future<bool> _attemptHisensePinFallback({
+    required TvDevice device,
+    required String pairingMessage,
+  }) async {
+    if (device.brand != TvBrand.hisense) {
+      return false;
+    }
+
+    // Pause the blocking overlay while the user types a PIN.
+    if (mounted) {
+      setState(() {
+        _isPairingInProgress = false;
+      });
+    }
+    while (true) {
+      final pin = await _promptForHisensePairingPin(pairingMessage);
+      if (mounted) {
+        setState(() {
+          _isPairingInProgress = true;
+        });
+      }
+      if (pin == null) {
+        return false;
+      }
+
+      final submitResult = await widget.commandService.submitPairingCode(
+        device: device,
+        fourDigitPin: pin,
+      );
+      if (!mounted) {
+        return false;
+      }
+      if (submitResult.isSuccess) {
+        return true;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(submitResult.message)));
+      // Show the PIN dialog again after a failed code so users can retry.
+      setState(() {
+        _isPairingInProgress = false;
+      });
+    }
+  }
+
+  Future<String?> _promptForHisensePairingPin(String pairingMessage) {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        String? inputError;
+
+        String? validatePin() {
+          final value = controller.text.trim();
+          if (!RegExp(r'^\d{4}$').hasMatch(value)) {
+            return 'Enter exactly 4 digits.';
+          }
+          return null;
+        }
+
+        void submit(StateSetter setDialogState) {
+          final error = validatePin();
+          if (error != null) {
+            setDialogState(() {
+              inputError = error;
+            });
+            return;
+          }
+          Navigator.of(context).pop(controller.text.trim());
+        }
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Enter TV pairing code'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Hisense TV may require a 4-digit code shown on-screen to finish pairing.',
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    pairingMessage,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    maxLength: 4,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: '4-digit TV code',
+                      border: const OutlineInputBorder(),
+                      counterText: '',
+                      errorText: inputError,
+                    ),
+                    onChanged: (_) {
+                      if (inputError == null) {
+                        return;
+                      }
+                      setDialogState(() {
+                        inputError = null;
+                      });
+                    },
+                    onSubmitted: (_) => submit(setDialogState),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => submit(setDialogState),
+                  child: const Text('Submit code'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _confirmRemoveSavedDevice(TvDevice device) async {

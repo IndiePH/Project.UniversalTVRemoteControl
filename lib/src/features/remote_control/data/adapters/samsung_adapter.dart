@@ -38,6 +38,16 @@ class SamsungAdapter implements TvBrandAdapter {
   }
 
   @override
+  Future<void> submitPairingCode({
+    required TvDevice device,
+    required String fourDigitPin,
+  }) async {
+    throw UnsupportedError(
+      'Samsung pairing code submission is not required in this flow.',
+    );
+  }
+
+  @override
   Future<void> sendCommand({
     required TvDevice device,
     required RemoteCommand command,

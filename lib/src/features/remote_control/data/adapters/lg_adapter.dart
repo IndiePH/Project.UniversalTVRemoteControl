@@ -26,6 +26,14 @@ class LgAdapter implements TvBrandAdapter {
   Future<void> preparePairing({required TvDevice device}) async {}
 
   @override
+  Future<void> submitPairingCode({
+    required TvDevice device,
+    required String fourDigitPin,
+  }) async {
+    throw UnsupportedError('LG pairing code flow is not implemented yet.');
+  }
+
+  @override
   Future<void> sendCommand({
     required TvDevice device,
     required RemoteCommand command,

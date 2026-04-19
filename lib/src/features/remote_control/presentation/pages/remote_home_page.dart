@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/src/features/remote_control/application/device_repository.dart';
 import 'package:one_remote/src/features/remote_control/application/layout_repository.dart';
 import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_file_logger.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
@@ -187,8 +189,31 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       }
     });
     if (!result.isSuccess) {
-      _showToast(result.message, isError: true);
+      if (result.isCompatibilityIssue) {
+        _showTextCompatibilityMessage(result.message);
+      } else {
+        _showToast(result.message, isError: true);
+      }
     }
+  }
+
+  void _showTextCompatibilityMessage(String message) {
+    if (!mounted) {
+      return;
+    }
+    final colorScheme = Theme.of(context).colorScheme;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: TextStyle(color: colorScheme.onTertiaryContainer),
+          ),
+          duration: const Duration(seconds: 8),
+          backgroundColor: colorScheme.tertiaryContainer,
+        ),
+      );
   }
 
   void _showToast(String message, {bool isError = false}) {
@@ -264,6 +289,22 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (!_isLayoutEditMode) {
       unawaited(_persistLayoutForActiveDevice());
     }
+  }
+
+  Future<void> _copyLatestSamsungTextLog() async {
+    final logs = await SamsungTransportFileLogger.readLatestLogForSharing();
+    if (!mounted) {
+      return;
+    }
+    if (logs == null || logs.trim().isEmpty) {
+      _showToast('No Samsung transport log found yet.', isError: true);
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: logs));
+    if (!mounted) {
+      return;
+    }
+    _showToast('Copied Samsung transport log to clipboard.');
   }
 
   void _resetLayoutToDefaults() {
@@ -927,6 +968,11 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       appBar: AppBar(
         title: const Text('OneRemote'),
         actions: [
+          IconButton(
+            onPressed: _copyLatestSamsungTextLog,
+            icon: const Icon(Icons.bug_report_outlined),
+            tooltip: 'Copy Samsung text logs',
+          ),
           IconButton(
             onPressed: _toggleLayoutEditMode,
             icon: Icon(_isLayoutEditMode ? Icons.check : Icons.settings),

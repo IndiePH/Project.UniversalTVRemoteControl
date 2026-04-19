@@ -20,6 +20,20 @@ class InMemoryRemoteCommandService implements RemoteCommandService {
   }
 
   @override
+  Future<CommandDispatchResult> submitPairingCode({
+    required TvDevice device,
+    required String fourDigitPin,
+  }) async {
+    log(
+      'Mock submitPairingCode -> ${device.displayName}: $fourDigitPin',
+      name: 'remote_command_service',
+    );
+    return CommandDispatchResult.success(
+      'Pairing code accepted for ${device.displayName}.',
+    );
+  }
+
+  @override
   Future<CommandDispatchResult> sendCommand({
     required TvDevice device,
     required RemoteCommand command,

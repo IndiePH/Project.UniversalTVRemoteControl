@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_multicast_lock/flutter_multicast_lock.dart';
 import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
@@ -9,8 +10,9 @@ import 'package:one_remote/src/features/remote_control/domain/models/tv_device.d
 
 /// Discovers TVs over local network via SSDP M-SEARCH.
 ///
-/// This keeps MVP discovery lightweight and dependency-free while still
-/// finding common UPnP/SSDP-advertised devices for Samsung/LG/Hisense.
+/// MVP discovery via UPnP/SSDP for Samsung/LG/Hisense. On Android, multicast
+/// UDP is held open with [FlutterMulticastLock] so M-SEARCH responses are not
+/// dropped by the Wi‑Fi stack.
 class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
   SsdpDeviceDiscoveryService({this.timeout = const Duration(seconds: 3)});
 
@@ -20,10 +22,25 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
     'ssdp:all',
     'upnp:rootdevice',
     'urn:schemas-upnp-org:device:MediaRenderer:1',
+    'urn:schemas-upnp-org:device:MediaServer:1',
   ];
 
   @override
   Future<List<TvDevice>> discoverDevices() async {
+    final multicastLock = FlutterMulticastLock();
+    if (Platform.isAndroid) {
+      await multicastLock.acquireMulticastLock();
+    }
+    try {
+      return await _discoverDevicesCore();
+    } finally {
+      if (Platform.isAndroid) {
+        await multicastLock.releaseMulticastLock();
+      }
+    }
+  }
+
+  Future<List<TvDevice>> _discoverDevicesCore() async {
     RawDatagramSocket? socket;
     final candidatesByIp = <String, _DiscoveryCandidate>{};
 
@@ -120,6 +137,7 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
     final probe = [
       headers['server'] ?? '',
       headers['st'] ?? '',
+      headers['nt'] ?? '',
       headers['usn'] ?? '',
       headers['location'] ?? '',
     ].join(' ');
@@ -130,7 +148,9 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
     if (probe.contains('lg') || probe.contains('webos')) {
       return TvBrand.lg;
     }
-    if (probe.contains('hisense') || probe.contains('vidaa')) {
+    if (probe.contains('hisense') ||
+        probe.contains('vidaa') ||
+        probe.contains('hiview')) {
       return TvBrand.hisense;
     }
     return null;
