@@ -46,6 +46,13 @@ class LgAdapter implements TvBrandAdapter {
   }
 
   @override
+  Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
+      Stream<bool>.value(false);
+
+  /// LG (webOS / future ThinQ-style paths) is not the same stack as Hisense VIDAA/MQTT.
+  /// Until a real text-input channel exists, [supportsTextInput] stays false and this
+  /// fails fast so the UI cannot assume characters reached the TV.
+  @override
   Future<void> sendText({
     required TvDevice device,
     required String text,

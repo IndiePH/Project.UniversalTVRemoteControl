@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:flutter_multicast_lock/flutter_multicast_lock.dart';
 import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
-import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_brand_capabilities.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 /// Discovers TVs over local network via SSDP M-SEARCH.
@@ -97,7 +97,7 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
                 displayName:
                     '${_brandName(candidate.brand)} TV (${candidate.ip})',
                 brand: candidate.brand,
-                capabilities: _capabilitiesForBrand(candidate.brand),
+                capabilities: candidate.brand.defaultCapabilities,
               ),
             )
             .toList()
@@ -154,20 +154,6 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
       return TvBrand.hisense;
     }
     return null;
-  }
-
-  Set<DeviceCapability> _capabilitiesForBrand(TvBrand brand) {
-    return switch (brand) {
-      TvBrand.samsung => const {
-        DeviceCapability.keyCommands,
-        DeviceCapability.textInput,
-        DeviceCapability.powerControl,
-      },
-      TvBrand.lg || TvBrand.hisense => const {
-        DeviceCapability.keyCommands,
-        DeviceCapability.powerControl,
-      },
-    };
   }
 
   String _brandName(TvBrand brand) {

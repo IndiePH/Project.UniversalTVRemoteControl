@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/src/features/remote_control/application/device_repository.dart';
-import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_brand_capabilities.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/src/features/remote_control/presentation/formatting/two_digit_format.dart';
 
 /// Pairing flow entry point.
 ///
@@ -461,7 +462,7 @@ class _PairingPageState extends State<PairingPage> {
       id: '${_manualBrand.name}-$ip',
       displayName: '${_manualBrand.name.toUpperCase()} TV ($ip)',
       brand: _manualBrand,
-      capabilities: _capabilitiesForBrand(_manualBrand),
+      capabilities: _manualBrand.defaultCapabilities,
     );
     await _pairSelectedDevice(device: device, manualIpToSave: ip);
   }
@@ -471,21 +472,6 @@ class _PairingPageState extends State<PairingPage> {
       r'^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$',
     );
     return regExp.hasMatch(input);
-  }
-
-  Set<DeviceCapability> _capabilitiesForBrand(TvBrand brand) {
-    // Keep capability defaults centralized for manual-pairing generated devices.
-    return switch (brand) {
-      TvBrand.samsung => const {
-        DeviceCapability.keyCommands,
-        DeviceCapability.textInput,
-        DeviceCapability.powerControl,
-      },
-      TvBrand.lg || TvBrand.hisense => const {
-        DeviceCapability.keyCommands,
-        DeviceCapability.powerControl,
-      },
-    };
   }
 
   @override
@@ -671,12 +657,10 @@ class _PairingPageState extends State<PairingPage> {
     }
     final local = pairedAt.toLocal();
     final date =
-        '${local.year}-${_twoDigits(local.month)}-${_twoDigits(local.day)}';
-    final time = '${_twoDigits(local.hour)}:${_twoDigits(local.minute)}';
+        '${local.year}-${formatTwoDigits(local.month)}-${formatTwoDigits(local.day)}';
+    final time = '${formatTwoDigits(local.hour)}:${formatTwoDigits(local.minute)}';
     return 'Previously paired ($date $time)';
   }
-
-  String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
   Widget _buildManualAddSection() {
     return Column(
