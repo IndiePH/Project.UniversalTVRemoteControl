@@ -1,14 +1,20 @@
 import 'dart:convert';
+import 'dart:developer' show log;
 import 'dart:io';
 
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/adapter_device_info_log_gate.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense/hisense_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_event.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 
 /// MQTT transport to Hisense VIDAA TVs (LAN, port 36669).
 ///
 /// TLS with self-signed broker certs is the common case on newer firmware.
-class RealHisenseTransportClient implements HisenseTransportClient {
+class RealHisenseTransportClient
+    with TransportEventEmitterMixin
+    implements HisenseTransportClient {
   RealHisenseTransportClient({
     required String Function(String deviceId) hostResolver,
     String mqttClientId =
@@ -34,6 +40,7 @@ class RealHisenseTransportClient implements HisenseTransportClient {
 
   final Map<String, MqttServerClient> _mqttByDeviceId = <String, MqttServerClient>{};
   final Set<String> _authorizedDeviceIds = <String>{};
+  final AdapterDeviceInfoLogGate _deviceInfoLogGate = AdapterDeviceInfoLogGate();
 
   String _sendKeyTopic() =>
       '/remoteapp/tv/remote_service/$_mqttTopicClientSegment/actions/sendkey';
@@ -52,6 +59,13 @@ class RealHisenseTransportClient implements HisenseTransportClient {
         'Hisense pairing requires a 4-digit code shown on TV. Enter it to continue.',
       );
     }
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'hisense',
+        deviceId: deviceId,
+        type: 'connected',
+      ),
+    );
   }
 
   @override
@@ -70,12 +84,27 @@ class RealHisenseTransportClient implements HisenseTransportClient {
     final payload = jsonEncode({'authNum': int.parse(cleaned)});
     _publishString(client, _authTopic(), payload);
     _authorizedDeviceIds.add(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'hisense',
+        deviceId: deviceId,
+        type: 'authentication_code_submitted',
+      ),
+    );
   }
 
   @override
   Future<void> sendKey({required String deviceId, required String keyName}) async {
     final client = await _clientFor(deviceId);
     _publishString(client, _sendKeyTopic(), keyName);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'hisense',
+        deviceId: deviceId,
+        type: 'key_sent',
+        message: keyName,
+      ),
+    );
   }
 
   @override
@@ -94,6 +123,14 @@ class RealHisenseTransportClient implements HisenseTransportClient {
       'url': url,
     });
     _publishString(client, _launchTopic(), payload);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'hisense',
+        deviceId: deviceId,
+        type: 'app_launched',
+        message: displayName,
+      ),
+    );
   }
 
   Future<MqttServerClient> _clientFor(String deviceId) async {
@@ -117,6 +154,7 @@ class RealHisenseTransportClient implements HisenseTransportClient {
       return;
     }
     existing?.disconnect();
+    _deviceInfoLogGate.reset(deviceId);
 
     final host = _hostResolver(deviceId).trim();
     if (host.isEmpty) {
@@ -142,6 +180,13 @@ class RealHisenseTransportClient implements HisenseTransportClient {
       throw StateError('Hisense MQTT connect failed (${status?.state}): $status');
     }
     _mqttByDeviceId[deviceId] = client;
+    if (_deviceInfoLogGate.shouldLog(deviceId)) {
+      log(
+        '[$deviceId] hisense transport connected: host=$host port=$_brokerPort '
+        'tls=${!_usePlaintextMqtt} clientId=$_mqttTopicClientSegment',
+        name: 'hisense_transport',
+      );
+    }
   }
 
   void _publishString(MqttServerClient client, String topic, String body) {

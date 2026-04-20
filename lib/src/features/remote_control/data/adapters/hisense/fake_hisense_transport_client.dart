@@ -1,15 +1,26 @@
 import 'dart:developer';
 
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense/hisense_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_event.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 
 /// Logs calls for tests and offline development.
-class FakeHisenseTransportClient implements HisenseTransportClient {
+class FakeHisenseTransportClient
+    with TransportEventEmitterMixin
+    implements HisenseTransportClient {
   final Set<String> _connected = <String>{};
   final Set<String> _authorized = <String>{};
 
   @override
   Future<void> connect({required String deviceId}) async {
     _connected.add(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'hisense',
+        deviceId: deviceId,
+        type: 'connected',
+      ),
+    );
     log('Hisense MQTT connect: $deviceId', name: 'hisense_transport');
     if (!_authorized.contains(deviceId)) {
       throw StateError(
@@ -32,6 +43,13 @@ class FakeHisenseTransportClient implements HisenseTransportClient {
       throw StateError('Incorrect pairing code. Please try again.');
     }
     _authorized.add(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'hisense',
+        deviceId: deviceId,
+        type: 'authentication_code_submitted',
+      ),
+    );
     log(
       'Hisense MQTT auth: $deviceId pin=$fourDigitPin',
       name: 'hisense_transport',
@@ -44,6 +62,14 @@ class FakeHisenseTransportClient implements HisenseTransportClient {
     required String keyName,
   }) async {
     await _ensure(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'hisense',
+        deviceId: deviceId,
+        type: 'key_sent',
+        message: keyName,
+      ),
+    );
     log('Hisense MQTT sendkey: $deviceId -> $keyName', name: 'hisense_transport');
   }
 
@@ -56,6 +82,14 @@ class FakeHisenseTransportClient implements HisenseTransportClient {
     int storeType = 0,
   }) async {
     await _ensure(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'hisense',
+        deviceId: deviceId,
+        type: 'app_launched',
+        message: displayName,
+      ),
+    );
     log(
       'Hisense MQTT launchapp: $deviceId name=$displayName url=$url '
       'urlType=$urlType storeType=$storeType',

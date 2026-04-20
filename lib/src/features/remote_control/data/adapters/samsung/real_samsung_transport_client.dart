@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:one_remote/src/features/remote_control/data/adapters/adapter_device_info_log_gate.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_event.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_pairing_token_store.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_remote_text_session.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_transport_logging.dart';
@@ -21,7 +24,9 @@ import 'package:one_remote/src/features/remote_control/data/adapters/samsung/sam
 /// Implementation is split across focused types: [RealSamsungPairingTokenStore],
 /// [RealSamsungRemoteTextSession], [RealSamsungTransportLogging], and
 /// [RealSamsungWsHandshake].
-class RealSamsungTransportClient implements SamsungTransportClient {
+class RealSamsungTransportClient
+    with TransportEventEmitterMixin
+    implements SamsungTransportClient {
   static const bool _sendInputEndAfterEachText = bool.fromEnvironment(
     'SAMSUNG_SEND_INPUT_END_PER_TEXT',
     defaultValue: false,
@@ -54,6 +59,7 @@ class RealSamsungTransportClient implements SamsungTransportClient {
   final Map<String, StreamSubscription<dynamic>> _subscriptionsByDeviceId =
       <String, StreamSubscription<dynamic>>{};
   final Map<String, DateTime> _lastSendAtByDeviceId = <String, DateTime>{};
+  final AdapterDeviceInfoLogGate _deviceInfoLogGate = AdapterDeviceInfoLogGate();
 
   @override
   Stream<bool> watchRemoteTextInputReady(String deviceId) {
@@ -107,6 +113,14 @@ class RealSamsungTransportClient implements SamsungTransportClient {
             port: uri.port,
           );
         }
+        emitTransportEvent(
+          TransportEvent(
+            transport: 'samsung',
+            deviceId: deviceId,
+            type: 'connected',
+            message: '$host:${uri.port}',
+          ),
+        );
         return;
       } on Object catch (error, stackTrace) {
         lastError = error;
@@ -144,6 +158,13 @@ class RealSamsungTransportClient implements SamsungTransportClient {
 
     await SamsungTlsTrustStore.instance.ensureLoaded();
     await SamsungTlsTrustStore.instance.clearEndpoint(host, 8002);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'samsung',
+        deviceId: deviceId,
+        type: 'pairing_approval_requested',
+      ),
+    );
 
     await _resetConnection(deviceId);
     await _connectWithoutToken(deviceId: deviceId, host: host);
@@ -202,6 +223,14 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     };
     socket.add(jsonEncode(payload));
     _lastSendAtByDeviceId[deviceId] = DateTime.now();
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'samsung',
+        deviceId: deviceId,
+        type: 'key_sent',
+        message: keyCode,
+      ),
+    );
   }
 
   @override
@@ -240,6 +269,13 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     _logging.logOutbound(deviceId, inputPayload);
     socket.add(inputPayload);
     _lastSendAtByDeviceId[deviceId] = DateTime.now();
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'samsung',
+        deviceId: deviceId,
+        type: 'text_sent',
+      ),
+    );
 
     if (_sendInputEndAfterEachText) {
       await _sendInputEnd(deviceId: deviceId, socket: socket);
@@ -354,6 +390,7 @@ class RealSamsungTransportClient implements SamsungTransportClient {
           return;
         }
         final decoded = _tryDecodeMessage(message);
+        _logSamsungDeviceInfo(deviceId, decoded);
         _text.ingestDecoded(
           deviceId,
           decoded,
@@ -377,6 +414,13 @@ class RealSamsungTransportClient implements SamsungTransportClient {
         _subscriptionsByDeviceId.remove(deviceId)?.cancel();
         _socketsByDeviceId.remove(deviceId);
         _text.onSocketLost(deviceId);
+        emitTransportEvent(
+          TransportEvent(
+            transport: 'samsung',
+            deviceId: deviceId,
+            type: 'connection_closed',
+          ),
+        );
       },
       onError: (Object error, StackTrace stackTrace) {
         if (handshakeCompleter != null && !handshakeCompleter.isCompleted) {
@@ -385,6 +429,14 @@ class RealSamsungTransportClient implements SamsungTransportClient {
         _subscriptionsByDeviceId.remove(deviceId)?.cancel();
         _socketsByDeviceId.remove(deviceId);
         _text.onSocketLost(deviceId);
+        emitTransportEvent(
+          TransportEvent(
+            transport: 'samsung',
+            deviceId: deviceId,
+            type: 'connection_error',
+            message: error.toString(),
+          ),
+        );
       },
       cancelOnError: false,
     );
@@ -450,6 +502,46 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     return null;
   }
 
+  void _logSamsungDeviceInfo(String deviceId, Map<String, dynamic>? decoded) {
+    if (!_logging.enabled || decoded == null) {
+      return;
+    }
+    if (!_deviceInfoLogGate.shouldLog(deviceId)) {
+      return;
+    }
+
+    final event = decoded['event'];
+    if (event is! String || event != 'ms.channel.connect') {
+      return;
+    }
+    final data = decoded['data'];
+    if (data is! Map<String, dynamic>) {
+      return;
+    }
+
+    final model = data['model']?.toString().trim();
+    final os = data['OS']?.toString().trim();
+    final firmware = data['firmwareVersion']?.toString().trim();
+    final frameVersion = data['version']?.toString().trim();
+    final id = data['id']?.toString().trim();
+
+    final hasInfo = <String?>[model, os, firmware, frameVersion, id].any(
+      (value) => value != null && value.isNotEmpty,
+    );
+    if (!hasInfo) {
+      return;
+    }
+
+    _logging.logDebug(
+      '[$deviceId] samsung device info: '
+      'model=${model ?? "unknown"} '
+      'os=${os ?? "unknown"} '
+      'firmware=${firmware ?? "unknown"} '
+      'frameVersion=${frameVersion ?? "unknown"} '
+      'id=${id ?? "unknown"}',
+    );
+  }
+
   Future<void> _applyKeyPacing(String deviceId) async {
     final lastSentAt = _lastSendAtByDeviceId[deviceId];
     if (lastSentAt == null) {
@@ -466,6 +558,7 @@ class RealSamsungTransportClient implements SamsungTransportClient {
     await _subscriptionsByDeviceId.remove(deviceId)?.cancel();
     final socket = _socketsByDeviceId.remove(deviceId);
     _lastSendAtByDeviceId.remove(deviceId);
+    _deviceInfoLogGate.reset(deviceId);
     _text.onSocketLost(deviceId);
     if (socket == null) {
       return;

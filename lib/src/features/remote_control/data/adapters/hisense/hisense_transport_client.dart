@@ -1,8 +1,12 @@
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_event_source.dart';
+
 /// Local-network VIDAA-style MQTT control (Hisense TVs, port 36669).
 ///
 /// Topic layout follows community-documented patterns; the [mqttClientId]
 /// segment must stay consistent across pairing and key sends for a session.
-abstract class HisenseTransportClient {
+abstract class HisenseTransportClient
+    implements TransportClient, TransportEventSource {
   /// Ensures an MQTT session to the TV for [deviceId] (host derived by caller).
   Future<void> connect({required String deviceId});
 

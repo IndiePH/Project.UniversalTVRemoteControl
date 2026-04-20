@@ -2,9 +2,13 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_event.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 
 /// Placeholder transport used until the real Samsung socket/auth client is wired.
-class FakeSamsungTransportClient implements SamsungTransportClient {
+class FakeSamsungTransportClient
+    with TransportEventEmitterMixin
+    implements SamsungTransportClient {
   final Set<String> _connectedDeviceIds = <String>{};
   final Map<String, StreamController<bool>> _imeReadyBroadcasters =
       <String, StreamController<bool>>{};
@@ -20,6 +24,13 @@ class FakeSamsungTransportClient implements SamsungTransportClient {
   Future<void> connect({required String deviceId}) async {
     _connectedDeviceIds.add(deviceId);
     _notifyImeReady(deviceId, true);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'samsung',
+        deviceId: deviceId,
+        type: 'connected',
+      ),
+    );
     log('Samsung transport connected: $deviceId', name: 'samsung_transport');
   }
 
@@ -30,6 +41,13 @@ class FakeSamsungTransportClient implements SamsungTransportClient {
     Duration approvalTimeout = const Duration(seconds: 45),
   }) async {
     await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'samsung',
+        deviceId: deviceId,
+        type: 'pairing_approval_requested',
+      ),
+    );
     log(
       'Samsung transport requestPairingApproval: $deviceId via $triggerKeyCode',
       name: 'samsung_transport',
@@ -42,6 +60,14 @@ class FakeSamsungTransportClient implements SamsungTransportClient {
     required String keyCode,
   }) async {
     await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'samsung',
+        deviceId: deviceId,
+        type: 'key_sent',
+        message: keyCode,
+      ),
+    );
     log(
       'Samsung transport sendKey: $deviceId -> $keyCode',
       name: 'samsung_transport',
@@ -54,6 +80,13 @@ class FakeSamsungTransportClient implements SamsungTransportClient {
     required String text,
   }) async {
     await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'samsung',
+        deviceId: deviceId,
+        type: 'text_sent',
+      ),
+    );
     log(
       'Samsung transport sendText: $deviceId -> "$text"',
       name: 'samsung_transport',

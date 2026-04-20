@@ -1,4 +1,8 @@
-abstract class SamsungTransportClient {
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/transport_event_source.dart';
+
+abstract class SamsungTransportClient
+    implements TransportClient, TransportEventSource {
   Future<void> connect({required String deviceId});
 
   /// Whether the TV has signaled an IME / text session (remote typing may work).
