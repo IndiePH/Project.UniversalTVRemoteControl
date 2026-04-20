@@ -78,11 +78,13 @@ void main() {
     expect(find.text('Sent: power'), findsOneWidget);
   });
 
-  testWidgets('removes active saved device after REMOVE confirmation', (
+  testWidgets(
+    'removes active saved device after REMOVE confirmation and falls back last-used',
+    (
     WidgetTester tester,
   ) async {
     final repository = InMemoryDeviceRepository();
-    const seededDevice = TvDevice(
+    const activeDevice = TvDevice(
       id: 'samsung-living-room',
       displayName: 'Living Room TV',
       brand: TvBrand.samsung,
@@ -92,10 +94,20 @@ void main() {
         DeviceCapability.powerControl,
       },
     );
-    await repository.saveDevice(seededDevice);
-    await repository.setLastUsedDevice(seededDevice.id);
+    const fallbackDevice = TvDevice(
+      id: 'lg-bedroom',
+      displayName: 'Bedroom TV',
+      brand: TvBrand.lg,
+      capabilities: {
+        DeviceCapability.keyCommands,
+        DeviceCapability.powerControl,
+      },
+    );
+    await repository.saveDevice(activeDevice);
+    await repository.saveDevice(fallbackDevice);
+    await repository.setLastUsedDevice(activeDevice.id);
     await repository.setLastSuccessfulPairingAt(
-      deviceId: seededDevice.id,
+      deviceId: activeDevice.id,
       timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
     );
 
@@ -130,7 +142,72 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Living Room TV'), findsNothing);
+    expect(find.text('Bedroom TV'), findsOneWidget);
     expect(find.textContaining('Removed Living Room TV'), findsOneWidget);
+
+    final lastUsed = await repository.getLastUsedDevice();
+    expect(lastUsed?.id, fallbackDevice.id);
+  });
+
+  testWidgets('removing non-active last-used device falls back without REMOVE guard', (
+    WidgetTester tester,
+  ) async {
+    final repository = InMemoryDeviceRepository();
+    const activeDevice = TvDevice(
+      id: 'samsung-living-room',
+      displayName: 'Living Room TV',
+      brand: TvBrand.samsung,
+      capabilities: {
+        DeviceCapability.keyCommands,
+        DeviceCapability.powerControl,
+      },
+    );
+    const lastUsedDevice = TvDevice(
+      id: 'lg-bedroom',
+      displayName: 'Bedroom TV',
+      brand: TvBrand.lg,
+      capabilities: {
+        DeviceCapability.keyCommands,
+        DeviceCapability.powerControl,
+      },
+    );
+    await repository.saveDevice(activeDevice);
+    await repository.saveDevice(lastUsedDevice);
+    await repository.setLastUsedDevice(lastUsedDevice.id);
+    await repository.setLastSuccessfulPairingAt(
+      deviceId: lastUsedDevice.id,
+      timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PairingPage(
+          commandService: InMemoryRemoteCommandService(),
+          discoveryService: _StaticDiscoveryService(),
+          deviceRepository: repository,
+          activeDeviceId: activeDevice.id,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Living Room TV'), findsOneWidget);
+    expect(find.text('Bedroom TV'), findsOneWidget);
+
+    final savedTile = find.widgetWithText(ListTile, 'Bedroom TV');
+    final listTile = tester.widget<ListTile>(savedTile);
+    final deleteButton = listTile.trailing! as IconButton;
+    deleteButton.onPressed?.call();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(TextField, 'Type REMOVE'), findsNothing);
+    expect(find.text('Bedroom TV'), findsNothing);
+
+    final lastUsed = await repository.getLastUsedDevice();
+    expect(lastUsed?.id, activeDevice.id);
   });
 }
 
