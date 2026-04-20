@@ -6,9 +6,21 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 
 **Checklists:** Under **Status Tracker**, `[x]` marks work recorded as done in this plan; `[ ]` marks remaining. Lower sections (**Milestones**, **Cross-Cutting**) use `[ ]` as structured backlog lines that may still overlap the tracker—treat the **Status Tracker** as the current narrative for shipped vs in-flight work.
 
+## Jira (project TVREMOTE)
+
+- **TVREMOTE-36** — Per-brand TV adapters and transports (**implementation** epic; structured for additional OEMs later).
+- **TVREMOTE-37** — Per-brand TV adapter and transport **testing** epic (Samsung / LG / Hisense lanes today).
+- **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring). **TVREMOTE-7**, **TVREMOTE-14**, and **TVREMOTE-18** are parented under TVREMOTE-36.
+- **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung), **TVREMOTE-50** (LG), **TVREMOTE-51** (Hisense); **TVREMOTE-13** is parented under TVREMOTE-37. Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
+- Umbrella issues superseded by this split (historical, **Done** in Jira): **TVREMOTE-25**, **TVREMOTE-21**, **TVREMOTE-9**, **TVREMOTE-10**, **TVREMOTE-16**.
+
 ## Status Tracker (Current)
 
 ### Completed
+- [x] Workspace hygiene baseline (`TVREMOTE-1`):
+  - [x] Verified generated/transient artifacts are excluded by repo/platform `.gitignore` rules (`.dart_tool/`, `build/`, platform `Flutter/ephemeral`, plugin registrants, local gradle/IDE outputs)
+  - [x] Added root `__pycache__/` ignore to prevent incidental `.cursor` Python cache churn
+  - [x] Verified tracked generated plugin glue files remain intentional and clean (`linux/flutter/generated_plugins.cmake`, `windows/flutter/generated_plugins.cmake` show no diff)
 - [x] Milestone 0 / Task 0.1:
   - [x] Established layered structure (`presentation` / `application` / `data` / `domain`)
   - [x] Added extensible brand adapter contracts and router-based dispatch
