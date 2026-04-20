@@ -2,7 +2,7 @@
 
 **OneRemote** (internal: **Universal TV Remote** — `references/product_specs.md`).
 
-**This file** is the submission checklist. Summaries also live in `references/product_specs.md` §8 and `references/implementation_tasks.md` (Final Release Gate)—keep them aligned when rules change.
+**This file** is the submission checklist. Summaries also live in `references/product_specs.md` §8 and `references/implementation_tasks.md` (Final Release Gate; Markdown task-list bullets)—keep them aligned when rules change.
 
 ---
 

@@ -20,6 +20,8 @@ One app to control almost any TV—fast, simple, and no setup headaches.
 
 This specification is a living document. It is the current source of truth, but scope and sequencing may evolve as implementation feedback is gathered.
 
+**Implementation status:** Shipped vs in-flight narrative lives in `references/implementation_tasks.md` (**Status Tracker** uses Markdown `- [x]` / `- [ ]` checklists).
+
 **Target launch:** **End of May 2026**; earlier if the product is ready sooner (see `references/implementation_tasks.md` Planning Notes).
 
 ---

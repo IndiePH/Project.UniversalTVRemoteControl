@@ -34,6 +34,8 @@ Keep entries short and append new updates at the top.
 - Layout editor: removed swap-result snackbars and the copy-last-drag debug header button.
 - Docs sync:
   - updated `references/implementation_tasks.md` status tracker + SRP checklist
+  - reformatted `references/implementation_tasks.md` with Markdown task lists across Status Tracker, Next Up, milestone backlog, brand-default rules, suggested execution order, definition of done, and final release gate; added a short checklist legend at the top of the plan
+  - updated `references/product_specs.md`, `references/universal-tv-remote-info-and-req.md`, and `references/compliance-and-release-requirements.md` to point readers at the checklist-style Status Tracker / Final Release Gate
   - updated `references/goal-oneremote-lib-review.md` Task 3 follow-up note
 
 ### Verification
