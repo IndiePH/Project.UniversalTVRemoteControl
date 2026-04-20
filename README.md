@@ -32,6 +32,9 @@ Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — 
     - Android: `Android/data/<your.package>/files/one_remote_logs/`
 - Optional Samsung text-input compatibility toggle:
   - `--dart-define=SAMSUNG_SEND_INPUT_END_PER_TEXT=true` (enables `SendInputEnd` after each text send)
+- Samsung text-input capability exposure gate (keep disabled until physical validation):
+  - default is OFF (Samsung device capability set excludes text input; adapter reports `supportsTextInput=false`)
+  - enable only for validation runs with `--dart-define=SAMSUNG_ENABLE_TEXT_INPUT=true`
 
 ## Getting Started
 

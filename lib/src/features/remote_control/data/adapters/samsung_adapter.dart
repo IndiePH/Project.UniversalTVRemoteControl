@@ -9,6 +9,11 @@ import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.da
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 class SamsungAdapter implements TvBrandAdapter {
+  static const bool _samsungTextInputEnabled = bool.fromEnvironment(
+    'SAMSUNG_ENABLE_TEXT_INPUT',
+    defaultValue: false,
+  );
+
   SamsungAdapter({
     SamsungTransportClient? transportClient,
     CommandKeyMap? keyMapper,
@@ -19,7 +24,7 @@ class SamsungAdapter implements TvBrandAdapter {
   TvBrand get brand => TvBrand.samsung;
 
   @override
-  bool get supportsTextInput => true;
+  bool get supportsTextInput => _samsungTextInputEnabled;
 
   @override
   Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
