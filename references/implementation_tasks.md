@@ -8,9 +8,11 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 
 ## Jira (project TVREMOTE)
 
+- **TVREMOTE-1** — Workspace hygiene: stabilize repo against generated/transient noise (root `__pycache__/` ignore, `.gitignore`/`generated_plugins.cmake` verification); narrative and acceptance notes live under **Status Tracker → Completed** (`Workspace hygiene baseline`).
+- **TVREMOTE-8** — Saved-device remove/last-used fallback test coverage completed (`test/widget_test.dart`); tracks `Next Up → Expand tests → saved-device remove/last-used fallback paths`.
 - **TVREMOTE-36** — Per-brand TV adapters and transports (**implementation** epic; structured for additional OEMs later).
 - **TVREMOTE-37** — Per-brand TV adapter and transport **testing** epic (Samsung / LG / Hisense lanes today).
-- **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring). **TVREMOTE-7**, **TVREMOTE-14**, and **TVREMOTE-18** are parented under TVREMOTE-36.
+- **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring), plus transport-abstraction follow-ups **TVREMOTE-52** (shared marker + required event source) and **TVREMOTE-53** (event adoption in Samsung/Hisense real+fake clients). **TVREMOTE-7**, **TVREMOTE-14**, and **TVREMOTE-18** are parented under TVREMOTE-36.
 - **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung), **TVREMOTE-50** (LG), **TVREMOTE-51** (Hisense); **TVREMOTE-13** is parented under TVREMOTE-37. Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
 - Umbrella issues superseded by this split (historical, **Done** in Jira): **TVREMOTE-25**, **TVREMOTE-21**, **TVREMOTE-9**, **TVREMOTE-10**, **TVREMOTE-16**.
 
@@ -137,7 +139,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [ ] pairing success/failure paths
   - [ ] Samsung approval timeout/rejection handling paths
   - [ ] adapter capability unsupported flows
-  - [ ] saved-device remove/last-used fallback paths
+  - [x] saved-device remove/last-used fallback paths
 - [ ] Implement missing per-brand text-input transports and re-enable capability flags after validation
 - [ ] Add focused widget tests for:
   - [ ] drag/drop swap behavior (including multi-cell items and resolver rejection vs accept paths)

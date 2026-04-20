@@ -6,6 +6,9 @@ Keep entries short and append new updates at the top.
 ## 2026-04-20
 
 ### Changed
+- Workspace hygiene (**TVREMOTE-1**): root `.gitignore` ignores `__pycache__/`; `references/implementation_tasks.md` Status Tracker records verification of existing ignore rules for `.dart_tool/`, `build/`, platform `Flutter/ephemeral`, and clean diffs for tracked `linux/flutter/generated_plugins.cmake` and `windows/flutter/generated_plugins.cmake`.
+- Saved-device fallback test coverage (**TVREMOTE-8**): widget tests now cover active-device removal fallback and non-active last-used removal fallback behavior.
+- Transport abstraction follow-up (**TVREMOTE-52**, **TVREMOTE-53**): added shared transport marker + required event stream contracts and wired standardized transport events across Samsung/Hisense fake+real clients.
 - Layout editor SRP pass: `RemoteLayoutEditor` delegates to `RemoteLayoutEditorGridGeometry`
   (cell sizing + occupancy + validation footprints), `RemoteLayoutEditGridPainter` (grid lines),
   `RemoteLayoutEditorItemPreview` (dpad/rocker/icon tiles), and `RemoteLayoutEditorDragSession`
@@ -43,6 +46,7 @@ Keep entries short and append new updates at the top.
 - `dart analyze` on touched remote-home and pairing refactor modules passes.
 - `dart analyze` (whole project) after Samsung transport partition passes.
 - `dart analyze` + `flutter test test/widget_test.dart` after layout editor SRP split pass.
+- `flutter test test/widget_test.dart` passes with saved-device removal fallback coverage (active-device removal fallback and non-active last-used removal without REMOVE guard).
 
 ## 2026-04-19
 
