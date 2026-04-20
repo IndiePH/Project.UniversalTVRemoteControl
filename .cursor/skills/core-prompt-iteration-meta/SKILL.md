@@ -1,6 +1,6 @@
 ---
 name: core-prompt-iteration-meta
-description: Prior agent output bad/incomplete -> tighter next prompt + constraints + validation. JSON only. NO_EDITS NO_CMDS.
+description: Prior agent output bad/incomplete -> tighter next prompt + constraints + validation. NO_EDITS NO_CMDS.
 license: Complete terms in LICENSE.txt
 ---
 
@@ -8,10 +8,5 @@ license: Complete terms in LICENSE.txt
 
 MODE: PROMPT_REWRITE NO_EDITS NO_CMDS
 RULES: preserve user intent; include measurable acceptance; one independent goal per revised prompt.
-
-OUTPUT_ONLY_JSON
-```json
-{"failure_diagnosis":["string"],"revised_prompt":"string","added_constraints":["string"],"required_context":["string"],"validation_expectations":["string"],"recommended_next_skill":"string"}
-```
 
 PIPELINE: compare requested outcome vs last output -> identify failure mode -> rewrite with scope/files/exclusions/validation -> route next skill

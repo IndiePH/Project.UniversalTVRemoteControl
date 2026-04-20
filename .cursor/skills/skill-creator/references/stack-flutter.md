@@ -14,6 +14,11 @@ Use this reference when generating skills for Flutter developers.
 - Include platform caveats (permissions, lifecycle, build flavors) only when needed.
 - For execution skills, require test updates (`flutter test`) when behavior changes.
 
+## SRP Decomposition
+- Use single-responsibility steps: UI orchestration, pure Dart logic, painters, IO/session.
+- For refactors, prefer focused files over expanding one StatefulWidget/service with mixed concerns.
+- Trigger split when UI-only testing is forced, reasons-to-change diverge, or protocol/layout/gesture logic is interleaved.
+
 ## Common Constraints
 - Avoid broad refactors in generated patches.
 - Keep widget tree changes minimal and localized.
@@ -21,8 +26,8 @@ Use this reference when generating skills for Flutter developers.
 - Preserve existing architecture choice if one already exists.
 
 ## Output Patterns
-- Meta skills: JSON intent/plan/context output.
-- Execution skills: JSON patch/file proposals with confidence.
+- Meta skills: terse sections/bullets (intent, plan, risks, boundaries).
+- Execution skills: change summary, files touched, verification, confidence/risk.
 - Reference skills: concise standards with small code snippets.
 
 ## Validation Checklist

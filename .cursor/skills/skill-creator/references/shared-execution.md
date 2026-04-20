@@ -18,11 +18,11 @@ Use this reference when generating execution-oriented skills across any stack.
 - Avoid public API changes unless required by the task.
 - State assumptions instead of inventing missing requirements.
 
-## Output Contract
-- Return only valid output in the format defined by the generated skill.
-- Use strict JSON schemas when machine parsing is expected.
-- Include confidence/risk signals for non-trivial execution tasks.
-- Do not include extra prose outside the required output envelope.
+## Response Contract
+- Return only what the generated skill defines (sections, bullets, checklists).
+- Prefer terse structured prose; call out required fields explicitly in the skill instructions.
+- Include confidence/risk signals for non-trivial execution tasks when useful.
+- Avoid unrelated preamble; keep the reply easy to scan.
 
 ## Safety Boundary
 - Do not perform destructive or irreversible actions by default.

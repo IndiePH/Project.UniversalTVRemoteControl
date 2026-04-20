@@ -21,8 +21,8 @@ Use this reference when generating skills for Unreal Engine developers.
 - Keep changes local to requested feature/system boundaries.
 
 ## Output Patterns
-- Meta skills: JSON intent, routing plan, context package, risk.
-- Execution skills: JSON patch/spec proposals with assumptions and confidence.
+- Meta skills: intent, routing plan, context package, risk (structured bullets).
+- Execution skills: patch/spec proposals with assumptions and confidence.
 - Reference skills: compact standards and targeted snippets.
 
 ## Validation Checklist

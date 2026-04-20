@@ -21,8 +21,8 @@ Use this reference when generating skills for Unity developers.
 - Limit scope to requested systems/features.
 
 ## Output Patterns
-- Meta skills: route + risk + required context.
-- Execution skills: JSON with patch/spec fields and confidence.
+- Meta skills: route + risk + required context (structured bullets).
+- Execution skills: patch/spec summary, scope, assumptions, confidence.
 - Reference skills: compact standards (naming, lifecycle, tests, performance).
 
 ## Validation Checklist

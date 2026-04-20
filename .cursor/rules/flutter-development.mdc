@@ -11,3 +11,9 @@ STATE: setState for local UI only; shared/business state outside widget
 ASYNC: prefer async/await over then/catchError chains
 NULL: avoid ! unless proven by control flow
 QUALITY: keep formatter/lints clean; behavior changes require tests
+SRP: one reason to change per unit; if a type mixes concerns, extract focused collaborators
+SRP_UI_LOGIC: keep pure rules (layout/validation/parsing/protocol) out of build() and usually out of State
+SRP_VISUAL_INTERACTION: split painter/layout-only widgets from gesture/drag/session state when non-trivial
+SRP_DATA_IO: separate connection lifecycle/subscriptions from domain framing when mixed code hurts tests/reuse
+SRP_NAMING: prefer local suffix conventions (*_page.dart,*_controller.dart,*_repository.dart,*_service.dart,*_painter.dart,*_session.dart)
+SRP_TRIGGER: split when file navigation is hard, reasons-to-change diverge, or pure-unit testing is blocked by heavy widget/mocking needs
