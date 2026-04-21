@@ -4,6 +4,7 @@ import 'package:one_remote/src/features/remote_control/application/device_discov
 import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense/real_hisense_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/lg/real_lg_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_transport_client.dart';
@@ -63,7 +64,7 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
     final RemoteCommandService commandService = BrandRoutedRemoteCommandService(
       adapters: [
         _buildSamsungAdapter(),
-        LgAdapter(),
+        _buildLgAdapter(),
         _buildHisenseAdapter(),
       ],
     );
@@ -97,6 +98,17 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
     );
   }
 
+  LgAdapter _buildLgAdapter() {
+    if (_useFakeTransports) {
+      return LgAdapter();
+    }
+    return LgAdapter(
+      transportClient: RealLgTransportClient(
+        hostResolver: _resolveLgHost,
+      ),
+    );
+  }
+
   HisenseAdapter _buildHisenseAdapter() {
     if (_useFakeTransports) {
       return HisenseAdapter();
@@ -113,6 +125,12 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
     if (explicitHost.isNotEmpty) {
       return explicitHost;
     }
+    return _ipv4FromDeviceId(deviceId);
+  }
+
+  String _resolveLgHost(String deviceId) {
+    final explicitHost = _tvHostOverride.trim();
+    if (explicitHost.isNotEmpty) return explicitHost;
     return _ipv4FromDeviceId(deviceId);
   }
 
