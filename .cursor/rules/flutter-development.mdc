@@ -1,5 +1,5 @@
 ---
-description: Dart/Flutter defaults when **/*.dart in scope.
+description: Dart/Flutter defaults + doc-comment policy when **/*.dart in scope.
 globs: **/*.dart
 alwaysApply: false
 ---
@@ -11,6 +11,10 @@ STATE: setState for local UI only; shared/business state outside widget
 ASYNC: prefer async/await over then/catchError chains
 NULL: avoid ! unless proven by control flow
 QUALITY: keep formatter/lints clean; behavior changes require tests
+TYPE_DOC: classes/mixins/extensions start with `///` role/purpose; skip only if trivial and obvious from name+path
+PUBLIC_API_DOC: add `///` when contract/side-effects/threading are non-obvious
+INLINE_DOC: `//` or short `///` for algorithm/protocol/platform/perf/invariant details not obvious from code
+DOC_TONE: explain why/invariant; never narrate obvious line-by-line actions
 SRP: one reason to change per unit; if a type mixes concerns, extract focused collaborators
 SRP_UI_LOGIC: keep pure rules (layout/validation/parsing/protocol) out of build() and usually out of State
 SRP_VISUAL_INTERACTION: split painter/layout-only widgets from gesture/drag/session state when non-trivial
