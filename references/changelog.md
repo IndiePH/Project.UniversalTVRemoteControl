@@ -9,6 +9,7 @@ Keep entries short and append new updates at the top.
 - Workspace hygiene (**TVREMOTE-1**): root `.gitignore` ignores `__pycache__/`; `references/implementation_tasks.md` Status Tracker records verification of existing ignore rules for `.dart_tool/`, `build/`, platform `Flutter/ephemeral`, and clean diffs for tracked `linux/flutter/generated_plugins.cmake` and `windows/flutter/generated_plugins.cmake`.
 - Saved-device fallback test coverage (**TVREMOTE-8**): widget tests now cover active-device removal fallback and non-active last-used removal fallback behavior.
 - Transport abstraction follow-up (**TVREMOTE-52**, **TVREMOTE-53**): added shared transport marker + required event stream contracts and wired standardized transport events across Samsung/Hisense fake+real clients.
+- Onboarding/troubleshooting guidance (**TVREMOTE-17**): pairing page now exposes a non-intrusive top-right help action (`?`) that opens permission/network and "cannot find TV" guidance, with corresponding widget coverage.
 - Layout editor SRP pass: `RemoteLayoutEditor` delegates to `RemoteLayoutEditorGridGeometry`
   (cell sizing + occupancy + validation footprints), `RemoteLayoutEditGridPainter` (grid lines),
   `RemoteLayoutEditorItemPreview` (dpad/rocker/icon tiles), and `RemoteLayoutEditorDragSession`
