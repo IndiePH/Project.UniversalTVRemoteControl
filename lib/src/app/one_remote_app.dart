@@ -4,6 +4,7 @@ import 'package:one_remote/src/features/remote_control/application/device_discov
 import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense/real_hisense_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/lg/real_lg_pairing_key_store.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/real_lg_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung_adapter.dart';
@@ -105,6 +106,7 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
     return LgAdapter(
       transportClient: RealLgTransportClient(
         hostResolver: _resolveLgHost,
+        keyStore: RealLgPairingKeyStore(),
       ),
     );
   }

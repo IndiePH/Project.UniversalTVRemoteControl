@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:one_remote/src/features/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/adapter_device_info_log_gate.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_exceptions.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_key_mapper.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_message_builder.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/lg/real_lg_pairing_key_store.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 
@@ -16,10 +18,14 @@ import 'package:one_remote/src/features/remote_control/data/adapters/transport_e
 /// Connection flow:
 ///   1. Tries wss://host:3001 (webOS 22+), falls back to ws://host:3000 (webOS 2–6).
 ///   2. Sends the 39-permission registration manifest immediately after connecting.
-///   3. For first-time pairing: TV shows on-screen prompt; [requestClientKey] waits
-///      for the user to approve and returns the issued client-key.
-///   4. For reconnection with a stored key: manifest includes the key, TV registers
-///      silently, [watchRegistrationState] emits [LgRegistrationState.registered].
+///      If a client-key is stored in [keyStore], it is included for silent reconnect.
+///   3. First-time pairing: TV shows on-screen prompt; [requestClientKey] waits
+///      for the user to approve and returns the issued client-key, which is then
+///      persisted via [keyStore].
+///   4. Reconnection with stored key: manifest includes the key; [connect] awaits
+///      the registration confirmation before returning. If the key is stale the TV
+///      returns returnValue:false — the store is cleared and
+///      [LgPairingSessionExpiredException] is thrown so the caller can re-pair.
 ///
 /// Dpad and back commands route via a separate pointer input socket obtained from
 /// the TV. If the pointer socket is unavailable (webOS 2.x firmware), those
@@ -30,23 +36,34 @@ class RealLgTransportClient
   RealLgTransportClient({
     required String Function(String deviceId) hostResolver,
     this.connectTimeout = const Duration(seconds: 8),
-  }) : _hostResolver = hostResolver;
+    RealLgPairingKeyStore? keyStore,
+  }) : _hostResolver = hostResolver,
+       _keyStore = keyStore;
 
   final String Function(String deviceId) _hostResolver;
   final Duration connectTimeout;
+  final RealLgPairingKeyStore? _keyStore;
 
   final Map<String, WebSocket> _sockets = {};
   final Map<String, StreamSubscription<dynamic>> _subs = {};
   final Map<String, WebSocket> _pointerSockets = {};
   final Map<String, StreamSubscription<dynamic>> _pointerSubs = {};
 
-  // Resolved by the message handler when the TV issues a client-key.
+  // Resolved by message handler when TV issues a client-key on first-time pairing.
   final Map<String, Completer<String>> _pairingCompleters = {};
 
-  // Resolved by the message handler when a specific request ID gets a response.
+  // Resolved (or failed) by message handler when registration response arrives.
+  // Only populated when connect() is called with a stored key (reconnect flow).
+  final Map<String, Completer<void>> _registrationCompleters = {};
+
+  // Resolved by message handler for specific SSAP request IDs (e.g. pointer socket URL).
   final Map<String, Completer<Map<String, dynamic>?>> _pendingRequests = {};
 
   final Map<String, StreamController<LgRegistrationState>> _registrationControllers = {};
+
+  // Tracks whether the current connect attempt included a stored key, so the
+  // message handler can distinguish a stale-key rejection from a fresh rejection.
+  final Map<String, bool> _hadStoredKey = {};
 
   // Per-device mute state tracked in memory since SSAP setMute requires the target value.
   final Map<String, bool> _muteStates = {};
@@ -64,6 +81,10 @@ class RealLgTransportClient
 
     _emitRegistrationState(deviceId, LgRegistrationState.connecting);
 
+    final storedKey = await _keyStore?.keyForHost(host);
+    final hasStoredKey = storedKey != null && storedKey.isNotEmpty;
+    _hadStoredKey[deviceId] = hasStoredKey;
+
     final uris = [
       Uri.parse('wss://$host:3001'),
       Uri.parse('ws://$host:3000'),
@@ -71,25 +92,49 @@ class RealLgTransportClient
 
     Object? lastError;
     for (final uri in uris) {
+      // Create a fresh registration completer for each URI attempt when
+      // reconnecting with a stored key so connect() can await confirmation.
+      Completer<void>? registrationCompleter;
+      if (hasStoredKey) {
+        registrationCompleter = Completer<void>();
+        _registrationCompleters[deviceId] = registrationCompleter;
+      }
+
       try {
         final socket = await _openSocket(uri).timeout(connectTimeout);
         _bindSocket(deviceId: deviceId, socket: socket);
-        socket.add(jsonEncode(buildLgRegisterPayload()));
+        socket.add(jsonEncode(buildLgRegisterPayload(clientKey: storedKey)));
         emitTransportEvent(TransportEvent(
           transport: 'lg',
           deviceId: deviceId,
           type: 'connected',
           message: '$host:${uri.port}',
         ));
+
+        if (registrationCompleter != null) {
+          await registrationCompleter.future.timeout(
+            connectTimeout,
+            onTimeout: () => throw StateError(
+              'LG registration timed out for $deviceId at ${uri.host}:${uri.port}.',
+            ),
+          );
+        }
+
+        _registrationCompleters.remove(deviceId);
         return;
       } on Object catch (e) {
         lastError = e;
+        _registrationCompleters.remove(deviceId);
         await _resetConnection(deviceId);
+        // Propagate session-expired immediately — retrying with a stale key
+        // on a different port would just fail again.
+        if (e is LgPairingSessionExpiredException) rethrow;
       }
     }
 
     _emitRegistrationState(deviceId, LgRegistrationState.failed);
-    throw StateError('Failed to connect to LG TV at $host. Last error: $lastError');
+    throw lastError ??
+        StateError('Failed to connect to LG TV at $host.');
   }
 
   @override
@@ -137,11 +182,18 @@ class RealLgTransportClient
 
   @override
   Future<void> sendText({required String deviceId, required String text}) async {
-    await _sendSsap(
+    final response = await _sendSsapWithResponse(
       deviceId: deviceId,
       uri: 'ssap://com.webos.service.ime/insertText',
       payload: {'text': text, 'replace': 0},
     );
+    final returnValue =
+        (response?['payload'] as Map<String, dynamic>?)?['returnValue'] as bool?;
+    if (returnValue == false) {
+      throw TextInputCompatibilityException(
+        'LG IME text injection rejected — ensure a text field is focused on the TV.',
+      );
+    }
   }
 
   @override
@@ -181,6 +233,31 @@ class RealLgTransportClient
       type: 'ssap_sent',
       message: uri,
     ));
+  }
+
+  Future<Map<String, dynamic>?> _sendSsapWithResponse({
+    required String deviceId,
+    required String uri,
+    required Map<String, Object?> payload,
+  }) async {
+    if (_sockets[deviceId]?.readyState != WebSocket.open) {
+      await connect(deviceId: deviceId);
+    }
+    final socket = _sockets[deviceId];
+    if (socket == null || socket.readyState != WebSocket.open) {
+      throw StateError('LG socket unavailable for $deviceId after connect.');
+    }
+    final id = 'req_${_reqCounter++}';
+    final completer = Completer<Map<String, dynamic>?>();
+    _pendingRequests[id] = completer;
+    socket.add(jsonEncode(buildLgSsapRequest(requestId: id, uri: uri, payload: payload)));
+    emitTransportEvent(TransportEvent(
+      transport: 'lg',
+      deviceId: deviceId,
+      type: 'ssap_sent',
+      message: uri,
+    ));
+    return completer.future.timeout(connectTimeout);
   }
 
   // ---------------------------------------------------------------------------
@@ -298,20 +375,42 @@ class RealLgTransportClient
     final returnValue = payload?['returnValue'] as bool?;
     final clientKey = payload?['client-key'] as String?;
 
-    // Resolve any pending request waiting on this response ID.
+    // Resolve any pending SSAP request waiting on this response ID.
     if (id != null) _pendingRequests.remove(id)?.complete(decoded);
 
     if (type == 'registered') {
       if (returnValue == true) {
         _emitRegistrationState(deviceId, LgRegistrationState.registered);
+        _registrationCompleters.remove(deviceId)?.complete();
+
         if (clientKey != null && clientKey.isNotEmpty) {
+          // New client-key issued — persist it for future reconnects.
+          final host = _hostResolver(deviceId).trim();
+          final storeFuture = _keyStore?.storeKeyForHost(host, clientKey);
+          if (storeFuture != null) unawaited(storeFuture);
           _pairingCompleters[deviceId]?.complete(clientKey);
         }
       } else {
+        // returnValue == false: stale key or fresh rejection.
         _emitRegistrationState(deviceId, LgRegistrationState.failed);
-        _pairingCompleters[deviceId]?.completeError(
-          LgPairingRejectedException('LG TV rejected the pairing request.'),
-        );
+
+        if (_hadStoredKey[deviceId] == true) {
+          // Stale stored key — clear it so the next connect triggers re-pairing.
+          final host = _hostResolver(deviceId).trim();
+          final clearFuture = _keyStore?.clearKeyForHost(host);
+          if (clearFuture != null) unawaited(clearFuture);
+
+          final error = LgPairingSessionExpiredException(
+            'LG TV rejected the stored client-key for $deviceId. Re-pairing required.',
+          );
+          _registrationCompleters.remove(deviceId)?.completeError(error);
+          _pairingCompleters[deviceId]?.completeError(error);
+        } else {
+          final error =
+              LgPairingRejectedException('LG TV rejected the pairing request.');
+          _registrationCompleters.remove(deviceId)?.completeError(error);
+          _pairingCompleters[deviceId]?.completeError(error);
+        }
       }
     }
   }
@@ -335,6 +434,7 @@ class RealLgTransportClient
     _subs.remove(deviceId);
     _pointerSubs[deviceId]?.cancel();
     _pointerSubs.remove(deviceId);
+    _hadStoredKey.remove(deviceId);
     _muteStates.remove(deviceId);
     _logGate.reset(deviceId);
     try {

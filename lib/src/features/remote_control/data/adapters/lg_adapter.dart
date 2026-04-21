@@ -9,6 +9,11 @@ import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.da
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 class LgAdapter implements TvBrandAdapter {
+  static const bool _lgTextInputEnabled = bool.fromEnvironment(
+    'LG_ENABLE_TEXT_INPUT',
+    defaultValue: false,
+  );
+
   LgAdapter({
     LgTransportClient? transportClient,
     CommandKeyMap? keyMap,
@@ -19,7 +24,7 @@ class LgAdapter implements TvBrandAdapter {
   TvBrand get brand => TvBrand.lg;
 
   @override
-  bool get supportsTextInput => false;
+  bool get supportsTextInput => _lgTextInputEnabled;
 
   @override
   Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
@@ -29,11 +34,8 @@ class LgAdapter implements TvBrandAdapter {
 
   @override
   Future<void> preparePairing({required TvDevice device}) async {
-    // Register the key completer before connect so it is in place when
-    // the TV sends the client-key response after the user approves the prompt.
-    final clientKeyFuture = _transportClient.requestClientKey(deviceId: device.id);
     await _transportClient.connect(deviceId: device.id);
-    await clientKeyFuture; // key storage wired in T-2.2
+    await _transportClient.requestClientKey(deviceId: device.id);
   }
 
   @override
