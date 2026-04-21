@@ -116,6 +116,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [ ] first-time approval
     - [ ] previously approved token reuse
     - [ ] rejection/timeout recovery UX
+    - [x] Added Samsung physical validation matrix scaffold (`references/samsung_validation_matrix.md`) for model/firmware test runs (`TVREMOTE-49`)
   - [ ] Re-validate **Hisense discovery on Android APK** after multicast-lock change (empty scan vs AP isolation vs SSDP headers); consider optional fallback discovery (e.g. guided manual IP / `TV_HOST_OVERRIDE`, future port `36669` sweep) if SSDP still misses hardware
 - [ ] Milestone 3 / Task 3.1:
   - [ ] Continue usability polish for edit mode visual affordances and small-screen readability
@@ -286,8 +287,8 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] Keep perceived latency low with responsive button states.
 
 ### Task 3.3 - Improve onboarding and fallback guidance
-- [ ] Add clear permission and network guidance.
-- [ ] Add "cannot find TV" troubleshooting path.
+- [x] Add clear permission and network guidance.
+- [x] Add "cannot find TV" troubleshooting path.
 - [ ] Add protocol-specific help text for pairing issues.
 
 ## Cross-Cutting Tasks (Do in parallel)

@@ -262,6 +262,21 @@ class _PairingPageState extends State<PairingPage> {
     await _pairSelectedDevice(device: device, manualIpToSave: ip);
   }
 
+  void _showPairingHelp() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: const PairingTroubleshootingGuidanceSection(),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -270,6 +285,15 @@ class _PairingPageState extends State<PairingPage> {
         appBar: AppBar(
           title: const Text('Pair TV'),
           automaticallyImplyLeading: !_viewState.isPairingInProgress,
+          actions: [
+            IconButton(
+              tooltip: 'Pairing help',
+              icon: const Icon(Icons.help_outline),
+              onPressed: _viewState.isPairingInProgress
+                  ? null
+                  : _showPairingHelp,
+            ),
+          ],
         ),
         body: Stack(
           children: [

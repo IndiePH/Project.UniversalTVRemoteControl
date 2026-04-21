@@ -78,6 +78,33 @@ void main() {
     expect(find.text('Sent: power'), findsOneWidget);
   });
 
+  testWidgets('opens onboarding and troubleshooting guidance from help action', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PairingPage(
+          commandService: InMemoryRemoteCommandService(),
+          discoveryService: _EmptyDiscoveryService(),
+          deviceRepository: InMemoryDeviceRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.help_outline), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.help_outline));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Need help finding your TV?'), findsOneWidget);
+    expect(find.text('Permission and network checklist'), findsOneWidget);
+    expect(find.text('Cannot find TV? Try this'), findsOneWidget);
+
+    await tester.tap(find.text('Cannot find TV? Try this'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Use Add Manually with the TV IP address.'), findsOneWidget);
+  });
+
   testWidgets(
     'removes active saved device after REMOVE confirmation and falls back last-used',
     (
@@ -247,4 +274,9 @@ class _StaticDiscoveryService implements DeviceDiscoveryService {
 
   @override
   Future<List<TvDevice>> discoverDevices() async => _devices;
+}
+
+class _EmptyDiscoveryService implements DeviceDiscoveryService {
+  @override
+  Future<List<TvDevice>> discoverDevices() async => const <TvDevice>[];
 }

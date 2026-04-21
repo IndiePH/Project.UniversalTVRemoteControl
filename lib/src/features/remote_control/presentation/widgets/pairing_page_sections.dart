@@ -177,6 +177,53 @@ class PairingDiscoveryList extends StatelessWidget {
   }
 }
 
+/// Onboarding and fallback hints for discovery/pairing failures.
+class PairingTroubleshootingGuidanceSection extends StatelessWidget {
+  const PairingTroubleshootingGuidanceSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Need help finding your TV?',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: ExpansionTile(
+            title: const Text('Permission and network checklist'),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            expandedCrossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                '- Keep phone and TV on the same Wi-Fi network.\n'
+                '- Allow local network/Wi-Fi permissions when prompted.\n'
+                '- Disable client/AP isolation on your router if enabled.',
+              ),
+            ],
+          ),
+        ),
+        Card(
+          child: ExpansionTile(
+            title: const Text('Cannot find TV? Try this'),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            expandedCrossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                '- Run Scan for TVs again and wait a few seconds.\n'
+                '- Use Add Manually with the TV IP address.\n'
+                '- Restart TV network, then re-open the pairing screen.',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Manual brand/IP pairing form with recent IP shortcuts.
 class PairingManualAddSection extends StatelessWidget {
   const PairingManualAddSection({
