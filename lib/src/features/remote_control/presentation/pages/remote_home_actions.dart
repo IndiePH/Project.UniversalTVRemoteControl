@@ -51,6 +51,7 @@ final class RemoteHomeActions {
     required bool compileTimeUseFakeTransports,
     required Future<void> Function(bool value)? onUseFakeTransportsChanged,
     required Future<void> Function() onCopySamsungTextLogs,
+    required Future<void> Function() onCopyRuntimeFlagsTemplate,
   }) {
     showModalBottomSheet<void>(
       context: context,
@@ -73,6 +74,10 @@ final class RemoteHomeActions {
               onCopySamsungTextLogs: () {
                 Navigator.pop(sheetContext);
                 unawaited(onCopySamsungTextLogs());
+              },
+              onCopyRuntimeFlagsTemplate: () {
+                Navigator.pop(sheetContext);
+                unawaited(onCopyRuntimeFlagsTemplate());
               },
             );
           },

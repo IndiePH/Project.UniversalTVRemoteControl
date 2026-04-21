@@ -6,6 +6,7 @@ import 'package:one_remote/src/features/remote_control/application/device_reposi
 import 'package:one_remote/src/features/remote_control/application/layout_repository.dart';
 import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/application/transport_log_reader.dart';
+import 'package:one_remote/src/features/remote_control/debug/runtime_flags_template_debug.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/layout_position.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/remote_command.dart';
@@ -108,11 +109,11 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     _remoteTextReadySub = widget.commandService
         .watchRemoteTextInputReady(device: device)
         .listen((ready) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _remoteTextInputReady = ready);
-    });
+          if (!mounted) {
+            return;
+          }
+          setState(() => _remoteTextInputReady = ready);
+        });
   }
 
   Future<void> _loadInitialDevice() async {
@@ -288,7 +289,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     final local = timestamp.toLocal();
     final date =
         '${local.year}-${formatTwoDigits(local.month)}-${formatTwoDigits(local.day)}';
-    final time = '${formatTwoDigits(local.hour)}:${formatTwoDigits(local.minute)}';
+    final time =
+        '${formatTwoDigits(local.hour)}:${formatTwoDigits(local.minute)}';
     return '$date $time';
   }
 
@@ -315,6 +317,17 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     _showToast('Copied Samsung transport log to clipboard.');
   }
 
+  Future<void> _copyRuntimeFlagsTemplate() async {
+    await RuntimeFlagsTemplateDebug.copyRuntimeFlagsTemplate(
+      useFakeTransports: widget.useFakeTransports,
+      activeDevice: _activeDevice,
+    );
+    if (!mounted) {
+      return;
+    }
+    _showToast('Copied runtime flags template to clipboard.');
+  }
+
   void _showTransportDebugSheet() {
     RemoteHomeActions.showTransportDebugSheet(
       context: context,
@@ -323,6 +336,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       compileTimeUseFakeTransports: widget.compileTimeUseFakeTransports,
       onUseFakeTransportsChanged: widget.onUseFakeTransportsChanged,
       onCopySamsungTextLogs: _copyLatestSamsungTextLog,
+      onCopyRuntimeFlagsTemplate: _copyRuntimeFlagsTemplate,
     );
   }
 
@@ -449,9 +463,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   }) {
     setState(() => _status = _keyboardUnavailableMessage);
     _showToast(_keyboardUnavailableMessage, isError: true);
-    debugPrint(
-      availability.toDebugLog(action: action, deviceId: device.id),
-    );
+    debugPrint(availability.toDebugLog(action: action, deviceId: device.id));
   }
 
   void _openTextEntrySheet() {
