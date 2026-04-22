@@ -9,7 +9,7 @@ import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_excep
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_key_mapper.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_message_builder.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_transport_client.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/lg/real_lg_pairing_key_store.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_pairing_key_store.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 
@@ -30,19 +30,19 @@ import 'package:one_remote/src/features/remote_control/data/adapters/transport_e
 /// Dpad and back commands route via a separate pointer input socket obtained from
 /// the TV. If the pointer socket is unavailable (webOS 2.x firmware), those
 /// commands degrade gracefully with a logged warning rather than throwing.
-class RealLgTransportClient
+class LgWebSocketTransportClient
     with TransportEventEmitterMixin
     implements LgTransportClient {
-  RealLgTransportClient({
+  LgWebSocketTransportClient({
     required String Function(String deviceId) hostResolver,
     this.connectTimeout = const Duration(seconds: 8),
-    RealLgPairingKeyStore? keyStore,
+    LgPairingKeyStore? keyStore,
   }) : _hostResolver = hostResolver,
        _keyStore = keyStore;
 
   final String Function(String deviceId) _hostResolver;
   final Duration connectTimeout;
-  final RealLgPairingKeyStore? _keyStore;
+  final LgPairingKeyStore? _keyStore;
 
   final Map<String, WebSocket> _sockets = {};
   final Map<String, StreamSubscription<dynamic>> _subs = {};

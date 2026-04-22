@@ -1,6 +1,5 @@
 import 'package:one_remote/src/features/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/command_key_map.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/samsung/fake_samsung_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_key_mapper.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_client.dart';
@@ -15,9 +14,9 @@ class SamsungAdapter implements TvBrandAdapter {
   );
 
   SamsungAdapter({
-    SamsungTransportClient? transportClient,
+    required SamsungTransportClient transportClient,
     CommandKeyMap? keyMapper,
-  }) : _transportClient = transportClient ?? FakeSamsungTransportClient(),
+  }) : _transportClient = transportClient,
        _keyMapper = keyMapper ?? const SamsungKeyMapper();
 
   @override

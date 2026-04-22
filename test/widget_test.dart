@@ -13,6 +13,8 @@ import 'package:one_remote/src/features/remote_control/application/layout_reposi
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung_adapter.dart';
+import 'package:one_remote/src/features/remote_control/debug/fake_lg_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/debug/fake_samsung_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/data/in_memory_device_repository.dart';
 import 'package:one_remote/src/features/remote_control/data/in_memory_remote_command_service.dart';
@@ -44,7 +46,11 @@ void main() {
     WidgetTester tester,
   ) async {
     final commandService = BrandRoutedRemoteCommandService(
-      adapters: [SamsungAdapter(), LgAdapter(), HisenseAdapter()],
+      adapters: [
+        SamsungAdapter(transportClient: FakeSamsungTransportClient()),
+        LgAdapter(transportClient: FakeLgTransportClient()),
+        HisenseAdapter(),
+      ],
     );
 
     await tester.pumpWidget(

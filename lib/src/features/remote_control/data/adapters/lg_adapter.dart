@@ -1,6 +1,5 @@
 import 'package:one_remote/src/features/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/command_key_map.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/lg/fake_lg_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_key_mapper.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/supported_remote_commands.dart';
@@ -15,9 +14,9 @@ class LgAdapter implements TvBrandAdapter {
   );
 
   LgAdapter({
-    LgTransportClient? transportClient,
+    required LgTransportClient transportClient,
     CommandKeyMap? keyMap,
-  }) : _transportClient = transportClient ?? FakeLgTransportClient(),
+  }) : _transportClient = transportClient,
        _keyMap = keyMap ?? const LgKeyMapper();
 
   @override

@@ -6,9 +6,9 @@ import 'package:one_remote/src/features/remote_control/data/adapters/samsung/sam
 /// Debug logcat + optional on-device file logging for Samsung WebSocket frames.
 ///
 /// Controlled by `--dart-define=SAMSUNG_TRANSPORT_DEBUG=true` (defaults on in
-/// this codebase for APK diagnostics; see [RealSamsungTransportClient]).
-class RealSamsungTransportLogging {
-  RealSamsungTransportLogging({
+/// this codebase for APK diagnostics; see [SamsungWebSocketTransportClient]).
+class SamsungTransportLogging {
+  SamsungTransportLogging({
     this.enabled = const bool.fromEnvironment(
       'SAMSUNG_TRANSPORT_DEBUG',
       defaultValue: true,

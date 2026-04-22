@@ -5,10 +5,10 @@ import 'dart:io';
 import 'package:one_remote/src/features/remote_control/data/adapters/adapter_device_info_log_gate.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/transport_event_emitter_mixin.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_pairing_token_store.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_remote_text_session.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_transport_logging.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_ws_handshake.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_pairing_token_store.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_remote_text_session.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_logging.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_ws_handshake.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_tls_trust_store.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_client.dart';
@@ -21,10 +21,10 @@ import 'package:one_remote/src/features/remote_control/data/adapters/samsung/sam
 /// - Device host lookup is delegated to [hostResolver] until repository models
 ///   carry explicit network endpoint metadata.
 ///
-/// Implementation is split across focused types: [RealSamsungPairingTokenStore],
-/// [RealSamsungRemoteTextSession], [RealSamsungTransportLogging], and
-/// [RealSamsungWsHandshake].
-class RealSamsungTransportClient
+/// Implementation is split across focused types: [SamsungPairingTokenStore],
+/// [SamsungRemoteTextSession], [SamsungTransportLogging], and
+/// [SamsungWsHandshake].
+class SamsungWebSocketTransportClient
     with TransportEventEmitterMixin
     implements SamsungTransportClient {
   static const bool _sendInputEndAfterEachText = bool.fromEnvironment(
@@ -32,28 +32,28 @@ class RealSamsungTransportClient
     defaultValue: false,
   );
 
-  RealSamsungTransportClient({
+  SamsungWebSocketTransportClient({
     required String Function(String deviceId) hostResolver,
     this.clientName = 'OneRemote',
     this.connectTimeout = const Duration(seconds: 8),
     this.handshakeTimeout = const Duration(seconds: 30),
     this.keyDelay = const Duration(milliseconds: 200),
-    RealSamsungTransportLogging? transportLogging,
-    RealSamsungPairingTokenStore? pairingTokenStore,
-    RealSamsungRemoteTextSession? remoteTextSession,
+    SamsungTransportLogging? transportLogging,
+    SamsungPairingTokenStore? pairingTokenStore,
+    SamsungRemoteTextSession? remoteTextSession,
   }) : _hostResolver = hostResolver,
-       _logging = transportLogging ?? RealSamsungTransportLogging(),
-       _pairing = pairingTokenStore ?? RealSamsungPairingTokenStore(),
-       _text = remoteTextSession ?? RealSamsungRemoteTextSession();
+       _logging = transportLogging ?? SamsungTransportLogging(),
+       _pairing = pairingTokenStore ?? SamsungPairingTokenStore(),
+       _text = remoteTextSession ?? SamsungRemoteTextSession();
 
   final String Function(String deviceId) _hostResolver;
   final String clientName;
   final Duration connectTimeout;
   final Duration handshakeTimeout;
   final Duration keyDelay;
-  final RealSamsungTransportLogging _logging;
-  final RealSamsungPairingTokenStore _pairing;
-  final RealSamsungRemoteTextSession _text;
+  final SamsungTransportLogging _logging;
+  final SamsungPairingTokenStore _pairing;
+  final SamsungRemoteTextSession _text;
 
   final Map<String, WebSocket> _socketsByDeviceId = <String, WebSocket>{};
   final Map<String, StreamSubscription<dynamic>> _subscriptionsByDeviceId =
@@ -396,7 +396,7 @@ class RealSamsungTransportClient
           decoded,
           onImeDebugLog: _logging.enabled ? _logging.logDebug : null,
         );
-        RealSamsungWsHandshake.tryComplete(
+        SamsungWsHandshake.tryComplete(
           decoded: decoded,
           handshakeCompleter: handshakeCompleter,
         );

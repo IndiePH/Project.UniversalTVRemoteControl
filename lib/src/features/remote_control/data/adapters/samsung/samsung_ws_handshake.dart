@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
 
 /// Completes a connect-time [Completer] when the TV emits channel-ready events.
-abstract final class RealSamsungWsHandshake {
+abstract final class SamsungWsHandshake {
   static void tryComplete({
     required Map<String, dynamic>? decoded,
     required Completer<void>? handshakeCompleter,

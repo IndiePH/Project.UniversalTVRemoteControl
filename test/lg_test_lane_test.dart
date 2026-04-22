@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/src/features/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/src/features/remote_control/application/tv_brand_adapter.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/lg/fake_lg_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_exceptions.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg_adapter.dart';
@@ -89,7 +89,7 @@ void main() {
 
   test('LG lane: sendText when supportsTextInput=false returns unsupported', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter()],
+      adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
     );
     final result = await service.sendText(device: lgDevice, text: 'hello');
     expect(result.isSuccess, isFalse);
