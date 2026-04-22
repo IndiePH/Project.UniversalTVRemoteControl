@@ -10,6 +10,12 @@ const String lgPointerPrefix = 'POINTER:';
 /// Format: `lgLaunchPrefix + appId` — e.g. `'LAUNCH:netflix'`.
 const String lgLaunchPrefix = 'LAUNCH:';
 
+/// Sentinel for the power toggle — transport resolves to turnOn or turnOff based on tracked state.
+const String lgPowerToggleKey = 'TOGGLE:POWER';
+
+/// Sentinel for the play/pause toggle — transport resolves to play or pause based on tracked state.
+const String lgPlayPauseToggleKey = 'TOGGLE:PLAY_PAUSE';
+
 class LgKeyMapper extends CommandKeyMap {
   const LgKeyMapper();
 
@@ -21,14 +27,14 @@ class LgKeyMapper extends CommandKeyMap {
 }
 
 const Map<RemoteCommand, String> _kLgCommandMap = {
-  RemoteCommand.power:       'ssap://system/turnOff',
+  RemoteCommand.power:       lgPowerToggleKey,
   RemoteCommand.volumeUp:    'ssap://audio/volumeUp',
   RemoteCommand.volumeDown:  'ssap://audio/volumeDown',
   RemoteCommand.mute:        'ssap://audio/setMute',
   RemoteCommand.channelUp:   'ssap://tv/channelUp',
   RemoteCommand.channelDown: 'ssap://tv/channelDown',
   RemoteCommand.home:        '${lgPointerPrefix}HOME',
-  RemoteCommand.playPause:   'ssap://media.controls/play',
+  RemoteCommand.playPause:   lgPlayPauseToggleKey,
   RemoteCommand.input:       'ssap://tv/switchInput',
   RemoteCommand.netflix:     '${lgLaunchPrefix}netflix',
   RemoteCommand.primeVideo:  '${lgLaunchPrefix}amazon',

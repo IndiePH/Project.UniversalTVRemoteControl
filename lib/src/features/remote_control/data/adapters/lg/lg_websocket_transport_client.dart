@@ -68,6 +68,12 @@ class LgWebSocketTransportClient
   // Per-device mute state tracked in memory since SSAP setMute requires the target value.
   final Map<String, bool> _muteStates = {};
 
+  // Per-device power state — defaults to true (on) since a WebSocket connection implies TV is on.
+  final Map<String, bool> _powerStates = {};
+
+  // Per-device play state — defaults to true (playing) on first press.
+  final Map<String, bool> _playingStates = {};
+
   final AdapterDeviceInfoLogGate _logGate = AdapterDeviceInfoLogGate();
   int _reqCounter = 0;
 
@@ -178,6 +184,22 @@ class LgWebSocketTransportClient
       final newMute = !(_muteStates[deviceId] ?? false);
       _muteStates[deviceId] = newMute;
       await _sendSsap(deviceId: deviceId, uri: keyCode, payload: {'mute': newMute});
+    } else if (keyCode == lgPowerToggleKey) {
+      final newPower = !(_powerStates[deviceId] ?? true);
+      _powerStates[deviceId] = newPower;
+      await _sendSsap(
+        deviceId: deviceId,
+        uri: newPower ? 'ssap://system/turnOn' : 'ssap://system/turnOff',
+        payload: const {},
+      );
+    } else if (keyCode == lgPlayPauseToggleKey) {
+      final nowPlaying = !(_playingStates[deviceId] ?? true);
+      _playingStates[deviceId] = nowPlaying;
+      await _sendSsap(
+        deviceId: deviceId,
+        uri: nowPlaying ? 'ssap://media.controls/play' : 'ssap://media.controls/pause',
+        payload: const {},
+      );
     } else {
       await _sendSsap(deviceId: deviceId, uri: keyCode, payload: const {});
     }
@@ -463,6 +485,8 @@ class LgWebSocketTransportClient
     _pointerSubs.remove(deviceId);
     _hadStoredKey.remove(deviceId);
     _muteStates.remove(deviceId);
+    _powerStates.remove(deviceId);
+    _playingStates.remove(deviceId);
     _logGate.reset(deviceId);
     try {
       await _sockets.remove(deviceId)?.close();

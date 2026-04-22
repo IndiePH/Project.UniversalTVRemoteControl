@@ -9,7 +9,7 @@ void main() {
   test('LgKeyMapper: SSAP commands return correct URIs', () {
     expect(mapper.primaryKeyCodeFor(RemoteCommand.volumeUp), 'ssap://audio/volumeUp');
     expect(mapper.primaryKeyCodeFor(RemoteCommand.volumeDown), 'ssap://audio/volumeDown');
-    expect(mapper.primaryKeyCodeFor(RemoteCommand.power), 'ssap://system/turnOff');
+    expect(mapper.primaryKeyCodeFor(RemoteCommand.power), lgPowerToggleKey);
     expect(mapper.primaryKeyCodeFor(RemoteCommand.channelUp), 'ssap://tv/channelUp');
     expect(mapper.primaryKeyCodeFor(RemoteCommand.channelDown), 'ssap://tv/channelDown');
   });
@@ -22,7 +22,11 @@ void main() {
     expect(mapper.primaryKeyCodeFor(RemoteCommand.dpadOk), '${lgPointerPrefix}ENTER');
     expect(mapper.primaryKeyCodeFor(RemoteCommand.back), '${lgPointerPrefix}BACK');
     expect(mapper.primaryKeyCodeFor(RemoteCommand.home), '${lgPointerPrefix}HOME');
-    expect(mapper.primaryKeyCodeFor(RemoteCommand.playPause), '${lgPointerPrefix}PLAY');
+  });
+
+  test('LgKeyMapper: power and playPause return toggle sentinels', () {
+    expect(mapper.primaryKeyCodeFor(RemoteCommand.power), lgPowerToggleKey);
+    expect(mapper.primaryKeyCodeFor(RemoteCommand.playPause), lgPlayPauseToggleKey);
   });
 
   test('LgKeyMapper: app launches return LAUNCH: sentinel with app ID', () {
