@@ -16,7 +16,7 @@ import 'package:one_remote/src/features/remote_control/debug/fake_samsung_transp
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
 import 'package:one_remote/src/features/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/data/fake_device_discovery_service.dart';
-import 'package:one_remote/src/features/remote_control/data/in_memory_device_repository.dart';
+import 'package:one_remote/src/features/remote_control/data/shared_prefs_device_repository.dart';
 import 'package:one_remote/src/features/remote_control/data/shared_prefs_layout_repository.dart';
 import 'package:one_remote/src/features/remote_control/data/ssdp_device_discovery_service.dart';
 import 'package:one_remote/src/features/remote_control/presentation/pages/remote_home_page.dart';
@@ -36,7 +36,7 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
   );
   static const String _tvHostOverride = String.fromEnvironment('TV_HOST_OVERRIDE');
 
-  late final InMemoryDeviceRepository _deviceRepository = InMemoryDeviceRepository();
+  late final SharedPrefsDeviceRepository _deviceRepository = SharedPrefsDeviceRepository();
   late final SharedPrefsLayoutRepository _layoutRepository = SharedPrefsLayoutRepository();
 
   bool _useFakeTransports = _compileUseFakeTransports;

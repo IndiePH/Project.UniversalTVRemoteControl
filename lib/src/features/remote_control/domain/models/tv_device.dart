@@ -13,4 +13,25 @@ class TvDevice {
   final String displayName;
   final TvBrand brand;
   final Set<DeviceCapability> capabilities;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'displayName': displayName,
+    'brand': brand.name,
+    'capabilities': capabilities.map((c) => c.name).toList(),
+  };
+
+  static TvDevice? fromJson(Map<String, dynamic> json) {
+    try {
+      final id = json['id'] as String;
+      final displayName = json['displayName'] as String;
+      final brand = TvBrand.values.firstWhere((b) => b.name == json['brand']);
+      final capabilities = (json['capabilities'] as List<dynamic>)
+          .map((c) => DeviceCapability.values.firstWhere((d) => d.name == c))
+          .toSet();
+      return TvDevice(id: id, displayName: displayName, brand: brand, capabilities: capabilities);
+    } catch (_) {
+      return null;
+    }
+  }
 }
