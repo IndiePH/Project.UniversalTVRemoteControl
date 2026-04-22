@@ -79,6 +79,11 @@ class FakeLgTransportClient
     log('LG fake transport disconnected: $deviceId', name: 'lg_transport');
   }
 
+  @override
+  Future<void> clearPairing({required String deviceId}) async {
+    await disconnect(deviceId: deviceId);
+  }
+
   Future<void> _ensureConnected(String deviceId) async {
     if (!_connected.contains(deviceId)) await connect(deviceId: deviceId);
   }

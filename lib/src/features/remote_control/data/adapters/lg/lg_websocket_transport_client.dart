@@ -243,6 +243,18 @@ class LgWebSocketTransportClient
     _emitRegistrationState(deviceId, LgRegistrationState.failed);
   }
 
+  @override
+  Future<void> clearPairing({required String deviceId}) async {
+    final host = _hostResolver(deviceId).trim();
+    await _resetConnection(deviceId);
+    _emitRegistrationState(deviceId, LgRegistrationState.failed);
+    if (host.isNotEmpty) {
+      final clearFuture = _keyStore?.clearKeyForHost(host);
+      if (clearFuture != null) await clearFuture;
+    }
+    _pairingCompleters.remove(deviceId);
+  }
+
   // ---------------------------------------------------------------------------
   // SSAP
   // ---------------------------------------------------------------------------

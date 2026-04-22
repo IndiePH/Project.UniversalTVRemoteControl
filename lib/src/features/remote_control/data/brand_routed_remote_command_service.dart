@@ -17,6 +17,11 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
   final Map<TvBrand, TvBrandAdapter> _adapters;
 
   @override
+  Future<void> unpairDevice({required TvDevice device}) async {
+    await _adapterFor(device.brand)?.unpairDevice(device: device);
+  }
+
+  @override
   Future<CommandDispatchResult> preparePairing({
     required TvDevice device,
   }) async {

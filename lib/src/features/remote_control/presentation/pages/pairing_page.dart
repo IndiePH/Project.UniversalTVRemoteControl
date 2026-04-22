@@ -243,6 +243,7 @@ class _PairingPageState extends State<PairingPage> {
       }
     }
 
+    await widget.commandService.unpairDevice(device: device);
     await widget.deviceRepository.removeSavedDevice(device.id);
     await _loadPairingMetadata();
     if (!mounted) {

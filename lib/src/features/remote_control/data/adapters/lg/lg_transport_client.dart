@@ -27,6 +27,10 @@ abstract class LgTransportClient implements TransportClient, TransportEventSourc
 
   Future<void> disconnect({required String deviceId});
 
+  /// Disconnects, clears the stored client-key, and resets all in-memory
+  /// pairing state for [deviceId]. Call when the user explicitly removes the device.
+  Future<void> clearPairing({required String deviceId});
+
   /// Queries the TV for model name, software version, and other device metadata.
   /// Returns null if the TV does not respond or the request fails.
   Future<Map<String, dynamic>?> querySystemInfo({required String deviceId});

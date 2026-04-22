@@ -8,6 +8,9 @@ import 'package:one_remote/src/features/remote_control/domain/models/tv_device.d
 
 class InMemoryRemoteCommandService implements RemoteCommandService {
   @override
+  Future<void> unpairDevice({required TvDevice device}) async {}
+
+  @override
   Future<CommandDispatchResult> preparePairing({
     required TvDevice device,
   }) async {
