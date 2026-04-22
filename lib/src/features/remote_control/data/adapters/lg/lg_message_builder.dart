@@ -6,9 +6,10 @@ Map<String, dynamic> buildLgSsapRequest({
   required String requestId,
   required String uri,
   required Map<String, Object?> payload,
+  String type = 'request',
 }) {
   return <String, dynamic>{
-    'type': 'request',
+    'type': type,
     'id': requestId,
     'uri': uri,
     'payload': payload,
@@ -75,6 +76,7 @@ Map<String, dynamic> buildLgRegisterPayload({String? clientKey}) {
           'CONTROL_INPUT_JOYSTICK',
           'CONTROL_INPUT_KEYBOARD',
           'CONTROL_INPUT_MOUSE',
+          'CONTROL_MOUSE_AND_KEYBOARD',
           'CONTROL_INPUT_TEXT',
           'READ_APP_INFO',
           'READ_CURRENT_CHANNEL',

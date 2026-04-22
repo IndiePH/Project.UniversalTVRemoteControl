@@ -67,6 +67,12 @@ class FakeLgTransportClient
   Stream<bool> watchRemoteTextInputReady(String deviceId) => Stream<bool>.value(false);
 
   @override
+  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async {
+    await _ensureConnected(deviceId);
+    return const {'modelName': 'FAKE-LG-TV', 'version': '0.0.0', 'returnValue': true};
+  }
+
+  @override
   Future<void> disconnect({required String deviceId}) async {
     _connected.remove(deviceId);
     _emitRegistrationState(deviceId, LgRegistrationState.failed);

@@ -206,6 +206,9 @@ class _TimeoutLgTransportClient
       Stream<bool>.value(false);
 
   @override
+  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+
+  @override
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
@@ -278,6 +281,9 @@ class _ErrorOnSendLgTransportClient
       Stream<bool>.value(false);
 
   @override
+  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+
+  @override
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
@@ -313,6 +319,9 @@ class _ReconnectTrackingLgTransportClient
   @override
   Stream<bool> watchRemoteTextInputReady(String deviceId) =>
       Stream<bool>.value(false);
+
+  @override
+  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
 
   @override
   Future<void> disconnect({required String deviceId}) async {}
@@ -352,6 +361,9 @@ class _ImeRejectingLgTransportClient
       Stream<bool>.value(false);
 
   @override
+  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+
+  @override
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
@@ -387,6 +399,9 @@ class _StaleKeyLgTransportClient
   @override
   Stream<bool> watchRemoteTextInputReady(String deviceId) =>
       Stream<bool>.value(false);
+
+  @override
+  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
 
   @override
   Future<void> disconnect({required String deviceId}) async {}

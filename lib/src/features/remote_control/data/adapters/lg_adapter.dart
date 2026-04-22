@@ -16,8 +16,10 @@ class LgAdapter implements TvBrandAdapter {
   LgAdapter({
     required LgTransportClient transportClient,
     CommandKeyMap? keyMap,
+    void Function(String deviceId, Map<String, dynamic> info)? onSystemInfo,
   }) : _transportClient = transportClient,
-       _keyMap = keyMap ?? const LgKeyMapper();
+       _keyMap = keyMap ?? const LgKeyMapper(),
+       _onSystemInfo = onSystemInfo;
 
   @override
   TvBrand get brand => TvBrand.lg;
@@ -30,11 +32,16 @@ class LgAdapter implements TvBrandAdapter {
 
   final LgTransportClient _transportClient;
   final CommandKeyMap _keyMap;
+  final void Function(String deviceId, Map<String, dynamic> info)? _onSystemInfo;
 
   @override
   Future<void> preparePairing({required TvDevice device}) async {
     await _transportClient.connect(deviceId: device.id);
     await _transportClient.requestClientKey(deviceId: device.id);
+    if (_onSystemInfo != null) {
+      final info = await _transportClient.querySystemInfo(deviceId: device.id);
+      if (info != null) _onSystemInfo(device.id, info);
+    }
   }
 
   @override

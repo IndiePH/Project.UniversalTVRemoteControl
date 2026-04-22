@@ -171,7 +171,7 @@ class LgWebSocketTransportClient
       final appId = keyCode.substring(lgLaunchPrefix.length);
       await _sendSsap(
         deviceId: deviceId,
-        uri: 'ssap://com.webos.appmanager/launch',
+        uri: 'ssap://system.launcher/launch',
         payload: {'id': appId},
       );
     } else if (keyCode == 'ssap://audio/setMute') {
@@ -271,50 +271,46 @@ class LgWebSocketTransportClient
     required String deviceId,
     required String button,
   }) async {
-    try {
-      final pointerSocket = await _ensurePointerSocket(deviceId);
-      final b = button.toLowerCase();
-      pointerSocket.add('type:button\nbutton:$b\ndown:1\n\n');
-      pointerSocket.add('type:button\nbutton:$b\ndown:0\n\n');
-      emitTransportEvent(TransportEvent(
-        transport: 'lg',
-        deviceId: deviceId,
-        type: 'pointer_sent',
-        message: button,
-      ));
-    } on Object catch (e) {
-      // webOS 2.x firmware may not provide a pointer socket.
-      log(
-        'LG pointer socket unavailable for $deviceId ($e). '
-        'Dpad/back will not function on this firmware version.',
-        name: 'lg_transport',
-      );
-    }
+    final pointerSocket = await _ensurePointerSocket(deviceId);
+    pointerSocket.add("type:button\nname:$button\n\n");
+    emitTransportEvent(TransportEvent(
+      transport: 'lg',
+      deviceId: deviceId,
+      type: 'pointer_sent',
+      message: button,
+    ));
   }
 
   Future<WebSocket> _ensurePointerSocket(String deviceId) async {
     final existing = _pointerSockets[deviceId];
     if (existing != null && existing.readyState == WebSocket.open) return existing;
 
+    if (_sockets[deviceId]?.readyState != WebSocket.open) {
+      await connect(deviceId: deviceId);
+    }
+    final socket = _sockets[deviceId];
+    if (socket == null || socket.readyState != WebSocket.open) {
+      throw StateError('LG main socket unavailable for $deviceId after connect.');
+    }
+
     final id = 'ptr_${_reqCounter++}';
     final completer = Completer<Map<String, dynamic>?>();
     _pendingRequests[id] = completer;
-
-    final socket = _sockets[deviceId];
-    if (socket == null || socket.readyState != WebSocket.open) {
-      throw StateError('LG main socket not available for $deviceId.');
-    }
     socket.add(jsonEncode(buildLgSsapRequest(
       requestId: id,
       uri: 'ssap://com.webos.service.networkinput/getPointerInputSocket',
       payload: const {},
+      type: 'request',
     )));
 
     final response = await completer.future.timeout(connectTimeout);
     final socketPath =
         (response?['payload'] as Map<String, dynamic>?)?['socketPath'] as String?;
     if (socketPath == null || socketPath.isEmpty) {
-      throw StateError('LG TV did not return a pointer socket path for $deviceId.');
+      throw StateError(
+        'LG pointer socket unavailable for $deviceId. '
+        'TV response: $response',
+      );
     }
 
     final pointerSocket =
@@ -429,6 +425,20 @@ class LgWebSocketTransportClient
           _pairingCompleters[deviceId]?.completeError(error);
         }
       }
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async {
+    try {
+      final response = await _sendSsapWithResponse(
+        deviceId: deviceId,
+        uri: 'ssap://system/getSystemInfo',
+        payload: const {},
+      );
+      return response?['payload'] as Map<String, dynamic>?;
+    } catch (_) {
+      return null;
     }
   }
 

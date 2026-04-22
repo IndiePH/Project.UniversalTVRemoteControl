@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:one_remote/src/app/transport_debug_settings.dart';
 import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
@@ -105,6 +107,9 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
               hostResolver: _resolveLgHost,
               keyStore: LgPairingKeyStore(),
             ),
+      onSystemInfo: (deviceId, info) {
+        unawaited(_deviceRepository.saveDeviceSystemInfo(deviceId, info));
+      },
     );
   }
 

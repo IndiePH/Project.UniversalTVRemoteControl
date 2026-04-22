@@ -22,12 +22,12 @@ class LgKeyMapper extends CommandKeyMap {
 
 const Map<RemoteCommand, String> _kLgCommandMap = {
   RemoteCommand.power:       'ssap://system/turnOff',
-  RemoteCommand.volumeUp:    'ssap://audio/volume/up',
-  RemoteCommand.volumeDown:  'ssap://audio/volume/down',
+  RemoteCommand.volumeUp:    'ssap://audio/volumeUp',
+  RemoteCommand.volumeDown:  'ssap://audio/volumeDown',
   RemoteCommand.mute:        'ssap://audio/setMute',
   RemoteCommand.channelUp:   'ssap://tv/channelUp',
   RemoteCommand.channelDown: 'ssap://tv/channelDown',
-  RemoteCommand.home:        'ssap://system.launcher/home',
+  RemoteCommand.home:        '${lgPointerPrefix}HOME',
   RemoteCommand.playPause:   'ssap://media.controls/play',
   RemoteCommand.input:       'ssap://tv/switchInput',
   RemoteCommand.netflix:     '${lgLaunchPrefix}netflix',

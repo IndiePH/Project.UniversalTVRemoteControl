@@ -26,4 +26,8 @@ abstract class LgTransportClient implements TransportClient, TransportEventSourc
   Stream<bool> watchRemoteTextInputReady(String deviceId);
 
   Future<void> disconnect({required String deviceId});
+
+  /// Queries the TV for model name, software version, and other device metadata.
+  /// Returns null if the TV does not respond or the request fails.
+  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId});
 }
