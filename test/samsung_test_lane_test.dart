@@ -140,6 +140,9 @@ class _SubsetSamsungAdapter implements TvBrandAdapter {
   Set<RemoteCommand> get supportedCommands => const {RemoteCommand.power};
 
   @override
+  Future<void> unpairDevice({required TvDevice device}) async {}
+
+  @override
   Future<void> preparePairing({required TvDevice device}) async {}
 
   @override
@@ -173,6 +176,9 @@ class _CompatibilitySamsungAdapter implements TvBrandAdapter {
 
   @override
   Set<RemoteCommand> get supportedCommands => RemoteCommand.values.toSet();
+
+  @override
+  Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
   Future<void> preparePairing({required TvDevice device}) async {}

@@ -153,6 +153,9 @@ class _SubsetLgAdapter implements TvBrandAdapter {
   Set<RemoteCommand> get supportedCommands => const {RemoteCommand.power};
 
   @override
+  Future<void> unpairDevice({required TvDevice device}) async {}
+
+  @override
   Future<void> preparePairing({required TvDevice device}) async {}
 
   @override
@@ -209,6 +212,9 @@ class _TimeoutLgTransportClient
   Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
 
   @override
+  Future<void> clearPairing({required String deviceId}) async {}
+
+  @override
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
@@ -227,6 +233,9 @@ class _TextInputLgAdapter implements TvBrandAdapter {
 
   @override
   Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
+
+  @override
+  Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
   Future<void> preparePairing({required TvDevice device}) async {}
@@ -284,6 +293,9 @@ class _ErrorOnSendLgTransportClient
   Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
 
   @override
+  Future<void> clearPairing({required String deviceId}) async {}
+
+  @override
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
@@ -322,6 +334,9 @@ class _ReconnectTrackingLgTransportClient
 
   @override
   Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {}
 
   @override
   Future<void> disconnect({required String deviceId}) async {}
@@ -364,6 +379,9 @@ class _ImeRejectingLgTransportClient
   Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
 
   @override
+  Future<void> clearPairing({required String deviceId}) async {}
+
+  @override
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
@@ -402,6 +420,9 @@ class _StaleKeyLgTransportClient
 
   @override
   Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {}
 
   @override
   Future<void> disconnect({required String deviceId}) async {}
