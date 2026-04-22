@@ -65,6 +65,10 @@ class LgWebSocketTransportClient
   // message handler can distinguish a stale-key rejection from a fresh rejection.
   final Map<String, bool> _hadStoredKey = {};
 
+  // Devices that have completed registration (first-time pair or silent reconnect).
+  // Used by requestClientKey() to return immediately on reconnect.
+  final Set<String> _registeredDevices = {};
+
   // Per-device mute state tracked in memory since SSAP setMute requires the target value.
   final Map<String, bool> _muteStates = {};
 
@@ -151,6 +155,11 @@ class LgWebSocketTransportClient
     required String deviceId,
     Duration timeout = const Duration(seconds: 20),
   }) async {
+    if (_registeredDevices.contains(deviceId)) {
+      final host = _hostResolver(deviceId).trim();
+      final key = await _keyStore?.keyForHost(host);
+      if (key != null && key.isNotEmpty) return key;
+    }
     final completer = Completer<String>();
     _pairingCompleters[deviceId] = completer;
     try {
@@ -394,21 +403,35 @@ class LgWebSocketTransportClient
     final id = decoded['id'] as String?;
     final payload = decoded['payload'] as Map<String, dynamic>?;
     final clientKey = payload?['client-key'] as String?;
+    final returnValue = payload?['returnValue'] as bool?;
 
     // Resolve any pending SSAP request waiting on this response ID.
     if (id != null) _pendingRequests.remove(id)?.complete(decoded);
 
-    if (type == 'registered') {
+    // Registration response: TV sends type:"registered" (first-time pair or echoed key)
+    // OR type:"response" with id:"register_0" on reconnect (some firmware skips "registered").
+    // The type:"response" guard requires a stored key so intermediate ack messages sent
+    // during first-time pairing (before user approves the prompt) are not misread as rejections.
+    final isRegistrationResponse = type == 'registered' ||
+        (type == 'response' &&
+            id == 'register_0' &&
+            _hadStoredKey[deviceId] == true);
+
+    if (isRegistrationResponse) {
       if (clientKey != null && clientKey.isNotEmpty) {
-        // client-key present → TV accepted, regardless of whether returnValue is set.
+        // TV issued or echoed a client-key → success for any pairing scenario.
         _emitRegistrationState(deviceId, LgRegistrationState.registered);
         _registrationCompleters.remove(deviceId)?.complete();
         final host = _hostResolver(deviceId).trim();
         final storeFuture = _keyStore?.storeKeyForHost(host, clientKey);
         if (storeFuture != null) unawaited(storeFuture);
         _pairingCompleters[deviceId]?.complete(clientKey);
+      } else if (_hadStoredKey[deviceId] == true && returnValue != false) {
+        // Silent reconnect: TV accepted our stored key but didn't echo it back.
+        _emitRegistrationState(deviceId, LgRegistrationState.registered);
+        _registrationCompleters.remove(deviceId)?.complete();
       } else {
-        // No client-key and returnValue != true: stale key or fresh rejection.
+        // No client-key, not a valid silent reconnect → rejection.
         _emitRegistrationState(deviceId, LgRegistrationState.failed);
         if (_hadStoredKey[deviceId] == true) {
           final host = _hostResolver(deviceId).trim();
@@ -484,6 +507,7 @@ class LgWebSocketTransportClient
     _pointerSubs[deviceId]?.cancel();
     _pointerSubs.remove(deviceId);
     _hadStoredKey.remove(deviceId);
+    _registeredDevices.remove(deviceId);
     _muteStates.remove(deviceId);
     _powerStates.remove(deviceId);
     _playingStates.remove(deviceId);
@@ -504,6 +528,11 @@ class LgWebSocketTransportClient
   }
 
   void _emitRegistrationState(String deviceId, LgRegistrationState state) {
+    if (state == LgRegistrationState.registered) {
+      _registeredDevices.add(deviceId);
+    } else {
+      _registeredDevices.remove(deviceId);
+    }
     final ctrl = _registrationControllers[deviceId];
     if (ctrl != null && !ctrl.isClosed) ctrl.add(state);
   }
