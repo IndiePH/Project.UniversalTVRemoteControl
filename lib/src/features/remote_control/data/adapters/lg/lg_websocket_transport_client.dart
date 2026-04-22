@@ -100,10 +100,12 @@ class LgWebSocketTransportClient
         _registrationCompleters[deviceId] = registrationCompleter;
       }
 
+      log('LG connecting to $uri for $deviceId', name: 'lg_transport');
       try {
         final socket = await _openSocket(uri).timeout(connectTimeout);
         _bindSocket(deviceId: deviceId, socket: socket);
         socket.add(jsonEncode(buildLgRegisterPayload(clientKey: storedKey)));
+        log('LG socket open, register sent → $uri for $deviceId', name: 'lg_transport');
         emitTransportEvent(TransportEvent(
           transport: 'lg',
           deviceId: deviceId,
@@ -123,6 +125,7 @@ class LgWebSocketTransportClient
         _registrationCompleters.remove(deviceId);
         return;
       } on Object catch (e) {
+        log('LG connect failed ($uri) for $deviceId: $e', name: 'lg_transport');
         lastError = e;
         _registrationCompleters.remove(deviceId);
         await _resetConnection(deviceId);
@@ -372,42 +375,56 @@ class LgWebSocketTransportClient
     final type = decoded['type'] as String?;
     final id = decoded['id'] as String?;
     final payload = decoded['payload'] as Map<String, dynamic>?;
-    final returnValue = payload?['returnValue'] as bool?;
     final clientKey = payload?['client-key'] as String?;
 
     // Resolve any pending SSAP request waiting on this response ID.
     if (id != null) _pendingRequests.remove(id)?.complete(decoded);
 
     if (type == 'registered') {
-      if (returnValue == true) {
+      if (clientKey != null && clientKey.isNotEmpty) {
+        // client-key present → TV accepted, regardless of whether returnValue is set.
         _emitRegistrationState(deviceId, LgRegistrationState.registered);
         _registrationCompleters.remove(deviceId)?.complete();
-
-        if (clientKey != null && clientKey.isNotEmpty) {
-          // New client-key issued — persist it for future reconnects.
-          final host = _hostResolver(deviceId).trim();
-          final storeFuture = _keyStore?.storeKeyForHost(host, clientKey);
-          if (storeFuture != null) unawaited(storeFuture);
-          _pairingCompleters[deviceId]?.complete(clientKey);
-        }
+        final host = _hostResolver(deviceId).trim();
+        final storeFuture = _keyStore?.storeKeyForHost(host, clientKey);
+        if (storeFuture != null) unawaited(storeFuture);
+        _pairingCompleters[deviceId]?.complete(clientKey);
       } else {
-        // returnValue == false: stale key or fresh rejection.
+        // No client-key and returnValue != true: stale key or fresh rejection.
         _emitRegistrationState(deviceId, LgRegistrationState.failed);
-
         if (_hadStoredKey[deviceId] == true) {
-          // Stale stored key — clear it so the next connect triggers re-pairing.
           final host = _hostResolver(deviceId).trim();
           final clearFuture = _keyStore?.clearKeyForHost(host);
           if (clearFuture != null) unawaited(clearFuture);
-
           final error = LgPairingSessionExpiredException(
             'LG TV rejected the stored client-key for $deviceId. Re-pairing required.',
           );
           _registrationCompleters.remove(deviceId)?.completeError(error);
           _pairingCompleters[deviceId]?.completeError(error);
         } else {
-          final error =
-              LgPairingRejectedException('LG TV rejected the pairing request.');
+          final error = LgPairingRejectedException('LG TV rejected the pairing request.');
+          _registrationCompleters.remove(deviceId)?.completeError(error);
+          _pairingCompleters[deviceId]?.completeError(error);
+        }
+      }
+    } else if (type == 'error') {
+      // webOS 3.x+ sends type:"error" when the user dismisses the pairing prompt.
+      // Guard to avoid interfering with SSAP command error responses.
+      final hasPairingWaiter = _pairingCompleters.containsKey(deviceId) ||
+          _registrationCompleters.containsKey(deviceId);
+      if (hasPairingWaiter) {
+        _emitRegistrationState(deviceId, LgRegistrationState.failed);
+        if (_hadStoredKey[deviceId] == true) {
+          final host = _hostResolver(deviceId).trim();
+          final clearFuture = _keyStore?.clearKeyForHost(host);
+          if (clearFuture != null) unawaited(clearFuture);
+          final error = LgPairingSessionExpiredException(
+            'LG TV rejected the stored client-key for $deviceId. Re-pairing required.',
+          );
+          _registrationCompleters.remove(deviceId)?.completeError(error);
+          _pairingCompleters[deviceId]?.completeError(error);
+        } else {
+          final error = LgPairingRejectedException('LG TV rejected the pairing request.');
           _registrationCompleters.remove(deviceId)?.completeError(error);
           _pairingCompleters[deviceId]?.completeError(error);
         }

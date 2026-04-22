@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/src/features/remote_control/application/device_repository.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/src/features/remote_control/presentation/pages/pairing_page_coordinator.dart';
 import 'package:one_remote/src/features/remote_control/presentation/pages/pairing_page_data.dart';
@@ -131,9 +132,14 @@ class _PairingPageState extends State<PairingPage> {
     if (_viewState.isPairingInProgress) {
       return;
     }
+    final pairingHint = device.brand == TvBrand.lg
+        ? 'Look at your TV screen and accept the pairing prompt.'
+        : null;
+
     setState(() {
       _viewState = _viewState.copyWith(
         isPairingInProgress: true,
+        pairingHint: pairingHint,
         clearErrorMessage: true,
         clearManualErrorMessage: true,
       );
@@ -173,7 +179,15 @@ class _PairingPageState extends State<PairingPage> {
         },
       );
       if (!result.isSuccess) {
-        throw StateError('Pairing failed.');
+        if (!mounted) return;
+        final errorMsg = result.message ?? 'Pairing failed. Please try again.';
+        setState(() {
+          _viewState = _viewState.copyWith(errorMessage: errorMsg);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+        return;
       }
       if (!mounted) {
         return;
@@ -196,7 +210,10 @@ class _PairingPageState extends State<PairingPage> {
     } finally {
       if (mounted) {
         setState(() {
-          _viewState = _viewState.copyWith(isPairingInProgress: false);
+          _viewState = _viewState.copyWith(
+            isPairingInProgress: false,
+            clearPairingHint: true,
+          );
         });
       }
     }
@@ -327,7 +344,10 @@ class _PairingPageState extends State<PairingPage> {
                 ),
               ),
             ),
-            PairingBusyOverlay(visible: _viewState.isPairingInProgress),
+            PairingBusyOverlay(
+              visible: _viewState.isPairingInProgress,
+              hint: _viewState.pairingHint,
+            ),
           ],
         ),
       ),

@@ -29,7 +29,7 @@ class PairingPageCoordinator {
         onHisensePinRejected: onHisensePinRejected,
       );
       if (!didCompleteViaPin) {
-        return const PairingAttemptResult.failure();
+        return PairingAttemptResult.failure(pairingResult.message);
       }
     }
 
@@ -75,11 +75,13 @@ class PairingPageCoordinator {
 }
 
 final class PairingAttemptResult {
-  const PairingAttemptResult._({required this.isSuccess});
+  const PairingAttemptResult._({required this.isSuccess, this.message});
 
   const PairingAttemptResult.success() : this._(isSuccess: true);
 
-  const PairingAttemptResult.failure() : this._(isSuccess: false);
+  const PairingAttemptResult.failure([String? message])
+      : this._(isSuccess: false, message: message);
 
   final bool isSuccess;
+  final String? message;
 }
