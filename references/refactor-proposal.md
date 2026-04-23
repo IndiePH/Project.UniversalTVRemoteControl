@@ -26,13 +26,17 @@ Items are ordered: high-priority (safe, isolated) first, then medium-priority (s
 | R-04 | `RemoteHomePage._actionForItem` | Five unreachable switch cases | Dead code | Low | ✅ |
 | R-05 | `RemoteHomePage` | `firstOrNull` extension shadows Dart 3 built-in | Redundant extension | Low | ✅ |
 | R-06 | `HisenseAdapter` | `sendText` logs instead of throwing `UnsupportedError` | Inconsistency / latent bug | Low | ✅ |
-| R-07 | `OneRemoteApp` | `InMemoryDeviceRepository` used in production | Missing persistence | Medium | ❌ |
+| R-07 | `OneRemoteApp` | `InMemoryDeviceRepository` used in production | Missing persistence | Medium | ✅ |
 | R-08 | `layout_repository.dart` | `LayoutPosition` model in the application layer | Layer placement | Medium | ✅ |
 | R-09 | `TvBrand`, `SsdpDeviceDiscoveryService`, `PairingPage` | No `displayName` getter — brand naming scattered | Scattered display logic | Medium | ❌ |
-| R-10 | `SamsungAdapter` | Default constructor silently uses fake transport | Surprising default | Medium | ❌ |
+| R-10 | `SamsungAdapter` | Default constructor silently uses fake transport | Surprising default | Medium | ✅ |
 | R-11 | `CommandDispatchResult` | No discriminated type for `unsupported` vs `failure` | Design gap | Medium | 🔶 |
 | N-01 | `HisenseAdapter` | Default constructor silently uses fake transport | Surprising default | Medium | 🆕 ❌ |
 | N-02 | `SamsungTransportFileLogger` | Private `_twoDigits` duplicates `formatTwoDigits` — unreachable across layers | DRY / layer placement | Low | 🆕 ❌ |
+| N-03 | `LgWebSocketTransportClient` | `sendKey()` growing if/else dispatch chain | Design smell | Medium | 🆕 ❌ |
+| N-04 | `LgWebSocketTransportClient` | `_muteStates`/`_powerStates`/`_playingStates` duplicate toggle boilerplate | DRY violation | Medium | 🆕 ❌ |
+| N-05 | `BrandRoutedRemoteCommandService` | 4 catch blocks expose raw `$error` to users | Error handling | Low | 🆕 ❌ |
+| N-06 | `SamsungAdapter`, `HisenseAdapter` | `unpairDevice` no-ops undocumented | Doc debt | Low | 🆕 ❌ |
 
 ---
 
@@ -44,7 +48,7 @@ Items are ordered: high-priority (safe, isolated) first, then medium-priority (s
 | `clean-code-solid` | 1-core-engineering | DRY violations: ✅ R-01 (capabilities), ✅ R-02 (formatter), 🆕 N-02 (formatter layer gap); ✅ R-08 layer placement; ✅ R-06 adapter inconsistency |
 | `abstraction-domain-modeling` | 1-core-engineering | Layer placement: ✅ R-08 (`LayoutPosition`); brand ownership: ❌ R-09 (`TvBrand.displayName`), ✅ R-01 (`TvBrand.defaultCapabilities`); 🆕 N-02 (shared util layer) |
 | `code-maintenance` | 1-core-engineering | Dead code: ❌ R-03 (`keyCodeFor`); ✅ R-04 (switch cases); ✅ R-05 (`firstOrNull`) |
-| `technical-debt-management` | 2-architecture-system-design | Structural gaps: ❌ R-07 (missing persistence), ❌ R-10 + 🆕 N-01 (fake transport defaults), 🔶 R-11 (discriminated result type) |
+| `technical-debt-management` | 2-architecture-system-design | Structural gaps: ✅ R-07 (persistence added), ✅ R-10 + 🆕 N-01 (fake transport defaults — Samsung fixed, Hisense open), 🔶 R-11 (discriminated result type) |
 
 ---
 
@@ -85,6 +89,22 @@ Extension deleted. Dart 3 built-in `Iterable.firstOrNull` is used directly.
 ### R-06 · `HisenseAdapter.sendText` silently logs instead of throwing — ✅ Resolved
 
 `sendText` now throws `UnsupportedError(...)`, consistent with `LgAdapter`.
+
+---
+
+### R-07 · `InMemoryDeviceRepository` used in production — ✅ Resolved
+
+`SharedPrefsDeviceRepository` implemented and wired in `one_remote_app.dart:39`.
+Devices now survive app restarts. Mirrors the existing `SharedPrefsLayoutRepository` pattern.
+
+---
+
+### R-10 · `SamsungAdapter` defaults to fake transport — ✅ Resolved
+
+`transportClient` is now a `required` named parameter in `SamsungAdapter` (`samsung_adapter.dart:16`).
+Zero-arg construction no longer compiles; all callers must be explicit about the transport.
+`OneRemoteApp._buildSamsungAdapter()` passes either `FakeSamsungTransportClient` or
+`SamsungWebSocketTransportClient` explicitly. N-01 (`HisenseAdapter`) remains open.
 
 ---
 
@@ -134,22 +154,6 @@ shared-utils location outside the feature layers). Update all three call sites
 
 ## Open — Medium Priority (Structural)
 
-### R-07 · `InMemoryDeviceRepository` used in production
-
-**File:** `app/one_remote_app.dart:33`
-
-```dart
-late final InMemoryDeviceRepository _deviceRepository = InMemoryDeviceRepository();
-```
-
-Devices do not survive app restarts. Task 1.5 in `implementation_tasks.md` is still marked
-partial. `SharedPrefsLayoutRepository` already shows the pattern.
-
-**Proposed fix:** Add `SharedPrefsDeviceRepository implements DeviceRepository`, mirroring
-the layout repository approach. Wire it in `OneRemoteApp`.
-
----
-
 ### R-09 · `TvBrand` has no `displayName`
 
 **Files:**
@@ -177,22 +181,23 @@ Can land in the same commit as N-02 since both touch `tv_brand.dart` adjacently.
 
 ---
 
-### R-10 · `SamsungAdapter` defaults to fake transport
-### N-01 · `HisenseAdapter` defaults to fake transport *(new — same pattern)*
+### N-01 · `HisenseAdapter` defaults to fake transport
 
-**Files:**
-- `data/adapters/samsung_adapter.dart:20` — `transportClient ?? FakeSamsungTransportClient()`
-- `data/adapters/hisense_adapter.dart:15` — `transportClient ?? FakeHisenseTransportClient()`
+**File:** `data/adapters/hisense_adapter.dart:14`
 
-A developer calling `SamsungAdapter()` or `HisenseAdapter()` with no arguments silently gets
-a no-op fake. `OneRemoteApp` guards this with explicit `_useFakeTransports` branching, but
-the zero-arg default is a footgun for anyone instantiating these adapters in tests or new
-wiring.
+```dart
+HisenseAdapter({
+  HisenseTransportClient? transportClient,
+  ...
+}) : _transportClient = transportClient ?? FakeHisenseTransportClient(),
+```
 
-**Proposed fix:** Make `transportClient` required in both constructors, or rename the
-zero-arg factory to `SamsungAdapter.fake()` / `HisenseAdapter.fake()` to make intent
-explicit. Tests should pass `FakeSamsungTransportClient()` / `FakeHisenseTransportClient()`
-explicitly. Address both adapters together.
+`SamsungAdapter` was fixed (R-10 ✅ — `transportClient` is now `required`). `HisenseAdapter`
+still silently falls back to the no-op fake when called with no argument.
+`OneRemoteApp._buildHisenseAdapter()` still relies on this zero-arg path for fake mode.
+
+**Proposed fix:** Make `transportClient` required, or introduce a named `HisenseAdapter.fake()`
+constructor. Update `OneRemoteApp` to call the explicit factory.
 
 ---
 
@@ -218,11 +223,89 @@ constructors to assign matching outcomes. Update UI call sites to branch on `out
 
 ---
 
+---
+
+### N-03 · `LgWebSocketTransportClient.sendKey()` — growing if/else dispatch chain
+
+**File:** `data/adapters/lg/lg_websocket_transport_client.dart:185–221`
+
+```dart
+if (keyCode.startsWith(lgPointerPrefix)) { … }
+else if (keyCode.startsWith(lgLaunchPrefix)) { … }
+else if (keyCode == 'ssap://audio/setMute') { … }
+else if (keyCode == lgPowerToggleKey) { … }
+else if (keyCode == lgPlayPauseToggleKey) { … }
+else { … }
+```
+
+Five branches today; every new stateful command adds another. State and dispatch logic are
+scattered across the method rather than co-located per command.
+
+**Proposed fix:** Introduce a `Map<String, _LgCommandHandler>` (or closure map) where each
+entry owns both the dispatch logic and any per-device state it needs. Best addressed alongside N-04.
+
+---
+
+### N-04 · `_muteStates`, `_powerStates`, `_playingStates` — duplicate toggle boilerplate
+
+**File:** `data/adapters/lg/lg_websocket_transport_client.dart:72–80` (fields) + `sendKey()` branches
+
+```dart
+final Map<String, bool> _muteStates = {};
+final Map<String, bool> _powerStates = {};
+final Map<String, bool> _playingStates = {};
+```
+
+Three separate maps with identical toggle pattern `!(states[deviceId] ?? defaultValue)`.
+Adding any new stateful command duplicates the field, the toggle, and the `_resetConnection`
+cleanup.
+
+**Proposed fix:** Unify into a generic abstraction (e.g. a `_ToggleState` wrapper or a
+single `Map<String, Map<String, bool>>` keyed by command key). Address together with N-03.
+
+---
+
+### N-05 · `BrandRoutedRemoteCommandService` — raw `$error` in 4 catch blocks
+
+**File:** `data/brand_routed_remote_command_service.dart:40, 69, 94, 123`
+
+```dart
+return CommandDispatchResult.failure('Failed to pair ${device.displayName}: $error');
+```
+
+All four generic `catch` blocks interpolate `$error` directly. In release builds this may
+expose raw stack traces or internal exception text through the UI.
+
+**Proposed fix:** Guard with `kDebugMode` (from `flutter/foundation.dart`): show `$error`
+detail in debug, `'Something went wrong.'` in release. Applies to `preparePairing`,
+`submitPairingCode`, `sendCommand`, and `sendText`.
+
+---
+
+### N-06 · `SamsungAdapter` and `HisenseAdapter` `unpairDevice` no-ops undocumented
+
+**Files:** `data/adapters/samsung_adapter.dart:35`, `data/adapters/hisense_adapter.dart:31`
+
+```dart
+@override
+Future<void> unpairDevice({required TvDevice device}) async {}
+```
+
+Empty body with no explanation. Anyone adding persistent pairing state for either brand
+will have no indication that `unpairDevice` must be updated to clear it.
+
+**Proposed fix:** Add a TODO comment referencing the SharedPreferences pattern established
+by LG's `clearPairing` / `LgPairingKeyStore`.
+
+---
+
 ## Execution Notes
 
 - R-03 and N-02 are safe to execute independently in any order.
-- R-09, N-01, and R-10 can be combined: `TvBrand.displayName` and both adapter footgun fixes
-  are adjacent concerns that land cleanly in one or two commits.
-- R-07 should be done before adding new device-metadata fields.
+- R-09 and N-01 can be combined: `TvBrand.displayName` and the Hisense adapter footgun are
+  adjacent concerns that land cleanly in one commit.
+- N-03 and N-04 must be addressed together — the dispatch map and toggle abstraction are
+  tightly coupled in `LgWebSocketTransportClient.sendKey()`.
+- N-05 and N-06 are low-risk and can land in any order, independently of each other.
 - R-11 touches a public interface; run the full test suite after.
-- Execution order suggestion: N-02 → R-03 → R-09+R-10+N-01 → R-07 → R-11.
+- Execution order suggestion: N-05 → N-06 → N-02 → R-03 → R-09+N-01 → N-03+N-04 → R-11.
