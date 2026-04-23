@@ -10,6 +10,7 @@ import 'package:one_remote/src/features/remote_control/debug/runtime_flags_templ
 import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/layout_position.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/remote_command.dart';
+import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/src/features/remote_control/presentation/formatting/two_digit_format.dart';
 import 'package:one_remote/src/features/remote_control/presentation/pages/remote_home_actions.dart';
@@ -440,10 +441,11 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       _showToast('No device selected.', isError: true);
       return;
     }
+    const _imeExemptBrands = {TvBrand.lg};
     final availability = RemoteKeyboardAvailability.evaluate(
       device: device,
       remoteTextInputReady: _remoteTextInputReady,
-      requireImeReady: true,
+      requireImeReady: !_imeExemptBrands.contains(device.brand),
     );
     if (!availability.isAvailable) {
       _reportKeyboardUnavailable(
@@ -467,7 +469,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   }
 
   void _openTextEntrySheet() {
-    if (_activeDevice == null || !_remoteTextInputReady) {
+    if (_activeDevice == null) {
       return;
     }
     showModalBottomSheet<void>(
