@@ -1,16 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:one_remote/src/app/transport_debug_settings.dart';
 import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/src/features/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/hisense/real_hisense_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_pairing_key_store.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/lg/lg_websocket_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung_adapter.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/samsung/real_samsung_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_websocket_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/debug/fake_lg_transport_client.dart';
+import 'package:one_remote/src/features/remote_control/debug/fake_samsung_transport_client.dart';
 import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
 import 'package:one_remote/src/features/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/src/features/remote_control/data/fake_device_discovery_service.dart';
-import 'package:one_remote/src/features/remote_control/data/in_memory_device_repository.dart';
+import 'package:one_remote/src/features/remote_control/data/shared_prefs_device_repository.dart';
 import 'package:one_remote/src/features/remote_control/data/shared_prefs_layout_repository.dart';
 import 'package:one_remote/src/features/remote_control/data/ssdp_device_discovery_service.dart';
 import 'package:one_remote/src/features/remote_control/presentation/pages/remote_home_page.dart';
@@ -30,7 +36,7 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
   );
   static const String _tvHostOverride = String.fromEnvironment('TV_HOST_OVERRIDE');
 
-  late final InMemoryDeviceRepository _deviceRepository = InMemoryDeviceRepository();
+  late final SharedPrefsDeviceRepository _deviceRepository = SharedPrefsDeviceRepository();
   late final SharedPrefsLayoutRepository _layoutRepository = SharedPrefsLayoutRepository();
 
   bool _useFakeTransports = _compileUseFakeTransports;
@@ -63,7 +69,7 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
     final RemoteCommandService commandService = BrandRoutedRemoteCommandService(
       adapters: [
         _buildSamsungAdapter(),
-        LgAdapter(),
+        _buildLgAdapter(),
         _buildHisenseAdapter(),
       ],
     );
@@ -86,14 +92,24 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
   }
 
   SamsungAdapter _buildSamsungAdapter() {
-    if (_useFakeTransports) {
-      return SamsungAdapter();
-    }
-
     return SamsungAdapter(
-      transportClient: RealSamsungTransportClient(
-        hostResolver: _resolveSamsungHost,
-      ),
+      transportClient: _useFakeTransports
+          ? FakeSamsungTransportClient()
+          : SamsungWebSocketTransportClient(hostResolver: _resolveSamsungHost),
+    );
+  }
+
+  LgAdapter _buildLgAdapter() {
+    return LgAdapter(
+      transportClient: _useFakeTransports
+          ? FakeLgTransportClient()
+          : LgWebSocketTransportClient(
+              hostResolver: _resolveLgHost,
+              keyStore: LgPairingKeyStore(),
+            ),
+      onSystemInfo: (deviceId, info) {
+        unawaited(_deviceRepository.saveDeviceSystemInfo(deviceId, info));
+      },
     );
   }
 
@@ -113,6 +129,12 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
     if (explicitHost.isNotEmpty) {
       return explicitHost;
     }
+    return _ipv4FromDeviceId(deviceId);
+  }
+
+  String _resolveLgHost(String deviceId) {
+    final explicitHost = _tvHostOverride.trim();
+    if (explicitHost.isNotEmpty) return explicitHost;
     return _ipv4FromDeviceId(deviceId);
   }
 

@@ -6,7 +6,7 @@ import 'package:one_remote/src/features/remote_control/application/text_input_co
 ///
 /// Owns the `watchRemoteTextInputReady` broadcast stream and lightweight app
 /// context strings used when text input is unavailable.
-class RealSamsungRemoteTextSession {
+class SamsungRemoteTextSession {
   final Map<String, bool> _isImeActiveByDeviceId = <String, bool>{};
   final Map<String, bool> _isImeSessionPrimedByDeviceId = <String, bool>{};
   final Map<String, String> _appContextByDeviceId = <String, String>{};

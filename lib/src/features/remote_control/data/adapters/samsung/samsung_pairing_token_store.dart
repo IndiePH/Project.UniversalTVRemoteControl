@@ -18,7 +18,7 @@ enum SamsungPairingFrameOutcome {
 ///
 /// Does not own sockets; the transport client resets connections when
 /// [handleDecoded] returns [SamsungPairingFrameOutcome.unauthorized].
-class RealSamsungPairingTokenStore {
+class SamsungPairingTokenStore {
   final Map<String, String> _tokenByHost = <String, String>{};
   final Map<String, Set<Completer<void>>> _pendingPairingByHost =
       <String, Set<Completer<void>>>{};

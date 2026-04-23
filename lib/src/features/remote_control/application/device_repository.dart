@@ -13,4 +13,6 @@ abstract class DeviceRepository {
     required DateTime timestamp,
   });
   Future<void> setLastUsedDevice(String deviceId);
+  Future<void> saveDeviceSystemInfo(String deviceId, Map<String, dynamic> info);
+  Future<Map<String, dynamic>?> getDeviceSystemInfo(String deviceId);
 }

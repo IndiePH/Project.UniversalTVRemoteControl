@@ -6,6 +6,7 @@ final class PairingPageViewState {
   const PairingPageViewState({
     this.isLoading = false,
     this.isPairingInProgress = false,
+    this.pairingHint,
     this.errorMessage,
     this.manualErrorMessage,
     this.manualBrand = TvBrand.samsung,
@@ -18,6 +19,8 @@ final class PairingPageViewState {
 
   final bool isLoading;
   final bool isPairingInProgress;
+  /// Contextual hint shown inside the busy overlay (e.g. "Check your TV screen").
+  final String? pairingHint;
   final String? errorMessage;
   final String? manualErrorMessage;
   final TvBrand manualBrand;
@@ -30,6 +33,8 @@ final class PairingPageViewState {
   PairingPageViewState copyWith({
     bool? isLoading,
     bool? isPairingInProgress,
+    String? pairingHint,
+    bool clearPairingHint = false,
     String? errorMessage,
     bool clearErrorMessage = false,
     String? manualErrorMessage,
@@ -44,6 +49,7 @@ final class PairingPageViewState {
     return PairingPageViewState(
       isLoading: isLoading ?? this.isLoading,
       isPairingInProgress: isPairingInProgress ?? this.isPairingInProgress,
+      pairingHint: clearPairingHint ? null : (pairingHint ?? this.pairingHint),
       errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
       manualErrorMessage: clearManualErrorMessage
           ? null
