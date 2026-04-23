@@ -49,7 +49,8 @@ lib/
 | 1.1 | Document approved target structure and all affected import paths | `abstraction-domain-modeling`, `modularity` | — | LOW |
 | 1.2 | Rename/move directories to target structure | `refactoring` | 1.1 | MEDIUM |
 | 1.3 | Update all Dart imports across `lib/` and `test/` | `refactoring`, `framework-mastery` | 1.2 | MEDIUM |
-| 1.4 | Run `flutter build` + full test suite; fix any broken references | `framework-mastery`, `regression-prevention` | 1.3 | MEDIUM |
+| 1.4 | Flatten `test/lib/` internals to mirror new `lib/` layout — remove `src/features/remote_control/` nesting so paths become e.g. `test/lib/remote_control/data/…`, `test/lib/remote_control/application/…` (`test/lib/` wrapper stays) | `refactoring` | 1.2 | MEDIUM |
+| 1.5 | Run `flutter build` + full test suite; fix any broken references | `framework-mastery`, `regression-prevention` | 1.3, 1.4 | MEDIUM |
 
 ---
 
