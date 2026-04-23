@@ -2,7 +2,7 @@
 
 **Goal ID:** `lg-remote`
 **Created:** 2026-04-21
-**Status:** `pending`
+**Status:** `in_progress`
 **Owner:** wlvyr
 
 ---
@@ -245,7 +245,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** none
 - **Risk:** LOW
 - **Skills:** `abstraction-domain-modeling`, `api-design`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -266,7 +266,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Risk:** MEDIUM — real TLS/network I/O; self-signed cert handling needed
 - **Skills:** `language-specific-implementation`, `error-handling-resilience`
 - **Implementation note:** Pointer input socket (`wss://host:3001/netinput.pointer.sock`) must also be managed for dpad/back commands — connect on first pointer command, cache per deviceId
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -278,7 +278,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-1.1
 - **Risk:** LOW
 - **Skills:** `test-creation-strategy`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -291,7 +291,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Risk:** LOW
 - **Skills:** `refactoring`, `clean-code-solid`
 - **SSAP map to implement:** See "Verified SSAP command map" table above
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -303,7 +303,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-1.1, T-1.2, T-1.3, T-1.4
 - **Risk:** LOW
 - **Skills:** `refactoring`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -315,7 +315,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-1.5
 - **Risk:** LOW
 - **Skills:** `clean-code-solid`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -333,7 +333,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-1.2
 - **Risk:** LOW
 - **Skills:** `error-handling-resilience`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -345,7 +345,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-2.1
 - **Risk:** MEDIUM — async TV-side timeout; rejection path must be handled
 - **Skills:** `error-handling-resilience`, `abstraction-domain-modeling`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -357,7 +357,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-2.2
 - **Risk:** MEDIUM — session state correctness
 - **Skills:** `error-handling-resilience`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -375,7 +375,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-2.3
 - **Risk:** MEDIUM — IME only available when text field is focused on TV
 - **Skills:** `error-handling-resilience`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -388,7 +388,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Risk:** MEDIUM — webOS IME focus subscription may not exist
 - **Skills:** `abstraction-domain-modeling`
 - **Decision to log:** If SSAP has no IME subscription event, document in this file under Decisions
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -400,7 +400,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-3.1
 - **Risk:** LOW
 - **Skills:** `configuration`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -418,7 +418,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-1.3, T-1.5
 - **Risk:** LOW
 - **Skills:** `test-creation-strategy`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -430,7 +430,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-2.3, T-4.1
 - **Risk:** LOW
 - **Skills:** `test-creation-strategy`, `regression-prevention`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -442,7 +442,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-3.3, T-4.2
 - **Risk:** LOW
 - **Skills:** `test-creation-strategy`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -454,7 +454,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-4.3
 - **Risk:** LOW
 - **Skills:** `regression-prevention`
-- **Status:** `pending`
+- **Status:** `done`
 
 ---
 
@@ -472,7 +472,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-2.3, T-1.4
 - **Risk:** HIGH — hardware/network environment; not automatable
 - **Skills:** `test-interpretation-failure-diagnosis`
-- **Status:** `pending`
+- **Status:** `in_progress` — all physical checks passed; fill in device table in `references/lg_hardware_validation.md` (Settings → About This TV) to complete
 
 ---
 
@@ -484,7 +484,7 @@ Use `SharedPreferences` (matches project pattern: `RealSamsungPairingTokenStore`
 - **Deps:** T-3.1, T-3.2, T-5.1
 - **Risk:** HIGH — IME behavior varies by webOS version; may not work on all models
 - **Skills:** `test-interpretation-failure-diagnosis`
-- **Status:** `pending`
+- **Status:** `done` — IME confirmed working; `supportsTextInput` and `DeviceCapability.textInput` are unconditionally enabled for LG (flag-gating was dropped after validation)
 
 ---
 
@@ -529,6 +529,7 @@ T-1.3 can be written immediately after T-1.1.
 4. Client-key storage uses `SharedPreferences` — no new packages.
 5. `supportsTextInput` stays `false` for LG until T-5.2 physical validation confirms IME works.
 6. If webOS SSAP has no IME focus subscription event, `watchRemoteTextInputReady` emits constant `false` (documented limitation — same as Hisense).
+7. **webOS 2.x (2015 models) is included as best-effort.** The `ws://host:3000` fallback already covers these devices. Core commands (volume, power, channel, apps) are expected to work. The pointer input socket (`getPointerInputSocket`) may not exist on webOS 2.x firmware — `RealLgTransportClient` must degrade gracefully: log a warning and skip pointer-socket routing for that device rather than throwing. T-5.1 physical validation should record the lowest confirmed webOS version tested.
 
 ---
 
@@ -541,6 +542,7 @@ T-1.3 can be written immediately after T-1.1.
 | 2026-04-21 | Reuse `SamsungTlsTrustStore` pattern for TLS cert bypass | LG self-signed cert problem is identical to Samsung; no new code needed |
 | 2026-04-21 | Use `SharedPreferences` for client-key storage | Matches `RealSamsungPairingTokenStore` and `SharedPrefsLayoutRepository`; no new packages |
 | 2026-04-21 | Gate `LG_ENABLE_TEXT_INPUT` behind env flag | Mirrors `SAMSUNG_ENABLE_TEXT_INPUT`; IME path requires physical validation before exposing in UI |
+| 2026-04-22 | `watchRemoteTextInputReady` emits constant `false` for LG | SSAP protocol has no IME focus subscription event; documented limitation matching Hisense strategy |
 
 ---
 
