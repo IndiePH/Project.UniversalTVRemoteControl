@@ -78,6 +78,12 @@ class LgWebSocketTransportClient
   // Per-device play state — defaults to true (playing) on first press.
   final Map<String, bool> _playingStates = {};
 
+  // IME subscription state for watchRemoteTextInputReady.
+  final Map<String, StreamController<bool>> _imeReadyControllers = {};
+  final Map<String, String> _imeSubIds = {};
+  // Keyed by SSAP request ID; invoked on every matching response (unlike _pendingRequests).
+  final Map<String, void Function(Map<String, dynamic>)> _subscriptionHandlers = {};
+
   final AdapterDeviceInfoLogGate _logGate = AdapterDeviceInfoLogGate();
   int _reqCounter = 0;
 
@@ -235,7 +241,34 @@ class LgWebSocketTransportClient
       _registrationControllerFor(deviceId).stream;
 
   @override
-  Stream<bool> watchRemoteTextInputReady(String deviceId) => Stream<bool>.value(false);
+  Stream<bool> watchRemoteTextInputReady(String deviceId) {
+    final ctrl = _imeReadyControllers.putIfAbsent(
+      deviceId,
+      () => StreamController<bool>.broadcast(),
+    );
+    _ensureImeSubscription(deviceId);
+    return ctrl.stream;
+  }
+
+  void _ensureImeSubscription(String deviceId) {
+    if (_imeSubIds.containsKey(deviceId)) return;
+    final socket = _sockets[deviceId];
+    if (socket == null || socket.readyState != WebSocket.open) return;
+    final id = 'ime_sub_${_reqCounter++}';
+    _imeSubIds[deviceId] = id;
+    _subscriptionHandlers[id] = (decoded) {
+      final payload = decoded['payload'] as Map<String, dynamic>?;
+      final currentWidget = payload?['currentWidget'] as Map<String, dynamic>?;
+      final focus = currentWidget?['focus'] as bool?;
+      if (focus != null) _imeReadyControllers[deviceId]?.add(focus);
+    };
+    socket.add(jsonEncode(buildLgSsapRequest(
+      requestId: id,
+      uri: 'ssap://com.webos.service.ime/registerRemoteKeyboard',
+      payload: const {},
+      type: 'subscribe',
+    )));
+  }
 
   @override
   Future<void> disconnect({required String deviceId}) async {
@@ -419,6 +452,8 @@ class LgWebSocketTransportClient
 
     // Resolve any pending SSAP request waiting on this response ID.
     if (id != null) _pendingRequests.remove(id)?.complete(decoded);
+    // Forward to subscription handlers (persistent; not removed on fire).
+    if (id != null) _subscriptionHandlers[id]?.call(decoded);
 
     // Registration response: TV sends type:"registered" (first-time pair or echoed key)
     // OR type:"response" with id:"register_0" on reconnect (some firmware skips "registered").
@@ -523,6 +558,13 @@ class LgWebSocketTransportClient
     _muteStates.remove(deviceId);
     _powerStates.remove(deviceId);
     _playingStates.remove(deviceId);
+    final subId = _imeSubIds.remove(deviceId);
+    if (subId != null) _subscriptionHandlers.remove(subId);
+    final imeCtrl = _imeReadyControllers.remove(deviceId);
+    if (imeCtrl != null && !imeCtrl.isClosed) {
+      imeCtrl.add(false);
+      imeCtrl.close();
+    }
     _logGate.reset(deviceId);
     try {
       await _sockets.remove(deviceId)?.close();

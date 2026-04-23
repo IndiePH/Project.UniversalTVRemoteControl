@@ -8,11 +8,6 @@ import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.da
 import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
 
 class LgAdapter implements TvBrandAdapter {
-  static const bool _lgTextInputEnabled = bool.fromEnvironment(
-    'LG_ENABLE_TEXT_INPUT',
-    defaultValue: false,
-  );
-
   LgAdapter({
     required LgTransportClient transportClient,
     CommandKeyMap? keyMap,
@@ -25,7 +20,7 @@ class LgAdapter implements TvBrandAdapter {
   TvBrand get brand => TvBrand.lg;
 
   @override
-  bool get supportsTextInput => _lgTextInputEnabled;
+  bool get supportsTextInput => true;
 
   @override
   Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;

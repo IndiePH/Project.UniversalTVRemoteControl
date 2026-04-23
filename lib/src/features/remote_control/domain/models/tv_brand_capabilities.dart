@@ -10,11 +10,6 @@ extension TvBrandCapabilities on TvBrand {
     'SAMSUNG_ENABLE_TEXT_INPUT',
     defaultValue: false,
   );
-  static const bool _lgTextInputEnabled = bool.fromEnvironment(
-    'LG_ENABLE_TEXT_INPUT',
-    defaultValue: false,
-  );
-
   Set<DeviceCapability> get defaultCapabilities {
     return switch (this) {
       TvBrand.samsung => const {
@@ -22,9 +17,9 @@ extension TvBrandCapabilities on TvBrand {
         if (_samsungTextInputEnabled) DeviceCapability.textInput,
         DeviceCapability.powerControl,
       },
-      TvBrand.lg => {
+      TvBrand.lg => const {
         DeviceCapability.keyCommands,
-        if (_lgTextInputEnabled) DeviceCapability.textInput,
+        DeviceCapability.textInput,
         DeviceCapability.powerControl,
       },
       TvBrand.hisense => const {
