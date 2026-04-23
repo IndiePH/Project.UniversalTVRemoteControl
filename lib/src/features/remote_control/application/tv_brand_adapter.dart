@@ -9,6 +9,10 @@ abstract class TvBrandAdapter {
 
   Future<void> preparePairing({required TvDevice device}) async {}
 
+  /// Called when the user explicitly removes the device. Clears any persisted
+  /// pairing credentials and resets transport state. No-op by default.
+  Future<void> unpairDevice({required TvDevice device}) async {}
+
   /// Brand-specific step for pairing flows that require entering a TV code.
   Future<void> submitPairingCode({
     required TvDevice device,

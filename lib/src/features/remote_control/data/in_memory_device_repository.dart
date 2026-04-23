@@ -78,4 +78,18 @@ class InMemoryDeviceRepository implements DeviceRepository {
   Future<void> setLastUsedDevice(String deviceId) async {
     _lastUsedDeviceId = deviceId;
   }
+
+  final Map<String, Map<String, dynamic>> _deviceSystemInfoById = {};
+
+  @override
+  Future<void> saveDeviceSystemInfo(
+    String deviceId,
+    Map<String, dynamic> info,
+  ) async {
+    _deviceSystemInfoById[deviceId] = Map.unmodifiable(info);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getDeviceSystemInfo(String deviceId) async =>
+      _deviceSystemInfoById[deviceId];
 }

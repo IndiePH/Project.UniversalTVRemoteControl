@@ -28,6 +28,9 @@ class HisenseAdapter implements TvBrandAdapter {
   final CommandKeyMap _keyMap;
 
   @override
+  Future<void> unpairDevice({required TvDevice device}) async {}
+
+  @override
   Future<void> preparePairing({required TvDevice device}) async {
     await _transportClient.connect(deviceId: device.id);
   }

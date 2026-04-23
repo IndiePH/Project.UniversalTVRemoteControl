@@ -8,9 +8,11 @@ class PairingBusyOverlay extends StatelessWidget {
   const PairingBusyOverlay({
     super.key,
     required this.visible,
+    this.hint,
   });
 
   final bool visible;
+  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -34,25 +36,41 @@ class PairingBusyOverlay extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: appColors.remoteOutline, width: 1.2),
             ),
-            child: Row(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: appColors.pairingBusyOnCard,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: appColors.pairingBusyOnCard,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Waiting for TV approval...',
+                      style: TextStyle(
+                        color: appColors.pairingBusyOnCard,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  'Waiting for TV approval...',
-                  style: TextStyle(
-                    color: appColors.pairingBusyOnCard,
-                    fontWeight: FontWeight.w600,
+                if (hint != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    hint!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: appColors.pairingBusyOnCard,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
