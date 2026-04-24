@@ -28,6 +28,9 @@ class HisenseAdapter implements TvBrandAdapter {
   final CommandKeyMap _keyMap;
 
   @override
+  // TODO(unpair): Hisense has no persistent pairing state yet, so nothing to clear.
+  // When Hisense auth-code persistence is added, follow the SharedPreferences
+  // pattern in LgPairingKeyStore + LgWebSocketTransportClient.clearPairing.
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
