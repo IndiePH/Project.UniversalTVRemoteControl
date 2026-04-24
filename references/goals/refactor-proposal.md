@@ -22,7 +22,7 @@ Items are ordered: high-priority (safe, isolated) first, then medium-priority (s
 |---|---|---|---|---|---|
 | R-01 | `SsdpDeviceDiscoveryService`, `PairingPage` | `_capabilitiesForBrand` duplicated | DRY violation | Low | ✅ |
 | R-02 | `PairingPage`, `RemoteHomePage` | `_twoDigits` / timestamp formatting duplicated | DRY violation | Low | ✅ |
-| R-03 | `SamsungKeyMapper` | `keyCodeFor` duplicates inherited `primaryKeyCodeFor` | Dead method | Low | ❌ |
+| R-03 | `SamsungKeyMapper` | `keyCodeFor` duplicates inherited `primaryKeyCodeFor` | Dead method | Low | ✅ |
 | R-04 | `RemoteHomePage._actionForItem` | Five unreachable switch cases | Dead code | Low | ✅ |
 | R-05 | `RemoteHomePage` | `firstOrNull` extension shadows Dart 3 built-in | Redundant extension | Low | ✅ |
 | R-06 | `HisenseAdapter` | `sendText` logs instead of throwing `UnsupportedError` | Inconsistency / latent bug | Low | ✅ |
@@ -52,7 +52,7 @@ Items are ordered: high-priority (safe, isolated) first, then medium-priority (s
 | `refactoring` | 1-core-engineering | Primary driver — scanned for structural improvements, DRY violations, dead code, and inconsistencies without behavior change |
 | `clean-code-solid` | 1-core-engineering | DRY violations: ✅ R-01 (capabilities), ✅ R-02 (formatter), 🆕 N-02 (formatter layer gap); ✅ R-08 layer placement; ✅ R-06 adapter inconsistency |
 | `abstraction-domain-modeling` | 1-core-engineering | Layer placement: ✅ R-08 (`LayoutPosition`); brand ownership: ❌ R-09 (`TvBrand.displayName`), ✅ R-01 (`TvBrand.defaultCapabilities`); 🆕 N-02 (shared util layer) |
-| `code-maintenance` | 1-core-engineering | Dead code: ❌ R-03 (`keyCodeFor`); ✅ R-04 (switch cases); ✅ R-05 (`firstOrNull`) |
+| `code-maintenance` | 1-core-engineering | Dead code: ✅ R-03 (`keyCodeFor`); ✅ R-04 (switch cases); ✅ R-05 (`firstOrNull`) |
 | `technical-debt-management` | 2-architecture-system-design | Structural gaps: ✅ R-07 (persistence added), ✅ R-10 + 🆕 N-01 (fake transport defaults — Samsung fixed, Hisense open), 🔶 R-11 (discriminated result type) |
 
 ---

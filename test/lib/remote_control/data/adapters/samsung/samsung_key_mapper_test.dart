@@ -111,20 +111,4 @@ void main() {
     });
   });
 
-  group('SamsungKeyMapper: keyCodeFor ≡ primaryKeyCodeFor', () {
-    test('both return the same value for every command', () {
-      for (final command in RemoteCommand.values) {
-        expect(
-          mapper.keyCodeFor(command),
-          equals(mapper.primaryKeyCodeFor(command)),
-          reason: '${command.name}: keyCodeFor != primaryKeyCodeFor',
-        );
-      }
-    });
-
-    test('both return the first key when multiple fallbacks exist', () {
-      expect(mapper.keyCodeFor(RemoteCommand.web), 'KEY_WWW');
-      expect(mapper.primaryKeyCodeFor(RemoteCommand.web), 'KEY_WWW');
-    });
-  });
 }

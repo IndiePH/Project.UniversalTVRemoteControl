@@ -29,11 +29,6 @@ final class SamsungKeyMapper extends CommandKeyMap {
     RemoteCommand.menu: ['KEY_MENU'],
   };
 
-  String? keyCodeFor(RemoteCommand command) {
-    final keyCodes = keyCodesFor(command);
-    return keyCodes.isEmpty ? null : keyCodes.first;
-  }
-
   @override
   List<String> keyCodesFor(RemoteCommand command) {
     final keyCodes = _commandToKeyCodes[command];
