@@ -7,23 +7,23 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:one_remote/src/app/one_remote_app.dart';
-import 'package:one_remote/src/features/remote_control/application/device_discovery_service.dart';
-import 'package:one_remote/src/features/remote_control/application/layout_repository.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/hisense_adapter.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/lg_adapter.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/samsung_adapter.dart';
-import 'package:one_remote/src/features/remote_control/debug/fake_lg_transport_client.dart';
-import 'package:one_remote/src/features/remote_control/debug/fake_samsung_transport_client.dart';
-import 'package:one_remote/src/features/remote_control/data/brand_routed_remote_command_service.dart';
-import 'package:one_remote/src/features/remote_control/data/in_memory_device_repository.dart';
-import 'package:one_remote/src/features/remote_control/data/in_memory_remote_command_service.dart';
-import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
-import 'package:one_remote/src/features/remote_control/domain/models/layout_position.dart';
-import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
-import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/src/features/remote_control/presentation/pages/pairing_page.dart';
-import 'package:one_remote/src/features/remote_control/presentation/pages/remote_home_page.dart';
+import 'package:one_remote/app/one_remote_app.dart';
+import 'package:one_remote/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/remote_control/application/layout_repository.dart';
+import 'package:one_remote/remote_control/data/adapters/hisense_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
+import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
+import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
+import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
+import 'package:one_remote/remote_control/data/in_memory_device_repository.dart';
+import 'package:one_remote/remote_control/data/in_memory_remote_command_service.dart';
+import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/domain/models/layout_position.dart';
+import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
+import 'package:one_remote/remote_control/presentation/pages/remote_home_page.dart';
 
 void main() {
   testWidgets('renders remote home page shell', (WidgetTester tester) async {
