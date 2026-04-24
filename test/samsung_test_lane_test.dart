@@ -1,16 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:one_remote/src/features/remote_control/application/text_input_compatibility_exception.dart';
-import 'package:one_remote/src/features/remote_control/application/tv_brand_adapter.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/samsung/samsung_transport_client.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/samsung_adapter.dart';
-import 'package:one_remote/src/features/remote_control/data/brand_routed_remote_command_service.dart';
-import 'package:one_remote/src/features/remote_control/domain/models/device_capability.dart';
-import 'package:one_remote/src/features/remote_control/domain/models/remote_command.dart';
-import 'package:one_remote/src/features/remote_control/domain/models/tv_brand.dart';
-import 'package:one_remote/src/features/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/src/features/remote_control/data/adapters/transport_event.dart';
+import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
+import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
+import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
+import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/domain/models/remote_command.dart';
+import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 
 void main() {
   const samsungDevice = TvDevice(
