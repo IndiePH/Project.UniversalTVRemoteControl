@@ -69,10 +69,10 @@ lib/
 |----|------|-----|--------|------|------|--------|
 | 2.1 | Audit entire `lib/` for SOLID violations, code smells, and duplication — produce prioritised findings list | — | `clean-code-solid`, `complexity-analyzer`, `technical-debt-management` | — | LOW | ✓ done |
 | 2.2 | Write unit tests covering current behaviour in all areas flagged by 2.1 (safety net before any refactor) | — | `test-creation-strategy` | 2.1 | MEDIUM | pending |
-| 2.3 | Add TODO comments to Samsung and Hisense `unpairDevice` no-ops documenting the SharedPreferences pattern to follow (same as LG `clearPairing`) | N-06 | `technical-debt-management` | — | LOW | pending |
-| 2.4 ⚑ | *(Tentative)* Add `TvBrand.displayName` extension — replace `_brandName()` switch in `SsdpDeviceDiscoveryService` and `brand.name.toUpperCase()` at all call sites in the presentation layer | R-09 | `abstraction-domain-modeling`, `clean-code-solid` | — | LOW | pending |
-| 2.5 ⚑ | *(Tentative)* Move `formatTwoDigits` from `presentation/formatting/` to a shared utils layer (e.g. `lib/utils/`) so `SamsungTransportFileLogger` can import it without a downward dependency | N-02 | `clean-code-solid`, `abstraction-domain-modeling` | — | LOW | pending |
-| 2.6 | Apply `kDebugMode` guard to all 4 `catch` blocks in `BrandRoutedRemoteCommandService` (verbose in debug, generic in release) | N-05 | `error-handling-resilience` | — | LOW | pending |
+| 2.3 | Add TODO comments to Samsung and Hisense `unpairDevice` no-ops documenting the SharedPreferences pattern to follow (same as LG `clearPairing`) | N-06 | `technical-debt-management` | — | LOW | ✓ done |
+| 2.4 ⚑ | *(Tentative)* Add `TvBrand.displayName` extension — replace `_brandName()` switch in `SsdpDeviceDiscoveryService` and `brand.name.toUpperCase()` at all call sites in the presentation layer | R-09 | `abstraction-domain-modeling`, `clean-code-solid` | — | LOW | ✓ done |
+| 2.5 ⚑ | *(Tentative)* Move `formatTwoDigits` from `presentation/formatting/` to a shared utils layer (e.g. `lib/utils/`) so `SamsungTransportFileLogger` can import it without a downward dependency | N-02 | `clean-code-solid`, `abstraction-domain-modeling` | — | LOW | ✓ done |
+| 2.6 | Apply `kDebugMode` guard to all 4 `catch` blocks in `BrandRoutedRemoteCommandService` (verbose in debug, generic in release) — *temporary stopgap; superseded by 2.17* | N-05 | `error-handling-resilience` | — | LOW | ✓ done |
 | 2.7 ⚑ | *(Tentative)* Delete `SamsungKeyMapper.keyCodeFor` — duplicates inherited `CommandKeyMap.primaryKeyCodeFor`; update any external call sites | R-03 | `code-maintenance` | — | LOW | pending |
 | 2.8 ⚑ | *(Tentative)* Fix `HisenseAdapter` fake-transport footgun — make `transportClient` required or introduce `HisenseAdapter.fake()` named constructor; update `OneRemoteApp` | N-01 | `clean-code-solid` | — | MEDIUM | pending |
 | 2.9 | Replace `LgWebSocketTransportClient.sendKey()` if/else chain with a command dispatch map | N-03 | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM | pending |
@@ -83,6 +83,7 @@ lib/
 | 2.14 | Run full test suite against refactored code; verify no regressions from 2.9–2.12 | — | `regression-prevention` | 2.9, 2.10, 2.12 | MEDIUM | pending |
 | 2.15 ⚑ | *(Tentative)* Extract all adapter and service wiring out of `OneRemoteApp` widget into a standalone composition root; collapse `_resolveSamsungHost`, `_resolveLgHost`, `_resolveHisenseHost` into one shared `_resolveHost` method | N-07 | `clean-code-solid`, `modularity` | 2.14 | LOW | pending |
 | 2.16 ⚑ | *(Tentative)* Introduce `get_it` DI with `IDiConfig`/`DiBootstrap` pattern — define `IDiConfig` interface and `AppEnvironment` enum in `lib/app/configurations/`; each feature module gets a `DiXxx` class in `lib/<feature>/configurations/` implementing `IDiConfig.configure(GetIt, AppEnvironment)`; `DiBootstrap` holds the config list and drives registration; `OneRemoteApp` becomes a pure widget; no annotations on actual service/adapter classes; only `main.dart` changes to switch environments | N-09 | `modularity`, `clean-code-solid`, `dependency-management` | 2.15 | MEDIUM | pending |
+| 2.17 | Replace `kDebugMode` guard in `BrandRoutedRemoteCommandService` with `AppEnvironment`-aware error reporting — `development`/`debug` show full `$error` detail; `production` logs the raw error (without exposing it to the caller) and returns a generic `'Something went wrong.'` message | N-05 | `error-handling-resilience` | 2.16 | LOW | pending |
 
 ---
 
