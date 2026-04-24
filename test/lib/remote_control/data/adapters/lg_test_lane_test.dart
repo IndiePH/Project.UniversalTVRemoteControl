@@ -5,7 +5,6 @@ import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_exceptions.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
-import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
@@ -87,18 +86,9 @@ void main() {
 
   // --- T-4.3: Text-input and compatibility ---
 
-  test('LG lane: sendText when supportsTextInput=false returns unsupported', () async {
+  test('LG lane: sendText succeeds', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
-    );
-    final result = await service.sendText(device: lgDevice, text: 'hello');
-    expect(result.isSuccess, isFalse);
-    expect(result.message, contains('not supported'));
-  });
-
-  test('LG lane: sendText via text-input-enabled adapter succeeds', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [_TextInputLgAdapter(FakeLgTransportClient())],
     );
     final result = await service.sendText(device: lgDevice, text: 'hello');
     expect(result.isSuccess, isTrue);
@@ -106,7 +96,7 @@ void main() {
 
   test('LG lane: IME rejection surfaces as CommandDispatchResult.compatibility', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [_TextInputLgAdapter(_ImeRejectingLgTransportClient())],
+      adapters: [LgAdapter(transportClient: _ImeRejectingLgTransportClient())],
     );
     final result = await service.sendText(device: lgDevice, text: 'hello');
     expect(result.isSuccess, isFalse);
@@ -219,46 +209,6 @@ class _TimeoutLgTransportClient
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
-}
-
-class _TextInputLgAdapter implements TvBrandAdapter {
-  const _TextInputLgAdapter(this._transport);
-  final LgTransportClient _transport;
-
-  @override
-  TvBrand get brand => TvBrand.lg;
-
-  @override
-  bool get supportsTextInput => true;
-
-  @override
-  Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
-
-  @override
-  Future<void> unpairDevice({required TvDevice device}) async {}
-
-  @override
-  Future<void> preparePairing({required TvDevice device}) async {}
-
-  @override
-  Future<void> submitPairingCode({
-    required TvDevice device,
-    required String fourDigitPin,
-  }) async {}
-
-  @override
-  Future<void> sendCommand({
-    required TvDevice device,
-    required RemoteCommand command,
-  }) async {}
-
-  @override
-  Future<void> sendText({required TvDevice device, required String text}) =>
-      _transport.sendText(deviceId: device.id, text: text);
-
-  @override
-  Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
-      Stream<bool>.value(false);
 }
 
 class _ErrorOnSendLgTransportClient
