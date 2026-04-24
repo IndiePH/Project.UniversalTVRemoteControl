@@ -68,15 +68,15 @@ lib/
 | ID | Task | Ref | Skills | Deps | Risk | Status |
 |----|------|-----|--------|------|------|--------|
 | 2.1 | Audit entire `lib/` for SOLID violations, code smells, and duplication — produce prioritised findings list | — | `clean-code-solid`, `complexity-analyzer`, `technical-debt-management` | — | LOW | ✓ done |
-| 2.2 | Write unit tests covering current behaviour in all areas flagged by 2.1 (safety net before any refactor) | — | `test-creation-strategy` | 2.1 | MEDIUM | pending |
+| 2.2 | Write unit tests covering current behaviour in all areas flagged by 2.1 (safety net before any refactor) | — | `test-creation-strategy` | 2.1 | MEDIUM | ✓ done |
 | 2.3 | Add TODO comments to Samsung and Hisense `unpairDevice` no-ops documenting the SharedPreferences pattern to follow (same as LG `clearPairing`) | N-06 | `technical-debt-management` | — | LOW | ✓ done |
 | 2.4 ⚑ | *(Tentative)* Add `TvBrand.displayName` extension — replace `_brandName()` switch in `SsdpDeviceDiscoveryService` and `brand.name.toUpperCase()` at all call sites in the presentation layer | R-09 | `abstraction-domain-modeling`, `clean-code-solid` | — | LOW | ✓ done |
 | 2.5 ⚑ | *(Tentative)* Move `formatTwoDigits` from `presentation/formatting/` to a shared utils layer (e.g. `lib/utils/`) so `SamsungTransportFileLogger` can import it without a downward dependency | N-02 | `clean-code-solid`, `abstraction-domain-modeling` | — | LOW | ✓ done |
 | 2.6 | Apply `kDebugMode` guard to all 4 `catch` blocks in `BrandRoutedRemoteCommandService` (verbose in debug, generic in release) — *temporary stopgap; superseded by 2.17* | N-05 | `error-handling-resilience` | — | LOW | ✓ done |
 | 2.7 ⚑ | *(Tentative)* Delete `SamsungKeyMapper.keyCodeFor` — duplicates inherited `CommandKeyMap.primaryKeyCodeFor`; update any external call sites | R-03 | `code-maintenance` | — | LOW | ✓ done |
-| 2.8 ⚑ | *(Tentative)* Fix `HisenseAdapter` fake-transport footgun — make `transportClient` required or introduce `HisenseAdapter.fake()` named constructor; update `OneRemoteApp` | N-01 | `clean-code-solid` | — | MEDIUM | pending |
-| 2.9 | Replace `LgWebSocketTransportClient.sendKey()` if/else chain with a command dispatch map | N-03 | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM | pending |
-| 2.10 | Unify `_muteStates`, `_powerStates`, `_playingStates` into a single generic toggle-state abstraction | N-04 | `abstraction-domain-modeling`, `refactoring` | 2.2 | MEDIUM | pending |
+| 2.8 ⚑ | *(Tentative)* Fix `HisenseAdapter` fake-transport footgun — make `transportClient` required or introduce `HisenseAdapter.fake()` named constructor; update `OneRemoteApp` | N-01 | `clean-code-solid` | — | MEDIUM | ✓ done |
+| 2.9 | Replace `LgWebSocketTransportClient.sendKey()` if/else chain with a command dispatch map | N-03 | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM | ✓ done |
+| 2.10 | Unify `_muteStates`, `_powerStates`, `_playingStates` into a single generic toggle-state abstraction | N-04 | `abstraction-domain-modeling`, `refactoring` | 2.2 | MEDIUM | ✓ done |
 | 2.11 ⚑ | *(Tentative)* Unify `SamsungWebSocketTransportClient._connectWithoutToken` / `_connectWithKnownToken` into one private method — removes ~60 lines of structurally identical socket/TLS-pin logic | N-08 | `refactoring` | — | LOW | pending |
 | 2.12 | Replace growing brand if/else in `BrandRoutedRemoteCommandService` with Strategy map keyed by `TvBrand` | N-03 (related) | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM | pending |
 | 2.13 ⚑ | *(Tentative)* Add `CommandOutcome` enum discriminator to `CommandDispatchResult` — distinguish `success`, `unsupported`, `failure`, `compatibility` so UI can branch without flag-checking | R-11 | `api-design`, `clean-code-solid` | — | MEDIUM | pending |
