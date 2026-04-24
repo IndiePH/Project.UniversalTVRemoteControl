@@ -20,19 +20,6 @@ void main() {
     },
   );
 
-  // --- Default constructor ---
-
-  test('Hisense adapter: no-arg constructor defaults to FakeHisenseTransportClient', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [HisenseAdapter()],
-    );
-    final result = await service.preparePairing(device: hisenseDevice);
-    // FakeHisenseTransportClient throws when device is not authorized;
-    // the service surfaces this as failure with the fake's error message.
-    expect(result.isSuccess, isFalse);
-    expect(result.message, contains('4-digit code'));
-  });
-
   // --- preparePairing ---
 
   test('Hisense adapter: preparePairing calls connect on the transport', () async {

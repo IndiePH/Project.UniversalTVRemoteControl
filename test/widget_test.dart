@@ -13,6 +13,7 @@ import 'package:one_remote/remote_control/application/layout_repository.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/hisense/fake_hisense_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
@@ -49,7 +50,7 @@ void main() {
       adapters: [
         SamsungAdapter(transportClient: FakeSamsungTransportClient()),
         LgAdapter(transportClient: FakeLgTransportClient()),
-        HisenseAdapter(),
+        HisenseAdapter(transportClient: FakeHisenseTransportClient()),
       ],
     );
 

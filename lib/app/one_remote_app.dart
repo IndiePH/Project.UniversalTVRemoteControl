@@ -11,6 +11,7 @@ import 'package:one_remote/remote_control/data/adapters/lg/lg_websocket_transpor
 import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_websocket_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/hisense/fake_hisense_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
@@ -114,13 +115,10 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
   }
 
   HisenseAdapter _buildHisenseAdapter() {
-    if (_useFakeTransports) {
-      return HisenseAdapter();
-    }
     return HisenseAdapter(
-      transportClient: RealHisenseTransportClient(
-        hostResolver: _resolveHisenseHost,
-      ),
+      transportClient: _useFakeTransports
+          ? FakeHisenseTransportClient()
+          : RealHisenseTransportClient(hostResolver: _resolveHisenseHost),
     );
   }
 
