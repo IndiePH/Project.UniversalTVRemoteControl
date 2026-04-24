@@ -1,16 +1,14 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 
 void main() {
   const samsungDevice = TvDevice(
@@ -23,6 +21,18 @@ void main() {
       DeviceCapability.powerControl,
     },
   );
+
+  const samsungDeviceNoTextInput = TvDevice(
+    id: 'samsung-test',
+    displayName: 'Samsung Test TV',
+    brand: TvBrand.samsung,
+    capabilities: {
+      DeviceCapability.keyCommands,
+      DeviceCapability.powerControl,
+    },
+  );
+
+  // --- Existing tests (preserved from test/samsung_test_lane_test.dart) ---
 
   test('Samsung lane: unsupported command returns UI-safe result', () async {
     final service = BrandRoutedRemoteCommandService(
@@ -85,7 +95,54 @@ void main() {
 
     expect(values, [false]);
   });
+
+  // --- T-07 additions ---
+
+  test('Samsung lane: preparePairing success when transport accepts approval', () async {
+    final service = BrandRoutedRemoteCommandService(
+      adapters: [SamsungAdapter(transportClient: _SpySamsungTransportClient())],
+    );
+    final result = await service.preparePairing(device: samsungDevice);
+    expect(result.isSuccess, isTrue);
+  });
+
+  test('Samsung lane: submitPairingCode returns unsupported (Samsung does not require a PIN)', () async {
+    final service = BrandRoutedRemoteCommandService(
+      adapters: [SamsungAdapter(transportClient: _SpySamsungTransportClient())],
+    );
+    final result = await service.submitPairingCode(
+      device: samsungDevice,
+      fourDigitPin: '1234',
+    );
+    expect(result.isSuccess, isFalse);
+    expect(result.isCompatibilityIssue, isFalse);
+    expect(result.message, contains('not required'));
+  });
+
+  test('Samsung adapter: unpairDevice is a no-op and completes without error', () async {
+    final adapter = SamsungAdapter(transportClient: _SpySamsungTransportClient());
+    await expectLater(
+      adapter.unpairDevice(device: samsungDevice),
+      completes,
+    );
+  });
+
+  test('Samsung lane: watchRemoteTextInputReady returns false when device lacks textInput capability', () async {
+    // _CompatibilitySamsungAdapter has supportsTextInput=true so the service
+    // proceeds past that gate and reaches the capability check.
+    final service = BrandRoutedRemoteCommandService(
+      adapters: [const _CompatibilitySamsungAdapter()],
+    );
+    final values = await service
+        .watchRemoteTextInputReady(device: samsungDeviceNoTextInput)
+        .toList();
+    expect(values, [false]);
+  });
 }
+
+// ---------------------------------------------------------------------------
+// Test helpers
+// ---------------------------------------------------------------------------
 
 class _SpySamsungTransportClient implements SamsungTransportClient {
   _SpySamsungTransportClient({this.throwOnConnect = false});
