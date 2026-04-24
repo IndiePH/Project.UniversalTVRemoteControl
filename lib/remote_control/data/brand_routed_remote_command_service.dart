@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
@@ -38,7 +39,9 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
       );
     } catch (error) {
       return CommandDispatchResult.failure(
-        'Failed to pair ${device.displayName}: $error',
+        kDebugMode
+            ? 'Failed to pair ${device.displayName}: $error'
+            : 'Something went wrong.',
       );
     }
   }
@@ -66,7 +69,9 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
       return CommandDispatchResult.unsupported(error.message?.toString() ?? '$error');
     } catch (error) {
       return CommandDispatchResult.failure(
-        'Failed to submit pairing code for ${device.brand.name}: $error',
+        kDebugMode
+            ? 'Failed to submit pairing code for ${device.brand.name}: $error'
+            : 'Something went wrong.',
       );
     }
   }
@@ -92,7 +97,9 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
       return CommandDispatchResult.success('Sent: ${command.name}');
     } catch (error) {
       return CommandDispatchResult.failure(
-        'Failed to send ${command.name} for ${device.brand.name}: $error',
+        kDebugMode
+            ? 'Failed to send ${command.name} for ${device.brand.name}: $error'
+            : 'Something went wrong.',
       );
     }
   }
@@ -120,7 +127,9 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
       return CommandDispatchResult.compatibility(error.userMessage);
     } catch (error) {
       return CommandDispatchResult.failure(
-        'Failed to send text for ${device.brand.name}: $error',
+        kDebugMode
+            ? 'Failed to send text for ${device.brand.name}: $error'
+            : 'Something went wrong.',
       );
     }
   }
