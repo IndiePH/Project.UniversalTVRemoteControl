@@ -67,20 +67,20 @@ lib/
 |----|------|--------|------|------|
 | 2.1 | Audit entire `lib/` for SOLID violations, code smells, and duplication — produce prioritised findings list | `clean-code-solid`, `complexity-analyzer`, `technical-debt-management` | — | LOW |
 | 2.2 | Write unit tests covering current behaviour in all areas flagged by 2.1 (safety net before any refactor) | `test-creation-strategy` | 2.1 | MEDIUM |
-| 2.3 | Replace `LgWebSocketTransportClient.sendKey()` if/else chain with a command dispatch map | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM |
-| 2.4 | Unify `_muteStates`, `_powerStates`, `_playingStates` into a single generic toggle-state abstraction | `abstraction-domain-modeling`, `refactoring` | 2.2 | MEDIUM |
-| 2.5 | Replace growing brand if/else in `BrandRoutedRemoteCommandService` with Strategy map keyed by `TvBrand` | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM |
+| 2.3 | Add TODO comments to Samsung and Hisense `unpairDevice` no-ops documenting the SharedPreferences pattern to follow (same as LG `clearPairing`) | `technical-debt-management` | — | LOW |
+| 2.4 ⚑ | *(Tentative)* Add `TvBrand.displayName` extension — replace `_brandName()` switch in `SsdpDeviceDiscoveryService` and `brand.name.toUpperCase()` at all call sites in the presentation layer | `abstraction-domain-modeling`, `clean-code-solid` | — | LOW |
+| 2.5 ⚑ | *(Tentative)* Move `formatTwoDigits` from `presentation/formatting/` to a shared utils layer (e.g. `lib/utils/`) so `SamsungTransportFileLogger` can import it without a downward dependency | `clean-code-solid`, `abstraction-domain-modeling` | — | LOW |
 | 2.6 | Apply `kDebugMode` guard to all 4 `catch` blocks in `BrandRoutedRemoteCommandService` (verbose in debug, generic in release) | `error-handling-resilience` | — | LOW |
-| 2.7 | Add TODO comments to Samsung and Hisense `unpairDevice` no-ops documenting the SharedPreferences pattern to follow (same as LG `clearPairing`) | `technical-debt-management` | — | LOW |
-| 2.8 | Run full test suite against refactored code; verify no regressions from 2.3–2.5 | `regression-prevention` | 2.3, 2.4, 2.5 | MEDIUM |
-| 2.9 ⚑ | *(Tentative)* Delete `SamsungKeyMapper.keyCodeFor` — duplicates inherited `CommandKeyMap.primaryKeyCodeFor`; update any external call sites | `code-maintenance` | — | LOW |
-| 2.10 ⚑ | *(Tentative)* Fix `HisenseAdapter` fake-transport footgun — make `transportClient` required or introduce `HisenseAdapter.fake()` named constructor; update `OneRemoteApp` | `clean-code-solid` | — | MEDIUM |
-| 2.11 ⚑ | *(Tentative)* Move `formatTwoDigits` from `presentation/formatting/` to a shared utils layer (e.g. `lib/src/utils/`) so `SamsungTransportFileLogger` can import it without a downward dependency | `clean-code-solid`, `abstraction-domain-modeling` | — | LOW |
-| 2.12 ⚑ | *(Tentative)* Add `TvBrand.displayName` extension — replace `_brandName()` switch in `SsdpDeviceDiscoveryService` and `brand.name.toUpperCase()` at all call sites in the presentation layer | `abstraction-domain-modeling`, `clean-code-solid` | — | LOW |
+| 2.7 ⚑ | *(Tentative)* Delete `SamsungKeyMapper.keyCodeFor` — duplicates inherited `CommandKeyMap.primaryKeyCodeFor`; update any external call sites | `code-maintenance` | — | LOW |
+| 2.8 ⚑ | *(Tentative)* Fix `HisenseAdapter` fake-transport footgun — make `transportClient` required or introduce `HisenseAdapter.fake()` named constructor; update `OneRemoteApp` | `clean-code-solid` | — | MEDIUM |
+| 2.9 | Replace `LgWebSocketTransportClient.sendKey()` if/else chain with a command dispatch map | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM |
+| 2.10 | Unify `_muteStates`, `_powerStates`, `_playingStates` into a single generic toggle-state abstraction | `abstraction-domain-modeling`, `refactoring` | 2.2 | MEDIUM |
+| 2.11 ⚑ | *(Tentative)* Unify `SamsungWebSocketTransportClient._connectWithoutToken` / `_connectWithKnownToken` into one private method — removes ~60 lines of structurally identical socket/TLS-pin logic | `refactoring` | — | LOW |
+| 2.12 | Replace growing brand if/else in `BrandRoutedRemoteCommandService` with Strategy map keyed by `TvBrand` | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM |
 | 2.13 ⚑ | *(Tentative)* Add `CommandOutcome` enum discriminator to `CommandDispatchResult` — distinguish `success`, `unsupported`, `failure`, `compatibility` so UI can branch without flag-checking | `api-design`, `clean-code-solid` | — | MEDIUM |
-| 2.14 ⚑ | *(Tentative)* Extract all adapter and service wiring out of `OneRemoteApp` widget into a standalone composition root; collapse `_resolveSamsungHost`, `_resolveLgHost`, `_resolveHisenseHost` into one shared `_resolveHost` method | `clean-code-solid`, `modularity` | — | LOW |
-| 2.15 ⚑ | *(Tentative)* Unify `SamsungWebSocketTransportClient._connectWithoutToken` / `_connectWithKnownToken` into one private method — removes ~60 lines of structurally identical socket/TLS-pin logic | `refactoring` | — | LOW |
-| 2.16 ⚑ | *(Tentative)* Introduce `get_it` + `injectable` DI — move all service/adapter construction into `@module` classes (`LgModule`, `SamsungModule`, `HisenseModule`, `AppModule`); `OneRemoteApp` reduces to a pure widget that declares what it needs by interface; `@prod`/`@dev` env tags replace runtime `_useFakeTransports` branching | `modularity`, `clean-code-solid`, `dependency-management` | 2.14 | MEDIUM |
+| 2.14 | Run full test suite against refactored code; verify no regressions from 2.9–2.12 | `regression-prevention` | 2.9, 2.10, 2.12 | MEDIUM |
+| 2.15 ⚑ | *(Tentative)* Extract all adapter and service wiring out of `OneRemoteApp` widget into a standalone composition root; collapse `_resolveSamsungHost`, `_resolveLgHost`, `_resolveHisenseHost` into one shared `_resolveHost` method | `clean-code-solid`, `modularity` | 2.14 | LOW |
+| 2.16 ⚑ | *(Tentative)* Introduce `get_it` + `injectable` DI — move all service/adapter construction into `@module` classes (`LgModule`, `SamsungModule`, `HisenseModule`, `AppModule`); `OneRemoteApp` reduces to a pure widget that declares what it needs by interface; `@prod`/`@dev` env tags replace runtime `_useFakeTransports` branching | `modularity`, `clean-code-solid`, `dependency-management` | 2.15 | MEDIUM |
 
 ---
 
