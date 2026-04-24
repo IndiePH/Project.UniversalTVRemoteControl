@@ -11,7 +11,7 @@ import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/remote_control/presentation/formatting/two_digit_format.dart';
+import 'package:one_remote/utils/two_digit_format.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_actions.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_keyboard_availability.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';

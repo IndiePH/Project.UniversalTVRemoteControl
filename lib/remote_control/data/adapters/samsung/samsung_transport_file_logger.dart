@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:one_remote/utils/two_digit_format.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Writes Samsung transport debug logs to a local file on-device.
@@ -42,7 +43,7 @@ class SamsungTransportFileLogger {
 
     final now = DateTime.now();
     final fileName =
-        'samsung_transport_${now.year}${_twoDigits(now.month)}${_twoDigits(now.day)}.log';
+        'samsung_transport_${now.year}${formatTwoDigits(now.month)}${formatTwoDigits(now.day)}.log';
     final file = File('${logsDir.path}/$fileName');
     if (!await file.exists()) {
       await file.create(recursive: true);
@@ -89,6 +90,4 @@ class SamsungTransportFileLogger {
     }
     return Directory('${baseDir.path}/one_remote_logs');
   }
-
-  String _twoDigits(int value) => value.toString().padLeft(2, '0');
 }

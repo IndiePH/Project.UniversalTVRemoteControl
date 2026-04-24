@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:one_remote/remote_control/presentation/formatting/two_digit_format.dart';
+import 'package:one_remote/utils/two_digit_format.dart';
 
 void main() {
   group('formatTwoDigits', () {
