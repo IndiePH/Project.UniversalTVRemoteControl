@@ -49,7 +49,7 @@ final class PairingPageData {
   }) {
     return TvDevice(
       id: '${brand.name}-$ip',
-      displayName: '${brand.name.toUpperCase()} TV ($ip)',
+      displayName: '${brand.displayName} TV ($ip)',
       brand: brand,
       capabilities: brand.defaultCapabilities,
     );
