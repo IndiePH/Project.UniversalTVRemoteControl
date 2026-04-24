@@ -23,10 +23,11 @@ improve the TV remote screen UX. Each branch is independently deliverable and me
 | D2 | `lib/src/app` (app shell/routing) and `lib/src/features/remote_control/application` (service layer) are distinct concerns — both survive the rename, paths change | Naming confusion only; they are not duplicates |
 | D3 | Include brand dispatch Strategy map (task 2.5) in refactor/solid-clean-code branch | Same root cause as `sendKey()` if/else; fix together while context is active |
 | D4 | Disconnection detection: add `Stream<ConnectionState>` to transport interface; LG + Samsung use WebSocket `onDone`/`onError` (event-driven); Hisense uses periodic ping poll | Keeps brand logic below adapter boundary; UI subscribes to a unified stream |
+| D5 | DI container: `get_it` + `injectable` for adapter/service wiring — each concern gets an `@module` class (direct analog to `IDIConfig<Container, AppSettings>`); `OneRemoteApp` becomes a pure widget; `@prod`/`@dev` env tags replace runtime `_useFakeTransports` branching | Widget should not own construction logic; modular DI makes transport swapping, testing, and new-brand onboarding explicit without touching the app shell |
 
 ---
 
-## Branch 1 — `refactor/folder-structure`
+## Branch 1 — `refactor/folder-structure` (done)
 
 **Sub-goal:** Flatten `lib/` to feature-named top-level directories; remove `src` wrapper and `features/remote_control` nesting.
 
@@ -56,7 +57,7 @@ lib/
 
 ## Branch 2 — `refactor/solid-clean-code`
 
-**Sub-goal:** Eliminate SOLID violations, duplicated toggle-state boilerplate, growing brand dispatch chains, and raw error exposure.
+**Sub-goal:** Eliminate SOLID violations, duplicated toggle-state boilerplate, growing brand dispatch chains, raw error exposure, and introduce a DI container to decouple service construction from the presentation layer.
 
 > **Depends on Branch 1 being merged** (import paths must be stable before refactoring internals).
 
@@ -77,6 +78,9 @@ lib/
 | 2.11 ⚑ | *(Tentative)* Move `formatTwoDigits` from `presentation/formatting/` to a shared utils layer (e.g. `lib/src/utils/`) so `SamsungTransportFileLogger` can import it without a downward dependency | `clean-code-solid`, `abstraction-domain-modeling` | — | LOW |
 | 2.12 ⚑ | *(Tentative)* Add `TvBrand.displayName` extension — replace `_brandName()` switch in `SsdpDeviceDiscoveryService` and `brand.name.toUpperCase()` at all call sites in the presentation layer | `abstraction-domain-modeling`, `clean-code-solid` | — | LOW |
 | 2.13 ⚑ | *(Tentative)* Add `CommandOutcome` enum discriminator to `CommandDispatchResult` — distinguish `success`, `unsupported`, `failure`, `compatibility` so UI can branch without flag-checking | `api-design`, `clean-code-solid` | — | MEDIUM |
+| 2.14 ⚑ | *(Tentative)* Extract all adapter and service wiring out of `OneRemoteApp` widget into a standalone composition root; collapse `_resolveSamsungHost`, `_resolveLgHost`, `_resolveHisenseHost` into one shared `_resolveHost` method | `clean-code-solid`, `modularity` | — | LOW |
+| 2.15 ⚑ | *(Tentative)* Unify `SamsungWebSocketTransportClient._connectWithoutToken` / `_connectWithKnownToken` into one private method — removes ~60 lines of structurally identical socket/TLS-pin logic | `refactoring` | — | LOW |
+| 2.16 ⚑ | *(Tentative)* Introduce `get_it` + `injectable` DI — move all service/adapter construction into `@module` classes (`LgModule`, `SamsungModule`, `HisenseModule`, `AppModule`); `OneRemoteApp` reduces to a pure widget that declares what it needs by interface; `@prod`/`@dev` env tags replace runtime `_useFakeTransports` branching | `modularity`, `clean-code-solid`, `dependency-management` | 2.14 | MEDIUM |
 
 ---
 
@@ -135,6 +139,22 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 | 5.1 | Design per-device capability detection: at pairing time query TV model/firmware version, map to a model-specific capability set, fall back to `brand.defaultCapabilities` if model is unrecognised. Brainstorm correct approach with Claude before implementing. | `abstraction-domain-modeling`, `api-design`, `requirement-interpretation` | — | LOW |
 | 5.2 | Implement capability detection per 5.1 design; update `TvDevice.fromJson` / pairing flow to persist and restore per-device capabilities correctly | `abstraction-domain-modeling`, `framework-mastery` | 5.1 | MEDIUM |
 | 5.3 | Only show remote controls supported by the paired TV's capability set; allow user override | `framework-mastery`, `ux-constraints-awareness` | 5.2 | MEDIUM |
+
+> **Design note (5.1 — brand-variance):** Beyond capability variance, brands may change their wire
+> protocol in a future firmware or OS release. When this occurs, introduce a new adapter alongside
+> the existing one — never replace it, as older paired devices must remain functional.
+>
+> **Naming rule:** Don't add specificity until there's a second adapter to distinguish from. When
+> divergence happens, name both adapters by what actually differs between them — the transport
+> mechanism, protocol family, or API design (e.g. `LgSsapAdapter` + `LgRestAdapter`, or
+> `SamsungTizenAdapter` + `SamsungMatterAdapter`). Only use a version number in the name if the
+> version boundary IS the discriminator and no better descriptor exists. Never pre-emptively encode
+> version numbers on an adapter that has no sibling yet.
+>
+> **Routing seam to extend:** `BrandRoutedRemoteCommandService._adapters` (`Map<TvBrand, TvBrandAdapter>`);
+> the key may need to become a composite of brand + detected protocol variant. Detection should happen
+> at pairing time (alongside model/firmware probing in 5.1) and be persisted per device so the correct
+> adapter is selected on reconnect without re-probing.
 
 ---
 
