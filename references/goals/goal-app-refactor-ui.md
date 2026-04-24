@@ -2,7 +2,7 @@
 
 **Goal ID:** `app-refactor-ui`
 **Created:** 2026-04-22
-**Status:** `pending`
+**Status:** `in-progress`
 **Owner:** wlvyr
 
 ---
@@ -61,26 +61,28 @@ lib/
 
 > **Depends on Branch 1 being merged** (import paths must be stable before refactoring internals).
 
-> ⚑ Tasks marked *Tentative* were surfaced during lib review (`references/refactor-proposal.md`) and are up for debate — confirm before scheduling.
+> ⚑ Tasks marked *Tentative* were surfaced during lib review (`references/goals/refactor-proposal.md`) and are up for debate — confirm before scheduling. 
 
-| ID | Task | Skills | Deps | Risk |
-|----|------|--------|------|------|
-| 2.1 | Audit entire `lib/` for SOLID violations, code smells, and duplication — produce prioritised findings list | `clean-code-solid`, `complexity-analyzer`, `technical-debt-management` | — | LOW |
-| 2.2 | Write unit tests covering current behaviour in all areas flagged by 2.1 (safety net before any refactor) | `test-creation-strategy` | 2.1 | MEDIUM |
-| 2.3 | Add TODO comments to Samsung and Hisense `unpairDevice` no-ops documenting the SharedPreferences pattern to follow (same as LG `clearPairing`) | `technical-debt-management` | — | LOW |
-| 2.4 ⚑ | *(Tentative)* Add `TvBrand.displayName` extension — replace `_brandName()` switch in `SsdpDeviceDiscoveryService` and `brand.name.toUpperCase()` at all call sites in the presentation layer | `abstraction-domain-modeling`, `clean-code-solid` | — | LOW |
-| 2.5 ⚑ | *(Tentative)* Move `formatTwoDigits` from `presentation/formatting/` to a shared utils layer (e.g. `lib/utils/`) so `SamsungTransportFileLogger` can import it without a downward dependency | `clean-code-solid`, `abstraction-domain-modeling` | — | LOW |
-| 2.6 | Apply `kDebugMode` guard to all 4 `catch` blocks in `BrandRoutedRemoteCommandService` (verbose in debug, generic in release) | `error-handling-resilience` | — | LOW |
-| 2.7 ⚑ | *(Tentative)* Delete `SamsungKeyMapper.keyCodeFor` — duplicates inherited `CommandKeyMap.primaryKeyCodeFor`; update any external call sites | `code-maintenance` | — | LOW |
-| 2.8 ⚑ | *(Tentative)* Fix `HisenseAdapter` fake-transport footgun — make `transportClient` required or introduce `HisenseAdapter.fake()` named constructor; update `OneRemoteApp` | `clean-code-solid` | — | MEDIUM |
-| 2.9 | Replace `LgWebSocketTransportClient.sendKey()` if/else chain with a command dispatch map | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM |
-| 2.10 | Unify `_muteStates`, `_powerStates`, `_playingStates` into a single generic toggle-state abstraction | `abstraction-domain-modeling`, `refactoring` | 2.2 | MEDIUM |
-| 2.11 ⚑ | *(Tentative)* Unify `SamsungWebSocketTransportClient._connectWithoutToken` / `_connectWithKnownToken` into one private method — removes ~60 lines of structurally identical socket/TLS-pin logic | `refactoring` | — | LOW |
-| 2.12 | Replace growing brand if/else in `BrandRoutedRemoteCommandService` with Strategy map keyed by `TvBrand` | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM |
-| 2.13 ⚑ | *(Tentative)* Add `CommandOutcome` enum discriminator to `CommandDispatchResult` — distinguish `success`, `unsupported`, `failure`, `compatibility` so UI can branch without flag-checking | `api-design`, `clean-code-solid` | — | MEDIUM |
-| 2.14 | Run full test suite against refactored code; verify no regressions from 2.9–2.12 | `regression-prevention` | 2.9, 2.10, 2.12 | MEDIUM |
-| 2.15 ⚑ | *(Tentative)* Extract all adapter and service wiring out of `OneRemoteApp` widget into a standalone composition root; collapse `_resolveSamsungHost`, `_resolveLgHost`, `_resolveHisenseHost` into one shared `_resolveHost` method | `clean-code-solid`, `modularity` | 2.14 | LOW |
-| 2.16 ⚑ | *(Tentative)* Introduce `get_it` DI with `IDiConfig`/`DiBootstrap` pattern — define `IDiConfig` interface and `AppEnvironment` enum in `lib/app/configurations/`; each feature module gets a `DiXxx` class in `lib/<feature>/configurations/` implementing `IDiConfig.configure(GetIt, AppEnvironment)`; `DiBootstrap` holds the config list and drives registration; `OneRemoteApp` becomes a pure widget; no annotations on actual service/adapter classes; only `main.dart` changes to switch environments | `modularity`, `clean-code-solid`, `dependency-management` | 2.15 | MEDIUM |
+> ref refers to the id in `references/goals/refactor-proposal.md`
+
+| ID | Task | Ref | Skills | Deps | Risk | Status |
+|----|------|-----|--------|------|------|--------|
+| 2.1 | Audit entire `lib/` for SOLID violations, code smells, and duplication — produce prioritised findings list | — | `clean-code-solid`, `complexity-analyzer`, `technical-debt-management` | — | LOW | ✓ done |
+| 2.2 | Write unit tests covering current behaviour in all areas flagged by 2.1 (safety net before any refactor) | — | `test-creation-strategy` | 2.1 | MEDIUM | pending |
+| 2.3 | Add TODO comments to Samsung and Hisense `unpairDevice` no-ops documenting the SharedPreferences pattern to follow (same as LG `clearPairing`) | N-06 | `technical-debt-management` | — | LOW | pending |
+| 2.4 ⚑ | *(Tentative)* Add `TvBrand.displayName` extension — replace `_brandName()` switch in `SsdpDeviceDiscoveryService` and `brand.name.toUpperCase()` at all call sites in the presentation layer | R-09 | `abstraction-domain-modeling`, `clean-code-solid` | — | LOW | pending |
+| 2.5 ⚑ | *(Tentative)* Move `formatTwoDigits` from `presentation/formatting/` to a shared utils layer (e.g. `lib/utils/`) so `SamsungTransportFileLogger` can import it without a downward dependency | N-02 | `clean-code-solid`, `abstraction-domain-modeling` | — | LOW | pending |
+| 2.6 | Apply `kDebugMode` guard to all 4 `catch` blocks in `BrandRoutedRemoteCommandService` (verbose in debug, generic in release) | N-05 | `error-handling-resilience` | — | LOW | pending |
+| 2.7 ⚑ | *(Tentative)* Delete `SamsungKeyMapper.keyCodeFor` — duplicates inherited `CommandKeyMap.primaryKeyCodeFor`; update any external call sites | R-03 | `code-maintenance` | — | LOW | pending |
+| 2.8 ⚑ | *(Tentative)* Fix `HisenseAdapter` fake-transport footgun — make `transportClient` required or introduce `HisenseAdapter.fake()` named constructor; update `OneRemoteApp` | N-01 | `clean-code-solid` | — | MEDIUM | pending |
+| 2.9 | Replace `LgWebSocketTransportClient.sendKey()` if/else chain with a command dispatch map | N-03 | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM | pending |
+| 2.10 | Unify `_muteStates`, `_powerStates`, `_playingStates` into a single generic toggle-state abstraction | N-04 | `abstraction-domain-modeling`, `refactoring` | 2.2 | MEDIUM | pending |
+| 2.11 ⚑ | *(Tentative)* Unify `SamsungWebSocketTransportClient._connectWithoutToken` / `_connectWithKnownToken` into one private method — removes ~60 lines of structurally identical socket/TLS-pin logic | N-08 | `refactoring` | — | LOW | pending |
+| 2.12 | Replace growing brand if/else in `BrandRoutedRemoteCommandService` with Strategy map keyed by `TvBrand` | N-03 (related) | `design-pattern-selection`, `clean-code-solid` | 2.2 | MEDIUM | pending |
+| 2.13 ⚑ | *(Tentative)* Add `CommandOutcome` enum discriminator to `CommandDispatchResult` — distinguish `success`, `unsupported`, `failure`, `compatibility` so UI can branch without flag-checking | R-11 | `api-design`, `clean-code-solid` | — | MEDIUM | pending |
+| 2.14 | Run full test suite against refactored code; verify no regressions from 2.9–2.12 | — | `regression-prevention` | 2.9, 2.10, 2.12 | MEDIUM | pending |
+| 2.15 ⚑ | *(Tentative)* Extract all adapter and service wiring out of `OneRemoteApp` widget into a standalone composition root; collapse `_resolveSamsungHost`, `_resolveLgHost`, `_resolveHisenseHost` into one shared `_resolveHost` method | N-07 | `clean-code-solid`, `modularity` | 2.14 | LOW | pending |
+| 2.16 ⚑ | *(Tentative)* Introduce `get_it` DI with `IDiConfig`/`DiBootstrap` pattern — define `IDiConfig` interface and `AppEnvironment` enum in `lib/app/configurations/`; each feature module gets a `DiXxx` class in `lib/<feature>/configurations/` implementing `IDiConfig.configure(GetIt, AppEnvironment)`; `DiBootstrap` holds the config list and drives registration; `OneRemoteApp` becomes a pure widget; no annotations on actual service/adapter classes; only `main.dart` changes to switch environments | N-09 | `modularity`, `clean-code-solid`, `dependency-management` | 2.15 | MEDIUM | pending |
 
 ---
 
