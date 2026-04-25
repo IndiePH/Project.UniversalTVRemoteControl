@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
@@ -104,7 +105,7 @@ void main() {
     );
     final result = await service.sendText(device: hisenseDevice, text: 'hello');
     expect(result.isSuccess, isFalse);
-    expect(result.isCompatibilityIssue, isFalse);
+    expect(result.outcome, CommandOutcome.unsupported);
     expect(result.message, contains('not supported'));
   });
 

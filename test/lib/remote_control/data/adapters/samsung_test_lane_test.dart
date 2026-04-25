@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
@@ -59,7 +60,7 @@ void main() {
     final result = await service.sendText(device: samsungDevice, text: 'hello');
 
     expect(result.isSuccess, isFalse);
-    expect(result.isCompatibilityIssue, isTrue);
+    expect(result.outcome, CommandOutcome.compatibility);
     expect(result.message, 'Samsung IME unavailable on this screen.');
   });
 
@@ -71,7 +72,7 @@ void main() {
     final result = await service.sendText(device: samsungDevice, text: 'hello');
 
     expect(result.isSuccess, isFalse);
-    expect(result.isCompatibilityIssue, isFalse);
+    expect(result.outcome, CommandOutcome.unsupported);
     expect(result.message, contains('Text input is not supported for samsung.'));
   });
 
@@ -115,7 +116,7 @@ void main() {
       fourDigitPin: '1234',
     );
     expect(result.isSuccess, isFalse);
-    expect(result.isCompatibilityIssue, isFalse);
+    expect(result.outcome, CommandOutcome.unsupported);
     expect(result.message, contains('not required'));
   });
 

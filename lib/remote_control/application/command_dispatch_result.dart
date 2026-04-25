@@ -1,30 +1,25 @@
+enum CommandOutcome { success, unsupported, failure, compatibility }
+
 class CommandDispatchResult {
   const CommandDispatchResult._({
-    required this.isSuccess,
+    required this.outcome,
     required this.message,
-    this.isCompatibilityIssue = false,
   });
 
-  final bool isSuccess;
+  final CommandOutcome outcome;
   final String message;
 
-  /// True when sending failed because the TV app or screen does not support
-  /// remote text injection (distinct from transport or generic errors).
-  final bool isCompatibilityIssue;
+  bool get isSuccess => outcome == CommandOutcome.success;
 
   const CommandDispatchResult.success(String message)
-    : this._(isSuccess: true, message: message);
+    : this._(outcome: CommandOutcome.success, message: message);
 
   const CommandDispatchResult.unsupported(String message)
-    : this._(isSuccess: false, message: message);
+    : this._(outcome: CommandOutcome.unsupported, message: message);
 
   const CommandDispatchResult.failure(String message)
-    : this._(isSuccess: false, message: message);
+    : this._(outcome: CommandOutcome.failure, message: message);
 
   const CommandDispatchResult.compatibility(String message)
-    : this._(
-        isSuccess: false,
-        message: message,
-        isCompatibilityIssue: true,
-      );
+    : this._(outcome: CommandOutcome.compatibility, message: message);
 }

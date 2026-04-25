@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
@@ -147,7 +148,7 @@ void main() {
       fourDigitPin: '1234',
     );
     expect(result.isSuccess, isFalse);
-    expect(result.isCompatibilityIssue, isFalse);
+    expect(result.outcome, CommandOutcome.unsupported);
     expect(result.message, contains('client-key'));
   });
 

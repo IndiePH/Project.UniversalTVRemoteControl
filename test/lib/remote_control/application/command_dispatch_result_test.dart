@@ -8,9 +8,9 @@ void main() {
       expect(result.isSuccess, isTrue);
     });
 
-    test('isCompatibilityIssue is false', () {
+    test('outcome is success', () {
       const result = CommandDispatchResult.success('OK');
-      expect(result.isCompatibilityIssue, isFalse);
+      expect(result.outcome, CommandOutcome.success);
     });
 
     test('message is preserved', () {
@@ -25,9 +25,9 @@ void main() {
       expect(result.isSuccess, isFalse);
     });
 
-    test('isCompatibilityIssue is false', () {
+    test('outcome is unsupported', () {
       const result = CommandDispatchResult.unsupported('Not supported');
-      expect(result.isCompatibilityIssue, isFalse);
+      expect(result.outcome, CommandOutcome.unsupported);
     });
 
     test('message is preserved', () {
@@ -42,9 +42,9 @@ void main() {
       expect(result.isSuccess, isFalse);
     });
 
-    test('isCompatibilityIssue is false', () {
+    test('outcome is failure', () {
       const result = CommandDispatchResult.failure('Something went wrong');
-      expect(result.isCompatibilityIssue, isFalse);
+      expect(result.outcome, CommandOutcome.failure);
     });
 
     test('message is preserved', () {
@@ -59,9 +59,9 @@ void main() {
       expect(result.isSuccess, isFalse);
     });
 
-    test('isCompatibilityIssue is true', () {
+    test('outcome is compatibility', () {
       const result = CommandDispatchResult.compatibility('No focused text field');
-      expect(result.isCompatibilityIssue, isTrue);
+      expect(result.outcome, CommandOutcome.compatibility);
     });
 
     test('message is preserved', () {
@@ -70,16 +70,14 @@ void main() {
     });
   });
 
-  group('CommandDispatchResult: current ambiguity (R-11)', () {
-    // Documents the known design gap: unsupported and failure are
-    // programmatically indistinguishable by flags. R-11 (task 2.13) will
-    // introduce a CommandOutcome discriminator to resolve this.
-    test('unsupported and failure share the same flag values', () {
+  group('CommandDispatchResult: outcome discriminates all four cases (R-11)', () {
+    test('unsupported and failure have distinct outcomes', () {
       const unsupported = CommandDispatchResult.unsupported('not available');
       const failure = CommandDispatchResult.failure('transport error');
 
-      expect(unsupported.isSuccess, equals(failure.isSuccess));
-      expect(unsupported.isCompatibilityIssue, equals(failure.isCompatibilityIssue));
+      expect(unsupported.outcome, CommandOutcome.unsupported);
+      expect(failure.outcome, CommandOutcome.failure);
+      expect(unsupported.outcome, isNot(failure.outcome));
     });
   });
 }

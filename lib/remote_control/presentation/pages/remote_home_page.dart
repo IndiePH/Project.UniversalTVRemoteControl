@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
+import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
 import 'package:one_remote/remote_control/debug/runtime_flags_template_debug.dart';
@@ -205,7 +206,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       }
     });
     if (!result.isSuccess) {
-      if (result.isCompatibilityIssue) {
+      if (result.outcome == CommandOutcome.compatibility) {
         _showTextCompatibilityMessage(result.message);
       } else {
         _showToast(result.message, isError: true);

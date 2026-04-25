@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
@@ -266,7 +267,7 @@ void main() {
       );
       final result = await service.preparePairing(device: device);
       expect(result.isSuccess, isFalse);
-      expect(result.isCompatibilityIssue, isFalse);
+      expect(result.outcome, CommandOutcome.failure);
     });
 
     test('failure message contains error detail in debug mode', () async {
@@ -288,7 +289,7 @@ void main() {
         fourDigitPin: '1234',
       );
       expect(result.isSuccess, isFalse);
-      expect(result.isCompatibilityIssue, isFalse);
+      expect(result.outcome, CommandOutcome.failure);
     });
 
     test('failure message contains error detail in debug mode', () async {
@@ -313,7 +314,7 @@ void main() {
         command: RemoteCommand.volumeUp,
       );
       expect(result.isSuccess, isFalse);
-      expect(result.isCompatibilityIssue, isFalse);
+      expect(result.outcome, CommandOutcome.failure);
     });
 
     test('failure message contains error detail in debug mode', () async {
@@ -335,7 +336,7 @@ void main() {
       );
       final result = await service.sendText(device: device, text: 'hello');
       expect(result.isSuccess, isFalse);
-      expect(result.isCompatibilityIssue, isFalse);
+      expect(result.outcome, CommandOutcome.failure);
     });
 
     test('failure message contains error detail in debug mode', () async {
