@@ -8,7 +8,13 @@ import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
 import 'package:one_remote/app/one_remote_app.dart';
 import 'package:one_remote/app/stream_unhandled_error_source.dart';
-import 'package:one_remote/app/transport_debug_settings.dart';
+
+StreamUnhandledErrorSource? _errorSource() {
+  final sl = GetIt.instance;
+  return sl.isRegistered<StreamUnhandledErrorSource>()
+      ? sl<StreamUnhandledErrorSource>()
+      : null;
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,22 +22,11 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
   ]);
 
-  const compileUseFakeTransports = bool.fromEnvironment(
-    'USE_FAKE_TRANSPORTS',
-    defaultValue: false,
-  );
-  final stored = await TransportDebugSettings.readUseFakeTransportsOverride();
-  final env = (stored ?? compileUseFakeTransports)
-      ? AppEnvironment.debug
-      : AppEnvironment.production;
-  DiBootstrap.initialize(env);
-
-  final sl = GetIt.instance;
-  final errorSource = sl.isRegistered<StreamUnhandledErrorSource>()
-      ? sl<StreamUnhandledErrorSource>()
-      : null;
+  final env = kDebugMode ? AppEnvironment.debug : AppEnvironment.production;
+  await DiBootstrap.initialize(env);
 
   FlutterError.onError = (FlutterErrorDetails details) {
+    final errorSource = _errorSource();
     if (errorSource != null) {
       errorSource.add(details.exception);
     } else if (env == AppEnvironment.debug) {
@@ -42,6 +37,7 @@ Future<void> main() async {
   runZonedGuarded(
     () => runApp(const OneRemoteApp()),
     (Object error, StackTrace stack) {
+      final errorSource = _errorSource();
       if (errorSource != null) {
         errorSource.add(error);
       } else if (env == AppEnvironment.debug) {
