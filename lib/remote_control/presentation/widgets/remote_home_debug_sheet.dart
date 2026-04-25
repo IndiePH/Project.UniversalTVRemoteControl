@@ -8,7 +8,7 @@ class RemoteHomeDebugSheet extends StatelessWidget {
     required this.useFakeTransports,
     required this.compileTimeUseFakeTransports,
     required this.onUseFakeTransportsChanged,
-    required this.onCopySamsungTextLogs,
+    required this.onCopyTransportLogs,
     required this.onCopyRuntimeFlagsTemplate,
   });
 
@@ -16,7 +16,7 @@ class RemoteHomeDebugSheet extends StatelessWidget {
   final bool useFakeTransports;
   final bool compileTimeUseFakeTransports;
   final Future<void> Function(bool value) onUseFakeTransportsChanged;
-  final VoidCallback onCopySamsungTextLogs;
+  final VoidCallback onCopyTransportLogs;
   final VoidCallback onCopyRuntimeFlagsTemplate;
 
   @override
@@ -56,8 +56,8 @@ class RemoteHomeDebugSheet extends StatelessWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.copy),
-              title: const Text('Copy Samsung text logs'),
-              onTap: onCopySamsungTextLogs,
+              title: const Text('Copy transport logs'),
+              onTap: onCopyTransportLogs,
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,

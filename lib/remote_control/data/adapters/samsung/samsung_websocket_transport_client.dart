@@ -167,7 +167,7 @@ class SamsungWebSocketTransportClient
     );
 
     await _resetConnection(deviceId);
-    await _connectWithoutToken(deviceId: deviceId, host: host);
+    await _connectWith(deviceId: deviceId, host: host);
 
     if (!_pairing.hasNonEmptyToken(host)) {
       final completer = Completer<void>();
@@ -189,7 +189,11 @@ class SamsungWebSocketTransportClient
     while (DateTime.now().isBefore(deadline)) {
       try {
         await _resetConnection(deviceId);
-        await _connectWithKnownToken(deviceId: deviceId, host: host);
+        final token = _pairing.trimmedTokenForHost(host);
+        if (token.isEmpty) {
+          throw StateError('Samsung pairing token is not available yet.');
+        }
+        await _connectWith(deviceId: deviceId, host: host, token: token);
         return;
       } on Object catch (error) {
         if (!SamsungTransportAuthorization.isAuthorizationError(error)) {
@@ -299,49 +303,17 @@ class SamsungWebSocketTransportClient
     return WebSocket.connect(uri.toString());
   }
 
-  Future<void> _connectWithoutToken({
+  Future<void> _connectWith({
     required String deviceId,
     required String host,
+    String? token,
   }) async {
     final encodedName = base64Encode(utf8.encode(clientName));
     final uri = Uri.parse(
-      'wss://$host:8002/api/v2/channels/samsung.remote.control?name=$encodedName',
-    );
-    try {
-      final socket = await _openSocket(uri).timeout(connectTimeout);
-      final handshakeCompleter = Completer<void>();
-      _bindSocket(
-        deviceId: deviceId,
-        host: host,
-        socket: socket,
-        handshakeCompleter: handshakeCompleter,
-      );
-      await handshakeCompleter.future.timeout(handshakeTimeout);
-      SamsungTlsTrustStore.instance.commitPendingPins(
-        host: host,
-        port: uri.port,
-      );
-    } on Object {
-      SamsungTlsTrustStore.instance.abandonPendingPins(
-        host: host,
-        port: uri.port,
-      );
-      rethrow;
-    }
-  }
-
-  Future<void> _connectWithKnownToken({
-    required String deviceId,
-    required String host,
-  }) async {
-    final token = _pairing.trimmedTokenForHost(host);
-    if (token.isEmpty) {
-      throw StateError('Samsung pairing token is not available yet.');
-    }
-    final encodedName = base64Encode(utf8.encode(clientName));
-    final uri = Uri.parse(
-      'wss://$host:8002/api/v2/channels/samsung.remote.control'
-      '?name=$encodedName&token=$token',
+      token != null
+          ? 'wss://$host:8002/api/v2/channels/samsung.remote.control'
+              '?name=$encodedName&token=$token'
+          : 'wss://$host:8002/api/v2/channels/samsung.remote.control?name=$encodedName',
     );
     try {
       final socket = await _openSocket(uri).timeout(connectTimeout);

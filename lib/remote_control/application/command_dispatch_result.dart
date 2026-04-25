@@ -1,30 +1,23 @@
-class CommandDispatchResult {
-  const CommandDispatchResult._({
-    required this.isSuccess,
-    required this.message,
-    this.isCompatibilityIssue = false,
-  });
+import 'package:one_remote/remote_control/application/result.dart';
 
-  final bool isSuccess;
-  final String message;
+enum CommandOutcome { success, unsupported, failure, compatibility }
 
-  /// True when sending failed because the TV app or screen does not support
-  /// remote text injection (distinct from transport or generic errors).
-  final bool isCompatibilityIssue;
+class CommandDispatchResult extends Result {
+  
+  CommandDispatchResult.success(String message)
+    : super(outcome: CommandOutcome.success.name, message: message);
 
-  const CommandDispatchResult.success(String message)
-    : this._(isSuccess: true, message: message);
+  CommandDispatchResult.unsupported(String message)
+    : super(outcome: CommandOutcome.unsupported.name, message: message);
 
-  const CommandDispatchResult.unsupported(String message)
-    : this._(isSuccess: false, message: message);
+  CommandDispatchResult.failure(String message, {Object? exception})
+    : super(outcome: CommandOutcome.failure.name, message: message, exception: exception);
 
-  const CommandDispatchResult.failure(String message)
-    : this._(isSuccess: false, message: message);
+  CommandDispatchResult.compatibility(String message)
+    : super(outcome: CommandOutcome.compatibility.name, message: message);
 
-  const CommandDispatchResult.compatibility(String message)
-    : this._(
-        isSuccess: false,
-        message: message,
-        isCompatibilityIssue: true,
-      );
+  CommandOutcome getOutcome() => CommandOutcome.values.byName(outcome);
+
+  @override
+  bool get isSuccess => getOutcome() == CommandOutcome.success;
 }

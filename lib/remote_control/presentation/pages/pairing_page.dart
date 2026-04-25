@@ -180,7 +180,7 @@ class _PairingPageState extends State<PairingPage> {
       );
       if (!result.isSuccess) {
         if (!mounted) return;
-        final errorMsg = result.message ?? 'Pairing failed. Please try again.';
+        final errorMsg = result.message;
         setState(() {
           _viewState = _viewState.copyWith(errorMessage: errorMsg);
         });

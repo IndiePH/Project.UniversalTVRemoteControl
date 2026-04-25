@@ -127,7 +127,7 @@ class PairingSavedDevicesSection extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
-                    pairingNote ?? device.brand.name.toUpperCase(),
+                    pairingNote ?? device.brand.displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -185,8 +185,8 @@ class PairingDiscoveryList extends StatelessWidget {
           tileColor: Theme.of(context).colorScheme.surface,
           title: Text(device.displayName),
           subtitle: pairingNote == null
-              ? Text(device.brand.name.toUpperCase())
-              : Text('${device.brand.name.toUpperCase()} • $pairingNote'),
+              ? Text(device.brand.displayName)
+              : Text('${device.brand.displayName} • $pairingNote'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => onSelectDevice(device),
         );
@@ -282,7 +282,7 @@ class PairingManualAddSection extends StatelessWidget {
               .map(
                 (brand) => DropdownMenuItem<TvBrand>(
                   value: brand,
-                  child: Text(brand.name.toUpperCase()),
+                  child: Text(brand.displayName),
                 ),
               )
               .toList(),
