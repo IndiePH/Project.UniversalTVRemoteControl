@@ -149,13 +149,13 @@ class _PairingPageState extends State<PairingPage> {
       final result = await _pairingCoordinator.pairSelectedDevice(
         device: device,
         manualIpToSave: manualIpToSave,
-        promptHisensePin: (pairingMessage) async {
+        promptPin: (pairingMessage) async {
           if (mounted) {
             setState(() {
               _viewState = _viewState.copyWith(isPairingInProgress: false);
             });
           }
-          final pin = await PairingPageDialogs.promptHisensePairingPin(
+          final pin = await PairingPageDialogs.promptPairingPin(
             context: context,
             pairingMessage: pairingMessage,
           );
@@ -166,7 +166,7 @@ class _PairingPageState extends State<PairingPage> {
           }
           return pin;
         },
-        onHisensePinRejected: (message) {
+        onPinRejected: (message) {
           if (!mounted) {
             return;
           }

@@ -2,7 +2,7 @@ import 'package:one_remote/app/message_handler.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/result.dart';
-import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 /// Coordinates pairing and persistence steps for `PairingPage`.
@@ -19,19 +19,23 @@ class PairingPageCoordinator {
   Future<PairingAttemptResult> pairSelectedDevice({
     required TvDevice device,
     String? manualIpToSave,
-    required Future<String?> Function(String pairingMessage) promptHisensePin,
-    required void Function(String retryMessage) onHisensePinRejected,
+    required Future<String?> Function(String pairingMessage) promptPin,
+    required void Function(String retryMessage) onPinRejected,
   }) async {
     final pairingResult = await _commandService.preparePairing(device: device);
     if (!pairingResult.isSuccess) {
-      final didCompleteViaPin = await _attemptHisensePinFallback(
-        device: device,
-        pairingMessage: MessageHandler.sanitize(pairingResult),
-        promptHisensePin: promptHisensePin,
-        onHisensePinRejected: onHisensePinRejected,
-      );
-      if (!didCompleteViaPin) {
+      if (!device.capabilities.contains(DeviceCapability.pinPairing)) {
         return PairingAttemptResult.failure(MessageHandler.sanitize(pairingResult));
+      }
+      final pairingMessage = MessageHandler.sanitize(pairingResult);
+      final paired = await _attemptPinPairing(
+        device: device,
+        pairingMessage: pairingMessage,
+        promptPin: promptPin,
+        onPinRejected: onPinRejected,
+      );
+      if (!paired) {
+        return PairingAttemptResult.failure(pairingMessage);
       }
     }
 
@@ -49,30 +53,21 @@ class PairingPageCoordinator {
     return PairingAttemptResult.success();
   }
 
-  Future<bool> _attemptHisensePinFallback({
+  Future<bool> _attemptPinPairing({
     required TvDevice device,
     required String pairingMessage,
-    required Future<String?> Function(String pairingMessage) promptHisensePin,
-    required void Function(String retryMessage) onHisensePinRejected,
+    required Future<String?> Function(String) promptPin,
+    required void Function(String) onPinRejected,
   }) async {
-    if (device.brand != TvBrand.hisense) {
-      return false;
-    }
-
     while (true) {
-      final pin = await promptHisensePin(pairingMessage);
-      if (pin == null) {
-        return false;
-      }
-
+      final pin = await promptPin(pairingMessage);
+      if (pin == null) return false;
       final submitResult = await _commandService.submitPairingCode(
         device: device,
         fourDigitPin: pin,
       );
-      if (submitResult.isSuccess) {
-        return true;
-      }
-      onHisensePinRejected(MessageHandler.sanitize(submitResult));
+      if (submitResult.isSuccess) return true;
+      onPinRejected(MessageHandler.sanitize(submitResult));
     }
   }
 }
