@@ -41,10 +41,10 @@ final class RemoteHomeActions {
     );
   }
 
-  static Future<bool> copyLatestSamsungTextLog({
+  static Future<bool> copyLatestTransportLog({
     required TransportLogReader transportLogReader,
   }) async {
-    final logs = await transportLogReader.readLatestSamsungLogForSharing();
+    final logs = await transportLogReader.readLatestLogForSharing();
     if (logs == null || logs.trim().isEmpty) {
       return false;
     }
@@ -54,7 +54,7 @@ final class RemoteHomeActions {
 
   static void showTransportDebugSheet({
     required BuildContext context,
-    required Future<void> Function() onCopySamsungTextLogs,
+    required Future<void> Function() onCopyTransportLogs,
     required Future<void> Function() onCopyRuntimeFlagsTemplate,
   }) {
     final env = GetIt.instance<AppEnvironment>();
@@ -77,9 +77,9 @@ final class RemoteHomeActions {
                   pendingFake = value;
                 });
               },
-              onCopySamsungTextLogs: () {
+              onCopyTransportLogs: () {
                 Navigator.pop(sheetContext);
-                unawaited(onCopySamsungTextLogs());
+                unawaited(onCopyTransportLogs());
               },
               onCopyRuntimeFlagsTemplate: () {
                 Navigator.pop(sheetContext);

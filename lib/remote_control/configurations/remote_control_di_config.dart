@@ -32,6 +32,8 @@ SharedPrefsDeviceRepository _configureShared(GetIt sl) {
   final deviceRepository = SharedPrefsDeviceRepository();
   sl.registerSingleton<DeviceRepository>(deviceRepository);
   sl.registerSingleton<LayoutRepository>(SharedPrefsLayoutRepository());
+
+  // TODO: Determine why TransportLogReader is specific to Samsung.
   sl.registerSingleton<TransportLogReader>(const SamsungTransportLogReader());
   return deviceRepository;
 }

@@ -295,18 +295,18 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     }
   }
 
-  Future<void> _copyLatestSamsungTextLog() async {
-    final didCopy = await RemoteHomeActions.copyLatestSamsungTextLog(
+  Future<void> _copyLatestTransportLog() async {
+    final didCopy = await RemoteHomeActions.copyLatestTransportLog(
       transportLogReader: widget.transportLogReader,
     );
     if (!mounted) {
       return;
     }
     if (!didCopy) {
-      _showToast('No Samsung transport log found yet.', isError: true);
+      _showToast('No transport log found yet.', isError: true);
       return;
     }
-    _showToast('Copied Samsung transport log to clipboard.');
+    _showToast('Copied transport log to clipboard.');
   }
 
   Future<void> _copyRuntimeFlagsTemplate() async {
@@ -322,7 +322,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   void _showTransportDebugSheet() {
     RemoteHomeActions.showTransportDebugSheet(
       context: context,
-      onCopySamsungTextLogs: _copyLatestSamsungTextLog,
+      onCopyTransportLogs: _copyLatestTransportLog,
       onCopyRuntimeFlagsTemplate: _copyRuntimeFlagsTemplate,
     );
   }
