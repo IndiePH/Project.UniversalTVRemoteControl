@@ -131,6 +131,7 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 | 4.6 | Add `Stream<ConnectionState>` to transport client interface; implement for LG (WS events), Samsung (WS events), Hisense (ping poll) | `design-pattern-selection`, `abstraction-domain-modeling` | — | MEDIUM |
 | 4.7 | Implement disconnection indicator in TV remote screen (consumes stream from 4.6) | `framework-mastery` | 4.6 | MEDIUM |
 | 4.8 | Regression test: connection/disconnection state correctly reflects for each brand | `regression-prevention` | 4.6, 4.7 | MEDIUM |
+| 4.9 | Only show remote controls supported by the paired TV's capability set, on pair or on selecting paired; allow user override | — | `framework-mastery`, `ux-constraints-awareness` | 5.2 | MEDIUM | pending |
 
 ## Branch 5 - `feat/brand-dependent-features`
 
@@ -144,7 +145,6 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 |----|------|-----|--------|------|------|--------|
 | 5.1 | Design per-device capability detection: at pairing time query TV model/firmware version, map to a model-specific capability set, fall back to `brand.defaultCapabilities` if model is unrecognised. Brainstorm correct approach with Claude before implementing. | — | `abstraction-domain-modeling`, `api-design`, `requirement-interpretation` | — | LOW | ✓ done |
 | 5.2 | Implement capability detection per 5.1 design; update `TvDevice.fromJson` / pairing flow to persist and restore per-device capabilities correctly | D6 | `abstraction-domain-modeling`, `framework-mastery` | 5.1 | MEDIUM | ✓ done |
-| 5.3 | Only show remote controls supported by the paired TV's capability set, on pair or on selecting paired; allow user override | — | `framework-mastery`, `ux-constraints-awareness` | 5.2 | MEDIUM | pending |
 | 5.4 ⚑ | *(Tentative)* Bury `TransportLogReader` inside the adapter layer — introduce opt-in `TransportLogProvider` interface (application layer); `SamsungAdapter` implements it (→ `SamsungTransportLogReader`); LG/Hisense don't; introduce `TransportLogReaderProvider` application port; `BrandRoutedRemoteCommandService` implements it (routes via `is TransportLogProvider` check, falls back to `NoopTransportLogReader`); DI removes `TransportLogReader` singleton, registers `TransportLogReaderProvider` (same concrete instance as `RemoteCommandService`); `RemoteHomePage` swaps `TransportLogReader` field for `TransportLogReaderProvider`, resolves reader per active device brand at call time | — | `abstraction-domain-modeling`, `api-design`, `modularity` | — | MEDIUM | ✓ done |
 | 5.5 | Set up root exception handler — wire `FlutterError.onError` and `runZonedGuarded` in `main.dart`; in `production` log unhandled exceptions; in `development`/`debug` expose them via a `Stream<Object>` registered in DI so the UI can surface them as a debug overlay | — | `error-handling-resilience`, `modularity` | 2.17 | LOW | ✓ done |
 
