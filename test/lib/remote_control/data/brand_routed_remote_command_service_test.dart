@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
+import 'package:one_remote/remote_control/application/transport_log_provider.dart';
+import 'package:one_remote/remote_control/application/transport_log_reader.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
@@ -389,6 +391,34 @@ void main() {
       expect((result.exception as StateError).message, 'text error');
     });
   });
+
+  // 5.4 — TransportLogReaderProvider: routes to adapter log reader when
+  // adapter implements TransportLogProvider; falls back to noop otherwise.
+
+  group('TransportLogReaderProvider — readerForDevice', () {
+    test('returns reader from adapter when adapter implements TransportLogProvider', () {
+      final adapter = _LogProviderAdapter(brand: TvBrand.samsung);
+      final service = BrandRoutedRemoteCommandService(adapters: [adapter]);
+
+      final reader = service.readerForDevice(device);
+      expect(reader, same(adapter.transportLogReader));
+    });
+
+    test('returns NoopTransportLogReader when adapter does not implement TransportLogProvider', () {
+      final lg = _RecordingAdapter(brand: TvBrand.lg);
+      final service = BrandRoutedRemoteCommandService(adapters: [lg]);
+
+      final reader = service.readerForDevice(lgDevice);
+      expect(reader, isA<NoopTransportLogReader>());
+    });
+
+    test('returns NoopTransportLogReader when no adapter configured for brand', () {
+      final service = BrandRoutedRemoteCommandService(adapters: []);
+
+      final reader = service.readerForDevice(device);
+      expect(reader, isA<NoopTransportLogReader>());
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -499,4 +529,18 @@ class _ThrowingAdapter implements TvBrandAdapter {
   @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
       Stream<bool>.value(false);
+}
+
+class _LogProviderAdapter extends _RecordingAdapter implements TransportLogProvider {
+  _LogProviderAdapter({required super.brand}) : _logReader = _StubTransportLogReader();
+
+  final _StubTransportLogReader _logReader;
+
+  @override
+  TransportLogReader get transportLogReader => _logReader;
+}
+
+class _StubTransportLogReader implements TransportLogReader {
+  @override
+  Future<String?> readLatestLogForSharing() async => 'stub log';
 }
