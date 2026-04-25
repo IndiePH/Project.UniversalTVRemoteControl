@@ -3,7 +3,7 @@ import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/remote_control/presentation/formatting/two_digit_format.dart';
+import 'package:one_remote/utils/two_digit_format.dart';
 
 /// Read/derive data used by `PairingPage` presentation state.
 final class PairingPageData {
@@ -49,7 +49,7 @@ final class PairingPageData {
   }) {
     return TvDevice(
       id: '${brand.name}-$ip',
-      displayName: '${brand.name.toUpperCase()} TV ($ip)',
+      displayName: '${brand.displayName} TV ($ip)',
       brand: brand,
       capabilities: brand.defaultCapabilities,
     );

@@ -37,9 +37,7 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
         'Pairing approved for ${device.displayName}.',
       );
     } catch (error) {
-      return CommandDispatchResult.failure(
-        'Failed to pair ${device.displayName}: $error',
-      );
+      return CommandDispatchResult.failure('Something went wrong.', exception: error);
     }
   }
 
@@ -65,9 +63,7 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
     } on UnsupportedError catch (error) {
       return CommandDispatchResult.unsupported(error.message?.toString() ?? '$error');
     } catch (error) {
-      return CommandDispatchResult.failure(
-        'Failed to submit pairing code for ${device.brand.name}: $error',
-      );
+      return CommandDispatchResult.failure('Something went wrong.', exception: error);
     }
   }
 
@@ -91,9 +87,7 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
       await adapter.sendCommand(device: device, command: command);
       return CommandDispatchResult.success('Sent: ${command.name}');
     } catch (error) {
-      return CommandDispatchResult.failure(
-        'Failed to send ${command.name} for ${device.brand.name}: $error',
-      );
+      return CommandDispatchResult.failure('Something went wrong.', exception: error);
     }
   }
 
@@ -119,9 +113,7 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
     } on TextInputCompatibilityException catch (error) {
       return CommandDispatchResult.compatibility(error.userMessage);
     } catch (error) {
-      return CommandDispatchResult.failure(
-        'Failed to send text for ${device.brand.name}: $error',
-      );
+      return CommandDispatchResult.failure('Something went wrong.', exception: error);
     }
   }
 

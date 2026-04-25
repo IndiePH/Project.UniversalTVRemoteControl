@@ -3,6 +3,26 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-04-25
+
+### Changed
+- Introduced `get_it` DI container with `IDiConfig`/`DiBootstrap` pattern; split env-specific DI configs; removed transport concepts from presentation layer
+- Registered transport clients in DI; collapsed duplicate host resolvers
+- Introduced `Result` base class (`lib/remote_control/application/result.dart`) as the standard return type for all operation results; `CommandDispatchResult` extends it with `CommandOutcome` enum and `getOutcome()`
+- Added `MessageHandler.sanitize` for env-aware error verbosity (hides exception detail in production)
+- Replaced `sendKey` if/else chain with `TransportCommand`/`TransportCommandFactory` Command pattern; unified toggle state handling
+- Generalized `TransportLogReader` as an application-layer port with `NoopTransportLogReader` default; unified Samsung WebSocket `_connectWith` method
+- Made `HisenseAdapter.transportClient` required; consolidated `TVBrand` properties
+- Deleted duplicate `SamsungKeyMapper.keyCodeFor`; relocated `formatTwoDigits` to `lib/utils` to fix downward layer dependency
+- Reorganized lib directory structure
+
+### Added
+- Unit tests for strategy map routing in `BrandRoutedRemoteCommandService`
+
+### Conventions
+- DI configuration and runtime are now decoupled: `IDiConfig` implementations declare bindings; `DiBootstrap` selects configs by `AppEnvironment`; remote control bindings live in `lib/remote_control/configurations/remote_control_di_config.dart`
+- `Result` (`lib/remote_control/application/result.dart`) is the abstract base for all operation results; use `Result.success()` / `Result.failure()` named constructors; consumers use `MessageHandler.sanitize(result)` for safe display strings
+
 ## 2026-04-20
 
 ### Changed

@@ -6,7 +6,7 @@ final class SamsungTransportLogReader implements TransportLogReader {
   const SamsungTransportLogReader();
 
   @override
-  Future<String?> readLatestSamsungLogForSharing() {
+  Future<String?> readLatestLogForSharing() {
     return SamsungTransportFileLogger.readLatestLogForSharing();
   }
 }

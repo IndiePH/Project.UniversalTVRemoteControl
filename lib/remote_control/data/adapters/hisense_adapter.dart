@@ -1,6 +1,5 @@
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
-import 'package:one_remote/remote_control/data/adapters/hisense/fake_hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_key_mapper.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
@@ -10,9 +9,9 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 class HisenseAdapter implements TvBrandAdapter {
   HisenseAdapter({
-    HisenseTransportClient? transportClient,
+    required HisenseTransportClient transportClient,
     CommandKeyMap? keyMap,
-  }) : _transportClient = transportClient ?? FakeHisenseTransportClient(),
+  }) : _transportClient = transportClient,
        _keyMap = keyMap ?? const HisenseKeyMapper();
 
   @override
@@ -28,6 +27,9 @@ class HisenseAdapter implements TvBrandAdapter {
   final CommandKeyMap _keyMap;
 
   @override
+  // TODO(unpair): Hisense has no persistent pairing state yet, so nothing to clear.
+  // When Hisense auth-code persistence is added, follow the SharedPreferences
+  // pattern in LgPairingKeyStore + LgWebSocketTransportClient.clearPairing.
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override

@@ -95,7 +95,7 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
               (candidate) => TvDevice(
                 id: '${candidate.brand.name}-${candidate.ip}',
                 displayName:
-                    '${_brandName(candidate.brand)} TV (${candidate.ip})',
+                    '${candidate.brand.displayName} TV (${candidate.ip})',
                 brand: candidate.brand,
                 capabilities: candidate.brand.defaultCapabilities,
               ),
@@ -154,14 +154,6 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
       return TvBrand.hisense;
     }
     return null;
-  }
-
-  String _brandName(TvBrand brand) {
-    return switch (brand) {
-      TvBrand.samsung => 'Samsung',
-      TvBrand.lg => 'LG',
-      TvBrand.hisense => 'Hisense',
-    };
   }
 
   String? _extractHostFromLocation(String? locationHeader) {

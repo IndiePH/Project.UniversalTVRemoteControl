@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/app/message_handler.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
+import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
 import 'package:one_remote/remote_control/debug/runtime_flags_template_debug.dart';
@@ -11,7 +13,7 @@ import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/remote_control/presentation/formatting/two_digit_format.dart';
+import 'package:one_remote/utils/two_digit_format.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_actions.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_keyboard_availability.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
@@ -34,9 +36,6 @@ class RemoteHomePage extends StatefulWidget {
     required this.discoveryService,
     required this.layoutRepository,
     this.transportLogReader = const NoopTransportLogReader(),
-    this.useFakeTransports = false,
-    this.compileTimeUseFakeTransports = false,
-    this.onUseFakeTransportsChanged,
   });
 
   final RemoteCommandService commandService;
@@ -44,15 +43,6 @@ class RemoteHomePage extends StatefulWidget {
   final DeviceDiscoveryService discoveryService;
   final LayoutRepository layoutRepository;
   final TransportLogReader transportLogReader;
-
-  /// Effective mode for the debug sheet; parent recreates services when this changes.
-  final bool useFakeTransports;
-
-  /// Shown for context next to [useFakeTransports] (from `--dart-define`).
-  final bool compileTimeUseFakeTransports;
-
-  /// When null, the transport toggle is hidden (e.g. isolated widget tests).
-  final Future<void> Function(bool useFake)? onUseFakeTransportsChanged;
 
   @override
   State<RemoteHomePage> createState() => _RemoteHomePageState();
@@ -151,11 +141,12 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (!mounted) {
       return false;
     }
+    final message = MessageHandler.sanitize(result);
     setState(() {
-      _status = result.message;
+      _status = message;
     });
     if (!result.isSuccess) {
-      _showToast(result.message, isError: true);
+      _showToast(message, isError: true);
     }
     return result.isSuccess;
   }
@@ -198,17 +189,18 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (!mounted) {
       return;
     }
+    final message = MessageHandler.sanitize(result);
     setState(() {
-      _status = result.message;
+      _status = message;
       if (result.isSuccess) {
         _textController.clear();
       }
     });
     if (!result.isSuccess) {
-      if (result.isCompatibilityIssue) {
+      if (result.getOutcome() == CommandOutcome.compatibility) {
         _showTextCompatibilityMessage(result.message);
       } else {
-        _showToast(result.message, isError: true);
+        _showToast(message, isError: true);
       }
     }
   }
@@ -303,23 +295,22 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     }
   }
 
-  Future<void> _copyLatestSamsungTextLog() async {
-    final didCopy = await RemoteHomeActions.copyLatestSamsungTextLog(
+  Future<void> _copyLatestTransportLog() async {
+    final didCopy = await RemoteHomeActions.copyLatestTransportLog(
       transportLogReader: widget.transportLogReader,
     );
     if (!mounted) {
       return;
     }
     if (!didCopy) {
-      _showToast('No Samsung transport log found yet.', isError: true);
+      _showToast('No transport log found yet.', isError: true);
       return;
     }
-    _showToast('Copied Samsung transport log to clipboard.');
+    _showToast('Copied transport log to clipboard.');
   }
 
   Future<void> _copyRuntimeFlagsTemplate() async {
     await RuntimeFlagsTemplateDebug.copyRuntimeFlagsTemplate(
-      useFakeTransports: widget.useFakeTransports,
       activeDevice: _activeDevice,
     );
     if (!mounted) {
@@ -331,11 +322,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   void _showTransportDebugSheet() {
     RemoteHomeActions.showTransportDebugSheet(
       context: context,
-      showTransportToggle: widget.onUseFakeTransportsChanged != null,
-      useFakeTransports: widget.useFakeTransports,
-      compileTimeUseFakeTransports: widget.compileTimeUseFakeTransports,
-      onUseFakeTransportsChanged: widget.onUseFakeTransportsChanged,
-      onCopySamsungTextLogs: _copyLatestSamsungTextLog,
+      onCopyTransportLogs: _copyLatestTransportLog,
       onCopyRuntimeFlagsTemplate: _copyRuntimeFlagsTemplate,
     );
   }

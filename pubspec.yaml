@@ -39,6 +39,7 @@ dependencies:
   mqtt_client: ^10.11.10
   flutter_multicast_lock: ^1.2.0
   crypto: ^3.0.6
+  get_it: ^7.6.0
 
 dev_dependencies:
   flutter_test:

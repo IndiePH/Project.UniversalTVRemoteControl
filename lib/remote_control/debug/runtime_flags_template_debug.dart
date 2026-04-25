@@ -1,4 +1,6 @@
 import 'package:flutter/services.dart';
+import 'package:get_it/get_it.dart';
+import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
@@ -7,20 +9,17 @@ final class RuntimeFlagsTemplateDebug {
   const RuntimeFlagsTemplateDebug._();
 
   static Future<void> copyRuntimeFlagsTemplate({
-    required bool useFakeTransports,
     required TvDevice? activeDevice,
   }) async {
-    final template = buildRuntimeFlagsTemplate(
-      useFakeTransports: useFakeTransports,
-      activeDevice: activeDevice,
-    );
+    final template = buildRuntimeFlagsTemplate(activeDevice: activeDevice);
     await Clipboard.setData(ClipboardData(text: template));
   }
 
   static String buildRuntimeFlagsTemplate({
-    required bool useFakeTransports,
     required TvDevice? activeDevice,
   }) {
+    final useFakeTransports =
+        GetIt.instance<AppEnvironment>() == AppEnvironment.debug;
     final brand = activeDevice?.brand;
     final lines = switch (brand) {
       // Keep in sync with references/samsung_validation_matrix.md -> Environment -> Runtime flags.

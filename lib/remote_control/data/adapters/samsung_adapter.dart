@@ -32,6 +32,9 @@ class SamsungAdapter implements TvBrandAdapter {
   final CommandKeyMap _keyMapper;
 
   @override
+  // TODO(unpair): Samsung has no persistent pairing state yet, so nothing to clear.
+  // When Samsung token/session persistence is added, follow the SharedPreferences
+  // pattern in LgPairingKeyStore + LgWebSocketTransportClient.clearPairing.
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
