@@ -37,6 +37,7 @@ class RemoteHomePage extends StatefulWidget {
     required this.discoveryService,
     required this.layoutRepository,
     this.transportLogReaderProvider = const NoopTransportLogReaderProvider(),
+    this.onRestartApp,
   });
 
   final RemoteCommandService commandService;
@@ -44,6 +45,7 @@ class RemoteHomePage extends StatefulWidget {
   final DeviceDiscoveryService discoveryService;
   final LayoutRepository layoutRepository;
   final TransportLogReaderProvider transportLogReaderProvider;
+  final Future<void> Function()? onRestartApp;
 
   @override
   State<RemoteHomePage> createState() => _RemoteHomePageState();
@@ -325,11 +327,12 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   }
 
   void _showTransportDebugSheet() {
-    RemoteHomeActions.showTransportDebugSheet(
+    unawaited(RemoteHomeActions.showTransportDebugSheet(
       context: context,
       onCopyTransportLogs: _copyLatestTransportLog,
       onCopyRuntimeFlagsTemplate: _copyRuntimeFlagsTemplate,
-    );
+      onRestartApp: widget.onRestartApp,
+    ));
   }
 
   void _resetLayoutToDefaults() {
