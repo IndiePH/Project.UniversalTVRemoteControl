@@ -102,13 +102,14 @@ lib/
 
 | ID | Task | Skills | Deps | Risk |
 |----|------|--------|------|------|
-| 3.1 | Add brand-specific pre-pairing confirmation prompt (shows required steps for that brand, Continue / Cancel) | `ux-constraints-awareness`, `framework-mastery` | — | MEDIUM |
+| 3.1 | Add brand-specific pre-pairing confirmation prompt (shows required steps for that brand, Continue / Cancel). If non, no need to show | `ux-constraints-awareness`, `framework-mastery` | — | MEDIUM |
 | 3.2 | Add pairing status/response prompt shown after initiating pairing (progress + outcome) | `ux-constraints-awareness`, `framework-mastery` | 3.1 | MEDIUM |
 | 3.3 | Rebuild page as scrollable grouped list (Group 1: paired + swipe-to-delete; Group 2: available) | `framework-mastery` | — | MEDIUM |
 | 3.4 | Implement option-3 button layout: search icon (auto-scan on load) + "Manual Setup" button | `framework-mastery` | 3.3 | LOW |
 | 3.5 | Add per-TV online indicator (green wifi icon = reachable; greyed = not) | `framework-mastery` | 3.3 | LOW |
 | 3.6 | Add rename paired TV option (swipe-reveal or long-press) | `framework-mastery` | 3.3 | LOW |
-| 3.7 | End-to-end pairing regression across LG, Samsung, Hisense | `regression-prevention` | 3.1, 3.2, 3.3 | MEDIUM |
+| 3.7 | Add sub-text for an already paired TV. Probably have format `Brand | Model | Variant`  | to-be-determined | 3.3 | LOW |
+| 3.9 | End-to-end pairing regression across LG, Samsung, Hisense | `regression-prevention` | 3.1, 3.2, 3.3 | MEDIUM |
 
 ---
 
@@ -135,7 +136,7 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 
 ## Branch 5 - `feat/brand-dependent-features`
 
-**Sub-goal** Only controls available to the paired tv will be shown, unless overridden by the user.
+**Sub-goal** per-device capability detection
 
 > **Branch TBD** — tasks 5.1 and 5.2 are design/research tasks; branch name to be decided once approach is confirmed.
 
