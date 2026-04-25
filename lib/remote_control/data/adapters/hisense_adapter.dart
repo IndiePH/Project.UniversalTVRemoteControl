@@ -24,7 +24,7 @@ class HisenseAdapter implements TvBrandAdapter {
 
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
-      null;
+      const TvDeviceInfo();
 
   @override
   bool get supportsTextInput => false;

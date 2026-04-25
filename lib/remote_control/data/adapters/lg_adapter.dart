@@ -40,7 +40,7 @@ class LgAdapter implements TvBrandAdapter {
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async {
     final raw = await _transportClient.querySystemInfo(deviceId: device.id);
-    if (raw == null) return null;
+    if (raw == null) return const TvDeviceInfo();
     return TvDeviceInfo(
       modelIdentifier: raw['modelName'] as String?,
       firmwareVersion: raw['swVersion'] as String?,

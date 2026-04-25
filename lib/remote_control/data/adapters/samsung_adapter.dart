@@ -32,7 +32,7 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
 
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
-      null;
+      const TvDeviceInfo();
 
   @override
   TransportLogReader get transportLogReader => const SamsungTransportLogReader();
