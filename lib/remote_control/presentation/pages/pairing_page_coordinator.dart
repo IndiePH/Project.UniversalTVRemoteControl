@@ -39,8 +39,9 @@ class PairingPageCoordinator {
       await _deviceRepository.saveRecentManualIp(manualIpToSave);
     }
     final pairedAt = DateTime.now();
-    await _deviceRepository.saveDevice(device);
-    await _deviceRepository.setLastUsedDevice(device.id);
+    final deviceToSave = pairingResult.device ?? device;
+    await _deviceRepository.saveDevice(deviceToSave);
+    await _deviceRepository.setLastUsedDevice(deviceToSave.id);
     await _deviceRepository.setLastSuccessfulPairingAt(
       deviceId: device.id,
       timestamp: pairedAt,

@@ -4,11 +4,13 @@ import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_key_mapper.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_protocol_variants.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   static const bool _samsungTextInputEnabled = bool.fromEnvironment(
@@ -24,6 +26,13 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
 
   @override
   TvBrand get brand => TvBrand.samsung;
+
+  @override
+  String get protocolVariant => SamsungProtocolVariants.defaultVariant;
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      null;
 
   @override
   TransportLogReader get transportLogReader => const SamsungTransportLogReader();

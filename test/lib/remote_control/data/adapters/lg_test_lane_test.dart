@@ -9,10 +9,13 @@ import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
+import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/domain/models/tv_model_capability_registry.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 void main() {
   const lgDevice = TvDevice(
@@ -49,6 +52,8 @@ void main() {
   test('LG lane: unsupported command returns UI-safe result', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [const _SubsetLgAdapter()],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.sendCommand(
       device: lgDevice,
@@ -73,6 +78,8 @@ void main() {
   test('LG lane: preparePairing completes when fake transport issues a key', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isTrue);
@@ -81,6 +88,8 @@ void main() {
   test('LG lane: pairing timeout surfaces as CommandDispatchResult.failure', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _TimeoutLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isFalse);
@@ -92,6 +101,8 @@ void main() {
   test('LG lane: stale key rejection surfaces as CommandDispatchResult.failure', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _StaleKeyLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isFalse);
@@ -105,6 +116,8 @@ void main() {
   test('LG lane: sendText succeeds', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.sendText(device: lgDevice, text: 'hello');
     expect(result.isSuccess, isTrue);
@@ -113,6 +126,8 @@ void main() {
   test('LG lane: IME rejection surfaces as CommandDispatchResult.compatibility', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _ImeRejectingLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.sendText(device: lgDevice, text: 'hello');
     expect(result.isSuccess, isFalse);
@@ -124,6 +139,8 @@ void main() {
   test('LG lane: transport throw on sendCommand surfaces as CommandDispatchResult.failure', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _ErrorOnSendLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.sendCommand(
       device: lgDevice,
@@ -148,6 +165,8 @@ void main() {
   test('LG lane: submitPairingCode returns unsupported (LG uses client-key flow, not PIN)', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.submitPairingCode(
       device: lgDevice,
@@ -170,6 +189,8 @@ void main() {
   test('LG lane: unpairDevice completes without error', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     await expectLater(
       service.unpairDevice(device: lgDevice),
@@ -182,6 +203,8 @@ void main() {
   test('LG lane: watchRemoteTextInputReady returns adapter stream when device has textInput capability', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _TextInputReadyLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final values = await service
         .watchRemoteTextInputReady(device: lgDeviceWithTextInput)
@@ -190,7 +213,11 @@ void main() {
   });
 
   test('LG lane: watchRemoteTextInputReady returns false when no adapter registered', () async {
-    final service = BrandRoutedRemoteCommandService(adapters: []);
+    final service = BrandRoutedRemoteCommandService(
+      adapters: [],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
+    );
     final values = await service
         .watchRemoteTextInputReady(device: lgDeviceWithTextInput)
         .toList();
@@ -200,6 +227,8 @@ void main() {
   test('LG lane: watchRemoteTextInputReady returns false when device lacks textInput capability', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _TextInputReadyLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     // lgDevice has no DeviceCapability.textInput
     final values = await service
@@ -218,6 +247,13 @@ class _SubsetLgAdapter implements TvBrandAdapter {
 
   @override
   TvBrand get brand => TvBrand.lg;
+
+  @override
+  String get protocolVariant => TvDevice.defaultProtocolVariant;
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      null;
 
   @override
   bool get supportsTextInput => false;

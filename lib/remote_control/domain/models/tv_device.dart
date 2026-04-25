@@ -8,18 +8,35 @@ class TvDevice {
     required this.displayName,
     required this.brand,
     required this.capabilities,
+    this.protocolVariant = defaultProtocolVariant,
   });
+
+  static const String defaultProtocolVariant = 'default';
 
   final String id;
   final String displayName;
   final TvBrand brand;
   final Set<DeviceCapability> capabilities;
+  final String protocolVariant;
+
+  TvDevice copyWith({
+    Set<DeviceCapability>? capabilities,
+    String? protocolVariant,
+  }) =>
+      TvDevice(
+        id: id,
+        displayName: displayName,
+        brand: brand,
+        capabilities: capabilities ?? this.capabilities,
+        protocolVariant: protocolVariant ?? this.protocolVariant,
+      );
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'displayName': displayName,
     'brand': brand.name,
     'capabilities': capabilities.map((c) => c.name).toList(),
+    'protocolVariant': protocolVariant,
   };
 
   static TvDevice? fromJson(Map<String, dynamic> json) {
@@ -27,11 +44,29 @@ class TvDevice {
       final id = json['id'] as String;
       final displayName = json['displayName'] as String;
       final brand = TvBrand.values.firstWhere((b) => b.name == json['brand']);
-      // Capabilities are derived from brand defaults, not persisted values.
-      // Per-device capability detection (model/firmware probing at pairing time)
-      // is a planned future improvement — see goal-app-refactor-ui.md Branch 5.
-      final capabilities = brand.defaultCapabilities;
-      return TvDevice(id: id, displayName: displayName, brand: brand, capabilities: capabilities);
+      final protocolVariant =
+          json['protocolVariant'] as String? ?? defaultProtocolVariant;
+      final capabilityNames =
+          (json['capabilities'] as List<dynamic>?)?.cast<String>() ?? [];
+      final parsed = capabilityNames
+          .map((n) {
+            try {
+              return DeviceCapability.values.byName(n);
+            } catch (_) {
+              return null;
+            }
+          })
+          .nonNulls
+          .toSet();
+      final capabilities =
+          parsed.isEmpty ? brand.defaultCapabilities : parsed;
+      return TvDevice(
+        id: id,
+        displayName: displayName,
+        brand: brand,
+        capabilities: capabilities,
+        protocolVariant: protocolVariant,
+      );
     } catch (_) {
       return null;
     }

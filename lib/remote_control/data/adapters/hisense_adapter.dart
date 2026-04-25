@@ -1,11 +1,13 @@
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_key_mapper.dart';
+import 'package:one_remote/remote_control/data/adapters/hisense/hisense_protocol_variants.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class HisenseAdapter implements TvBrandAdapter {
   HisenseAdapter({
@@ -16,6 +18,13 @@ class HisenseAdapter implements TvBrandAdapter {
 
   @override
   TvBrand get brand => TvBrand.hisense;
+
+  @override
+  String get protocolVariant => HisenseProtocolVariants.defaultVariant;
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      null;
 
   @override
   bool get supportsTextInput => false;
