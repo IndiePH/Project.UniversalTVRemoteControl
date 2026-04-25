@@ -257,11 +257,11 @@ void main() {
     });
   });
 
-  // N-05: kDebugMode guard — all 4 catch blocks return failure and surface
-  // error detail in debug builds (tests always run with kDebugMode=true).
+  // 2.17: generic catch blocks always return a safe message and carry the raw
+  // exception so env-aware consumers can surface detail in non-production builds.
 
-  group('preparePairing', () {
-    test('returns failure when adapter throws', () async {
+  group('preparePairing — unexpected failure', () {
+    test('returns failure outcome', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
       );
@@ -270,17 +270,26 @@ void main() {
       expect(result.outcome, CommandOutcome.failure);
     });
 
-    test('failure message contains error detail in debug mode', () async {
+    test('message is always generic', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
       );
       final result = await service.preparePairing(device: device);
-      expect(result.message, contains('pairing error'));
+      expect(result.message, 'Something went wrong.');
+    });
+
+    test('exception carries the raw error', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [_ThrowingAdapter()],
+      );
+      final result = await service.preparePairing(device: device);
+      expect(result.exception, isA<StateError>());
+      expect((result.exception as StateError).message, 'pairing error');
     });
   });
 
-  group('submitPairingCode', () {
-    test('returns failure when adapter throws unexpected error', () async {
+  group('submitPairingCode — unexpected failure', () {
+    test('returns failure outcome', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
       );
@@ -292,7 +301,7 @@ void main() {
       expect(result.outcome, CommandOutcome.failure);
     });
 
-    test('failure message contains error detail in debug mode', () async {
+    test('message is always generic', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
       );
@@ -300,12 +309,24 @@ void main() {
         device: device,
         fourDigitPin: '1234',
       );
-      expect(result.message, contains('submit error'));
+      expect(result.message, 'Something went wrong.');
+    });
+
+    test('exception carries the raw error', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [_ThrowingAdapter()],
+      );
+      final result = await service.submitPairingCode(
+        device: device,
+        fourDigitPin: '1234',
+      );
+      expect(result.exception, isA<StateError>());
+      expect((result.exception as StateError).message, 'submit error');
     });
   });
 
-  group('sendCommand', () {
-    test('returns failure when adapter throws', () async {
+  group('sendCommand — unexpected failure', () {
+    test('returns failure outcome', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
       );
@@ -317,7 +338,7 @@ void main() {
       expect(result.outcome, CommandOutcome.failure);
     });
 
-    test('failure message contains error detail in debug mode', () async {
+    test('message is always generic', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
       );
@@ -325,12 +346,24 @@ void main() {
         device: device,
         command: RemoteCommand.volumeUp,
       );
-      expect(result.message, contains('send error'));
+      expect(result.message, 'Something went wrong.');
+    });
+
+    test('exception carries the raw error', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [_ThrowingAdapter()],
+      );
+      final result = await service.sendCommand(
+        device: device,
+        command: RemoteCommand.volumeUp,
+      );
+      expect(result.exception, isA<StateError>());
+      expect((result.exception as StateError).message, 'send error');
     });
   });
 
-  group('sendText', () {
-    test('returns failure when adapter throws unexpected error', () async {
+  group('sendText — unexpected failure', () {
+    test('returns failure outcome', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
       );
@@ -339,12 +372,21 @@ void main() {
       expect(result.outcome, CommandOutcome.failure);
     });
 
-    test('failure message contains error detail in debug mode', () async {
+    test('message is always generic', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
       );
       final result = await service.sendText(device: device, text: 'hello');
-      expect(result.message, contains('text error'));
+      expect(result.message, 'Something went wrong.');
+    });
+
+    test('exception carries the raw error', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [_ThrowingAdapter()],
+      );
+      final result = await service.sendText(device: device, text: 'hello');
+      expect(result.exception, isA<StateError>());
+      expect((result.exception as StateError).message, 'text error');
     });
   });
 }

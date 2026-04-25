@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/app/message_handler.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
@@ -140,11 +141,12 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (!mounted) {
       return false;
     }
+    final message = MessageHandler.sanitize(result);
     setState(() {
-      _status = result.message;
+      _status = message;
     });
     if (!result.isSuccess) {
-      _showToast(result.message, isError: true);
+      _showToast(message, isError: true);
     }
     return result.isSuccess;
   }
@@ -187,8 +189,9 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (!mounted) {
       return;
     }
+    final message = MessageHandler.sanitize(result);
     setState(() {
-      _status = result.message;
+      _status = message;
       if (result.isSuccess) {
         _textController.clear();
       }
@@ -197,7 +200,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       if (result.outcome == CommandOutcome.compatibility) {
         _showTextCompatibilityMessage(result.message);
       } else {
-        _showToast(result.message, isError: true);
+        _showToast(message, isError: true);
       }
     }
   }

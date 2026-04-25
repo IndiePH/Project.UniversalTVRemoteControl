@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
@@ -38,11 +37,7 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
         'Pairing approved for ${device.displayName}.',
       );
     } catch (error) {
-      return CommandDispatchResult.failure(
-        kDebugMode
-            ? 'Failed to pair ${device.displayName}: $error'
-            : 'Something went wrong.',
-      );
+      return CommandDispatchResult.failure('Something went wrong.', exception: error);
     }
   }
 
@@ -68,11 +63,7 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
     } on UnsupportedError catch (error) {
       return CommandDispatchResult.unsupported(error.message?.toString() ?? '$error');
     } catch (error) {
-      return CommandDispatchResult.failure(
-        kDebugMode
-            ? 'Failed to submit pairing code for ${device.brand.name}: $error'
-            : 'Something went wrong.',
-      );
+      return CommandDispatchResult.failure('Something went wrong.', exception: error);
     }
   }
 
@@ -96,11 +87,7 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
       await adapter.sendCommand(device: device, command: command);
       return CommandDispatchResult.success('Sent: ${command.name}');
     } catch (error) {
-      return CommandDispatchResult.failure(
-        kDebugMode
-            ? 'Failed to send ${command.name} for ${device.brand.name}: $error'
-            : 'Something went wrong.',
-      );
+      return CommandDispatchResult.failure('Something went wrong.', exception: error);
     }
   }
 
@@ -126,11 +113,7 @@ class BrandRoutedRemoteCommandService implements RemoteCommandService {
     } on TextInputCompatibilityException catch (error) {
       return CommandDispatchResult.compatibility(error.userMessage);
     } catch (error) {
-      return CommandDispatchResult.failure(
-        kDebugMode
-            ? 'Failed to send text for ${device.brand.name}: $error'
-            : 'Something went wrong.',
-      );
+      return CommandDispatchResult.failure('Something went wrong.', exception: error);
     }
   }
 

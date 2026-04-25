@@ -84,7 +84,9 @@ void main() {
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isFalse);
-    expect(result.message, contains('Timed out'));
+    expect(result.message, 'Something went wrong.');
+    expect(result.exception, isA<LgPairingTimeoutException>());
+    expect(result.exception.toString(), contains('Timed out'));
   });
 
   test('LG lane: stale key rejection surfaces as CommandDispatchResult.failure', () async {
@@ -93,7 +95,9 @@ void main() {
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isFalse);
-    expect(result.message, contains('Re-pairing'));
+    expect(result.message, 'Something went wrong.');
+    expect(result.exception, isA<LgPairingSessionExpiredException>());
+    expect(result.exception.toString(), contains('Re-pairing'));
   });
 
   // --- T-4.3: Text-input and compatibility ---
@@ -126,7 +130,9 @@ void main() {
       command: RemoteCommand.volumeUp,
     );
     expect(result.isSuccess, isFalse);
-    expect(result.message, contains('send error'));
+    expect(result.message, 'Something went wrong.');
+    expect(result.exception, isA<StateError>());
+    expect((result.exception as StateError).message, contains('send error'));
   });
 
   test('LG adapter: reconnects automatically when socket is not open', () async {
