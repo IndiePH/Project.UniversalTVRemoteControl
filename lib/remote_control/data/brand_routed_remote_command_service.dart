@@ -21,24 +21,28 @@ class BrandRoutedRemoteCommandService
     required List<TvBrandAdapter> adapters,
     required VariantResolutionRegistry variantRegistry,
     required TvModelCapabilityRegistry capabilityRegistry,
-  }) : _adapters = {for (final a in adapters) a.brand: a},
+  }) : _adapters = {
+         for (final a in adapters) (a.brand, a.protocolVariant): a
+       },
        _variantRegistry = variantRegistry,
        _capabilityRegistry = capabilityRegistry;
 
-  final Map<TvBrand, TvBrandAdapter> _adapters;
+  final Map<(TvBrand, String), TvBrandAdapter> _adapters;
   final VariantResolutionRegistry _variantRegistry;
   final TvModelCapabilityRegistry _capabilityRegistry;
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {
-    await _adapterFor(device.brand)?.unpairDevice(device: device);
+    await _adapterFor(device.brand, device.protocolVariant)?.unpairDevice(
+      device: device,
+    );
   }
 
   @override
   Future<CommandDispatchResult> preparePairing({
     required TvDevice device,
   }) async {
-    final adapter = _adapterFor(device.brand);
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
       return CommandDispatchResult.unsupported(
         'No adapter configured for ${device.brand.name}.',
@@ -50,7 +54,7 @@ class BrandRoutedRemoteCommandService
       final variant = _variantRegistry.resolve(brand: device.brand, info: info);
       final capabilities = _capabilityRegistry.resolve(
         brand: device.brand,
-        modelIdentifier: info?.modelIdentifier,
+        info: info,
       );
       final enriched = device.copyWith(
         capabilities: capabilities,
@@ -70,7 +74,7 @@ class BrandRoutedRemoteCommandService
     required TvDevice device,
     required String fourDigitPin,
   }) async {
-    final adapter = _adapterFor(device.brand);
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
       return CommandDispatchResult.unsupported(
         'No adapter configured for ${device.brand.name}.',
@@ -96,7 +100,7 @@ class BrandRoutedRemoteCommandService
     required TvDevice device,
     required RemoteCommand command,
   }) async {
-    final adapter = _adapterFor(device.brand);
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
       return CommandDispatchResult.unsupported(
         'No adapter configured for ${device.brand.name}.',
@@ -120,7 +124,7 @@ class BrandRoutedRemoteCommandService
     required TvDevice device,
     required String text,
   }) async {
-    final adapter = _adapterFor(device.brand);
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
       return CommandDispatchResult.unsupported(
         'No adapter configured for ${device.brand.name}.',
@@ -143,7 +147,7 @@ class BrandRoutedRemoteCommandService
 
   @override
   Stream<bool> watchRemoteTextInputReady({required TvDevice device}) {
-    final adapter = _adapterFor(device.brand);
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
       return Stream<bool>.value(false);
     }
@@ -158,12 +162,13 @@ class BrandRoutedRemoteCommandService
 
   @override
   TransportLogReader readerForDevice(TvDevice device) {
-    final adapter = _adapterFor(device.brand);
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter is TransportLogProvider) {
       return (adapter as TransportLogProvider).transportLogReader;
     }
     return const NoopTransportLogReader();
   }
 
-  TvBrandAdapter? _adapterFor(TvBrand brand) => _adapters[brand];
+  TvBrandAdapter? _adapterFor(TvBrand brand, String variant) =>
+      _adapters[(brand, variant)];
 }

@@ -737,7 +737,7 @@ class _StubCapabilityRegistry implements TvModelCapabilityRegistry {
   @override
   Set<DeviceCapability> resolve({
     required TvBrand brand,
-    required String? modelIdentifier,
+    required TvDeviceInfo? info,
   }) => _capabilities;
 }
 
