@@ -84,7 +84,8 @@ lib/
 | 2.15 ⚑ | *(Tentative)* Extract all adapter and service wiring out of `OneRemoteApp` widget into a standalone composition root; collapse `_resolveSamsungHost`, `_resolveLgHost`, `_resolveHisenseHost` into one shared `_resolveHost` method | N-07 | `clean-code-solid`, `modularity` | 2.14 | LOW | ✓ done |
 | 2.16 ⚑ | *(Tentative)* Introduce `get_it` DI with `IDiConfig`/`DiBootstrap` pattern — define `IDiConfig` interface and `AppEnvironment` enum in `lib/app/configurations/`; each feature module gets a `DiXxx` class in `lib/<feature>/configurations/` implementing `IDiConfig.configure(GetIt, AppEnvironment)`; `DiBootstrap` holds the config list and drives registration; `OneRemoteApp` becomes a pure widget; no annotations on actual service/adapter classes; only `main.dart` changes to switch environments | N-09 | `modularity`, `clean-code-solid`, `dependency-management` | 2.15 | MEDIUM | ✓ done |
 | 2.17 | Replace `kDebugMode` guard in `BrandRoutedRemoteCommandService` with `AppEnvironment`-aware error reporting — `development`/`debug` show full `$error` detail; `production` logs the raw error (without exposing it to the caller) and returns a generic `'Something went wrong.'` message | N-05 | `error-handling-resilience` | 2.16 | LOW | ✓ done |
-| 2.18 | Set up root exception handler — wire `FlutterError.onError` and `runZonedGuarded` in `main.dart`; in `production` log unhandled exceptions; in `development`/`debug` expose them via a `Stream<Object>` registered in DI so the UI can surface them as a debug overlay | — | `error-handling-resilience`, `modularity` | 2.17 | LOW | pending |
+
+| 2.19 ⚑ | *(Tentative)* Rename `readLatestSamsungLogForSharing` → `readLatestLogForSharing` on `TransportLogReader`, `NoopTransportLogReader`, `SamsungTransportLogReader`; rename `copyLatestSamsungTextLog` → `copyLatestTransportLog` in `RemoteHomeActions`; rename `onCopySamsungTextLogs` → `onCopyTransportLogs` in `RemoteHomeActions`, `RemoteHomeDebugSheet`, and `_RemoteHomePageState` | — | `abstraction-domain-modeling`, `api-design` | — | LOW | ✓ done |
 
 ---
 
@@ -142,7 +143,9 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 |----|------|--------|------|------|
 | 5.1 | Design per-device capability detection: at pairing time query TV model/firmware version, map to a model-specific capability set, fall back to `brand.defaultCapabilities` if model is unrecognised. Brainstorm correct approach with Claude before implementing. | `abstraction-domain-modeling`, `api-design`, `requirement-interpretation` | — | LOW |
 | 5.2 | Implement capability detection per 5.1 design; update `TvDevice.fromJson` / pairing flow to persist and restore per-device capabilities correctly | `abstraction-domain-modeling`, `framework-mastery` | 5.1 | MEDIUM |
-| 5.3 | Only show remote controls supported by the paired TV's capability set; allow user override | `framework-mastery`, `ux-constraints-awareness` | 5.2 | MEDIUM |
+| 5.3 | Only show remote controls supported by the paired TV's capability set, on pair or on selecting paired; allow user override | `framework-mastery`, `ux-constraints-awareness` | 5.2 | MEDIUM |
+| 5.4 ⚑ | *(Tentative)* Bury `TransportLogReader` inside the adapter layer — introduce opt-in `TransportLogProvider` interface (application layer); `SamsungAdapter` implements it (→ `SamsungTransportLogReader`); LG/Hisense don't; introduce `TransportLogReaderProvider` application port; `BrandRoutedRemoteCommandService` implements it (routes via `is TransportLogProvider` check, falls back to `NoopTransportLogReader`); DI removes `TransportLogReader` singleton, registers `TransportLogReaderProvider` (same concrete instance as `RemoteCommandService`); `RemoteHomePage` swaps `TransportLogReader` field for `TransportLogReaderProvider`, resolves reader per active device brand at call time | — | `abstraction-domain-modeling`, `api-design`, `modularity` | — | MEDIUM |
+| 5.5 | Set up root exception handler — wire `FlutterError.onError` and `runZonedGuarded` in `main.dart`; in `production` log unhandled exceptions; in `development`/`debug` expose them via a `Stream<Object>` registered in DI so the UI can surface them as a debug overlay | `error-handling-resilience`, `modularity` | 2.17 | LOW |
 
 > **Design note (5.1 — brand-variance):** Beyond capability variance, brands may change their wire
 > protocol in a future firmware or OS release. When this occurs, introduce a new adapter alongside
@@ -169,7 +172,6 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 | ID | Task | Ref | Skills | Deps | Risk | Status |
 |----|------|-----|--------|------|------|--------|
 | 6.1 ⚑ | *(Tentative)* Rename `USE_FAKE_TRANSPORTS` dart-define, `TransportDebugSettings.writeUseFakeTransports`, `_compileUseFakeTransports`, and all related identifiers in `RemoteHomeActions` / `RemoteHomeDebugSheet` to environment-neutral names (e.g. `USE_SIMULATED_TRANSPORTS` or a higher-level concept); update all call sites | — | `clean-code-solid`, `api-design` | 2.16 | LOW | pending |
-| 6.2 ⚑ | *(Tentative)* Redesign `TransportLogReader` interface — rename `readLatestSamsungLogForSharing` to a brand-agnostic method signature; update `SamsungTransportLogReader`, `NoopTransportLogReader`, and all call sites | — | `abstraction-domain-modeling`, `api-design` | — | LOW | pending |
 
 ---
 
