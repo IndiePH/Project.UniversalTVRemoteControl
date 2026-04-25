@@ -60,7 +60,7 @@ void main() {
     final result = await service.sendText(device: samsungDevice, text: 'hello');
 
     expect(result.isSuccess, isFalse);
-    expect(result.outcome, CommandOutcome.compatibility);
+    expect(result.getOutcome(), CommandOutcome.compatibility);
     expect(result.message, 'Samsung IME unavailable on this screen.');
   });
 
@@ -72,7 +72,7 @@ void main() {
     final result = await service.sendText(device: samsungDevice, text: 'hello');
 
     expect(result.isSuccess, isFalse);
-    expect(result.outcome, CommandOutcome.unsupported);
+    expect(result.getOutcome(), CommandOutcome.unsupported);
     expect(result.message, contains('Text input is not supported for samsung.'));
   });
 
@@ -116,7 +116,7 @@ void main() {
       fourDigitPin: '1234',
     );
     expect(result.isSuccess, isFalse);
-    expect(result.outcome, CommandOutcome.unsupported);
+    expect(result.getOutcome(), CommandOutcome.unsupported);
     expect(result.message, contains('not required'));
   });
 

@@ -267,7 +267,7 @@ void main() {
       );
       final result = await service.preparePairing(device: device);
       expect(result.isSuccess, isFalse);
-      expect(result.outcome, CommandOutcome.failure);
+      expect(result.getOutcome(), CommandOutcome.failure);
     });
 
     test('message is always generic', () async {
@@ -298,7 +298,7 @@ void main() {
         fourDigitPin: '1234',
       );
       expect(result.isSuccess, isFalse);
-      expect(result.outcome, CommandOutcome.failure);
+      expect(result.getOutcome(), CommandOutcome.failure);
     });
 
     test('message is always generic', () async {
@@ -335,7 +335,7 @@ void main() {
         command: RemoteCommand.volumeUp,
       );
       expect(result.isSuccess, isFalse);
-      expect(result.outcome, CommandOutcome.failure);
+      expect(result.getOutcome(), CommandOutcome.failure);
     });
 
     test('message is always generic', () async {
@@ -369,7 +369,7 @@ void main() {
       );
       final result = await service.sendText(device: device, text: 'hello');
       expect(result.isSuccess, isFalse);
-      expect(result.outcome, CommandOutcome.failure);
+      expect(result.getOutcome(), CommandOutcome.failure);
     });
 
     test('message is always generic', () async {

@@ -3,26 +3,21 @@ import 'package:one_remote/remote_control/application/result.dart';
 enum CommandOutcome { success, unsupported, failure, compatibility }
 
 class CommandDispatchResult extends Result {
-  const CommandDispatchResult._({
-    required this.outcome,
-    required super.message,
-    super.exception,
-  });
+  
+  CommandDispatchResult.success(String message)
+    : super(outcome: CommandOutcome.success.name, message: message);
 
-  final CommandOutcome outcome;
+  CommandDispatchResult.unsupported(String message)
+    : super(outcome: CommandOutcome.unsupported.name, message: message);
+
+  CommandDispatchResult.failure(String message, {Object? exception})
+    : super(outcome: CommandOutcome.failure.name, message: message, exception: exception);
+
+  CommandDispatchResult.compatibility(String message)
+    : super(outcome: CommandOutcome.compatibility.name, message: message);
+
+  CommandOutcome getOutcome() => CommandOutcome.values.byName(outcome);
 
   @override
-  bool get isSuccess => outcome == CommandOutcome.success;
-
-  const CommandDispatchResult.success(String message)
-    : this._(outcome: CommandOutcome.success, message: message);
-
-  const CommandDispatchResult.unsupported(String message)
-    : this._(outcome: CommandOutcome.unsupported, message: message);
-
-  const CommandDispatchResult.failure(String message, {Object? exception})
-    : this._(outcome: CommandOutcome.failure, message: message, exception: exception);
-
-  const CommandDispatchResult.compatibility(String message)
-    : this._(outcome: CommandOutcome.compatibility, message: message);
+  bool get isSuccess => getOutcome() == CommandOutcome.success;
 }

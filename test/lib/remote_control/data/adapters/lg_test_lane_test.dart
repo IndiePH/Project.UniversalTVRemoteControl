@@ -154,7 +154,7 @@ void main() {
       fourDigitPin: '1234',
     );
     expect(result.isSuccess, isFalse);
-    expect(result.outcome, CommandOutcome.unsupported);
+    expect(result.getOutcome(), CommandOutcome.unsupported);
     expect(result.message, contains('client-key'));
   });
 

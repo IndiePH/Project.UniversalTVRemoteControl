@@ -105,7 +105,7 @@ void main() {
     );
     final result = await service.sendText(device: hisenseDevice, text: 'hello');
     expect(result.isSuccess, isFalse);
-    expect(result.outcome, CommandOutcome.unsupported);
+    expect(result.getOutcome(), CommandOutcome.unsupported);
     expect(result.message, contains('not supported'));
   });
 

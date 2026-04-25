@@ -45,7 +45,7 @@ class PairingPageCoordinator {
       deviceId: device.id,
       timestamp: pairedAt,
     );
-    return const PairingAttemptResult.success();
+    return PairingAttemptResult.success();
   }
 
   Future<bool> _attemptHisensePinFallback({
@@ -76,20 +76,15 @@ class PairingPageCoordinator {
   }
 }
 
+enum PairingOutcome { success, failure }
+
 final class PairingAttemptResult extends Result {
-  const PairingAttemptResult._({
-    required bool isSuccess,
-    required String message,
-  }) : _isSuccess = isSuccess,
-       super(message: message);
+  PairingAttemptResult.success() : super(outcome: PairingOutcome.success.name,message: '');
+  PairingAttemptResult.failure(String message)
+    : super(outcome: PairingOutcome.failure.name,message: message);
 
-  const PairingAttemptResult.success() : this._(isSuccess: true, message: '');
-
-  const PairingAttemptResult.failure(String message)
-    : this._(isSuccess: false, message: message);
-
-  final bool _isSuccess;
+  PairingOutcome getOutcome() => PairingOutcome.values.byName(outcome);
 
   @override
-  bool get isSuccess => _isSuccess;
+  bool get isSuccess => getOutcome() == PairingOutcome.success;
 }

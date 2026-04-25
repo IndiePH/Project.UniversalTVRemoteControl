@@ -197,7 +197,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       }
     });
     if (!result.isSuccess) {
-      if (result.outcome == CommandOutcome.compatibility) {
+      if (result.getOutcome() == CommandOutcome.compatibility) {
         _showTextCompatibilityMessage(result.message);
       } else {
         _showToast(message, isError: true);
