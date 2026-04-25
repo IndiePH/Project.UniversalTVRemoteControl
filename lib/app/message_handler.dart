@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/remote_control/application/result.dart';
@@ -10,7 +11,7 @@ final class MessageHandler {
   static String sanitize(Result result) {
     if (result.exception == null) return result.message;
     final env = GetIt.instance<AppEnvironment>();
-    return env != AppEnvironment.production
+    return (env != AppEnvironment.production || kDebugMode)
         ? '${result.message}: ${result.exception}'
         : result.message;
   }
