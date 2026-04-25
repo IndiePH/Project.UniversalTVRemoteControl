@@ -53,6 +53,7 @@ final class RemoteHomeActions {
     required Future<void> Function() onCopySamsungTextLogs,
     required Future<void> Function() onCopyRuntimeFlagsTemplate,
   }) {
+    var pendingFake = useFakeTransports;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -61,7 +62,7 @@ final class RemoteHomeActions {
           builder: (context, setModalState) {
             return RemoteHomeDebugSheet(
               showTransportToggle: showTransportToggle,
-              useFakeTransports: useFakeTransports,
+              useFakeTransports: pendingFake,
               compileTimeUseFakeTransports: compileTimeUseFakeTransports,
               onUseFakeTransportsChanged: (value) async {
                 final changeMode = onUseFakeTransportsChanged;
@@ -69,7 +70,7 @@ final class RemoteHomeActions {
                   return;
                 }
                 await changeMode(value);
-                setModalState(() {});
+                setModalState(() { pendingFake = value; });
               },
               onCopySamsungTextLogs: () {
                 Navigator.pop(sheetContext);

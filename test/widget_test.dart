@@ -7,9 +7,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
+import 'package:one_remote/app/configurations/app_environment.dart';
+import 'package:one_remote/app/configurations/di_bootstrap.dart';
 import 'package:one_remote/app/one_remote_app.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
@@ -28,6 +32,10 @@ import 'package:one_remote/remote_control/presentation/pages/remote_home_page.da
 
 void main() {
   testWidgets('renders remote home page shell', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    DiBootstrap.initialize(AppEnvironment.debug);
+    addTearDown(GetIt.instance.reset);
+
     await tester.pumpWidget(const OneRemoteApp());
     await tester.pump();
 

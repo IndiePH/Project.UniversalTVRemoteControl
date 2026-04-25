@@ -1,68 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:one_remote/app/app_composition_root.dart';
+import 'package:get_it/get_it.dart';
+import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
-import 'package:one_remote/remote_control/data/shared_prefs_device_repository.dart';
-import 'package:one_remote/remote_control/data/shared_prefs_layout_repository.dart';
-import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
+import 'package:one_remote/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/remote_control/application/device_repository.dart';
+import 'package:one_remote/remote_control/application/layout_repository.dart';
+import 'package:one_remote/remote_control/application/remote_command_service.dart';
+import 'package:one_remote/remote_control/application/transport_log_reader.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_page.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
-class OneRemoteApp extends StatefulWidget {
+class OneRemoteApp extends StatelessWidget {
   const OneRemoteApp({super.key});
 
-  @override
-  State<OneRemoteApp> createState() => _OneRemoteAppState();
-}
-
-class _OneRemoteAppState extends State<OneRemoteApp> {
   static const bool _compileUseFakeTransports = bool.fromEnvironment(
     'USE_FAKE_TRANSPORTS',
     defaultValue: false,
   );
 
-  late final SharedPrefsDeviceRepository _deviceRepository = SharedPrefsDeviceRepository();
-  late final SharedPrefsLayoutRepository _layoutRepository = SharedPrefsLayoutRepository();
-
-  bool _useFakeTransports = _compileUseFakeTransports;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadTransportOverride();
-  }
-
-  Future<void> _loadTransportOverride() async {
-    final stored = await TransportDebugSettings.readUseFakeTransportsOverride();
-    if (!mounted) return;
-    setState(() {
-      _useFakeTransports = stored ?? _compileUseFakeTransports;
-    });
-  }
-
-  Future<void> _setUseFakeTransports(bool value) async {
-    await TransportDebugSettings.writeUseFakeTransports(value);
-    if (!mounted) return;
-    setState(() => _useFakeTransports = value);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final sl = GetIt.instance;
     return MaterialApp(
       title: 'OneRemote',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme(),
       home: RemoteHomePage(
-        commandService: AppCompositionRoot.buildCommandService(
-          _useFakeTransports,
-          _deviceRepository,
-        ),
-        deviceRepository: _deviceRepository,
-        discoveryService: AppCompositionRoot.buildDiscoveryService(_useFakeTransports),
-        layoutRepository: _layoutRepository,
-        transportLogReader: const SamsungTransportLogReader(),
-        useFakeTransports: _useFakeTransports,
+        commandService: sl<RemoteCommandService>(),
+        deviceRepository: sl<DeviceRepository>(),
+        discoveryService: sl<DeviceDiscoveryService>(),
+        layoutRepository: sl<LayoutRepository>(),
+        transportLogReader: sl<TransportLogReader>(),
+        useFakeTransports: sl<AppEnvironment>() == AppEnvironment.debug,
         compileTimeUseFakeTransports: _compileUseFakeTransports,
-        onUseFakeTransportsChanged: _setUseFakeTransports,
+        onUseFakeTransportsChanged: TransportDebugSettings.writeUseFakeTransports,
       ),
     );
   }
