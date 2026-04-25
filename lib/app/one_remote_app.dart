@@ -1,25 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:one_remote/app/app_composition_root.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
-import 'package:one_remote/remote_control/application/device_discovery_service.dart';
-import 'package:one_remote/remote_control/application/remote_command_service.dart';
-import 'package:one_remote/remote_control/data/adapters/hisense_adapter.dart';
-import 'package:one_remote/remote_control/data/adapters/hisense/real_hisense_transport_client.dart';
-import 'package:one_remote/remote_control/data/adapters/lg/lg_pairing_key_store.dart';
-import 'package:one_remote/remote_control/data/adapters/lg/lg_websocket_transport_client.dart';
-import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
-import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
-import 'package:one_remote/remote_control/data/adapters/samsung/samsung_websocket_transport_client.dart';
-import 'package:one_remote/remote_control/data/adapters/hisense/fake_hisense_transport_client.dart';
-import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
-import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
-import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
-import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
-import 'package:one_remote/remote_control/data/fake_device_discovery_service.dart';
 import 'package:one_remote/remote_control/data/shared_prefs_device_repository.dart';
 import 'package:one_remote/remote_control/data/shared_prefs_layout_repository.dart';
-import 'package:one_remote/remote_control/data/ssdp_device_discovery_service.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_page.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
@@ -35,7 +19,6 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
     'USE_FAKE_TRANSPORTS',
     defaultValue: false,
   );
-  static const String _tvHostOverride = String.fromEnvironment('TV_HOST_OVERRIDE');
 
   late final SharedPrefsDeviceRepository _deviceRepository = SharedPrefsDeviceRepository();
   late final SharedPrefsLayoutRepository _layoutRepository = SharedPrefsLayoutRepository();
@@ -64,25 +47,17 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
 
   @override
   Widget build(BuildContext context) {
-    final DeviceDiscoveryService discoveryService = _useFakeTransports
-        ? FakeDeviceDiscoveryService()
-        : SsdpDeviceDiscoveryService();
-    final RemoteCommandService commandService = BrandRoutedRemoteCommandService(
-      adapters: [
-        _buildSamsungAdapter(),
-        _buildLgAdapter(),
-        _buildHisenseAdapter(),
-      ],
-    );
-
     return MaterialApp(
       title: 'OneRemote',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme(),
       home: RemoteHomePage(
-        commandService: commandService,
+        commandService: AppCompositionRoot.buildCommandService(
+          _useFakeTransports,
+          _deviceRepository,
+        ),
         deviceRepository: _deviceRepository,
-        discoveryService: discoveryService,
+        discoveryService: AppCompositionRoot.buildDiscoveryService(_useFakeTransports),
         layoutRepository: _layoutRepository,
         transportLogReader: const SamsungTransportLogReader(),
         useFakeTransports: _useFakeTransports,
@@ -90,67 +65,5 @@ class _OneRemoteAppState extends State<OneRemoteApp> {
         onUseFakeTransportsChanged: _setUseFakeTransports,
       ),
     );
-  }
-
-  SamsungAdapter _buildSamsungAdapter() {
-    return SamsungAdapter(
-      transportClient: _useFakeTransports
-          ? FakeSamsungTransportClient()
-          : SamsungWebSocketTransportClient(hostResolver: _resolveSamsungHost),
-    );
-  }
-
-  LgAdapter _buildLgAdapter() {
-    return LgAdapter(
-      transportClient: _useFakeTransports
-          ? FakeLgTransportClient()
-          : LgWebSocketTransportClient(
-              hostResolver: _resolveLgHost,
-              keyStore: LgPairingKeyStore(),
-            ),
-      onSystemInfo: (deviceId, info) {
-        unawaited(_deviceRepository.saveDeviceSystemInfo(deviceId, info));
-      },
-    );
-  }
-
-  HisenseAdapter _buildHisenseAdapter() {
-    return HisenseAdapter(
-      transportClient: _useFakeTransports
-          ? FakeHisenseTransportClient()
-          : RealHisenseTransportClient(hostResolver: _resolveHisenseHost),
-    );
-  }
-
-  String _resolveSamsungHost(String deviceId) {
-    final explicitHost = _tvHostOverride.trim();
-    if (explicitHost.isNotEmpty) {
-      return explicitHost;
-    }
-    return _ipv4FromDeviceId(deviceId);
-  }
-
-  String _resolveLgHost(String deviceId) {
-    final explicitHost = _tvHostOverride.trim();
-    if (explicitHost.isNotEmpty) return explicitHost;
-    return _ipv4FromDeviceId(deviceId);
-  }
-
-  String _resolveHisenseHost(String deviceId) {
-    final explicitHost = _tvHostOverride.trim();
-    if (explicitHost.isNotEmpty) {
-      return explicitHost;
-    }
-    return _ipv4FromDeviceId(deviceId);
-  }
-
-  /// Device IDs from discovery/manual pairing are expected as `<brand>-<ip>`.
-  static String _ipv4FromDeviceId(String deviceId) {
-    final ipv4Regex = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
-    final match = ipv4Regex.firstMatch(deviceId);
-    if (match == null) {
-      return '';
-    }
-    return match.group(1) ?? '';
   }
 }
