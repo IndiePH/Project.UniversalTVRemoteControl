@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get_it/get_it.dart';
+import 'package:one_remote/app/configurations/app_environment.dart';
+import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
@@ -13,6 +16,11 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_home_debug
 /// Groups remote-home navigation and debug actions outside widget state.
 final class RemoteHomeActions {
   const RemoteHomeActions._();
+
+  static const bool _compileUseFakeTransports = bool.fromEnvironment(
+    'USE_FAKE_TRANSPORTS',
+    defaultValue: false,
+  );
 
   static Future<TvDevice?> openPairing({
     required BuildContext context,
@@ -46,14 +54,13 @@ final class RemoteHomeActions {
 
   static void showTransportDebugSheet({
     required BuildContext context,
-    required bool showTransportToggle,
-    required bool useFakeTransports,
-    required bool compileTimeUseFakeTransports,
-    required Future<void> Function(bool value)? onUseFakeTransportsChanged,
     required Future<void> Function() onCopySamsungTextLogs,
     required Future<void> Function() onCopyRuntimeFlagsTemplate,
   }) {
-    var pendingFake = useFakeTransports;
+    final env = GetIt.instance<AppEnvironment>();
+    final isDebug = env == AppEnvironment.debug;
+    var pendingFake = isDebug;
+
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -61,16 +68,14 @@ final class RemoteHomeActions {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return RemoteHomeDebugSheet(
-              showTransportToggle: showTransportToggle,
+              showTransportToggle: isDebug,
               useFakeTransports: pendingFake,
-              compileTimeUseFakeTransports: compileTimeUseFakeTransports,
+              compileTimeUseFakeTransports: _compileUseFakeTransports,
               onUseFakeTransportsChanged: (value) async {
-                final changeMode = onUseFakeTransportsChanged;
-                if (changeMode == null) {
-                  return;
-                }
-                await changeMode(value);
-                setModalState(() { pendingFake = value; });
+                await TransportDebugSettings.writeUseFakeTransports(value);
+                setModalState(() {
+                  pendingFake = value;
+                });
               },
               onCopySamsungTextLogs: () {
                 Navigator.pop(sheetContext);

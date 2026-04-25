@@ -35,9 +35,6 @@ class RemoteHomePage extends StatefulWidget {
     required this.discoveryService,
     required this.layoutRepository,
     this.transportLogReader = const NoopTransportLogReader(),
-    this.useFakeTransports = false,
-    this.compileTimeUseFakeTransports = false,
-    this.onUseFakeTransportsChanged,
   });
 
   final RemoteCommandService commandService;
@@ -45,15 +42,6 @@ class RemoteHomePage extends StatefulWidget {
   final DeviceDiscoveryService discoveryService;
   final LayoutRepository layoutRepository;
   final TransportLogReader transportLogReader;
-
-  /// Effective mode for the debug sheet; parent recreates services when this changes.
-  final bool useFakeTransports;
-
-  /// Shown for context next to [useFakeTransports] (from `--dart-define`).
-  final bool compileTimeUseFakeTransports;
-
-  /// When null, the transport toggle is hidden (e.g. isolated widget tests).
-  final Future<void> Function(bool useFake)? onUseFakeTransportsChanged;
 
   @override
   State<RemoteHomePage> createState() => _RemoteHomePageState();
@@ -320,7 +308,6 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
 
   Future<void> _copyRuntimeFlagsTemplate() async {
     await RuntimeFlagsTemplateDebug.copyRuntimeFlagsTemplate(
-      useFakeTransports: widget.useFakeTransports,
       activeDevice: _activeDevice,
     );
     if (!mounted) {
@@ -332,10 +319,6 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   void _showTransportDebugSheet() {
     RemoteHomeActions.showTransportDebugSheet(
       context: context,
-      showTransportToggle: widget.onUseFakeTransportsChanged != null,
-      useFakeTransports: widget.useFakeTransports,
-      compileTimeUseFakeTransports: widget.compileTimeUseFakeTransports,
-      onUseFakeTransportsChanged: widget.onUseFakeTransportsChanged,
       onCopySamsungTextLogs: _copyLatestSamsungTextLog,
       onCopyRuntimeFlagsTemplate: _copyRuntimeFlagsTemplate,
     );

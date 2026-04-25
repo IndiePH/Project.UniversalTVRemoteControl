@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:one_remote/app/configurations/app_environment.dart';
-import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
@@ -12,11 +10,6 @@ import 'package:one_remote/theme/app_theme.dart';
 
 class OneRemoteApp extends StatelessWidget {
   const OneRemoteApp({super.key});
-
-  static const bool _compileUseFakeTransports = bool.fromEnvironment(
-    'USE_FAKE_TRANSPORTS',
-    defaultValue: false,
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +24,6 @@ class OneRemoteApp extends StatelessWidget {
         discoveryService: sl<DeviceDiscoveryService>(),
         layoutRepository: sl<LayoutRepository>(),
         transportLogReader: sl<TransportLogReader>(),
-        useFakeTransports: sl<AppEnvironment>() == AppEnvironment.debug,
-        compileTimeUseFakeTransports: _compileUseFakeTransports,
-        onUseFakeTransportsChanged: TransportDebugSettings.writeUseFakeTransports,
       ),
     );
   }

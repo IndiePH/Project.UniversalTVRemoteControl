@@ -25,6 +25,14 @@ import 'package:one_remote/remote_control/data/ssdp_device_discovery_service.dar
 import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
 
+SharedPrefsDeviceRepository _configureShared(GetIt sl) {
+  final deviceRepository = SharedPrefsDeviceRepository();
+  sl.registerSingleton<DeviceRepository>(deviceRepository);
+  sl.registerSingleton<LayoutRepository>(SharedPrefsLayoutRepository());
+  sl.registerSingleton<TransportLogReader>(const SamsungTransportLogReader());
+  return deviceRepository;
+}
+
 final class RemoteControlDiConfig implements IDiConfig {
   const RemoteControlDiConfig();
 
@@ -32,40 +40,29 @@ final class RemoteControlDiConfig implements IDiConfig {
 
   @override
   void configure(GetIt sl, AppEnvironment env) {
-    final deviceRepository = SharedPrefsDeviceRepository();
-    sl.registerSingleton<DeviceRepository>(deviceRepository);
-    sl.registerSingleton<LayoutRepository>(SharedPrefsLayoutRepository());
-    sl.registerSingleton<TransportLogReader>(const SamsungTransportLogReader());
-
-    final useFake = env == AppEnvironment.debug;
-
-    sl.registerSingleton<DeviceDiscoveryService>(
-      useFake ? FakeDeviceDiscoveryService() : SsdpDeviceDiscoveryService(),
-    );
-
+    final deviceRepository = _configureShared(sl);
+    sl.registerSingleton<DeviceDiscoveryService>(SsdpDeviceDiscoveryService());
     sl.registerSingleton<RemoteCommandService>(
       BrandRoutedRemoteCommandService(
         adapters: [
           SamsungAdapter(
-            transportClient: useFake
-                ? FakeSamsungTransportClient()
-                : SamsungWebSocketTransportClient(hostResolver: _resolveHost),
+            transportClient: SamsungWebSocketTransportClient(
+              hostResolver: _resolveHost,
+            ),
           ),
           LgAdapter(
-            transportClient: useFake
-                ? FakeLgTransportClient()
-                : LgWebSocketTransportClient(
-                    hostResolver: _resolveHost,
-                    keyStore: LgPairingKeyStore(),
-                  ),
+            transportClient: LgWebSocketTransportClient(
+              hostResolver: _resolveHost,
+              keyStore: LgPairingKeyStore(),
+            ),
             onSystemInfo: (deviceId, info) {
               unawaited(deviceRepository.saveDeviceSystemInfo(deviceId, info));
             },
           ),
           HisenseAdapter(
-            transportClient: useFake
-                ? FakeHisenseTransportClient()
-                : RealHisenseTransportClient(hostResolver: _resolveHost),
+            transportClient: RealHisenseTransportClient(
+              hostResolver: _resolveHost,
+            ),
           ),
         ],
       ),
@@ -83,5 +80,29 @@ final class RemoteControlDiConfig implements IDiConfig {
     final match = ipv4Regex.firstMatch(deviceId);
     if (match == null) return '';
     return match.group(1) ?? '';
+  }
+}
+
+final class DebugRemoteControlDiConfig implements IDiConfig {
+  const DebugRemoteControlDiConfig();
+
+  @override
+  void configure(GetIt sl, AppEnvironment env) {
+    final deviceRepository = _configureShared(sl);
+    sl.registerSingleton<DeviceDiscoveryService>(FakeDeviceDiscoveryService());
+    sl.registerSingleton<RemoteCommandService>(
+      BrandRoutedRemoteCommandService(
+        adapters: [
+          SamsungAdapter(transportClient: FakeSamsungTransportClient()),
+          LgAdapter(
+            transportClient: FakeLgTransportClient(),
+            onSystemInfo: (deviceId, info) {
+              unawaited(deviceRepository.saveDeviceSystemInfo(deviceId, info));
+            },
+          ),
+          HisenseAdapter(transportClient: FakeHisenseTransportClient()),
+        ],
+      ),
+    );
   }
 }

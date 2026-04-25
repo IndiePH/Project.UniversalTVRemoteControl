@@ -6,14 +6,19 @@ import 'package:one_remote/remote_control/configurations/remote_control_di_confi
 final class DiBootstrap {
   DiBootstrap._();
 
-  static final List<IDiConfig> _configs = [
-    const RemoteControlDiConfig(),
-  ];
+  static List<IDiConfig> _configsFor(AppEnvironment env) => switch (env) {
+    AppEnvironment.production || AppEnvironment.development => [
+      const RemoteControlDiConfig(),
+    ],
+    AppEnvironment.debug => [
+      const DebugRemoteControlDiConfig(),
+    ],
+  };
 
   static void initialize(AppEnvironment env) {
     final sl = GetIt.instance;
     sl.registerSingleton<AppEnvironment>(env);
-    for (final config in _configs) {
+    for (final config in _configsFor(env)) {
       config.configure(sl, env);
     }
   }
