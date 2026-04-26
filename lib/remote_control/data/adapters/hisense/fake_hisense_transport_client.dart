@@ -97,6 +97,9 @@ class FakeHisenseTransportClient
     );
   }
 
+  @override
+  Future<void> probe(String host) async {}
+
   Future<void> _ensure(String deviceId) async {
     if (!_connected.contains(deviceId)) {
       _connected.add(deviceId);

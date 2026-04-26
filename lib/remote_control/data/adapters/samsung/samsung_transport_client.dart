@@ -17,4 +17,8 @@ abstract class SamsungTransportClient
   Future<void> sendKey({required String deviceId, required String keyCode});
 
   Future<void> sendText({required String deviceId, required String text});
+
+  /// Lightweight TCP reachability check. Tries Samsung ports in order.
+  /// Completes if the TV is reachable; throws otherwise.
+  Future<void> probe(String host);
 }

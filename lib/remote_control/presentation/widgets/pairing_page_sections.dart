@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/presentation/pages/pairing_page_data.dart';
 import 'package:one_remote/theme/app_theme.dart';
+import 'package:one_remote/utils/two_digit_format.dart';
 
 /// Busy overlay shown while waiting for TV-side pairing confirmation.
 class PairingBusyOverlay extends StatelessWidget {
@@ -80,117 +83,177 @@ class PairingBusyOverlay extends StatelessWidget {
   }
 }
 
-/// Horizontally scrollable list of saved devices and quick reconnect actions.
-class PairingSavedDevicesSection extends StatelessWidget {
-  const PairingSavedDevicesSection({
-    super.key,
-    required this.devices,
-    required this.pairingNoteForDevice,
-    required this.onSelectDevice,
-    required this.onRemoveSavedDevice,
-  });
+/// Section heading for the Remote Selection grouped list.
+class RemoteSelectionSectionHeader extends StatelessWidget {
+  const RemoteSelectionSectionHeader(this.label, {super.key});
 
-  final List<TvDevice> devices;
-  final String? Function(String deviceId) pairingNoteForDevice;
-  final void Function(TvDevice device) onSelectDevice;
-  final void Function(TvDevice device) onRemoveSavedDevice;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    if (devices.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Saved Devices', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 82,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: devices.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final device = devices[index];
-              final pairingNote = pairingNoteForDevice(device.id);
-              return SizedBox(
-                width: 220,
-                child: ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text(
-                    device.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(
-                    pairingNote ?? device.brand.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: IconButton(
-                    tooltip: 'Remove saved device',
-                    onPressed: () => onRemoveSavedDevice(device),
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-                  onTap: () => onSelectDevice(device),
-                ),
-              );
-            },
-          ),
+    return Text(label, style: Theme.of(context).textTheme.titleSmall);
+  }
+}
+
+/// Paired TV row — swipe left (endToStart) to reveal Delete.
+///
+/// [onConfirmDismiss] must always return false; visual removal is driven by
+/// the parent list rebuilding after the underlying state update.
+String _pairedTvSubtitle(TvDevice device, DateTime? pairedAt) {
+  final parts = [device.brand.displayName];
+  if (device.modelIdentifier != null) parts.add(device.modelIdentifier!);
+  if (device.protocolVariant != TvDevice.defaultProtocolVariant) {
+    parts.add(device.protocolVariant);
+  }
+  var label = parts.join(' · ');
+  if (pairedAt != null) {
+    final local = pairedAt.toLocal();
+    final date =
+        '${local.year}-${formatTwoDigits(local.month)}-${formatTwoDigits(local.day)}';
+    final time =
+        '${formatTwoDigits(local.hour)}:${formatTwoDigits(local.minute)}';
+    label = '$label (paired on $date $time)';
+  }
+  return label;
+}
+
+class PairedTvListItem extends StatefulWidget {
+  const PairedTvListItem({
+    super.key,
+    required this.device,
+    required this.pairedAt,
+    required this.reachabilityService,
+    required this.onConfirmDismiss,
+    required this.onRename,
+    required this.onInfo,
+    required this.onTap,
+  });
+
+  final TvDevice device;
+  final DateTime? pairedAt;
+  final TvReachabilityService reachabilityService;
+  final Future<bool?> Function(DismissDirection) onConfirmDismiss;
+  final VoidCallback onRename;
+  final VoidCallback onInfo;
+  final VoidCallback onTap;
+
+  @override
+  State<PairedTvListItem> createState() => _PairedTvListItemState();
+}
+
+class _PairedTvListItemState extends State<PairedTvListItem> {
+  late final Future<bool> _reachableFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _reachableFuture = widget.reachabilityService.isReachable(widget.device);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: Key(widget.device.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: widget.onConfirmDismiss,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.error,
+          borderRadius: BorderRadius.circular(12),
         ),
-      ],
+        child: Icon(
+          Icons.delete_outline,
+          color: Theme.of(context).colorScheme.onError,
+        ),
+      ),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        tileColor: Theme.of(context).colorScheme.surface,
+        title: Text(
+          widget.device.displayName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          _pairedTvSubtitle(widget.device, widget.pairedAt),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FutureBuilder<bool>(
+              future: _reachableFuture,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 1.5),
+                  );
+                }
+                return Icon(
+                  snapshot.data! ? Icons.wifi : Icons.wifi_off,
+                  size: 18,
+                  color: snapshot.data!
+                      ? Colors.green
+                      : Theme.of(context).disabledColor,
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              iconSize: 18,
+              tooltip: 'Rename',
+              visualDensity: VisualDensity.compact,
+              onPressed: widget.onRename,
+            ),
+            IconButton(
+              icon: const Icon(Icons.info_outline),
+              iconSize: 18,
+              tooltip: 'Device info',
+              visualDensity: VisualDensity.compact,
+              onPressed: widget.onInfo,
+            ),
+            Icon(
+              Icons.chevron_left,
+              size: 18,
+              color: Theme.of(context).disabledColor,
+            ),
+          ],
+        ),
+        onTap: widget.onTap,
+      ),
     );
   }
 }
 
-/// Discovery result list for scanned TVs.
-class PairingDiscoveryList extends StatelessWidget {
-  const PairingDiscoveryList({
+/// Available (scan result) TV row — tap to begin pairing.
+class AvailableTvListItem extends StatelessWidget {
+  const AvailableTvListItem({
     super.key,
-    required this.isLoading,
-    required this.discoveredDevices,
-    required this.pairingNoteForDevice,
-    required this.onSelectDevice,
+    required this.device,
+    required this.pairingNote,
+    required this.onTap,
   });
 
-  final bool isLoading;
-  final List<TvDevice> discoveredDevices;
-  final String? Function(String deviceId) pairingNoteForDevice;
-  final void Function(TvDevice device) onSelectDevice;
+  final TvDevice device;
+  final String? pairingNote;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading && discoveredDevices.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (discoveredDevices.isEmpty) {
-      return const Center(
-        child: Text('No TVs found yet. Run a scan to discover devices.'),
-      );
-    }
-    return ListView.separated(
-      itemCount: discoveredDevices.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final device = discoveredDevices[index];
-        final pairingNote = pairingNoteForDevice(device.id);
-        return ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          tileColor: Theme.of(context).colorScheme.surface,
-          title: Text(device.displayName),
-          subtitle: pairingNote == null
-              ? Text(device.brand.displayName)
-              : Text('${device.brand.displayName} • $pairingNote'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => onSelectDevice(device),
-        );
-      },
+    return ListTile(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      tileColor: Theme.of(context).colorScheme.surface,
+      title: Text(device.displayName),
+      subtitle: pairingNote == null
+          ? Text(device.brand.displayName)
+          : Text('${device.brand.displayName} • $pairingNote'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }
@@ -329,6 +392,80 @@ class PairingManualAddSection extends StatelessWidget {
         const SizedBox(height: 8),
         PairingActionButton(label: 'Add Manually', onPressed: onAddManualDevice),
       ],
+    );
+  }
+}
+
+/// Modal bottom sheet wrapping [PairingManualAddSection] with self-contained state.
+///
+/// Owns brand selection, IP input, and validation error — the parent page only
+/// provides the recent-IP list and an async callback to initiate pairing.
+class PairingManualAddSheet extends StatefulWidget {
+  const PairingManualAddSheet({
+    super.key,
+    required this.recentManualIps,
+    required this.onAdd,
+  });
+
+  final List<String> recentManualIps;
+  final Future<void> Function(TvBrand brand, String ip) onAdd;
+
+  @override
+  State<PairingManualAddSheet> createState() => _PairingManualAddSheetState();
+}
+
+class _PairingManualAddSheetState extends State<PairingManualAddSheet> {
+  final TextEditingController _ipController = TextEditingController();
+  TvBrand _brand = TvBrand.samsung;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _ipController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final ip = _ipController.text.trim();
+    if (ip.isEmpty) {
+      setState(() => _errorMessage = 'Enter a TV IP address.');
+      return;
+    }
+    if (!PairingPageData.isValidIpv4(ip)) {
+      setState(() =>
+          _errorMessage = 'Enter a valid IPv4 address (e.g. 192.168.1.20).');
+      return;
+    }
+    setState(() => _errorMessage = null);
+    await widget.onAdd(_brand, ip);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: PairingManualAddSection(
+          manualBrand: _brand,
+          manualIpController: _ipController,
+          manualErrorMessage: _errorMessage,
+          recentManualIps: widget.recentManualIps,
+          onManualBrandChanged: (brand) => setState(() => _brand = brand),
+          onManualIpChanged: () {
+            if (_errorMessage != null) setState(() => _errorMessage = null);
+          },
+          onRecentIpSelected: (ip) => setState(() {
+            _ipController.text = ip;
+            _errorMessage = null;
+          }),
+          onAddManualDevice: _submit,
+        ),
+      ),
     );
   }
 }

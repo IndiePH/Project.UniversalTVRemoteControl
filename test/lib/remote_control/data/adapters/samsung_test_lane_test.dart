@@ -198,6 +198,9 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
 
   @override
   Stream<bool> watchRemoteTextInputReady(String deviceId) => Stream<bool>.value(true);
+
+  @override
+  Future<void> probe(String host) async {}
 }
 
 class _SubsetSamsungAdapter implements TvBrandAdapter {
@@ -239,6 +242,9 @@ class _SubsetSamsungAdapter implements TvBrandAdapter {
 
   @override
   Future<void> sendText({required TvDevice device, required String text}) async {}
+
+  @override
+  Future<void> probeConnection({required TvDevice device}) async {}
 
   @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
@@ -286,6 +292,9 @@ class _CompatibilitySamsungAdapter implements TvBrandAdapter {
   Future<void> sendText({required TvDevice device, required String text}) async {
     throw TextInputCompatibilityException('Samsung IME unavailable on this screen.');
   }
+
+  @override
+  Future<void> probeConnection({required TvDevice device}) async {}
 
   @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>

@@ -189,6 +189,20 @@ class RealHisenseTransportClient
     }
   }
 
+  @override
+  Future<void> probe(String host) async {
+    try {
+      final socket = await Socket.connect(
+        host,
+        _brokerPort,
+        timeout: const Duration(seconds: 3),
+      );
+      socket.destroy();
+    } catch (_) {
+      throw SocketException('$host unreachable on Hisense port $_brokerPort');
+    }
+  }
+
   void _publishString(MqttServerClient client, String topic, String body) {
     final builder = MqttClientPayloadBuilder()..addString(body);
     client.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);

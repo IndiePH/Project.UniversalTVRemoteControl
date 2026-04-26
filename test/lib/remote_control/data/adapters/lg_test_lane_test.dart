@@ -93,7 +93,7 @@ void main() {
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isFalse);
-    expect(result.message, 'Something went wrong.');
+    expect(result.message, 'Pairing failed for LG Test TV.');
     expect(result.exception, isA<LgPairingTimeoutException>());
     expect(result.exception.toString(), contains('Timed out'));
   });
@@ -106,7 +106,7 @@ void main() {
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isFalse);
-    expect(result.message, 'Something went wrong.');
+    expect(result.message, 'Pairing failed for LG Test TV.');
     expect(result.exception, isA<LgPairingSessionExpiredException>());
     expect(result.exception.toString(), contains('Re-pairing'));
   });
@@ -147,7 +147,7 @@ void main() {
       command: RemoteCommand.volumeUp,
     );
     expect(result.isSuccess, isFalse);
-    expect(result.message, 'Something went wrong.');
+    expect(result.message, 'Failed to send command to LG Test TV.');
     expect(result.exception, isA<StateError>());
     expect((result.exception as StateError).message, contains('send error'));
   });
@@ -280,6 +280,9 @@ class _SubsetLgAdapter implements TvBrandAdapter {
   }) async {}
 
   @override
+  Future<void> probeConnection({required TvDevice device}) async {}
+
+  @override
   Future<void> sendText({required TvDevice device, required String text}) async {}
 
   @override
@@ -327,6 +330,9 @@ class _TimeoutLgTransportClient
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
+  Future<void> probe(String host) async {}
+
+  @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
 }
 
@@ -366,6 +372,9 @@ class _ErrorOnSendLgTransportClient
 
   @override
   Future<void> disconnect({required String deviceId}) async {}
+
+  @override
+  Future<void> probe(String host) async {}
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -411,6 +420,9 @@ class _ReconnectTrackingLgTransportClient
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
+  Future<void> probe(String host) async {}
+
+  @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
 }
 
@@ -452,6 +464,9 @@ class _ImeRejectingLgTransportClient
 
   @override
   Future<void> disconnect({required String deviceId}) async {}
+
+  @override
+  Future<void> probe(String host) async {}
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -497,6 +512,9 @@ class _ClearPairingTrackingLgTransportClient
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
+  Future<void> probe(String host) async {}
+
+  @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
 }
 
@@ -534,6 +552,9 @@ class _TextInputReadyLgTransportClient
 
   @override
   Future<void> disconnect({required String deviceId}) async {}
+
+  @override
+  Future<void> probe(String host) async {}
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -577,6 +598,9 @@ class _StaleKeyLgTransportClient
 
   @override
   Future<void> disconnect({required String deviceId}) async {}
+
+  @override
+  Future<void> probe(String host) async {}
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();

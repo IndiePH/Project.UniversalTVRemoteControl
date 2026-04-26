@@ -84,6 +84,9 @@ class FakeLgTransportClient
     await disconnect(deviceId: deviceId);
   }
 
+  @override
+  Future<void> probe(String host) async {}
+
   Future<void> _ensureConnected(String deviceId) async {
     if (!_connected.contains(deviceId)) await connect(deviceId: deviceId);
   }
