@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
+import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_coordinator.dart';
@@ -24,12 +27,18 @@ class PairingPage extends StatefulWidget {
     required this.commandService,
     required this.discoveryService,
     required this.deviceRepository,
+    required this.stepsRegistry,
+    required this.hintRegistry,
+    required this.reachabilityService,
     this.activeDeviceId,
   });
 
   final RemoteCommandService commandService;
   final DeviceDiscoveryService discoveryService;
   final DeviceRepository deviceRepository;
+  final PrePairingStepsRegistry stepsRegistry;
+  final PairingProgressHintRegistry hintRegistry;
+  final TvReachabilityService reachabilityService;
   final String? activeDeviceId;
 
   @override
@@ -37,7 +46,6 @@ class PairingPage extends StatefulWidget {
 }
 
 class _PairingPageState extends State<PairingPage> {
-  final TextEditingController _manualIpController = TextEditingController();
   PairingPageViewState _viewState = const PairingPageViewState();
   late final PairingPageCoordinator _pairingCoordinator = PairingPageCoordinator(
     commandService: widget.commandService,
@@ -46,7 +54,6 @@ class _PairingPageState extends State<PairingPage> {
 
   @override
   void dispose() {
-    _manualIpController.dispose();
     super.dispose();
   }
 
@@ -90,6 +97,8 @@ class _PairingPageState extends State<PairingPage> {
       _viewState = _viewState.copyWith(
         isLoading: true,
         clearErrorMessage: true,
+        discoveredDevices: const [],
+        scanCount: _viewState.scanCount + 1,
       );
     });
 
@@ -121,7 +130,21 @@ class _PairingPageState extends State<PairingPage> {
     }
   }
 
+  void _selectPairedDevice(TvDevice device) {
+    Navigator.of(context).pop(device);
+  }
+
   Future<void> _selectDevice(TvDevice device) async {
+    final steps = widget.stepsRegistry.stepsFor(device.brand, device.protocolVariant);
+    if (steps != null) {
+      if (!mounted) return;
+      final confirmed = await PairingPageDialogs.confirmPrePairing(
+        context: context,
+        brandName: device.brand.displayName,
+        steps: steps,
+      );
+      if (!confirmed || !mounted) return;
+    }
     await _pairSelectedDevice(device: device);
   }
 
@@ -132,21 +155,23 @@ class _PairingPageState extends State<PairingPage> {
     if (_viewState.isPairingInProgress) {
       return;
     }
-    final pairingHint = device.brand == TvBrand.lg
-        ? 'Look at your TV screen and accept the pairing prompt.'
-        : null;
 
     setState(() {
       _viewState = _viewState.copyWith(
         isPairingInProgress: true,
-        pairingHint: pairingHint,
+        pairingHint: widget.hintRegistry.hintFor(
+          device.brand,
+          device.protocolVariant,
+        ),
         clearErrorMessage: true,
-        clearManualErrorMessage: true,
       );
     });
 
+    PairingAttemptResult? result;
+    String? exceptionMessage;
+
     try {
-      final result = await _pairingCoordinator.pairSelectedDevice(
+      result = await _pairingCoordinator.pairSelectedDevice(
         device: device,
         manualIpToSave: manualIpToSave,
         promptPin: (pairingMessage) async {
@@ -167,46 +192,16 @@ class _PairingPageState extends State<PairingPage> {
           return pin;
         },
         onPinRejected: (message) {
-          if (!mounted) {
-            return;
-          }
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
+          if (!mounted) return;
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(message)));
           setState(() {
             _viewState = _viewState.copyWith(isPairingInProgress: false);
           });
         },
       );
-      if (!result.isSuccess) {
-        if (!mounted) return;
-        final errorMsg = result.message;
-        setState(() {
-          _viewState = _viewState.copyWith(errorMessage: errorMsg);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
-        return;
-      }
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(context).pop(device);
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _viewState = _viewState.copyWith(
-          errorMessage: 'Pairing failed. Please try again.',
-        );
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to pair with TV. Please try again.'),
-        ),
-      );
+      exceptionMessage = 'Pairing failed. Please try again.';
     } finally {
       if (mounted) {
         setState(() {
@@ -217,6 +212,43 @@ class _PairingPageState extends State<PairingPage> {
         });
       }
     }
+
+    if (!mounted) return;
+
+    if (exceptionMessage != null) {
+      setState(() {
+        _viewState = _viewState.copyWith(errorMessage: exceptionMessage);
+      });
+      await PairingPageDialogs.showPairingOutcome(
+        context: context,
+        isSuccess: false,
+        deviceName: device.displayName,
+        errorMessage: exceptionMessage,
+      );
+      return;
+    }
+
+    if (!result!.isSuccess) {
+      final errorMsg = result.message;
+      setState(() {
+        _viewState = _viewState.copyWith(errorMessage: errorMsg);
+      });
+      await PairingPageDialogs.showPairingOutcome(
+        context: context,
+        isSuccess: false,
+        deviceName: device.displayName,
+        errorMessage: errorMsg,
+      );
+      return;
+    }
+
+    await PairingPageDialogs.showPairingOutcome(
+      context: context,
+      isSuccess: true,
+      deviceName: device.displayName,
+    );
+    if (!mounted) return;
+    Navigator.of(context).pop(device);
   }
 
   Future<void> _confirmRemoveSavedDevice(TvDevice device) async {
@@ -233,16 +265,6 @@ class _PairingPageState extends State<PairingPage> {
       return;
     }
 
-    // Active-device removal has an additional guard to reduce accidental disconnects.
-    if (isActiveDevice) {
-      final confirmText = await PairingPageDialogs.confirmActiveRemoval(
-        context: context,
-      );
-      if (!confirmText) {
-        return;
-      }
-    }
-
     await widget.commandService.unpairDevice(device: device);
     await widget.deviceRepository.removeSavedDevice(device.id);
     await _loadPairingMetadata();
@@ -254,30 +276,33 @@ class _PairingPageState extends State<PairingPage> {
     ).showSnackBar(SnackBar(content: Text('Removed ${device.displayName}')));
   }
 
-  Future<void> _addManualDevice() async {
-    final ip = _manualIpController.text.trim();
-    if (ip.isEmpty) {
-      setState(() {
-        _viewState = _viewState.copyWith(
-          manualErrorMessage: 'Enter a TV IP address.',
-        );
-      });
-      return;
-    }
-    if (!PairingPageData.isValidIpv4(ip)) {
-      setState(() {
-        _viewState = _viewState.copyWith(
-          manualErrorMessage: 'Enter a valid IPv4 address (e.g. 192.168.1.20).',
-        );
-      });
-      return;
-    }
-
-    final device = PairingPageData.buildManualDevice(
-      brand: _viewState.manualBrand,
-      ip: ip,
+  Future<void> _renameDevice(TvDevice device) async {
+    final newName = await PairingPageDialogs.promptRenameDevice(
+      context: context,
+      currentName: device.displayName,
     );
+    if (newName == null || !mounted) return;
+    await widget.deviceRepository.saveDevice(device.copyWith(displayName: newName));
+    await _loadPairingMetadata();
+  }
+
+  Future<void> _addManualDevice({
+    required TvBrand brand,
+    required String ip,
+  }) async {
+    final device = PairingPageData.buildManualDevice(brand: brand, ip: ip);
     await _pairSelectedDevice(device: device, manualIpToSave: ip);
+  }
+
+  void _showManualAddSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => PairingManualAddSheet(
+        recentManualIps: _viewState.recentManualIps,
+        onAdd: (brand, ip) => _addManualDevice(brand: brand, ip: ip),
+      ),
+    );
   }
 
   void _showPairingHelp() {
@@ -295,13 +320,35 @@ class _PairingPageState extends State<PairingPage> {
     );
   }
 
+  Widget _buildFabs() {
+    final disabled = _viewState.isPairingInProgress;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FloatingActionButton.small(
+          heroTag: 'fab_manual',
+          tooltip: 'Add manually',
+          onPressed: disabled ? null : _showManualAddSheet,
+          child: const Icon(Icons.keyboard),
+        ),
+        const SizedBox(height: 12),
+        FloatingActionButton(
+          heroTag: 'fab_scan',
+          tooltip: 'Scan for TVs',
+          onPressed: disabled ? null : _scanDevices,
+          child: const Icon(Icons.search),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: !_viewState.isPairingInProgress,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Pair TV'),
+          title: const Text('Select Remote'),
           automaticallyImplyLeading: !_viewState.isPairingInProgress,
           actions: [
             IconButton(
@@ -313,37 +360,13 @@ class _PairingPageState extends State<PairingPage> {
             ),
           ],
         ),
+        floatingActionButton: _buildFabs(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: Stack(
           children: [
             AbsorbPointer(
               absorbing: _viewState.isPairingInProgress,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildSavedDevicesSection(),
-                    const SizedBox(height: 12),
-                    PairingActionButton(
-                      label: _viewState.isLoading ? 'Scanning...' : 'Scan for TVs',
-                      onPressed: _viewState.isLoading ? null : _scanDevices,
-                    ),
-                    const SizedBox(height: 12),
-                    if (_viewState.errorMessage != null) ...[
-                      Text(
-                        _viewState.errorMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    Expanded(child: _buildDiscoveryList()),
-                    const SizedBox(height: 12),
-                    _buildManualAddSection(),
-                  ],
-                ),
-              ),
+              child: _buildScrollBody(),
             ),
             PairingBusyOverlay(
               visible: _viewState.isPairingInProgress,
@@ -355,21 +378,95 @@ class _PairingPageState extends State<PairingPage> {
     );
   }
 
-  Widget _buildSavedDevicesSection() {
-    return PairingSavedDevicesSection(
-      devices: _viewState.savedDevices,
-      pairingNoteForDevice: _pairingNoteForDevice,
-      onSelectDevice: (device) => unawaited(_selectDevice(device)),
-      onRemoveSavedDevice: (device) => unawaited(_confirmRemoveSavedDevice(device)),
-    );
-  }
-
-  Widget _buildDiscoveryList() {
-    return PairingDiscoveryList(
-      isLoading: _viewState.isLoading,
-      discoveredDevices: _viewState.discoveredDevices,
-      pairingNoteForDevice: _pairingNoteForDevice,
-      onSelectDevice: (device) => unawaited(_selectDevice(device)),
+  Widget _buildScrollBody() {
+    final savedDevices = _viewState.savedDevices;
+    return CustomScrollView(
+      slivers: [
+        if (savedDevices.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: const RemoteSelectionSectionHeader('Paired'),
+            ),
+          ),
+          SliverList.builder(
+            itemCount: savedDevices.length,
+            itemBuilder: (context, index) {
+              final device = savedDevices[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                child: PairedTvListItem(
+                  key: ValueKey('${device.id}_${_viewState.scanCount}'),
+                  device: device,
+                  pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
+                  reachabilityService: widget.reachabilityService,
+                  onConfirmDismiss: (_) async {
+                    await _confirmRemoveSavedDevice(device);
+                    return false;
+                  },
+                  onRename: () => unawaited(_renameDevice(device)),
+                  onInfo: () => unawaited(
+                    PairingPageDialogs.showDeviceInfo(
+                      context: context,
+                      device: device,
+                      pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
+                    ),
+                  ),
+                  onTap: () => _selectPairedDevice(device),
+                ),
+              );
+            },
+          ),
+        ],
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: const RemoteSelectionSectionHeader('Available'),
+          ),
+        ),
+        if (_viewState.errorMessage != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                _viewState.errorMessage!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ),
+        if (_viewState.isLoading)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          )
+        else if (_viewState.discoveredDevices.isEmpty)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: Text('No TVs found yet. Run a scan to discover devices.'),
+              ),
+            ),
+          )
+        else
+          SliverList.builder(
+            itemCount: _viewState.discoveredDevices.length,
+            itemBuilder: (context, index) {
+              final device = _viewState.discoveredDevices[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                child: AvailableTvListItem(
+                  device: device,
+                  pairingNote: _pairingNoteForDevice(device.id),
+                  onTap: () => unawaited(_selectDevice(device)),
+                ),
+              );
+            },
+          ),
+        const SliverPadding(padding: EdgeInsets.only(bottom: 96)),
+      ],
     );
   }
 
@@ -378,35 +475,6 @@ class _PairingPageState extends State<PairingPage> {
       deviceId: deviceId,
       savedDeviceIds: _viewState.savedDeviceIds,
       pairingHistoryByDeviceId: _viewState.pairingHistoryByDeviceId,
-    );
-  }
-
-  Widget _buildManualAddSection() {
-    return PairingManualAddSection(
-      manualBrand: _viewState.manualBrand,
-      manualIpController: _manualIpController,
-      manualErrorMessage: _viewState.manualErrorMessage,
-      recentManualIps: _viewState.recentManualIps,
-      onManualBrandChanged: (brand) {
-        setState(() {
-          _viewState = _viewState.copyWith(manualBrand: brand);
-        });
-      },
-      onManualIpChanged: () {
-        if (_viewState.manualErrorMessage == null) {
-          return;
-        }
-        setState(() {
-          _viewState = _viewState.copyWith(clearManualErrorMessage: true);
-        });
-      },
-      onRecentIpSelected: (ip) {
-        setState(() {
-          _manualIpController.text = ip;
-          _viewState = _viewState.copyWith(clearManualErrorMessage: true);
-        });
-      },
-      onAddManualDevice: () => unawaited(_addManualDevice()),
     );
   }
 }

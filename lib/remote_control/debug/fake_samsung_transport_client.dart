@@ -112,6 +112,9 @@ class FakeSamsungTransportClient
     });
   }
 
+  @override
+  Future<void> probe(String host) async {}
+
   Future<void> _ensureConnected(String deviceId) async {
     if (_connectedDeviceIds.contains(deviceId)) {
       return;

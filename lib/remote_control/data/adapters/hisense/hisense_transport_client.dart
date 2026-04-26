@@ -31,4 +31,8 @@ abstract class HisenseTransportClient
     int urlType = 37,
     int storeType = 0,
   });
+
+  /// Lightweight TCP reachability check on the broker port.
+  /// Completes if the TV is reachable; throws otherwise.
+  Future<void> probe(String host);
 }

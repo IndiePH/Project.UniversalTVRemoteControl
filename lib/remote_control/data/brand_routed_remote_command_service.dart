@@ -59,6 +59,7 @@ class BrandRoutedRemoteCommandService
       final enriched = device.copyWith(
         capabilities: capabilities,
         protocolVariant: variant,
+        modelIdentifier: info?.modelIdentifier,
       );
       return CommandDispatchResult.success(
         'Pairing approved for ${device.displayName}.',

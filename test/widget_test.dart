@@ -29,6 +29,9 @@ import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
+import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
+import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_page.dart';
 
@@ -56,6 +59,17 @@ void main() {
   testWidgets('pairs to discovered TV and sends command from remote', (
     WidgetTester tester,
   ) async {
+    GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
+      const DefaultPrePairingStepsRegistry(),
+    );
+    GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
+      const DefaultPairingProgressHintRegistry(),
+    );
+    GetIt.instance.registerSingleton<TvReachabilityService>(
+      _StubTvReachabilityService(),
+    );
+    addTearDown(GetIt.instance.reset);
+
     final commandService = BrandRoutedRemoteCommandService(
       adapters: [
         SamsungAdapter(transportClient: FakeSamsungTransportClient()),
@@ -81,12 +95,22 @@ void main() {
     // Open pairing via Wi-Fi button.
     await tester.tap(find.byIcon(Icons.wifi));
     await tester.pumpAndSettle();
-    expect(find.text('Pair TV'), findsOneWidget);
+    expect(find.text('Select Remote'), findsOneWidget);
 
     await tester.pumpAndSettle();
     final discoveredTile = find.widgetWithText(ListTile, 'LG OLED - Bedroom');
     final listTile = tester.widget<ListTile>(discoveredTile);
     listTile.onTap?.call();
+    await tester.pumpAndSettle();
+
+    // Dismiss the pre-pairing confirmation dialog shown for LG.
+    expect(find.text('Before pairing with LG'), findsOneWidget);
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // Dismiss the pairing outcome dialog.
+    expect(find.text('Paired successfully'), findsOneWidget);
+    await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Connected: LG OLED - Bedroom'), findsOneWidget);
@@ -106,6 +130,9 @@ void main() {
           commandService: InMemoryRemoteCommandService(),
           discoveryService: _EmptyDiscoveryService(),
           deviceRepository: InMemoryDeviceRepository(),
+          stepsRegistry: const DefaultPrePairingStepsRegistry(),
+          hintRegistry: const DefaultPairingProgressHintRegistry(),
+          reachabilityService: _StubTvReachabilityService(),
         ),
       ),
     );
@@ -125,7 +152,7 @@ void main() {
   });
 
   testWidgets(
-    'removes active saved device after REMOVE confirmation and falls back last-used',
+    'removes active saved device after single confirmation and falls back last-used',
     (
     WidgetTester tester,
   ) async {
@@ -163,6 +190,9 @@ void main() {
           commandService: InMemoryRemoteCommandService(),
           discoveryService: _StaticDiscoveryService(),
           deviceRepository: repository,
+          stepsRegistry: const DefaultPrePairingStepsRegistry(),
+          hintRegistry: const DefaultPairingProgressHintRegistry(),
+          reachabilityService: _StubTvReachabilityService(),
           activeDeviceId: 'samsung-living-room',
         ),
       ),
@@ -171,22 +201,13 @@ void main() {
 
     expect(find.text('Living Room TV'), findsOneWidget);
 
-    final savedTile = find.widgetWithText(ListTile, 'Living Room TV');
-    final listTile = tester.widget<ListTile>(savedTile);
-    final deleteButton = listTile.trailing! as IconButton;
-    deleteButton.onPressed?.call();
+    await tester.drag(find.text('Living Room TV'), const Offset(-500, 0));
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Type REMOVE'),
-      'REMOVE',
-    );
-    await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
-    await tester.pumpAndSettle();
-
+    expect(find.widgetWithText(TextField, 'Type REMOVE'), findsNothing);
     expect(find.text('Living Room TV'), findsNothing);
     expect(find.text('Bedroom TV'), findsOneWidget);
     expect(find.textContaining('Removed Living Room TV'), findsOneWidget);
@@ -231,6 +252,9 @@ void main() {
           commandService: InMemoryRemoteCommandService(),
           discoveryService: _StaticDiscoveryService(),
           deviceRepository: repository,
+          stepsRegistry: const DefaultPrePairingStepsRegistry(),
+          hintRegistry: const DefaultPairingProgressHintRegistry(),
+          reachabilityService: _StubTvReachabilityService(),
           activeDeviceId: activeDevice.id,
         ),
       ),
@@ -240,10 +264,7 @@ void main() {
     expect(find.text('Living Room TV'), findsOneWidget);
     expect(find.text('Bedroom TV'), findsOneWidget);
 
-    final savedTile = find.widgetWithText(ListTile, 'Bedroom TV');
-    final listTile = tester.widget<ListTile>(savedTile);
-    final deleteButton = listTile.trailing! as IconButton;
-    deleteButton.onPressed?.call();
+    await tester.drag(find.text('Bedroom TV'), const Offset(-500, 0));
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
@@ -298,4 +319,9 @@ class _StaticDiscoveryService implements DeviceDiscoveryService {
 class _EmptyDiscoveryService implements DeviceDiscoveryService {
   @override
   Future<List<TvDevice>> discoverDevices() async => const <TvDevice>[];
+}
+
+class _StubTvReachabilityService implements TvReachabilityService {
+  @override
+  Future<bool> isReachable(TvDevice device) async => false;
 }

@@ -250,23 +250,27 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       deviceRepository: widget.deviceRepository,
       activeDeviceId: _activeDevice?.id,
     );
-    if (!mounted || selectedDevice == null) {
-      return;
-    }
-    final lastPairedAt = await widget.deviceRepository
-        .getLastSuccessfulPairingAt(selectedDevice.id);
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
+
+    // When a device is explicitly selected use it; otherwise re-read the last
+    // used device so any rename made in the pairing screen is reflected here.
+    final device =
+        selectedDevice ?? await widget.deviceRepository.getLastUsedDevice();
+    if (!mounted || device == null) return;
+
+    final lastPairedAt =
+        await widget.deviceRepository.getLastSuccessfulPairingAt(device.id);
+    if (!mounted) return;
+
     setState(() {
-      _activeDevice = selectedDevice;
-      _status = _statusForConnectedDevice(
-        selectedDevice.displayName,
-        lastPairedAt,
-      );
+      _activeDevice = device;
+      _status = _statusForConnectedDevice(device.displayName, lastPairedAt);
     });
-    _subscribeRemoteTextReady(selectedDevice);
-    await _loadLayoutForDevice(selectedDevice.id);
+
+    if (selectedDevice != null) {
+      _subscribeRemoteTextReady(device);
+      await _loadLayoutForDevice(device.id);
+    }
   }
 
   String _statusForConnectedDevice(String deviceName, DateTime? lastPairedAt) {

@@ -35,6 +35,14 @@ class HisenseAdapter implements TvBrandAdapter {
   final HisenseTransportClient _transportClient;
   final CommandKeyMap _keyMap;
 
+  static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
+
+  @override
+  Future<void> probeConnection({required TvDevice device}) async {
+    final host = _ipv4.firstMatch(device.id)?.group(1) ?? '';
+    await _transportClient.probe(host);
+  }
+
   @override
   // TODO(unpair): Hisense has no persistent pairing state yet, so nothing to clear.
   // When Hisense auth-code persistence is added, follow the SharedPreferences

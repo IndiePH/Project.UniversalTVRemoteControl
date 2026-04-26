@@ -3,6 +3,35 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-04-26
+
+### Added
+- Replaced chevron on paired TV rows with an info (ⓘ) button; tapping shows a dialog with name, brand, model, variant, pairing date, and last known IP (task 3.8e)
+- Greyed-out left-chevron hint on paired TV rows to indicate swipe-to-delete affordance
+
+### Fixed
+- Search loading spinner now shown even when discovered list already has items; list clears on each new scan (task 3.8a)
+- Tapping a paired TV now closes the selection screen immediately instead of re-entering the pairing flow (task 3.8b)
+- Swipe-to-delete no longer shows a second "type REMOVE" confirmation; single dialog only (task 3.8c)
+- Wifi reachability icon on paired TVs re-probes on every search instead of showing the initial result forever (task 3.8d)
+
+### Added
+- Pre-pairing prompt screen before initiating pairing flow
+- Pairing outcome dialog and progress hint registry (task 3.2)
+- Grouped scrollable paired-TV list with swipe-to-delete (task 3.3)
+- Option-3 FAB layout with manual-add modal sheet (task 3.4)
+- Per-TV online indicator via TCP reachability probe (task 3.5)
+- Rename paired TV from the selection list (task 3.6)
+- Paired TV sub-text showing brand, model, and pairing date (task 3.7)
+- Brand-dependent capabilities, LG adapter, and refactor across transport/command layers (PR #5)
+
+### Changed
+- Consolidated port literals into named constants in transport clients
+- Updated file structure to follow project convention
+
+### Fixed
+- Corrected stale message assertions in LG lane tests
+
 ## 2026-04-25
 
 ### Changed

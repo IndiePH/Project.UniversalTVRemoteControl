@@ -217,6 +217,9 @@ class _SpyHisenseTransportClient
   }
 
   @override
+  Future<void> probe(String host) async {}
+
+  @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
 }
 
@@ -245,6 +248,9 @@ class _ErrorOnPinHisenseTransportClient
     int urlType = 37,
     int storeType = 0,
   }) async {}
+
+  @override
+  Future<void> probe(String host) async {}
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
