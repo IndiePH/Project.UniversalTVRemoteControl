@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/utils/two_digit_format.dart';
 
 /// Dialog helpers for `PairingPage` destructive/confirmation flows.
 final class PairingPageDialogs {
@@ -259,6 +261,54 @@ final class PairingPageDialogs {
     return shouldRemove == true;
   }
 
+  static Future<void> showDeviceInfo({
+    required BuildContext context,
+    required TvDevice device,
+    required DateTime? pairedAt,
+  }) async {
+    final prefix = '${device.brand.name}-';
+    final lastKnownIp = device.id.startsWith(prefix)
+        ? device.id.substring(prefix.length)
+        : null;
+
+    String? pairedAtLabel;
+    if (pairedAt != null) {
+      final local = pairedAt.toLocal();
+      pairedAtLabel =
+          '${local.year}-${formatTwoDigits(local.month)}-${formatTwoDigits(local.day)}'
+          ' ${formatTwoDigits(local.hour)}:${formatTwoDigits(local.minute)}';
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Device Info'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _InfoRow(label: 'Name', value: device.displayName),
+            _InfoRow(label: 'Brand', value: device.brand.displayName),
+            if (device.modelIdentifier != null)
+              _InfoRow(label: 'Model', value: device.modelIdentifier!),
+            if (device.protocolVariant != TvDevice.defaultProtocolVariant)
+              _InfoRow(label: 'Variant', value: device.protocolVariant),
+            if (pairedAtLabel != null)
+              _InfoRow(label: 'Paired on', value: pairedAtLabel),
+            if (lastKnownIp != null)
+              _InfoRow(label: 'Last known IP', value: lastKnownIp),
+          ],
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
+  }
+
   static Future<bool> confirmActiveRemoval({
     required BuildContext context,
   }) async {
@@ -333,5 +383,34 @@ final class PairingPageDialogs {
       },
     );
     return result == true;
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 96,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+            ),
+          ),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
   }
 }

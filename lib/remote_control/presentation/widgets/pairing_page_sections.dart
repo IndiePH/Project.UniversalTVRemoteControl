@@ -125,6 +125,7 @@ class PairedTvListItem extends StatefulWidget {
     required this.reachabilityService,
     required this.onConfirmDismiss,
     required this.onRename,
+    required this.onInfo,
     required this.onTap,
   });
 
@@ -133,6 +134,7 @@ class PairedTvListItem extends StatefulWidget {
   final TvReachabilityService reachabilityService;
   final Future<bool?> Function(DismissDirection) onConfirmDismiss;
   final VoidCallback onRename;
+  final VoidCallback onInfo;
   final VoidCallback onTap;
 
   @override
@@ -208,7 +210,18 @@ class _PairedTvListItemState extends State<PairedTvListItem> {
               visualDensity: VisualDensity.compact,
               onPressed: widget.onRename,
             ),
-            const Icon(Icons.chevron_right),
+            IconButton(
+              icon: const Icon(Icons.info_outline),
+              iconSize: 18,
+              tooltip: 'Device info',
+              visualDensity: VisualDensity.compact,
+              onPressed: widget.onInfo,
+            ),
+            Icon(
+              Icons.chevron_left,
+              size: 18,
+              color: Theme.of(context).disabledColor,
+            ),
           ],
         ),
         onTap: widget.onTap,

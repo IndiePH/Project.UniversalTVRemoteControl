@@ -5,6 +5,10 @@ Keep entries short and append new updates at the top.
 
 ## 2026-04-26
 
+### Added
+- Replaced chevron on paired TV rows with an info (ⓘ) button; tapping shows a dialog with name, brand, model, variant, pairing date, and last known IP (task 3.8e)
+- Greyed-out left-chevron hint on paired TV rows to indicate swipe-to-delete affordance
+
 ### Fixed
 - Search loading spinner now shown even when discovered list already has items; list clears on each new scan (task 3.8a)
 - Tapping a paired TV now closes the selection screen immediately instead of re-entering the pairing flow (task 3.8b)

@@ -405,6 +405,13 @@ class _PairingPageState extends State<PairingPage> {
                     return false;
                   },
                   onRename: () => unawaited(_renameDevice(device)),
+                  onInfo: () => unawaited(
+                    PairingPageDialogs.showDeviceInfo(
+                      context: context,
+                      device: device,
+                      pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
+                    ),
+                  ),
                   onTap: () => _selectPairedDevice(device),
                 ),
               );
