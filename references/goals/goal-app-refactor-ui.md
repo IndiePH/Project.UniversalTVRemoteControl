@@ -113,7 +113,7 @@ lib/
 | 3.8b | Fix paired TV tap showing pre-pairing prompt: paired TVs should close the selection screen immediately (already paired); only available TVs go through the pairing flow | `framework-mastery`, `bug-diagnosis` | 3.1, 3.3 | LOW | ✓ done |
 | 3.8c | Remove duplicate delete confirmation: swipe-to-delete currently shows two dialogs ("Remove?" then "type REMOVE"); keep only the first | `framework-mastery`, `bug-diagnosis` | 3.3 | LOW | ✓ done |
 | 3.8d | Fix wifi icon not refreshing on search: reachability probe is only run once on widget creation; re-probe all paired TVs whenever a search is triggered | `framework-mastery`, `bug-diagnosis` | 3.5 | LOW | ✓ done |
-| 3.8e | Replace `>` chevron on paired TV rows with an `ⓘ` (info_outline) icon button; tapping it shows a dialog with: display name, brand, model, protocol variant, pairing date, and IP address. Requires adding `hostAddress: String?` to `TvDevice` (currently not stored — id encodes IP only for manually-added devices, not SSDP-discovered ones); persist and restore it through `toJson`/`fromJson` and the pairing coordinator | `framework-mastery`, `abstraction-domain-modeling` | 3.3, 3.7 | MEDIUM | pending |
+| 3.8e | Replace `>` chevron on paired TV rows with an `ⓘ` (info_outline) icon button; tapping it shows a dialog with: display name, brand, model, protocol variant, pairing date, and IP address. Requires adding `hostAddress: String?` to `TvDevice` (currently not stored — id encodes IP only for manually-added devices, not SSDP-discovered ones); persist and restore it through `toJson`/`fromJson` and the pairing coordinator | `framework-mastery`, `abstraction-domain-modeling` | 3.3, 3.7 | MEDIUM | done |
 | 3.9 | End-to-end pairing regression across LG, Samsung, Hisense | `regression-prevention` | 3.1, 3.2, 3.3 | MEDIUM | pending |
 
 ---
@@ -133,11 +133,12 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 | 4.2 | Show "Connect a TV to begin" bubble guide, pointing to the 4.1 button/icon, when no TVs are paired, pointing to the remote-selection button | `ux-constraints-awareness`, `framework-mastery` | — | LOW | pending |
 | 4.3 | disable all remote buttons pre-pairing (when no remote paired/selected); only remote-selection button and cog remain fully active | `framework-mastery` | — | LOW | pending |
 | 4.4 | On first pairing for a TV: auto-load brand-default button grid (only show commands supported by that brand); overridden by persisted user preference | `framework-mastery`, `modularity` | — | MEDIUM | pending |
-| 4.5 | Implement gesture to switch between paired remotes (e.g., horizontal swipe on remote body) — confirm gesture doesn't conflict with existing scroll/button interactions | `ux-constraints-awareness`, `framework-mastery` | — | MEDIUM | pending |
-| 4.6 | Add `Stream<ConnectionState>` to transport client interface; implement for LG (WS events), Samsung (WS events), Hisense (ping poll) | `design-pattern-selection`, `abstraction-domain-modeling` | — | MEDIUM | pending |
-| 4.7 | Implement disconnection indicator in TV remote screen (consumes stream from 4.6) | `framework-mastery` | 4.6 | MEDIUM | pending |
-| 4.8 | Regression test: connection/disconnection state correctly reflects for each brand | `regression-prevention` | 4.6, 4.7 | MEDIUM | pending |
-| 4.9 | Only show remote controls supported by the paired TV's capability set, on pair or on selecting paired; allow user override | — | `framework-mastery`, `ux-constraints-awareness` | 5.2 | MEDIUM | pending |
+| 4.5 | Add `Stream<ConnectionState>` to transport client interface; implement for LG (WS events), Samsung (WS events), Hisense (ping poll) | `design-pattern-selection`, `abstraction-domain-modeling`, `refactoring` | — | MEDIUM | pending |
+| 4.6 | Implement disconnection indicator in TV remote screen (consumes stream from 4.5) | `framework-mastery` | 4.6 | MEDIUM | pending |
+| 4.7 | Only show remote controls supported by the paired TV's capability set, on pair or on selecting paired; allow user override | — | `framework-mastery`, `ux-constraints-awareness` | 5.2 | MEDIUM | pending |
+| 4.8 | Regression test: connection/disconnection state correctly reflects for each brand | `regression-prevention` | 4.5, 4.6 | MEDIUM | pending |
+
+| 4.X | (Deferred) Implement gesture to switch between paired remotes (e.g., horizontal swipe on remote body) — confirm gesture doesn't conflict with existing scroll/button interactions | `ux-constraints-awareness`, `framework-mastery` | — | MEDIUM | pending |
 
 ## Branch 5 - `feat/brand-dependent-features`
 
