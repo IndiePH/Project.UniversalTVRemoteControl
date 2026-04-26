@@ -384,7 +384,7 @@ void main() {
     });
   });
 
-  // 2.17: generic catch blocks always return a safe message and carry the raw
+  // 2.17: catch blocks return an operation-specific message and carry the raw
   // exception so env-aware consumers can surface detail in non-production builds.
 
   group('preparePairing — unexpected failure', () {
@@ -399,14 +399,14 @@ void main() {
       expect(result.getOutcome(), CommandOutcome.failure);
     });
 
-    test('message is always generic', () async {
+    test('message identifies the operation and device', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
         variantRegistry: const DefaultVariantResolutionRegistry(),
         capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
       );
       final result = await service.preparePairing(device: device);
-      expect(result.message, 'Something went wrong.');
+      expect(result.message, 'Pairing failed for ${device.displayName}.');
     });
 
     test('exception carries the raw error', () async {
@@ -436,7 +436,7 @@ void main() {
       expect(result.getOutcome(), CommandOutcome.failure);
     });
 
-    test('message is always generic', () async {
+    test('message identifies the operation and device', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
         variantRegistry: const DefaultVariantResolutionRegistry(),
@@ -446,7 +446,7 @@ void main() {
         device: device,
         fourDigitPin: '1234',
       );
-      expect(result.message, 'Something went wrong.');
+      expect(result.message, 'Failed to submit pairing code for ${device.displayName}.');
     });
 
     test('exception carries the raw error', () async {
@@ -479,7 +479,7 @@ void main() {
       expect(result.getOutcome(), CommandOutcome.failure);
     });
 
-    test('message is always generic', () async {
+    test('message identifies the operation and device', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
         variantRegistry: const DefaultVariantResolutionRegistry(),
@@ -489,7 +489,7 @@ void main() {
         device: device,
         command: RemoteCommand.volumeUp,
       );
-      expect(result.message, 'Something went wrong.');
+      expect(result.message, 'Failed to send command to ${device.displayName}.');
     });
 
     test('exception carries the raw error', () async {
@@ -519,14 +519,14 @@ void main() {
       expect(result.getOutcome(), CommandOutcome.failure);
     });
 
-    test('message is always generic', () async {
+    test('message identifies the operation and device', () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],
         variantRegistry: const DefaultVariantResolutionRegistry(),
         capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
       );
       final result = await service.sendText(device: device, text: 'hello');
-      expect(result.message, 'Something went wrong.');
+      expect(result.message, 'Failed to send text to ${device.displayName}.');
     });
 
     test('exception carries the raw error', () async {
