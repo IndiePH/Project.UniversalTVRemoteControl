@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/i_di_config.dart';
@@ -7,7 +5,9 @@ import 'package:one_remote/remote_control/application/device_discovery_service.d
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
-import 'package:one_remote/remote_control/application/transport_log_reader.dart';
+import 'package:one_remote/remote_control/application/transport_log_reader_provider.dart';
+import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/domain/models/tv_model_capability_registry.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/fake_hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/real_hisense_transport_client.dart';
@@ -17,7 +17,6 @@ import 'package:one_remote/remote_control/data/adapters/lg/lg_transport_client.d
 import 'package:one_remote/remote_control/data/adapters/lg/lg_websocket_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
-import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_websocket_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
@@ -28,14 +27,15 @@ import 'package:one_remote/remote_control/data/ssdp_device_discovery_service.dar
 import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
 
-SharedPrefsDeviceRepository _configureShared(GetIt sl) {
-  final deviceRepository = SharedPrefsDeviceRepository();
-  sl.registerSingleton<DeviceRepository>(deviceRepository);
+void _configureShared(GetIt sl) {
+  sl.registerSingleton<DeviceRepository>(SharedPrefsDeviceRepository());
   sl.registerSingleton<LayoutRepository>(SharedPrefsLayoutRepository());
-
-  // TODO: Determine why TransportLogReader is specific to Samsung.
-  sl.registerSingleton<TransportLogReader>(const SamsungTransportLogReader());
-  return deviceRepository;
+  sl.registerSingleton<VariantResolutionRegistry>(
+    const DefaultVariantResolutionRegistry(),
+  );
+  sl.registerSingleton<TvModelCapabilityRegistry>(
+    const DefaultTvModelCapabilityRegistry(),
+  );
 }
 
 final class RemoteControlDiConfig implements IDiConfig {
@@ -45,7 +45,7 @@ final class RemoteControlDiConfig implements IDiConfig {
 
   @override
   void configure(GetIt sl, AppEnvironment env) {
-    final deviceRepository = _configureShared(sl);
+    _configureShared(sl);
     sl.registerSingleton<DeviceDiscoveryService>(SsdpDeviceDiscoveryService());
     sl.registerSingleton<LgPairingKeyStore>(LgPairingKeyStore());
     sl.registerSingleton<SamsungTransportClient>(
@@ -60,20 +60,17 @@ final class RemoteControlDiConfig implements IDiConfig {
     sl.registerSingleton<HisenseTransportClient>(
       RealHisenseTransportClient(hostResolver: _resolveHost),
     );
-    sl.registerSingleton<RemoteCommandService>(
-      BrandRoutedRemoteCommandService(
-        adapters: [
-          SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
-          LgAdapter(
-            transportClient: sl<LgTransportClient>(),
-            onSystemInfo: (deviceId, info) {
-              unawaited(deviceRepository.saveDeviceSystemInfo(deviceId, info));
-            },
-          ),
-          HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
-        ],
-      ),
+    final commandService = BrandRoutedRemoteCommandService(
+      adapters: [
+        SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
+        LgAdapter(transportClient: sl<LgTransportClient>()),
+        HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
+      ],
+      variantRegistry: sl<VariantResolutionRegistry>(),
+      capabilityRegistry: sl<TvModelCapabilityRegistry>(),
     );
+    sl.registerSingleton<RemoteCommandService>(commandService);
+    sl.registerSingleton<TransportLogReaderProvider>(commandService);
   }
 
   static String _resolveHost(String deviceId) {
@@ -95,24 +92,21 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
 
   @override
   void configure(GetIt sl, AppEnvironment env) {
-    final deviceRepository = _configureShared(sl);
+    _configureShared(sl);
     sl.registerSingleton<DeviceDiscoveryService>(FakeDeviceDiscoveryService());
     sl.registerSingleton<SamsungTransportClient>(FakeSamsungTransportClient());
     sl.registerSingleton<LgTransportClient>(FakeLgTransportClient());
     sl.registerSingleton<HisenseTransportClient>(FakeHisenseTransportClient());
-    sl.registerSingleton<RemoteCommandService>(
-      BrandRoutedRemoteCommandService(
-        adapters: [
-          SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
-          LgAdapter(
-            transportClient: sl<LgTransportClient>(),
-            onSystemInfo: (deviceId, info) {
-              unawaited(deviceRepository.saveDeviceSystemInfo(deviceId, info));
-            },
-          ),
-          HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
-        ],
-      ),
+    final commandService = BrandRoutedRemoteCommandService(
+      adapters: [
+        SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
+        LgAdapter(transportClient: sl<LgTransportClient>()),
+        HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
+      ],
+      variantRegistry: sl<VariantResolutionRegistry>(),
+      capabilityRegistry: sl<TvModelCapabilityRegistry>(),
     );
+    sl.registerSingleton<RemoteCommandService>(commandService);
+    sl.registerSingleton<TransportLogReaderProvider>(commandService);
   }
 }

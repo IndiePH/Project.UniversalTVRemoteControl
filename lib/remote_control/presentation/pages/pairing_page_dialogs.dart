@@ -5,7 +5,7 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 final class PairingPageDialogs {
   const PairingPageDialogs._();
 
-  static Future<String?> promptHisensePairingPin({
+  static Future<String?> promptPairingPin({
     required BuildContext context,
     required String pairingMessage,
   }) {
@@ -44,7 +44,7 @@ final class PairingPageDialogs {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Hisense TV may require a 4-digit code shown on-screen to finish pairing.',
+                    'Your TV may require a 4-digit code shown on-screen to finish pairing.',
                   ),
                   const SizedBox(height: 8),
                   Text(

@@ -52,14 +52,18 @@ final class RemoteHomeActions {
     return true;
   }
 
-  static void showTransportDebugSheet({
+  static Future<void> showTransportDebugSheet({
     required BuildContext context,
     required Future<void> Function() onCopyTransportLogs,
     required Future<void> Function() onCopyRuntimeFlagsTemplate,
-  }) {
+    Future<void> Function()? onRestartApp,
+  }) async {
     final env = GetIt.instance<AppEnvironment>();
     final isDebug = env == AppEnvironment.debug;
-    var pendingFake = isDebug;
+    final stored = await TransportDebugSettings.readUseFakeTransportsOverride();
+    var pendingFake = stored ?? _compileUseFakeTransports;
+
+    if (!context.mounted) return;
 
     showModalBottomSheet<void>(
       context: context,
@@ -76,6 +80,7 @@ final class RemoteHomeActions {
                 setModalState(() {
                   pendingFake = value;
                 });
+                await onRestartApp?.call();
               },
               onCopyTransportLogs: () {
                 Navigator.pop(sheetContext);

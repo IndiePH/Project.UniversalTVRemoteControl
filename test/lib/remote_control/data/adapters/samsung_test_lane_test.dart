@@ -6,10 +6,13 @@ import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transpor
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
+import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/domain/models/tv_model_capability_registry.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 void main() {
   const samsungDevice = TvDevice(
@@ -38,6 +41,8 @@ void main() {
   test('Samsung lane: unsupported command returns UI-safe result', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [const _SubsetSamsungAdapter()],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
 
     final result = await service.sendCommand(
@@ -55,6 +60,8 @@ void main() {
   test('Samsung lane: compatibility text exception is surfaced safely', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [const _CompatibilitySamsungAdapter()],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
 
     final result = await service.sendText(device: samsungDevice, text: 'hello');
@@ -67,6 +74,8 @@ void main() {
   test('Samsung lane: text send returns unsupported when flag is off', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [SamsungAdapter(transportClient: _SpySamsungTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
 
     final result = await service.sendText(device: samsungDevice, text: 'hello');
@@ -102,6 +111,8 @@ void main() {
   test('Samsung lane: preparePairing success when transport accepts approval', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [SamsungAdapter(transportClient: _SpySamsungTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.preparePairing(device: samsungDevice);
     expect(result.isSuccess, isTrue);
@@ -110,6 +121,8 @@ void main() {
   test('Samsung lane: submitPairingCode returns unsupported (Samsung does not require a PIN)', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [SamsungAdapter(transportClient: _SpySamsungTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.submitPairingCode(
       device: samsungDevice,
@@ -133,6 +146,8 @@ void main() {
     // proceeds past that gate and reaches the capability check.
     final service = BrandRoutedRemoteCommandService(
       adapters: [const _CompatibilitySamsungAdapter()],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final values = await service
         .watchRemoteTextInputReady(device: samsungDeviceNoTextInput)
@@ -192,6 +207,13 @@ class _SubsetSamsungAdapter implements TvBrandAdapter {
   TvBrand get brand => TvBrand.samsung;
 
   @override
+  String get protocolVariant => TvDevice.defaultProtocolVariant;
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      null;
+
+  @override
   bool get supportsTextInput => false;
 
   @override
@@ -228,6 +250,13 @@ class _CompatibilitySamsungAdapter implements TvBrandAdapter {
 
   @override
   TvBrand get brand => TvBrand.samsung;
+
+  @override
+  String get protocolVariant => TvDevice.defaultProtocolVariant;
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      null;
 
   @override
   bool get supportsTextInput => true;

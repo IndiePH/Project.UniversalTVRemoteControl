@@ -1,6 +1,5 @@
 import 'package:flutter/services.dart';
-import 'package:get_it/get_it.dart';
-import 'package:one_remote/app/configurations/app_environment.dart';
+import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
@@ -8,18 +7,25 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 final class RuntimeFlagsTemplateDebug {
   const RuntimeFlagsTemplateDebug._();
 
+  static const bool _compileUseFakeTransports =
+      bool.fromEnvironment('USE_FAKE_TRANSPORTS');
+
   static Future<void> copyRuntimeFlagsTemplate({
     required TvDevice? activeDevice,
   }) async {
-    final template = buildRuntimeFlagsTemplate(activeDevice: activeDevice);
+    final stored = await TransportDebugSettings.readUseFakeTransportsOverride();
+    final useFakeTransports = stored ?? _compileUseFakeTransports;
+    final template = buildRuntimeFlagsTemplate(
+      activeDevice: activeDevice,
+      useFakeTransports: useFakeTransports,
+    );
     await Clipboard.setData(ClipboardData(text: template));
   }
 
   static String buildRuntimeFlagsTemplate({
     required TvDevice? activeDevice,
+    required bool useFakeTransports,
   }) {
-    final useFakeTransports =
-        GetIt.instance<AppEnvironment>() == AppEnvironment.debug;
     final brand = activeDevice?.brand;
     final lines = switch (brand) {
       // Keep in sync with references/samsung_validation_matrix.md -> Environment -> Runtime flags.

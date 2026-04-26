@@ -14,14 +14,36 @@ Keep entries short and append new updates at the top.
 - Generalized `TransportLogReader` as an application-layer port with `NoopTransportLogReader` default; unified Samsung WebSocket `_connectWith` method
 - Made `HisenseAdapter.transportClient` required; consolidated `TVBrand` properties
 - Deleted duplicate `SamsungKeyMapper.keyCodeFor`; relocated `formatTwoDigits` to `lib/utils` to fix downward layer dependency
-- Reorganized lib directory structure
+- refactor - renamed hisense related method in pairing_page_coordinator.dart
 
 ### Added
 - Unit tests for strategy map routing in `BrandRoutedRemoteCommandService`
+- Wire FlutterError.onError and runZonedGuarded in main.dart
+- Per device settings and capabilities. see references/guide-adding-protocol-variant.md
+- soft-restart app on use fake toggle
 
 ### Conventions
 - DI configuration and runtime are now decoupled: `IDiConfig` implementations declare bindings; `DiBootstrap` selects configs by `AppEnvironment`; remote control bindings live in `lib/remote_control/configurations/remote_control_di_config.dart`
 - `Result` (`lib/remote_control/application/result.dart`) is the abstract base for all operation results; use `Result.success()` / `Result.failure()` named constructors; consumers use `MessageHandler.sanitize(result)` for safe display strings
+
+## 2026-04-24
+
+### Changed
+
+- Reorganized lib directory structure
+  - refactor(structure): flatten lib/ to feature-named top-level dirs (TVREMOTE branch-1)
+  - Remove lib/src/ wrapper and lib/src/features/ nesting. Move:
+    - lib/src/app/ → lib/app/
+    - lib/src/features/remote_control/ → lib/remote_control/
+    - lib/src/theme/ → lib/theme/
+    - Mirror test/lib/src/features/remote_control/ → test/lib/remote_control/.
+
+## 2026-04-23
+
+### Added
+
+- feature: LG remote adapter [TVREMOTE-39,TVREMOTE-42, TVREMOTE-45 TVREMOTE-47] (PR #2)
+- remove Real or real_ prefix in class/file names (it is assumed real unless named with mock or fake)
 
 ## 2026-04-20
 
