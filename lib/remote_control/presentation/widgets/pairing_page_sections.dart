@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/presentation/pages/pairing_page_data.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
 /// Busy overlay shown while waiting for TV-side pairing confirmation.
@@ -310,6 +311,80 @@ class PairingManualAddSection extends StatelessWidget {
         const SizedBox(height: 8),
         PairingActionButton(label: 'Add Manually', onPressed: onAddManualDevice),
       ],
+    );
+  }
+}
+
+/// Modal bottom sheet wrapping [PairingManualAddSection] with self-contained state.
+///
+/// Owns brand selection, IP input, and validation error — the parent page only
+/// provides the recent-IP list and an async callback to initiate pairing.
+class PairingManualAddSheet extends StatefulWidget {
+  const PairingManualAddSheet({
+    super.key,
+    required this.recentManualIps,
+    required this.onAdd,
+  });
+
+  final List<String> recentManualIps;
+  final Future<void> Function(TvBrand brand, String ip) onAdd;
+
+  @override
+  State<PairingManualAddSheet> createState() => _PairingManualAddSheetState();
+}
+
+class _PairingManualAddSheetState extends State<PairingManualAddSheet> {
+  final TextEditingController _ipController = TextEditingController();
+  TvBrand _brand = TvBrand.samsung;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _ipController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final ip = _ipController.text.trim();
+    if (ip.isEmpty) {
+      setState(() => _errorMessage = 'Enter a TV IP address.');
+      return;
+    }
+    if (!PairingPageData.isValidIpv4(ip)) {
+      setState(() =>
+          _errorMessage = 'Enter a valid IPv4 address (e.g. 192.168.1.20).');
+      return;
+    }
+    setState(() => _errorMessage = null);
+    await widget.onAdd(_brand, ip);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: PairingManualAddSection(
+          manualBrand: _brand,
+          manualIpController: _ipController,
+          manualErrorMessage: _errorMessage,
+          recentManualIps: widget.recentManualIps,
+          onManualBrandChanged: (brand) => setState(() => _brand = brand),
+          onManualIpChanged: () {
+            if (_errorMessage != null) setState(() => _errorMessage = null);
+          },
+          onRecentIpSelected: (ip) => setState(() {
+            _ipController.text = ip;
+            _errorMessage = null;
+          }),
+          onAddManualDevice: _submit,
+        ),
+      ),
     );
   }
 }

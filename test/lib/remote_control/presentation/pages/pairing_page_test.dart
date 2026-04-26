@@ -20,11 +20,12 @@ void main() {
     _StubPrePairingStepsRegistry? stepsRegistry,
     _StubPairingProgressHintRegistry? hintRegistry,
     DeviceRepository? deviceRepository,
+    DeviceDiscoveryService? discoveryService,
   }) {
     return MaterialApp(
       home: PairingPage(
         commandService: commandService,
-        discoveryService: _StubDiscoveryService(),
+        discoveryService: discoveryService ?? _StubDiscoveryService(),
         deviceRepository: deviceRepository ?? _StubDeviceRepository(),
         stepsRegistry: stepsRegistry ?? _StubPrePairingStepsRegistry(),
         hintRegistry: hintRegistry ?? _StubPairingProgressHintRegistry(),
@@ -251,6 +252,86 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // FAB layout
+  // ---------------------------------------------------------------------------
+
+  group('FAB layout', () {
+    testWidgets('search FAB is present', (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+      ));
+      await tester.pump();
+
+      expect(find.byTooltip('Scan for TVs'), findsOneWidget);
+      expect(find.widgetWithIcon(FloatingActionButton, Icons.search), findsOneWidget);
+    });
+
+    testWidgets('keyboard FAB is present', (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+      ));
+      await tester.pump();
+
+      expect(find.byTooltip('Add manually'), findsOneWidget);
+      expect(find.widgetWithIcon(FloatingActionButton, Icons.keyboard), findsOneWidget);
+    });
+
+    testWidgets('tapping search FAB re-triggers scan loading indicator',
+        (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+        discoveryService: _SlowDiscoveryService(),
+      ));
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Scan for TVs'));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('tapping keyboard FAB opens manual add sheet', (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+      ));
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Add manually'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Manual Pairing'), findsOneWidget);
+      expect(find.text('Add Manually'), findsOneWidget);
+    });
+
+    testWidgets('manual add sheet initiates pairing on valid IP', (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+        stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
+      ));
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Add manually'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).last, '192.168.1.99');
+      await tester.tap(find.text('Add Manually'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Paired successfully'), findsOneWidget);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // PIN flow regression
   // ---------------------------------------------------------------------------
 
@@ -374,6 +455,11 @@ class _SlowCommandService implements RemoteCommandService {
 class _StubDiscoveryService implements DeviceDiscoveryService {
   @override
   Future<List<TvDevice>> discoverDevices() async => [lgDevice, hisenseDevice];
+}
+
+class _SlowDiscoveryService implements DeviceDiscoveryService {
+  @override
+  Future<List<TvDevice>> discoverDevices() => Completer<List<TvDevice>>().future;
 }
 
 const lgDevice = TvDevice(

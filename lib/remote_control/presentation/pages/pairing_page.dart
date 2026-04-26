@@ -43,7 +43,6 @@ class PairingPage extends StatefulWidget {
 }
 
 class _PairingPageState extends State<PairingPage> {
-  final TextEditingController _manualIpController = TextEditingController();
   PairingPageViewState _viewState = const PairingPageViewState();
   late final PairingPageCoordinator _pairingCoordinator = PairingPageCoordinator(
     commandService: widget.commandService,
@@ -52,7 +51,6 @@ class _PairingPageState extends State<PairingPage> {
 
   @override
   void dispose() {
-    _manualIpController.dispose();
     super.dispose();
   }
 
@@ -157,7 +155,6 @@ class _PairingPageState extends State<PairingPage> {
           device.protocolVariant,
         ),
         clearErrorMessage: true,
-        clearManualErrorMessage: true,
       );
     });
 
@@ -280,30 +277,23 @@ class _PairingPageState extends State<PairingPage> {
     ).showSnackBar(SnackBar(content: Text('Removed ${device.displayName}')));
   }
 
-  Future<void> _addManualDevice() async {
-    final ip = _manualIpController.text.trim();
-    if (ip.isEmpty) {
-      setState(() {
-        _viewState = _viewState.copyWith(
-          manualErrorMessage: 'Enter a TV IP address.',
-        );
-      });
-      return;
-    }
-    if (!PairingPageData.isValidIpv4(ip)) {
-      setState(() {
-        _viewState = _viewState.copyWith(
-          manualErrorMessage: 'Enter a valid IPv4 address (e.g. 192.168.1.20).',
-        );
-      });
-      return;
-    }
-
-    final device = PairingPageData.buildManualDevice(
-      brand: _viewState.manualBrand,
-      ip: ip,
-    );
+  Future<void> _addManualDevice({
+    required TvBrand brand,
+    required String ip,
+  }) async {
+    final device = PairingPageData.buildManualDevice(brand: brand, ip: ip);
     await _pairSelectedDevice(device: device, manualIpToSave: ip);
+  }
+
+  void _showManualAddSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => PairingManualAddSheet(
+        recentManualIps: _viewState.recentManualIps,
+        onAdd: (brand, ip) => _addManualDevice(brand: brand, ip: ip),
+      ),
+    );
   }
 
   void _showPairingHelp() {
@@ -318,6 +308,28 @@ class _PairingPageState extends State<PairingPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildFabs() {
+    final disabled = _viewState.isPairingInProgress;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FloatingActionButton.small(
+          heroTag: 'fab_manual',
+          tooltip: 'Add manually',
+          onPressed: disabled ? null : _showManualAddSheet,
+          child: const Icon(Icons.keyboard),
+        ),
+        const SizedBox(height: 12),
+        FloatingActionButton(
+          heroTag: 'fab_scan',
+          tooltip: 'Scan for TVs',
+          onPressed: disabled ? null : _scanDevices,
+          child: const Icon(Icons.search),
+        ),
+      ],
     );
   }
 
@@ -339,6 +351,8 @@ class _PairingPageState extends State<PairingPage> {
             ),
           ],
         ),
+        floatingActionButton: _buildFabs(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: Stack(
           children: [
             AbsorbPointer(
@@ -432,10 +446,7 @@ class _PairingPageState extends State<PairingPage> {
               );
             },
           ),
-        SliverPadding(
-          padding: const EdgeInsets.all(16),
-          sliver: SliverToBoxAdapter(child: _buildManualAddSection()),
-        ),
+        const SliverPadding(padding: EdgeInsets.only(bottom: 96)),
       ],
     );
   }
@@ -445,35 +456,6 @@ class _PairingPageState extends State<PairingPage> {
       deviceId: deviceId,
       savedDeviceIds: _viewState.savedDeviceIds,
       pairingHistoryByDeviceId: _viewState.pairingHistoryByDeviceId,
-    );
-  }
-
-  Widget _buildManualAddSection() {
-    return PairingManualAddSection(
-      manualBrand: _viewState.manualBrand,
-      manualIpController: _manualIpController,
-      manualErrorMessage: _viewState.manualErrorMessage,
-      recentManualIps: _viewState.recentManualIps,
-      onManualBrandChanged: (brand) {
-        setState(() {
-          _viewState = _viewState.copyWith(manualBrand: brand);
-        });
-      },
-      onManualIpChanged: () {
-        if (_viewState.manualErrorMessage == null) {
-          return;
-        }
-        setState(() {
-          _viewState = _viewState.copyWith(clearManualErrorMessage: true);
-        });
-      },
-      onRecentIpSelected: (ip) {
-        setState(() {
-          _manualIpController.text = ip;
-          _viewState = _viewState.copyWith(clearManualErrorMessage: true);
-        });
-      },
-      onAddManualDevice: () => unawaited(_addManualDevice()),
     );
   }
 }

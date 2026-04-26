@@ -1,4 +1,3 @@
-import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 /// Local UI state for `PairingPage`.
@@ -8,8 +7,6 @@ final class PairingPageViewState {
     this.isPairingInProgress = false,
     this.pairingHint,
     this.errorMessage,
-    this.manualErrorMessage,
-    this.manualBrand = TvBrand.samsung,
     this.savedDevices = const <TvDevice>[],
     this.discoveredDevices = const <TvDevice>[],
     this.recentManualIps = const <String>[],
@@ -22,8 +19,6 @@ final class PairingPageViewState {
   /// Contextual hint shown inside the busy overlay (e.g. "Check your TV screen").
   final String? pairingHint;
   final String? errorMessage;
-  final String? manualErrorMessage;
-  final TvBrand manualBrand;
   final List<TvDevice> savedDevices;
   final List<TvDevice> discoveredDevices;
   final List<String> recentManualIps;
@@ -37,9 +32,6 @@ final class PairingPageViewState {
     bool clearPairingHint = false,
     String? errorMessage,
     bool clearErrorMessage = false,
-    String? manualErrorMessage,
-    bool clearManualErrorMessage = false,
-    TvBrand? manualBrand,
     List<TvDevice>? savedDevices,
     List<TvDevice>? discoveredDevices,
     List<String>? recentManualIps,
@@ -51,10 +43,6 @@ final class PairingPageViewState {
       isPairingInProgress: isPairingInProgress ?? this.isPairingInProgress,
       pairingHint: clearPairingHint ? null : (pairingHint ?? this.pairingHint),
       errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
-      manualErrorMessage: clearManualErrorMessage
-          ? null
-          : (manualErrorMessage ?? this.manualErrorMessage),
-      manualBrand: manualBrand ?? this.manualBrand,
       savedDevices: savedDevices ?? this.savedDevices,
       discoveredDevices: discoveredDevices ?? this.discoveredDevices,
       recentManualIps: recentManualIps ?? this.recentManualIps,
