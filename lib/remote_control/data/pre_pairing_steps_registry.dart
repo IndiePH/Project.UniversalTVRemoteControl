@@ -1,8 +1,11 @@
-import 'package:one_remote/remote_control/application/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
-final class DefaultPrePairingStepsRegistry implements PrePairingStepsRegistry {
+abstract interface class PrePairingStepsRegistry {
+  List<String>? stepsFor(TvBrand brand, String protocolVariant);
+}
+
+class DefaultPrePairingStepsRegistry implements PrePairingStepsRegistry {
   const DefaultPrePairingStepsRegistry();
 
   static const Map<(TvBrand, String), List<String>> _steps = {
