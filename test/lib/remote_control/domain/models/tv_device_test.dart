@@ -144,5 +144,57 @@ void main() {
 
       expect(json['protocolVariant'], equals('tizen_v5'));
     });
+
+    test('modelIdentifier round-trips through toJson / fromJson', () {
+      const original = TvDevice(
+        id: 'tv-1',
+        displayName: 'LG TV',
+        brand: TvBrand.lg,
+        capabilities: {DeviceCapability.keyCommands},
+        modelIdentifier: 'OLED65C2PSA',
+      );
+
+      final restored = TvDevice.fromJson(original.toJson());
+
+      expect(restored!.modelIdentifier, equals('OLED65C2PSA'));
+    });
+
+    test('fromJson sets modelIdentifier to null when key is absent', () {
+      final json = <String, dynamic>{
+        'id': 'tv-1',
+        'displayName': 'LG TV',
+        'brand': 'lg',
+        'capabilities': ['keyCommands'],
+      };
+
+      final device = TvDevice.fromJson(json);
+
+      expect(device!.modelIdentifier, isNull);
+    });
+  });
+
+  group('TvDevice.copyWith modelIdentifier', () {
+    const base = TvDevice(
+      id: 'tv-1',
+      displayName: 'LG TV',
+      brand: TvBrand.lg,
+      capabilities: {DeviceCapability.keyCommands},
+      modelIdentifier: 'OLED65C2PSA',
+    );
+
+    test('updates modelIdentifier and preserves other fields', () {
+      final updated = base.copyWith(modelIdentifier: 'OLED77C3PSA');
+
+      expect(updated.modelIdentifier, equals('OLED77C3PSA'));
+      expect(updated.id, base.id);
+      expect(updated.displayName, base.displayName);
+      expect(updated.brand, base.brand);
+    });
+
+    test('preserves modelIdentifier when not provided', () {
+      final updated = base.copyWith(displayName: 'New Name');
+
+      expect(updated.modelIdentifier, equals('OLED65C2PSA'));
+    });
   });
 }

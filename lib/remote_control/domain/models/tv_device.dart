@@ -9,6 +9,7 @@ class TvDevice {
     required this.brand,
     required this.capabilities,
     this.protocolVariant = defaultProtocolVariant,
+    this.modelIdentifier,
   });
 
   static const String defaultProtocolVariant = 'default';
@@ -18,11 +19,13 @@ class TvDevice {
   final TvBrand brand;
   final Set<DeviceCapability> capabilities;
   final String protocolVariant;
+  final String? modelIdentifier;
 
   TvDevice copyWith({
     String? displayName,
     Set<DeviceCapability>? capabilities,
     String? protocolVariant,
+    String? modelIdentifier,
   }) =>
       TvDevice(
         id: id,
@@ -30,6 +33,7 @@ class TvDevice {
         brand: brand,
         capabilities: capabilities ?? this.capabilities,
         protocolVariant: protocolVariant ?? this.protocolVariant,
+        modelIdentifier: modelIdentifier ?? this.modelIdentifier,
       );
 
   Map<String, dynamic> toJson() => {
@@ -38,6 +42,7 @@ class TvDevice {
     'brand': brand.name,
     'capabilities': capabilities.map((c) => c.name).toList(),
     'protocolVariant': protocolVariant,
+    'modelIdentifier': modelIdentifier,
   };
 
   static TvDevice? fromJson(Map<String, dynamic> json) {
@@ -47,6 +52,7 @@ class TvDevice {
       final brand = TvBrand.values.firstWhere((b) => b.name == json['brand']);
       final protocolVariant =
           json['protocolVariant'] as String? ?? defaultProtocolVariant;
+      final modelIdentifier = json['modelIdentifier'] as String?;
       final capabilityNames =
           (json['capabilities'] as List<dynamic>?)?.cast<String>() ?? [];
       final parsed = capabilityNames
@@ -67,6 +73,7 @@ class TvDevice {
         brand: brand,
         capabilities: capabilities,
         protocolVariant: protocolVariant,
+        modelIdentifier: modelIdentifier,
       );
     } catch (_) {
       return null;

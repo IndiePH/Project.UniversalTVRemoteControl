@@ -123,6 +123,26 @@ void main() {
       expect(result.device!.capabilities, equals(TvBrand.samsung.defaultCapabilities));
       expect(result.device!.protocolVariant, equals(TvDevice.defaultProtocolVariant));
     });
+
+    test('result.device carries modelIdentifier from queryDeviceInfo', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [_InfoReturningAdapter(const TvDeviceInfo(modelIdentifier: 'OLED65C2PSA'))],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
+      );
+      final result = await service.preparePairing(device: device);
+      expect(result.device!.modelIdentifier, equals('OLED65C2PSA'));
+    });
+
+    test('result.device modelIdentifier is null when queryDeviceInfo returns no model', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [_InfoReturningAdapter(const TvDeviceInfo())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
+      );
+      final result = await service.preparePairing(device: device);
+      expect(result.device!.modelIdentifier, isNull);
+    });
   });
 
   group('brand dispatch — submitPairingCode', () {

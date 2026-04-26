@@ -401,7 +401,7 @@ class _PairingPageState extends State<PairingPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 child: PairedTvListItem(
                   device: device,
-                  pairingNote: _pairingNoteForDevice(device.id),
+                  pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
                   reachabilityService: widget.reachabilityService,
                   onConfirmDismiss: (_) async {
                     await _confirmRemoveSavedDevice(device);

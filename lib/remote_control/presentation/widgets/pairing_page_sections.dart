@@ -4,6 +4,7 @@ import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_data.dart';
 import 'package:one_remote/theme/app_theme.dart';
+import 'package:one_remote/utils/two_digit_format.dart';
 
 /// Busy overlay shown while waiting for TV-side pairing confirmation.
 class PairingBusyOverlay extends StatelessWidget {
@@ -98,11 +99,29 @@ class RemoteSelectionSectionHeader extends StatelessWidget {
 ///
 /// [onConfirmDismiss] must always return false; visual removal is driven by
 /// the parent list rebuilding after the underlying state update.
+String _pairedTvSubtitle(TvDevice device, DateTime? pairedAt) {
+  final parts = [device.brand.displayName];
+  if (device.modelIdentifier != null) parts.add(device.modelIdentifier!);
+  if (device.protocolVariant != TvDevice.defaultProtocolVariant) {
+    parts.add(device.protocolVariant);
+  }
+  var label = parts.join(' · ');
+  if (pairedAt != null) {
+    final local = pairedAt.toLocal();
+    final date =
+        '${local.year}-${formatTwoDigits(local.month)}-${formatTwoDigits(local.day)}';
+    final time =
+        '${formatTwoDigits(local.hour)}:${formatTwoDigits(local.minute)}';
+    label = '$label (paired on $date $time)';
+  }
+  return label;
+}
+
 class PairedTvListItem extends StatefulWidget {
   const PairedTvListItem({
     super.key,
     required this.device,
-    required this.pairingNote,
+    required this.pairedAt,
     required this.reachabilityService,
     required this.onConfirmDismiss,
     required this.onRename,
@@ -110,7 +129,7 @@ class PairedTvListItem extends StatefulWidget {
   });
 
   final TvDevice device;
-  final String? pairingNote;
+  final DateTime? pairedAt;
   final TvReachabilityService reachabilityService;
   final Future<bool?> Function(DismissDirection) onConfirmDismiss;
   final VoidCallback onRename;
@@ -156,7 +175,7 @@ class _PairedTvListItemState extends State<PairedTvListItem> {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          widget.pairingNote ?? widget.device.brand.displayName,
+          _pairedTvSubtitle(widget.device, widget.pairedAt),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
