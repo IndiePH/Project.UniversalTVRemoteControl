@@ -19,12 +19,13 @@ void main() {
     required RemoteCommandService commandService,
     _StubPrePairingStepsRegistry? stepsRegistry,
     _StubPairingProgressHintRegistry? hintRegistry,
+    DeviceRepository? deviceRepository,
   }) {
     return MaterialApp(
       home: PairingPage(
         commandService: commandService,
         discoveryService: _StubDiscoveryService(),
-        deviceRepository: _StubDeviceRepository(),
+        deviceRepository: deviceRepository ?? _StubDeviceRepository(),
         stepsRegistry: stepsRegistry ?? _StubPrePairingStepsRegistry(),
         hintRegistry: hintRegistry ?? _StubPairingProgressHintRegistry(),
       ),
@@ -176,6 +177,80 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // Grouped list
+  // ---------------------------------------------------------------------------
+
+  group('grouped list', () {
+    const savedDevice = TvDevice(
+      id: 'lg-saved',
+      displayName: 'Saved TV',
+      brand: TvBrand.lg,
+      capabilities: {DeviceCapability.keyCommands},
+    );
+
+    testWidgets('saved device appears under Paired section header', (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+        deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+      ));
+      await tester.pump();
+
+      expect(find.text('Paired'), findsOneWidget);
+      expect(find.text('Saved TV'), findsOneWidget);
+    });
+
+    testWidgets('discovery results appear under Available section header',
+        (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+      ));
+      await tester.pump();
+
+      expect(find.text('Available'), findsOneWidget);
+      expect(find.text('LG TV'), findsOneWidget);
+      expect(find.text('Hisense TV'), findsOneWidget);
+    });
+
+    testWidgets('swipe left on paired TV shows remove confirmation dialog',
+        (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+        deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+      ));
+      await tester.pump();
+
+      await tester.drag(find.text('Saved TV'), const Offset(-500, 0));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Remove saved device?'), findsOneWidget);
+    });
+
+    testWidgets('cancelling swipe keeps item in paired list', (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+        deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+      ));
+      await tester.pump();
+
+      await tester.drag(find.text('Saved TV'), const Offset(-500, 0));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Saved TV'), findsOneWidget);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // PIN flow regression
   // ---------------------------------------------------------------------------
 
@@ -316,10 +391,13 @@ const hisenseDevice = TvDevice(
 );
 
 class _StubDeviceRepository implements DeviceRepository {
+  _StubDeviceRepository({this.savedDevices = const []});
+  final List<TvDevice> savedDevices;
+
   @override
   Future<void> saveDevice(TvDevice device) async {}
   @override
-  Future<List<TvDevice>> getSavedDevices() async => [];
+  Future<List<TvDevice>> getSavedDevices() async => savedDevices;
   @override
   Future<TvDevice?> getLastUsedDevice() async => null;
   @override

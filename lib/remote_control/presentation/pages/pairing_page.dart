@@ -327,7 +327,7 @@ class _PairingPageState extends State<PairingPage> {
       canPop: !_viewState.isPairingInProgress,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Pair TV'),
+          title: const Text('Select Remote'),
           automaticallyImplyLeading: !_viewState.isPairingInProgress,
           actions: [
             IconButton(
@@ -343,33 +343,7 @@ class _PairingPageState extends State<PairingPage> {
           children: [
             AbsorbPointer(
               absorbing: _viewState.isPairingInProgress,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildSavedDevicesSection(),
-                    const SizedBox(height: 12),
-                    PairingActionButton(
-                      label: _viewState.isLoading ? 'Scanning...' : 'Scan for TVs',
-                      onPressed: _viewState.isLoading ? null : _scanDevices,
-                    ),
-                    const SizedBox(height: 12),
-                    if (_viewState.errorMessage != null) ...[
-                      Text(
-                        _viewState.errorMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    Expanded(child: _buildDiscoveryList()),
-                    const SizedBox(height: 12),
-                    _buildManualAddSection(),
-                  ],
-                ),
-              ),
+              child: _buildScrollBody(),
             ),
             PairingBusyOverlay(
               visible: _viewState.isPairingInProgress,
@@ -381,21 +355,88 @@ class _PairingPageState extends State<PairingPage> {
     );
   }
 
-  Widget _buildSavedDevicesSection() {
-    return PairingSavedDevicesSection(
-      devices: _viewState.savedDevices,
-      pairingNoteForDevice: _pairingNoteForDevice,
-      onSelectDevice: (device) => unawaited(_selectDevice(device)),
-      onRemoveSavedDevice: (device) => unawaited(_confirmRemoveSavedDevice(device)),
-    );
-  }
-
-  Widget _buildDiscoveryList() {
-    return PairingDiscoveryList(
-      isLoading: _viewState.isLoading,
-      discoveredDevices: _viewState.discoveredDevices,
-      pairingNoteForDevice: _pairingNoteForDevice,
-      onSelectDevice: (device) => unawaited(_selectDevice(device)),
+  Widget _buildScrollBody() {
+    final savedDevices = _viewState.savedDevices;
+    return CustomScrollView(
+      slivers: [
+        if (savedDevices.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: const RemoteSelectionSectionHeader('Paired'),
+            ),
+          ),
+          SliverList.builder(
+            itemCount: savedDevices.length,
+            itemBuilder: (context, index) {
+              final device = savedDevices[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                child: PairedTvListItem(
+                  device: device,
+                  pairingNote: _pairingNoteForDevice(device.id),
+                  onConfirmDismiss: (_) async {
+                    await _confirmRemoveSavedDevice(device);
+                    return false;
+                  },
+                  onTap: () => unawaited(_selectDevice(device)),
+                ),
+              );
+            },
+          ),
+        ],
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: const RemoteSelectionSectionHeader('Available'),
+          ),
+        ),
+        if (_viewState.errorMessage != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                _viewState.errorMessage!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ),
+        if (_viewState.isLoading && _viewState.discoveredDevices.isEmpty)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          )
+        else if (_viewState.discoveredDevices.isEmpty)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: Text('No TVs found yet. Run a scan to discover devices.'),
+              ),
+            ),
+          )
+        else
+          SliverList.builder(
+            itemCount: _viewState.discoveredDevices.length,
+            itemBuilder: (context, index) {
+              final device = _viewState.discoveredDevices[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                child: AvailableTvListItem(
+                  device: device,
+                  pairingNote: _pairingNoteForDevice(device.id),
+                  onTap: () => unawaited(_selectDevice(device)),
+                ),
+              );
+            },
+          ),
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverToBoxAdapter(child: _buildManualAddSection()),
+        ),
+      ],
     );
   }
 

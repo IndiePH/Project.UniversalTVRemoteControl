@@ -91,7 +91,7 @@ void main() {
     // Open pairing via Wi-Fi button.
     await tester.tap(find.byIcon(Icons.wifi));
     await tester.pumpAndSettle();
-    expect(find.text('Pair TV'), findsOneWidget);
+    expect(find.text('Select Remote'), findsOneWidget);
 
     await tester.pumpAndSettle();
     final discoveredTile = find.widgetWithText(ListTile, 'LG OLED - Bedroom');
@@ -195,10 +195,7 @@ void main() {
 
     expect(find.text('Living Room TV'), findsOneWidget);
 
-    final savedTile = find.widgetWithText(ListTile, 'Living Room TV');
-    final listTile = tester.widget<ListTile>(savedTile);
-    final deleteButton = listTile.trailing! as IconButton;
-    deleteButton.onPressed?.call();
+    await tester.drag(find.text('Living Room TV'), const Offset(-500, 0));
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
@@ -266,10 +263,7 @@ void main() {
     expect(find.text('Living Room TV'), findsOneWidget);
     expect(find.text('Bedroom TV'), findsOneWidget);
 
-    final savedTile = find.widgetWithText(ListTile, 'Bedroom TV');
-    final listTile = tester.widget<ListTile>(savedTile);
-    final deleteButton = listTile.trailing! as IconButton;
-    deleteButton.onPressed?.call();
+    await tester.drag(find.text('Bedroom TV'), const Offset(-500, 0));
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FilledButton, 'Remove'));

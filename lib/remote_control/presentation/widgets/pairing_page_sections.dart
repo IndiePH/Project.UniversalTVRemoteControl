@@ -80,117 +80,98 @@ class PairingBusyOverlay extends StatelessWidget {
   }
 }
 
-/// Horizontally scrollable list of saved devices and quick reconnect actions.
-class PairingSavedDevicesSection extends StatelessWidget {
-  const PairingSavedDevicesSection({
-    super.key,
-    required this.devices,
-    required this.pairingNoteForDevice,
-    required this.onSelectDevice,
-    required this.onRemoveSavedDevice,
-  });
+/// Section heading for the Remote Selection grouped list.
+class RemoteSelectionSectionHeader extends StatelessWidget {
+  const RemoteSelectionSectionHeader(this.label, {super.key});
 
-  final List<TvDevice> devices;
-  final String? Function(String deviceId) pairingNoteForDevice;
-  final void Function(TvDevice device) onSelectDevice;
-  final void Function(TvDevice device) onRemoveSavedDevice;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    if (devices.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Saved Devices', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 82,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: devices.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final device = devices[index];
-              final pairingNote = pairingNoteForDevice(device.id);
-              return SizedBox(
-                width: 220,
-                child: ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  title: Text(
-                    device.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(
-                    pairingNote ?? device.brand.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: IconButton(
-                    tooltip: 'Remove saved device',
-                    onPressed: () => onRemoveSavedDevice(device),
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-                  onTap: () => onSelectDevice(device),
-                ),
-              );
-            },
-          ),
+    return Text(label, style: Theme.of(context).textTheme.titleSmall);
+  }
+}
+
+/// Paired TV row — swipe left (endToStart) to reveal Delete.
+///
+/// [onConfirmDismiss] must always return false; visual removal is driven by
+/// the parent list rebuilding after the underlying state update.
+class PairedTvListItem extends StatelessWidget {
+  const PairedTvListItem({
+    super.key,
+    required this.device,
+    required this.pairingNote,
+    required this.onConfirmDismiss,
+    required this.onTap,
+  });
+
+  final TvDevice device;
+  final String? pairingNote;
+  final Future<bool?> Function(DismissDirection) onConfirmDismiss;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: Key(device.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: onConfirmDismiss,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.error,
+          borderRadius: BorderRadius.circular(12),
         ),
-      ],
+        child: Icon(
+          Icons.delete_outline,
+          color: Theme.of(context).colorScheme.onError,
+        ),
+      ),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        tileColor: Theme.of(context).colorScheme.surface,
+        title: Text(
+          device.displayName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          pairingNote ?? device.brand.displayName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
     );
   }
 }
 
-/// Discovery result list for scanned TVs.
-class PairingDiscoveryList extends StatelessWidget {
-  const PairingDiscoveryList({
+/// Available (scan result) TV row — tap to begin pairing.
+class AvailableTvListItem extends StatelessWidget {
+  const AvailableTvListItem({
     super.key,
-    required this.isLoading,
-    required this.discoveredDevices,
-    required this.pairingNoteForDevice,
-    required this.onSelectDevice,
+    required this.device,
+    required this.pairingNote,
+    required this.onTap,
   });
 
-  final bool isLoading;
-  final List<TvDevice> discoveredDevices;
-  final String? Function(String deviceId) pairingNoteForDevice;
-  final void Function(TvDevice device) onSelectDevice;
+  final TvDevice device;
+  final String? pairingNote;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading && discoveredDevices.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (discoveredDevices.isEmpty) {
-      return const Center(
-        child: Text('No TVs found yet. Run a scan to discover devices.'),
-      );
-    }
-    return ListView.separated(
-      itemCount: discoveredDevices.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final device = discoveredDevices[index];
-        final pairingNote = pairingNoteForDevice(device.id);
-        return ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          tileColor: Theme.of(context).colorScheme.surface,
-          title: Text(device.displayName),
-          subtitle: pairingNote == null
-              ? Text(device.brand.displayName)
-              : Text('${device.brand.displayName} • $pairingNote'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => onSelectDevice(device),
-        );
-      },
+    return ListTile(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      tileColor: Theme.of(context).colorScheme.surface,
+      title: Text(device.displayName),
+      subtitle: pairingNote == null
+          ? Text(device.brand.displayName)
+          : Text('${device.brand.displayName} • $pairingNote'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }
