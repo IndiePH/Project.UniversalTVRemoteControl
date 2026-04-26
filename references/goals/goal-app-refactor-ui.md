@@ -131,7 +131,7 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 |----|------|--------|------|------|--------|
 | 4.1 | Reposition connection button/icon: move to the right of currently selected device place, resize smaller, change to remote+wifi glyph | `framework-mastery` | — | LOW | pending |
 | 4.2 | Show "Connect a TV to begin" bubble guide, pointing to the 4.1 button/icon, when no TVs are paired, pointing to the remote-selection button | `ux-constraints-awareness`, `framework-mastery` | — | LOW | pending |
-| 4.3 | Grey out all remote buttons pre-pairing (when no remote paired/selected); only remote-selection button and cog remain fully active | `framework-mastery` | — | LOW | pending |
+| 4.3 | disable all remote buttons pre-pairing (when no remote paired/selected); only remote-selection button and cog remain fully active | `framework-mastery` | — | LOW | pending |
 | 4.4 | On first pairing for a TV: auto-load brand-default button grid (only show commands supported by that brand); overridden by persisted user preference | `framework-mastery`, `modularity` | — | MEDIUM | pending |
 | 4.5 | Implement gesture to switch between paired remotes (e.g., horizontal swipe on remote body) — confirm gesture doesn't conflict with existing scroll/button interactions | `ux-constraints-awareness`, `framework-mastery` | — | MEDIUM | pending |
 | 4.6 | Add `Stream<ConnectionState>` to transport client interface; implement for LG (WS events), Samsung (WS events), Hisense (ping poll) | `design-pattern-selection`, `abstraction-domain-modeling` | — | MEDIUM | pending |
