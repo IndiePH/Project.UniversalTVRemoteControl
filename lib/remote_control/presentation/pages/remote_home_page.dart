@@ -8,6 +8,7 @@ import 'package:one_remote/remote_control/application/layout_repository.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
+import 'package:one_remote/remote_control/application/transport_log_reader_provider.dart';
 import 'package:one_remote/remote_control/debug/runtime_flags_template_debug.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
@@ -35,14 +36,16 @@ class RemoteHomePage extends StatefulWidget {
     required this.deviceRepository,
     required this.discoveryService,
     required this.layoutRepository,
-    this.transportLogReader = const NoopTransportLogReader(),
+    this.transportLogReaderProvider = const NoopTransportLogReaderProvider(),
+    this.onRestartApp,
   });
 
   final RemoteCommandService commandService;
   final DeviceRepository deviceRepository;
   final DeviceDiscoveryService discoveryService;
   final LayoutRepository layoutRepository;
-  final TransportLogReader transportLogReader;
+  final TransportLogReaderProvider transportLogReaderProvider;
+  final Future<void> Function()? onRestartApp;
 
   @override
   State<RemoteHomePage> createState() => _RemoteHomePageState();
@@ -296,8 +299,12 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   }
 
   Future<void> _copyLatestTransportLog() async {
+    final device = _activeDevice;
+    final reader = device != null
+        ? widget.transportLogReaderProvider.readerForDevice(device)
+        : const NoopTransportLogReader();
     final didCopy = await RemoteHomeActions.copyLatestTransportLog(
-      transportLogReader: widget.transportLogReader,
+      transportLogReader: reader,
     );
     if (!mounted) {
       return;
@@ -320,11 +327,12 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   }
 
   void _showTransportDebugSheet() {
-    RemoteHomeActions.showTransportDebugSheet(
+    unawaited(RemoteHomeActions.showTransportDebugSheet(
       context: context,
       onCopyTransportLogs: _copyLatestTransportLog,
       onCopyRuntimeFlagsTemplate: _copyRuntimeFlagsTemplate,
-    );
+      onRestartApp: widget.onRestartApp,
+    ));
   }
 
   void _resetLayoutToDefaults() {

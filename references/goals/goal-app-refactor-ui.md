@@ -24,6 +24,7 @@ improve the TV remote screen UX. Each branch is independently deliverable and me
 | D3 | Include brand dispatch Strategy map (task 2.5) in refactor/solid-clean-code branch | Same root cause as `sendKey()` if/else; fix together while context is active |
 | D4 | Disconnection detection: add `Stream<ConnectionState>` to transport interface; LG + Samsung use WebSocket `onDone`/`onError` (event-driven); Hisense uses periodic ping poll | Keeps brand logic below adapter boundary; UI subscribes to a unified stream |
 | D5 | DI container: `get_it` only (no `injectable`) — define `IDiConfig` interface and `AppEnvironment` enum in `lib/app/configurations/`; each feature module implements `IDiConfig` in its own `lib/<feature>/configurations/` file; `DiBootstrap.initialize(AppEnvironment)` iterates all registered configs and calls `configure(sl, env)` on each (direct analog to `IDIConfig<Container,AppSettings>` + `DIBootstrap.Initialize()`); `AppEnvironment` drives which instances are registered; no annotations on actual service/adapter classes; only `main.dart` changes to switch environments | Widget should not own construction logic; annotation-free keeps domain/data classes clean; modular config files make transport swapping, testing, and new-brand onboarding explicit without touching the app shell |
+| D6 | Per-device capability detection (task 5.1): `TvBrandAdapter.queryDeviceInfo()` default no-op returns `TvDeviceInfo?` (raw probe — model identifier + firmware version only; no variant assignment); two separate registries — `VariantResolutionRegistry` abstract interface (data layer, predicate-based entries, `DefaultVariantResolutionRegistry` concrete) maps probe data → `String` variant identifier; `TvModelCapabilityRegistry` abstract interface (domain) maps brand + model → `Set<DeviceCapability>`; per-brand string constant namespaces (`LgProtocolVariants`, `SamsungProtocolVariants`, etc.) in data layer alongside their adapters — shared enum rejected; `TvDevice.protocolVariant: String` non-nullable, `static const defaultProtocolVariant = 'default'` on `TvDevice`; `TvBrandAdapter` gets `String get protocolVariant => 'default'` so router self-derives composite key; router `_adapters` key becomes `(TvBrand, String)` when second adapter variant exists (deferred); `LgAdapter.onSystemInfo` callback superseded by `queryDeviceInfo` in 5.2; `saveDeviceSystemInfo` / `getDeviceSystemInfo` retained on `DeviceRepository` but not expanded | Shared enum would mix LG/Samsung/Hisense variant names in one flat namespace — per-brand constant classes scope each brand's variants independently; `TvDevice` stores only the resolved variant string, never range predicates; routing seam change deferred until a second concrete adapter variant exists to avoid premature abstraction (DA-5); `BrandRoutedRemoteCommandService` depends on `VariantResolutionRegistry` interface, not the concrete, to satisfy DIP |
 
 ---
 
@@ -101,13 +102,14 @@ lib/
 
 | ID | Task | Skills | Deps | Risk |
 |----|------|--------|------|------|
-| 3.1 | Add brand-specific pre-pairing confirmation prompt (shows required steps for that brand, Continue / Cancel) | `ux-constraints-awareness`, `framework-mastery` | — | MEDIUM |
+| 3.1 | Add brand-specific pre-pairing confirmation prompt (shows required steps for that brand, Continue / Cancel). If non, no need to show | `ux-constraints-awareness`, `framework-mastery` | — | MEDIUM |
 | 3.2 | Add pairing status/response prompt shown after initiating pairing (progress + outcome) | `ux-constraints-awareness`, `framework-mastery` | 3.1 | MEDIUM |
 | 3.3 | Rebuild page as scrollable grouped list (Group 1: paired + swipe-to-delete; Group 2: available) | `framework-mastery` | — | MEDIUM |
 | 3.4 | Implement option-3 button layout: search icon (auto-scan on load) + "Manual Setup" button | `framework-mastery` | 3.3 | LOW |
 | 3.5 | Add per-TV online indicator (green wifi icon = reachable; greyed = not) | `framework-mastery` | 3.3 | LOW |
 | 3.6 | Add rename paired TV option (swipe-reveal or long-press) | `framework-mastery` | 3.3 | LOW |
-| 3.7 | End-to-end pairing regression across LG, Samsung, Hisense | `regression-prevention` | 3.1, 3.2, 3.3 | MEDIUM |
+| 3.7 | Add sub-text for an already paired TV. Probably have format `Brand | Model | Variant`  | to-be-determined | 3.3 | LOW |
+| 3.9 | End-to-end pairing regression across LG, Samsung, Hisense | `regression-prevention` | 3.1, 3.2, 3.3 | MEDIUM |
 
 ---
 
@@ -130,22 +132,22 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 | 4.6 | Add `Stream<ConnectionState>` to transport client interface; implement for LG (WS events), Samsung (WS events), Hisense (ping poll) | `design-pattern-selection`, `abstraction-domain-modeling` | — | MEDIUM |
 | 4.7 | Implement disconnection indicator in TV remote screen (consumes stream from 4.6) | `framework-mastery` | 4.6 | MEDIUM |
 | 4.8 | Regression test: connection/disconnection state correctly reflects for each brand | `regression-prevention` | 4.6, 4.7 | MEDIUM |
+| 4.9 | Only show remote controls supported by the paired TV's capability set, on pair or on selecting paired; allow user override | — | `framework-mastery`, `ux-constraints-awareness` | 5.2 | MEDIUM | pending |
 
 ## Branch 5 - `feat/brand-dependent-features`
 
-**Sub-goal** Only controls available to the paired tv will be shown, unless overridden by the user.
+**Sub-goal** per-device capability detection
 
 > **Branch TBD** — tasks 5.1 and 5.2 are design/research tasks; branch name to be decided once approach is confirmed.
 
 **Current interim approach:** `TvDevice.fromJson` derives capabilities from `brand.defaultCapabilities` only — persisted capability values are ignored on load. This assumes all devices of a brand share the same capability set, which may not hold for older models.
 
-| ID | Task | Skills | Deps | Risk |
-|----|------|--------|------|------|
-| 5.1 | Design per-device capability detection: at pairing time query TV model/firmware version, map to a model-specific capability set, fall back to `brand.defaultCapabilities` if model is unrecognised. Brainstorm correct approach with Claude before implementing. | `abstraction-domain-modeling`, `api-design`, `requirement-interpretation` | — | LOW |
-| 5.2 | Implement capability detection per 5.1 design; update `TvDevice.fromJson` / pairing flow to persist and restore per-device capabilities correctly | `abstraction-domain-modeling`, `framework-mastery` | 5.1 | MEDIUM |
-| 5.3 | Only show remote controls supported by the paired TV's capability set, on pair or on selecting paired; allow user override | `framework-mastery`, `ux-constraints-awareness` | 5.2 | MEDIUM |
-| 5.4 ⚑ | *(Tentative)* Bury `TransportLogReader` inside the adapter layer — introduce opt-in `TransportLogProvider` interface (application layer); `SamsungAdapter` implements it (→ `SamsungTransportLogReader`); LG/Hisense don't; introduce `TransportLogReaderProvider` application port; `BrandRoutedRemoteCommandService` implements it (routes via `is TransportLogProvider` check, falls back to `NoopTransportLogReader`); DI removes `TransportLogReader` singleton, registers `TransportLogReaderProvider` (same concrete instance as `RemoteCommandService`); `RemoteHomePage` swaps `TransportLogReader` field for `TransportLogReaderProvider`, resolves reader per active device brand at call time | — | `abstraction-domain-modeling`, `api-design`, `modularity` | — | MEDIUM |
-| 5.5 | Set up root exception handler — wire `FlutterError.onError` and `runZonedGuarded` in `main.dart`; in `production` log unhandled exceptions; in `development`/`debug` expose them via a `Stream<Object>` registered in DI so the UI can surface them as a debug overlay | `error-handling-resilience`, `modularity` | 2.17 | LOW |
+| ID | Task | Ref | Skills | Deps | Risk | Status |
+|----|------|-----|--------|------|------|--------|
+| 5.1 | Design per-device capability detection: at pairing time query TV model/firmware version, map to a model-specific capability set, fall back to `brand.defaultCapabilities` if model is unrecognised. Brainstorm correct approach with Claude before implementing. | — | `abstraction-domain-modeling`, `api-design`, `requirement-interpretation` | — | LOW | ✓ done |
+| 5.2 | Implement capability detection per 5.1 design; update `TvDevice.fromJson` / pairing flow to persist and restore per-device capabilities correctly | D6 | `abstraction-domain-modeling`, `framework-mastery` | 5.1 | MEDIUM | ✓ done |
+| 5.4 ⚑ | *(Tentative)* Bury `TransportLogReader` inside the adapter layer — introduce opt-in `TransportLogProvider` interface (application layer); `SamsungAdapter` implements it (→ `SamsungTransportLogReader`); LG/Hisense don't; introduce `TransportLogReaderProvider` application port; `BrandRoutedRemoteCommandService` implements it (routes via `is TransportLogProvider` check, falls back to `NoopTransportLogReader`); DI removes `TransportLogReader` singleton, registers `TransportLogReaderProvider` (same concrete instance as `RemoteCommandService`); `RemoteHomePage` swaps `TransportLogReader` field for `TransportLogReaderProvider`, resolves reader per active device brand at call time | — | `abstraction-domain-modeling`, `api-design`, `modularity` | — | MEDIUM | ✓ done |
+| 5.5 | Set up root exception handler — wire `FlutterError.onError` and `runZonedGuarded` in `main.dart`; in `production` log unhandled exceptions; in `development`/`debug` expose them via a `Stream<Object>` registered in DI so the UI can surface them as a debug overlay | — | `error-handling-resilience`, `modularity` | 2.17 | LOW | ✓ done |
 
 > **Design note (5.1 — brand-variance):** Beyond capability variance, brands may change their wire
 > protocol in a future firmware or OS release. When this occurs, introduce a new adapter alongside
@@ -165,13 +167,7 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 
 ---
 
-## Branch 6 — `refactor/debug-transport-abstraction` (tentative)
 
-**Sub-goal:** Remove transport-implementation vocabulary ("fake", "real") from the presentation and debug-utility layers; replace with environment-neutral naming.
-
-| ID | Task | Ref | Skills | Deps | Risk | Status |
-|----|------|-----|--------|------|------|--------|
-| 6.1 ⚑ | *(Tentative)* Rename `USE_FAKE_TRANSPORTS` dart-define, `TransportDebugSettings.writeUseFakeTransports`, `_compileUseFakeTransports`, and all related identifiers in `RemoteHomeActions` / `RemoteHomeDebugSheet` to environment-neutral names (e.g. `USE_SIMULATED_TRANSPORTS` or a higher-level concept); update all call sites | — | `clean-code-solid`, `api-design` | 2.16 | LOW | pending |
 
 ---
 

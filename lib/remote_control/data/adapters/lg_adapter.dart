@@ -1,23 +1,26 @@
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_key_mapper.dart';
+import 'package:one_remote/remote_control/data/adapters/lg/lg_protocol_variants.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class LgAdapter implements TvBrandAdapter {
   LgAdapter({
     required LgTransportClient transportClient,
     CommandKeyMap? keyMap,
-    void Function(String deviceId, Map<String, dynamic> info)? onSystemInfo,
   }) : _transportClient = transportClient,
-       _keyMap = keyMap ?? const LgKeyMapper(),
-       _onSystemInfo = onSystemInfo;
+       _keyMap = keyMap ?? const LgKeyMapper();
 
   @override
   TvBrand get brand => TvBrand.lg;
+
+  @override
+  String get protocolVariant => LgProtocolVariants.defaultVariant;
 
   @override
   bool get supportsTextInput => true;
@@ -27,16 +30,21 @@ class LgAdapter implements TvBrandAdapter {
 
   final LgTransportClient _transportClient;
   final CommandKeyMap _keyMap;
-  final void Function(String deviceId, Map<String, dynamic> info)? _onSystemInfo;
 
   @override
   Future<void> preparePairing({required TvDevice device}) async {
     await _transportClient.connect(deviceId: device.id);
     await _transportClient.requestClientKey(deviceId: device.id);
-    if (_onSystemInfo != null) {
-      final info = await _transportClient.querySystemInfo(deviceId: device.id);
-      if (info != null) _onSystemInfo(device.id, info);
-    }
+  }
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async {
+    final raw = await _transportClient.querySystemInfo(deviceId: device.id);
+    if (raw == null) return const TvDeviceInfo();
+    return TvDeviceInfo(
+      modelIdentifier: raw['modelName'] as String?,
+      firmwareVersion: raw['swVersion'] as String?,
+    );
   }
 
   @override

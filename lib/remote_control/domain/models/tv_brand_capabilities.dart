@@ -25,6 +25,7 @@ extension TvBrandCapabilities on TvBrand {
       TvBrand.hisense => const {
         DeviceCapability.keyCommands,
         DeviceCapability.powerControl,
+        DeviceCapability.pinPairing,
       },
     };
   }

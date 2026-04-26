@@ -5,6 +5,8 @@ import 'package:one_remote/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
+import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/domain/models/tv_model_capability_registry.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -33,6 +35,8 @@ void main() {
   test('Hisense lane: preparePairing success when transport connects cleanly', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.preparePairing(device: hisenseDevice);
     expect(result.isSuccess, isTrue);
@@ -50,6 +54,8 @@ void main() {
   test('Hisense lane: sendCommand key route completes successfully', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.sendCommand(
       device: hisenseDevice,
@@ -102,6 +108,8 @@ void main() {
   test('Hisense lane: sendText returns unsupported (supportsTextInput is false)', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.sendText(device: hisenseDevice, text: 'hello');
     expect(result.isSuccess, isFalse);
@@ -121,6 +129,8 @@ void main() {
   test('Hisense lane: submitPairingCode success when transport accepts pin', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.submitPairingCode(
       device: hisenseDevice,
@@ -132,6 +142,8 @@ void main() {
   test('Hisense lane: submitPairingCode error surfaces as failure', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [HisenseAdapter(transportClient: _ErrorOnPinHisenseTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.submitPairingCode(
       device: hisenseDevice,
@@ -153,6 +165,8 @@ void main() {
   test('Hisense lane: unpairDevice completes without error', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     await expectLater(
       service.unpairDevice(device: hisenseDevice),
