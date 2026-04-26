@@ -97,6 +97,8 @@ class _PairingPageState extends State<PairingPage> {
       _viewState = _viewState.copyWith(
         isLoading: true,
         clearErrorMessage: true,
+        discoveredDevices: const [],
+        scanCount: _viewState.scanCount + 1,
       );
     });
 
@@ -126,6 +128,10 @@ class _PairingPageState extends State<PairingPage> {
         });
       }
     }
+  }
+
+  void _selectPairedDevice(TvDevice device) {
+    Navigator.of(context).pop(device);
   }
 
   Future<void> _selectDevice(TvDevice device) async {
@@ -259,16 +265,6 @@ class _PairingPageState extends State<PairingPage> {
       return;
     }
 
-    // Active-device removal has an additional guard to reduce accidental disconnects.
-    if (isActiveDevice) {
-      final confirmText = await PairingPageDialogs.confirmActiveRemoval(
-        context: context,
-      );
-      if (!confirmText) {
-        return;
-      }
-    }
-
     await widget.commandService.unpairDevice(device: device);
     await widget.deviceRepository.removeSavedDevice(device.id);
     await _loadPairingMetadata();
@@ -400,6 +396,7 @@ class _PairingPageState extends State<PairingPage> {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 child: PairedTvListItem(
+                  key: ValueKey('${device.id}_${_viewState.scanCount}'),
                   device: device,
                   pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
                   reachabilityService: widget.reachabilityService,
@@ -408,7 +405,7 @@ class _PairingPageState extends State<PairingPage> {
                     return false;
                   },
                   onRename: () => unawaited(_renameDevice(device)),
-                  onTap: () => unawaited(_selectDevice(device)),
+                  onTap: () => _selectPairedDevice(device),
                 ),
               );
             },
@@ -430,7 +427,7 @@ class _PairingPageState extends State<PairingPage> {
               ),
             ),
           ),
-        if (_viewState.isLoading && _viewState.discoveredDevices.isEmpty)
+        if (_viewState.isLoading)
           const SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 32),

@@ -12,6 +12,7 @@ final class PairingPageViewState {
     this.recentManualIps = const <String>[],
     this.savedDeviceIds = const <String>{},
     this.pairingHistoryByDeviceId = const <String, DateTime>{},
+    this.scanCount = 0,
   });
 
   final bool isLoading;
@@ -24,6 +25,8 @@ final class PairingPageViewState {
   final List<String> recentManualIps;
   final Set<String> savedDeviceIds;
   final Map<String, DateTime> pairingHistoryByDeviceId;
+  /// Incremented on each scan; used as a key seed to force reachability re-probe.
+  final int scanCount;
 
   PairingPageViewState copyWith({
     bool? isLoading,
@@ -37,6 +40,7 @@ final class PairingPageViewState {
     List<String>? recentManualIps,
     Set<String>? savedDeviceIds,
     Map<String, DateTime>? pairingHistoryByDeviceId,
+    int? scanCount,
   }) {
     return PairingPageViewState(
       isLoading: isLoading ?? this.isLoading,
@@ -49,6 +53,7 @@ final class PairingPageViewState {
       savedDeviceIds: savedDeviceIds ?? this.savedDeviceIds,
       pairingHistoryByDeviceId:
           pairingHistoryByDeviceId ?? this.pairingHistoryByDeviceId,
+      scanCount: scanCount ?? this.scanCount,
     );
   }
 }

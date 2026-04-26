@@ -152,7 +152,7 @@ void main() {
   });
 
   testWidgets(
-    'removes active saved device after REMOVE confirmation and falls back last-used',
+    'removes active saved device after single confirmation and falls back last-used',
     (
     WidgetTester tester,
   ) async {
@@ -207,13 +207,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Type REMOVE'),
-      'REMOVE',
-    );
-    await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
-    await tester.pumpAndSettle();
-
+    expect(find.widgetWithText(TextField, 'Type REMOVE'), findsNothing);
     expect(find.text('Living Room TV'), findsNothing);
     expect(find.text('Bedroom TV'), findsOneWidget);
     expect(find.textContaining('Removed Living Room TV'), findsOneWidget);

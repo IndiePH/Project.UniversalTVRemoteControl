@@ -5,6 +5,12 @@ Keep entries short and append new updates at the top.
 
 ## 2026-04-26
 
+### Fixed
+- Search loading spinner now shown even when discovered list already has items; list clears on each new scan (task 3.8a)
+- Tapping a paired TV now closes the selection screen immediately instead of re-entering the pairing flow (task 3.8b)
+- Swipe-to-delete no longer shows a second "type REMOVE" confirmation; single dialog only (task 3.8c)
+- Wifi reachability icon on paired TVs re-probes on every search instead of showing the initial result forever (task 3.8d)
+
 ### Added
 - Pre-pairing prompt screen before initiating pairing flow
 - Pairing outcome dialog and progress hint registry (task 3.2)
