@@ -167,13 +167,7 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 
 ---
 
-## Branch 6 — `refactor/debug-transport-abstraction` (tentative)
 
-**Sub-goal:** Remove transport-implementation vocabulary ("fake", "real") from the presentation and debug-utility layers; replace with environment-neutral naming.
-
-| ID | Task | Ref | Skills | Deps | Risk | Status |
-|----|------|-----|--------|------|------|--------|
-| 6.1 ⚑ | *(Tentative)* Rename `USE_FAKE_TRANSPORTS` dart-define, `TransportDebugSettings.writeUseFakeTransports`, `_compileUseFakeTransports`, and all related identifiers in `RemoteHomeActions` / `RemoteHomeDebugSheet` to environment-neutral names (e.g. `USE_SIMULATED_TRANSPORTS` or a higher-level concept); update all call sites | — | `clean-code-solid`, `api-design` | 2.16 | LOW | pending |
 
 ---
 
