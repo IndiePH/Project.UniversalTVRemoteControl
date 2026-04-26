@@ -29,6 +29,7 @@ import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_page.dart';
@@ -59,6 +60,9 @@ void main() {
   ) async {
     GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
       const DefaultPrePairingStepsRegistry(),
+    );
+    GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
+      const DefaultPairingProgressHintRegistry(),
     );
     addTearDown(GetIt.instance.reset);
 
@@ -100,6 +104,11 @@ void main() {
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
+    // Dismiss the pairing outcome dialog.
+    expect(find.text('Paired successfully'), findsOneWidget);
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
     expect(find.textContaining('Connected: LG OLED - Bedroom'), findsOneWidget);
 
     // Verify remote controls now dispatch command to the selected TV context.
@@ -118,6 +127,7 @@ void main() {
           discoveryService: _EmptyDiscoveryService(),
           deviceRepository: InMemoryDeviceRepository(),
           stepsRegistry: const DefaultPrePairingStepsRegistry(),
+          hintRegistry: const DefaultPairingProgressHintRegistry(),
         ),
       ),
     );
@@ -176,6 +186,7 @@ void main() {
           discoveryService: _StaticDiscoveryService(),
           deviceRepository: repository,
           stepsRegistry: const DefaultPrePairingStepsRegistry(),
+          hintRegistry: const DefaultPairingProgressHintRegistry(),
           activeDeviceId: 'samsung-living-room',
         ),
       ),
@@ -245,6 +256,7 @@ void main() {
           discoveryService: _StaticDiscoveryService(),
           deviceRepository: repository,
           stepsRegistry: const DefaultPrePairingStepsRegistry(),
+          hintRegistry: const DefaultPairingProgressHintRegistry(),
           activeDeviceId: activeDevice.id,
         ),
       ),

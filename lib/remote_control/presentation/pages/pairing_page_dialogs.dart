@@ -136,6 +136,43 @@ final class PairingPageDialogs {
     );
   }
 
+  static Future<void> showPairingOutcome({
+    required BuildContext context,
+    required bool isSuccess,
+    required String deviceName,
+    String? errorMessage,
+  }) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: isSuccess
+            ? Icon(
+                Icons.check_circle_outline,
+                size: 48,
+                color: Theme.of(context).colorScheme.primary,
+              )
+            : Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Theme.of(context).colorScheme.error,
+              ),
+        title: Text(isSuccess ? 'Paired successfully' : 'Pairing failed'),
+        content: Text(
+          isSuccess
+              ? '$deviceName is ready to use.'
+              : errorMessage ?? 'Pairing failed. Please try again.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(isSuccess ? 'Done' : 'Dismiss'),
+          ),
+        ],
+      ),
+    );
+  }
+
   static Future<bool> confirmRemoveSavedDevice({
     required BuildContext context,
     required TvDevice device,

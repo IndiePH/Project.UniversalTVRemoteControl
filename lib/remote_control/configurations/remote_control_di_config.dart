@@ -6,6 +6,7 @@ import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader_provider.dart';
+import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
 import 'package:one_remote/remote_control/domain/models/tv_model_capability_registry.dart';
@@ -33,6 +34,9 @@ void _configureShared(GetIt sl) {
   sl.registerSingleton<LayoutRepository>(SharedPrefsLayoutRepository());
   sl.registerSingleton<PrePairingStepsRegistry>(
     const DefaultPrePairingStepsRegistry(),
+  );
+  sl.registerSingleton<PairingProgressHintRegistry>(
+    const DefaultPairingProgressHintRegistry(),
   );
   sl.registerSingleton<VariantResolutionRegistry>(
     const DefaultVariantResolutionRegistry(),

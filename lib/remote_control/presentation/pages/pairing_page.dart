@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
@@ -26,6 +27,7 @@ class PairingPage extends StatefulWidget {
     required this.discoveryService,
     required this.deviceRepository,
     required this.stepsRegistry,
+    required this.hintRegistry,
     this.activeDeviceId,
   });
 
@@ -33,6 +35,7 @@ class PairingPage extends StatefulWidget {
   final DeviceDiscoveryService discoveryService;
   final DeviceRepository deviceRepository;
   final PrePairingStepsRegistry stepsRegistry;
+  final PairingProgressHintRegistry hintRegistry;
   final String? activeDeviceId;
 
   @override
@@ -145,21 +148,24 @@ class _PairingPageState extends State<PairingPage> {
     if (_viewState.isPairingInProgress) {
       return;
     }
-    final pairingHint = device.brand == TvBrand.lg
-        ? 'Look at your TV screen and accept the pairing prompt.'
-        : null;
 
     setState(() {
       _viewState = _viewState.copyWith(
         isPairingInProgress: true,
-        pairingHint: pairingHint,
+        pairingHint: widget.hintRegistry.hintFor(
+          device.brand,
+          device.protocolVariant,
+        ),
         clearErrorMessage: true,
         clearManualErrorMessage: true,
       );
     });
 
+    PairingAttemptResult? result;
+    String? exceptionMessage;
+
     try {
-      final result = await _pairingCoordinator.pairSelectedDevice(
+      result = await _pairingCoordinator.pairSelectedDevice(
         device: device,
         manualIpToSave: manualIpToSave,
         promptPin: (pairingMessage) async {
@@ -180,46 +186,16 @@ class _PairingPageState extends State<PairingPage> {
           return pin;
         },
         onPinRejected: (message) {
-          if (!mounted) {
-            return;
-          }
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
+          if (!mounted) return;
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(message)));
           setState(() {
             _viewState = _viewState.copyWith(isPairingInProgress: false);
           });
         },
       );
-      if (!result.isSuccess) {
-        if (!mounted) return;
-        final errorMsg = result.message;
-        setState(() {
-          _viewState = _viewState.copyWith(errorMessage: errorMsg);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
-        return;
-      }
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(context).pop(device);
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _viewState = _viewState.copyWith(
-          errorMessage: 'Pairing failed. Please try again.',
-        );
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to pair with TV. Please try again.'),
-        ),
-      );
+      exceptionMessage = 'Pairing failed. Please try again.';
     } finally {
       if (mounted) {
         setState(() {
@@ -230,6 +206,43 @@ class _PairingPageState extends State<PairingPage> {
         });
       }
     }
+
+    if (!mounted) return;
+
+    if (exceptionMessage != null) {
+      setState(() {
+        _viewState = _viewState.copyWith(errorMessage: exceptionMessage);
+      });
+      await PairingPageDialogs.showPairingOutcome(
+        context: context,
+        isSuccess: false,
+        deviceName: device.displayName,
+        errorMessage: exceptionMessage,
+      );
+      return;
+    }
+
+    if (!result!.isSuccess) {
+      final errorMsg = result.message;
+      setState(() {
+        _viewState = _viewState.copyWith(errorMessage: errorMsg);
+      });
+      await PairingPageDialogs.showPairingOutcome(
+        context: context,
+        isSuccess: false,
+        deviceName: device.displayName,
+        errorMessage: errorMsg,
+      );
+      return;
+    }
+
+    await PairingPageDialogs.showPairingOutcome(
+      context: context,
+      isSuccess: true,
+      deviceName: device.displayName,
+    );
+    if (!mounted) return;
+    Navigator.of(context).pop(device);
   }
 
   Future<void> _confirmRemoveSavedDevice(TvDevice device) async {
