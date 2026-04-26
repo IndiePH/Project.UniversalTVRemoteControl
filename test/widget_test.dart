@@ -29,6 +29,8 @@ import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/application/pre_pairing_steps_registry.dart';
+import 'package:one_remote/remote_control/data/default_pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_page.dart';
 
@@ -56,6 +58,11 @@ void main() {
   testWidgets('pairs to discovered TV and sends command from remote', (
     WidgetTester tester,
   ) async {
+    GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
+      const DefaultPrePairingStepsRegistry(),
+    );
+    addTearDown(GetIt.instance.reset);
+
     final commandService = BrandRoutedRemoteCommandService(
       adapters: [
         SamsungAdapter(transportClient: FakeSamsungTransportClient()),
@@ -89,6 +96,11 @@ void main() {
     listTile.onTap?.call();
     await tester.pumpAndSettle();
 
+    // Dismiss the pre-pairing confirmation dialog shown for LG.
+    expect(find.text('Before pairing with LG'), findsOneWidget);
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
     expect(find.textContaining('Connected: LG OLED - Bedroom'), findsOneWidget);
 
     // Verify remote controls now dispatch command to the selected TV context.
@@ -106,6 +118,7 @@ void main() {
           commandService: InMemoryRemoteCommandService(),
           discoveryService: _EmptyDiscoveryService(),
           deviceRepository: InMemoryDeviceRepository(),
+          stepsRegistry: const DefaultPrePairingStepsRegistry(),
         ),
       ),
     );
@@ -163,6 +176,7 @@ void main() {
           commandService: InMemoryRemoteCommandService(),
           discoveryService: _StaticDiscoveryService(),
           deviceRepository: repository,
+          stepsRegistry: const DefaultPrePairingStepsRegistry(),
           activeDeviceId: 'samsung-living-room',
         ),
       ),
@@ -231,6 +245,7 @@ void main() {
           commandService: InMemoryRemoteCommandService(),
           discoveryService: _StaticDiscoveryService(),
           deviceRepository: repository,
+          stepsRegistry: const DefaultPrePairingStepsRegistry(),
           activeDeviceId: activeDevice.id,
         ),
       ),

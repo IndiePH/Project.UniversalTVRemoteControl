@@ -5,6 +5,50 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 final class PairingPageDialogs {
   const PairingPageDialogs._();
 
+  static Future<bool> confirmPrePairing({
+    required BuildContext context,
+    required String brandName,
+    required List<String> steps,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Before pairing with $brandName'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Make sure:'),
+            const SizedBox(height: 8),
+            ...steps.map(
+              (step) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('• '),
+                    Expanded(child: Text(step)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+    return result == true;
+  }
+
   static Future<String?> promptPairingPin({
     required BuildContext context,
     required String pairingMessage,

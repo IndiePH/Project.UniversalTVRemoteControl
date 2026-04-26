@@ -7,6 +7,7 @@ import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
+import 'package:one_remote/remote_control/application/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -35,6 +36,7 @@ final class RemoteHomeActions {
           commandService: commandService,
           discoveryService: discoveryService,
           deviceRepository: deviceRepository,
+          stepsRegistry: GetIt.instance<PrePairingStepsRegistry>(),
           activeDeviceId: activeDeviceId,
         ),
       ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/application/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
@@ -24,12 +25,14 @@ class PairingPage extends StatefulWidget {
     required this.commandService,
     required this.discoveryService,
     required this.deviceRepository,
+    required this.stepsRegistry,
     this.activeDeviceId,
   });
 
   final RemoteCommandService commandService;
   final DeviceDiscoveryService discoveryService;
   final DeviceRepository deviceRepository;
+  final PrePairingStepsRegistry stepsRegistry;
   final String? activeDeviceId;
 
   @override
@@ -122,6 +125,16 @@ class _PairingPageState extends State<PairingPage> {
   }
 
   Future<void> _selectDevice(TvDevice device) async {
+    final steps = widget.stepsRegistry.stepsFor(device.brand, device.protocolVariant);
+    if (steps != null) {
+      if (!mounted) return;
+      final confirmed = await PairingPageDialogs.confirmPrePairing(
+        context: context,
+        brandName: device.brand.displayName,
+        steps: steps,
+      );
+      if (!confirmed || !mounted) return;
+    }
     await _pairSelectedDevice(device: device);
   }
 
