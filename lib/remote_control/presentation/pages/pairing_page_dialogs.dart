@@ -173,6 +173,60 @@ final class PairingPageDialogs {
     );
   }
 
+  static Future<String?> promptRenameDevice({
+    required BuildContext context,
+    required String currentName,
+  }) {
+    final controller = TextEditingController(text: currentName);
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        String? inputError;
+
+        void submit(StateSetter setDialogState) {
+          final name = controller.text.trim();
+          if (name.isEmpty) {
+            setDialogState(() => inputError = 'Enter a name.');
+            return;
+          }
+          Navigator.of(context).pop(name);
+        }
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Rename TV'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              maxLength: 40,
+              decoration: InputDecoration(
+                labelText: 'TV name',
+                border: const OutlineInputBorder(),
+                counterText: '',
+                errorText: inputError,
+              ),
+              textInputAction: TextInputAction.done,
+              onChanged: (_) {
+                if (inputError != null) setDialogState(() => inputError = null);
+              },
+              onSubmitted: (_) => submit(setDialogState),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(null),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => submit(setDialogState),
+                child: const Text('Rename'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   static Future<bool> confirmRemoveSavedDevice({
     required BuildContext context,
     required TvDevice device,

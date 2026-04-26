@@ -105,6 +105,7 @@ class PairedTvListItem extends StatefulWidget {
     required this.pairingNote,
     required this.reachabilityService,
     required this.onConfirmDismiss,
+    required this.onRename,
     required this.onTap,
   });
 
@@ -112,6 +113,7 @@ class PairedTvListItem extends StatefulWidget {
   final String? pairingNote;
   final TvReachabilityService reachabilityService;
   final Future<bool?> Function(DismissDirection) onConfirmDismiss;
+  final VoidCallback onRename;
   final VoidCallback onTap;
 
   @override
@@ -180,7 +182,13 @@ class _PairedTvListItemState extends State<PairedTvListItem> {
                 );
               },
             ),
-            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              iconSize: 18,
+              tooltip: 'Rename',
+              visualDensity: VisualDensity.compact,
+              onPressed: widget.onRename,
+            ),
             const Icon(Icons.chevron_right),
           ],
         ),

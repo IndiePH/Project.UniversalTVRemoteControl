@@ -256,6 +256,95 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // Rename flow
+  // ---------------------------------------------------------------------------
+
+  group('rename paired TV', () {
+    const savedDevice = TvDevice(
+      id: 'lg-saved',
+      displayName: 'Saved TV',
+      brand: TvBrand.lg,
+      capabilities: {DeviceCapability.keyCommands},
+    );
+
+    testWidgets('tapping rename button opens rename dialog pre-filled with current name',
+        (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+        deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+      ));
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Rename'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rename TV'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Saved TV'), findsOneWidget);
+    });
+
+    testWidgets('submitting new name saves device with updated displayName',
+        (tester) async {
+      final repo = _SpyDeviceRepository(savedDevices: [savedDevice]);
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+        deviceRepository: repo,
+      ));
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Rename'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Living Room TV');
+      await tester.tap(find.text('Rename'));
+      await tester.pumpAndSettle();
+
+      expect(repo.lastSavedDevice?.displayName, 'Living Room TV');
+    });
+
+    testWidgets('cancelling rename does not call saveDevice', (tester) async {
+      final repo = _SpyDeviceRepository(savedDevices: [savedDevice]);
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+        deviceRepository: repo,
+      ));
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Rename'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(repo.lastSavedDevice, isNull);
+    });
+
+    testWidgets('submitting empty name shows validation error', (tester) async {
+      await tester.pumpWidget(buildPage(
+        commandService: _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        ),
+        deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+      ));
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Rename'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '   ');
+      await tester.tap(find.text('Rename'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enter a name.'), findsOneWidget);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // FAB layout
   // ---------------------------------------------------------------------------
 
@@ -509,6 +598,16 @@ class _StubDeviceRepository implements DeviceRepository {
   Future<void> saveDeviceSystemInfo(String deviceId, Map<String, dynamic> info) async {}
   @override
   Future<Map<String, dynamic>?> getDeviceSystemInfo(String deviceId) async => null;
+}
+
+class _SpyDeviceRepository extends _StubDeviceRepository {
+  _SpyDeviceRepository({super.savedDevices});
+  TvDevice? lastSavedDevice;
+
+  @override
+  Future<void> saveDevice(TvDevice device) async {
+    lastSavedDevice = device;
+  }
 }
 
 class _StubTvReachabilityService implements TvReachabilityService {

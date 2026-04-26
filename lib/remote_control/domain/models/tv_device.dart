@@ -20,12 +20,13 @@ class TvDevice {
   final String protocolVariant;
 
   TvDevice copyWith({
+    String? displayName,
     Set<DeviceCapability>? capabilities,
     String? protocolVariant,
   }) =>
       TvDevice(
         id: id,
-        displayName: displayName,
+        displayName: displayName ?? this.displayName,
         brand: brand,
         capabilities: capabilities ?? this.capabilities,
         protocolVariant: protocolVariant ?? this.protocolVariant,

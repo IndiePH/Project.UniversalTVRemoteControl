@@ -280,6 +280,16 @@ class _PairingPageState extends State<PairingPage> {
     ).showSnackBar(SnackBar(content: Text('Removed ${device.displayName}')));
   }
 
+  Future<void> _renameDevice(TvDevice device) async {
+    final newName = await PairingPageDialogs.promptRenameDevice(
+      context: context,
+      currentName: device.displayName,
+    );
+    if (newName == null || !mounted) return;
+    await widget.deviceRepository.saveDevice(device.copyWith(displayName: newName));
+    await _loadPairingMetadata();
+  }
+
   Future<void> _addManualDevice({
     required TvBrand brand,
     required String ip,
@@ -397,6 +407,7 @@ class _PairingPageState extends State<PairingPage> {
                     await _confirmRemoveSavedDevice(device);
                     return false;
                   },
+                  onRename: () => unawaited(_renameDevice(device)),
                   onTap: () => unawaited(_selectDevice(device)),
                 ),
               );

@@ -5,6 +5,39 @@ import 'package:one_remote/remote_control/domain/models/tv_brand_capabilities.da
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 void main() {
+  group('TvDevice.copyWith', () {
+    const base = TvDevice(
+      id: 'tv-1',
+      displayName: 'Old Name',
+      brand: TvBrand.lg,
+      capabilities: {DeviceCapability.keyCommands},
+      protocolVariant: 'webos_v2',
+    );
+
+    test('updates displayName and preserves all other fields', () {
+      final updated = base.copyWith(displayName: 'New Name');
+
+      expect(updated.displayName, 'New Name');
+      expect(updated.id, base.id);
+      expect(updated.brand, base.brand);
+      expect(updated.capabilities, base.capabilities);
+      expect(updated.protocolVariant, base.protocolVariant);
+    });
+
+    test('preserves displayName when not provided', () {
+      final updated = base.copyWith(capabilities: {DeviceCapability.powerControl});
+
+      expect(updated.displayName, base.displayName);
+    });
+
+    test('preserves displayName when other fields are updated', () {
+      final updated = base.copyWith(protocolVariant: 'webos_v3');
+
+      expect(updated.displayName, base.displayName);
+      expect(updated.protocolVariant, 'webos_v3');
+    });
+  });
+
   group('TvDevice.toJson / fromJson', () {
     test('round-trips all fields', () {
       const original = TvDevice(
