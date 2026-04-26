@@ -10,6 +10,7 @@ import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
@@ -39,6 +40,7 @@ final class RemoteHomeActions {
           deviceRepository: deviceRepository,
           stepsRegistry: GetIt.instance<PrePairingStepsRegistry>(),
           hintRegistry: GetIt.instance<PairingProgressHintRegistry>(),
+          reachabilityService: GetIt.instance<TvReachabilityService>(),
           activeDeviceId: activeDeviceId,
         ),
       ),

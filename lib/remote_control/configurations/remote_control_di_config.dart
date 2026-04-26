@@ -21,6 +21,8 @@ import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_websocket_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
+import 'package:one_remote/remote_control/data/adapter_tv_reachability_service.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/data/fake_device_discovery_service.dart';
 import 'package:one_remote/remote_control/data/shared_prefs_device_repository.dart';
@@ -68,17 +70,21 @@ final class RemoteControlDiConfig implements IDiConfig {
     sl.registerSingleton<HisenseTransportClient>(
       RealHisenseTransportClient(hostResolver: _resolveHost),
     );
+    final adapters = [
+      SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
+      LgAdapter(transportClient: sl<LgTransportClient>()),
+      HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
+    ];
     final commandService = BrandRoutedRemoteCommandService(
-      adapters: [
-        SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
-        LgAdapter(transportClient: sl<LgTransportClient>()),
-        HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
-      ],
+      adapters: adapters,
       variantRegistry: sl<VariantResolutionRegistry>(),
       capabilityRegistry: sl<TvModelCapabilityRegistry>(),
     );
     sl.registerSingleton<RemoteCommandService>(commandService);
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
+    sl.registerSingleton<TvReachabilityService>(
+      AdapterTvReachabilityService(adapters: adapters),
+    );
   }
 
   static String _resolveHost(String deviceId) {
@@ -105,16 +111,20 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
     sl.registerSingleton<SamsungTransportClient>(FakeSamsungTransportClient());
     sl.registerSingleton<LgTransportClient>(FakeLgTransportClient());
     sl.registerSingleton<HisenseTransportClient>(FakeHisenseTransportClient());
+    final adapters = [
+      SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
+      LgAdapter(transportClient: sl<LgTransportClient>()),
+      HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
+    ];
     final commandService = BrandRoutedRemoteCommandService(
-      adapters: [
-        SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
-        LgAdapter(transportClient: sl<LgTransportClient>()),
-        HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
-      ],
+      adapters: adapters,
       variantRegistry: sl<VariantResolutionRegistry>(),
       capabilityRegistry: sl<TvModelCapabilityRegistry>(),
     );
     sl.registerSingleton<RemoteCommandService>(commandService);
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
+    sl.registerSingleton<TvReachabilityService>(
+      AdapterTvReachabilityService(adapters: adapters),
+    );
   }
 }

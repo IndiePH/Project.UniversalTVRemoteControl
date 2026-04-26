@@ -647,6 +647,9 @@ class _RecordingAdapter implements TvBrandAdapter {
   }
 
   @override
+  Future<void> probeConnection({required TvDevice device}) async {}
+
+  @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
       _textInputReadyStream;
 
@@ -696,6 +699,9 @@ class _ThrowingAdapter implements TvBrandAdapter {
   Future<void> sendText({required TvDevice device, required String text}) async {
     throw StateError('text error');
   }
+
+  @override
+  Future<void> probeConnection({required TvDevice device}) async {}
 
   @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>

@@ -526,6 +526,22 @@ class SamsungWebSocketTransportClient
     await Future<void>.delayed(keyDelay - elapsed);
   }
 
+  @override
+  Future<void> probe(String host) async {
+    for (final port in const [8002, 8001]) {
+      try {
+        final socket = await Socket.connect(
+          host,
+          port,
+          timeout: const Duration(seconds: 3),
+        );
+        socket.destroy();
+        return;
+      } catch (_) {}
+    }
+    throw SocketException('$host unreachable on Samsung ports');
+  }
+
   Future<void> _resetConnection(String deviceId) async {
     await _subscriptionsByDeviceId.remove(deviceId)?.cancel();
     final socket = _socketsByDeviceId.remove(deviceId);

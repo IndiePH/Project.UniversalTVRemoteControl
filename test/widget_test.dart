@@ -29,6 +29,7 @@ import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
@@ -63,6 +64,9 @@ void main() {
     );
     GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
       const DefaultPairingProgressHintRegistry(),
+    );
+    GetIt.instance.registerSingleton<TvReachabilityService>(
+      _StubTvReachabilityService(),
     );
     addTearDown(GetIt.instance.reset);
 
@@ -128,6 +132,7 @@ void main() {
           deviceRepository: InMemoryDeviceRepository(),
           stepsRegistry: const DefaultPrePairingStepsRegistry(),
           hintRegistry: const DefaultPairingProgressHintRegistry(),
+          reachabilityService: _StubTvReachabilityService(),
         ),
       ),
     );
@@ -187,6 +192,7 @@ void main() {
           deviceRepository: repository,
           stepsRegistry: const DefaultPrePairingStepsRegistry(),
           hintRegistry: const DefaultPairingProgressHintRegistry(),
+          reachabilityService: _StubTvReachabilityService(),
           activeDeviceId: 'samsung-living-room',
         ),
       ),
@@ -254,6 +260,7 @@ void main() {
           deviceRepository: repository,
           stepsRegistry: const DefaultPrePairingStepsRegistry(),
           hintRegistry: const DefaultPairingProgressHintRegistry(),
+          reachabilityService: _StubTvReachabilityService(),
           activeDeviceId: activeDevice.id,
         ),
       ),
@@ -318,4 +325,9 @@ class _StaticDiscoveryService implements DeviceDiscoveryService {
 class _EmptyDiscoveryService implements DeviceDiscoveryService {
   @override
   Future<List<TvDevice>> discoverDevices() async => const <TvDevice>[];
+}
+
+class _StubTvReachabilityService implements TvReachabilityService {
+  @override
+  Future<bool> isReachable(TvDevice device) async => false;
 }

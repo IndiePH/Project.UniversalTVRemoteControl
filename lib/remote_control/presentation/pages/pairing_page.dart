@@ -6,6 +6,7 @@ import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_coordinator.dart';
@@ -28,6 +29,7 @@ class PairingPage extends StatefulWidget {
     required this.deviceRepository,
     required this.stepsRegistry,
     required this.hintRegistry,
+    required this.reachabilityService,
     this.activeDeviceId,
   });
 
@@ -36,6 +38,7 @@ class PairingPage extends StatefulWidget {
   final DeviceRepository deviceRepository;
   final PrePairingStepsRegistry stepsRegistry;
   final PairingProgressHintRegistry hintRegistry;
+  final TvReachabilityService reachabilityService;
   final String? activeDeviceId;
 
   @override
@@ -389,6 +392,7 @@ class _PairingPageState extends State<PairingPage> {
                 child: PairedTvListItem(
                   device: device,
                   pairingNote: _pairingNoteForDevice(device.id),
+                  reachabilityService: widget.reachabilityService,
                   onConfirmDismiss: (_) async {
                     await _confirmRemoveSavedDevice(device);
                     return false;

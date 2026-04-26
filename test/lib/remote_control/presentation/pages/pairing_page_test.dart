@@ -6,6 +6,7 @@ import 'package:one_remote/remote_control/application/command_dispatch_result.da
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
@@ -21,6 +22,7 @@ void main() {
     _StubPairingProgressHintRegistry? hintRegistry,
     DeviceRepository? deviceRepository,
     DeviceDiscoveryService? discoveryService,
+    TvReachabilityService? reachabilityService,
   }) {
     return MaterialApp(
       home: PairingPage(
@@ -29,6 +31,7 @@ void main() {
         deviceRepository: deviceRepository ?? _StubDeviceRepository(),
         stepsRegistry: stepsRegistry ?? _StubPrePairingStepsRegistry(),
         hintRegistry: hintRegistry ?? _StubPairingProgressHintRegistry(),
+        reachabilityService: reachabilityService ?? _StubTvReachabilityService(),
       ),
     );
   }
@@ -73,6 +76,7 @@ void main() {
                       deviceRepository: _StubDeviceRepository(),
                       stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
                       hintRegistry: _StubPairingProgressHintRegistry(),
+                      reachabilityService: _StubTvReachabilityService(),
                     ),
                   ),
                 );
@@ -505,6 +509,11 @@ class _StubDeviceRepository implements DeviceRepository {
   Future<void> saveDeviceSystemInfo(String deviceId, Map<String, dynamic> info) async {}
   @override
   Future<Map<String, dynamic>?> getDeviceSystemInfo(String deviceId) async => null;
+}
+
+class _StubTvReachabilityService implements TvReachabilityService {
+  @override
+  Future<bool> isReachable(TvDevice device) async => false;
 }
 
 class _StubPrePairingStepsRegistry implements PrePairingStepsRegistry {

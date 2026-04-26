@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_data.dart';
@@ -97,26 +98,41 @@ class RemoteSelectionSectionHeader extends StatelessWidget {
 ///
 /// [onConfirmDismiss] must always return false; visual removal is driven by
 /// the parent list rebuilding after the underlying state update.
-class PairedTvListItem extends StatelessWidget {
+class PairedTvListItem extends StatefulWidget {
   const PairedTvListItem({
     super.key,
     required this.device,
     required this.pairingNote,
+    required this.reachabilityService,
     required this.onConfirmDismiss,
     required this.onTap,
   });
 
   final TvDevice device;
   final String? pairingNote;
+  final TvReachabilityService reachabilityService;
   final Future<bool?> Function(DismissDirection) onConfirmDismiss;
   final VoidCallback onTap;
 
   @override
+  State<PairedTvListItem> createState() => _PairedTvListItemState();
+}
+
+class _PairedTvListItemState extends State<PairedTvListItem> {
+  late final Future<bool> _reachableFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _reachableFuture = widget.reachabilityService.isReachable(widget.device);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Dismissible(
-      key: Key(device.id),
+      key: Key(widget.device.id),
       direction: DismissDirection.endToStart,
-      confirmDismiss: onConfirmDismiss,
+      confirmDismiss: widget.onConfirmDismiss,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
@@ -133,17 +149,42 @@ class PairedTvListItem extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         tileColor: Theme.of(context).colorScheme.surface,
         title: Text(
-          device.displayName,
+          widget.device.displayName,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          pairingNote ?? device.brand.displayName,
+          widget.pairingNote ?? widget.device.brand.displayName,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FutureBuilder<bool>(
+              future: _reachableFuture,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 1.5),
+                  );
+                }
+                return Icon(
+                  snapshot.data! ? Icons.wifi : Icons.wifi_off,
+                  size: 18,
+                  color: snapshot.data!
+                      ? Colors.green
+                      : Theme.of(context).disabledColor,
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
+        onTap: widget.onTap,
       ),
     );
   }

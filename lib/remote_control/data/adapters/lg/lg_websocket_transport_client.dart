@@ -559,6 +559,22 @@ class LgWebSocketTransportClient
       return null;
     }
   }
+
+  @override
+  Future<void> probe(String host) async {
+    for (final port in const [3001, 3000]) {
+      try {
+        final socket = await Socket.connect(
+          host,
+          port,
+          timeout: const Duration(seconds: 3),
+        );
+        socket.destroy();
+        return;
+      } catch (_) {}
+    }
+    throw SocketException('$host unreachable on LG ports');
+  }
 }
 
 // ---------------------------------------------------------------------------

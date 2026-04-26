@@ -13,6 +13,11 @@ abstract class TvBrandAdapter {
 
   Future<void> preparePairing({required TvDevice device}) async {}
 
+  /// Probes whether the TV is reachable on the network.
+  /// Completes normally if reachable; throws if not.
+  Future<void> probeConnection({required TvDevice device}) async =>
+      throw UnsupportedError('probeConnection not implemented for ${device.brand}');
+
   /// Queries the TV for model and firmware information after pairing.
   /// Returns null if the brand's protocol does not support device probing.
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>

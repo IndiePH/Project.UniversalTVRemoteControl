@@ -105,8 +105,8 @@ lib/
 | 3.1 | Add brand-specific pre-pairing confirmation prompt (shows required steps for that brand, Continue / Cancel). If non, no need to show | `ux-constraints-awareness`, `framework-mastery` | — | MEDIUM | ✓ done |
 | 3.2 | Add pairing status/response prompt shown after initiating pairing (progress + outcome) | `ux-constraints-awareness`, `framework-mastery` | 3.1 | MEDIUM | ✓ done |
 | 3.3 | Rebuild page as scrollable grouped list (Group 1: paired + swipe-to-delete; Group 2: available) | `framework-mastery` | — | MEDIUM | ✓ done |
-| 3.4 | Implement option-3 button layout: search icon (auto-scan on load) + "Manual Setup" button | `framework-mastery` | 3.3 | LOW | pending |
-| 3.5 | Add per-TV online indicator (for already paired device) (green wifi icon = reachable; greyed = not) | `framework-mastery` | 3.3 | LOW | pending |
+| 3.4 | Implement option-3 button layout: search icon (auto-scan on load) + "Manual Setup" button | `framework-mastery` | 3.3 | LOW | ✓ done |
+| 3.5 | Add per-TV online indicator (for already paired device) (green wifi icon = reachable; greyed = not) | `framework-mastery` | 3.3 | LOW | ✓ done |
 | 3.6 | Add rename paired TV option (swipe-reveal or long-press) | `framework-mastery` | 3.3 | LOW | pending |
 | 3.7 | Add sub-text for an already paired TV. Probably have format `Brand | Model | Variant`  | to-be-determined | 3.3 | LOW | pending |
 | 3.9 | End-to-end pairing regression across LG, Samsung, Hisense | `regression-prevention` | 3.1, 3.2, 3.3 | MEDIUM | pending |
@@ -124,8 +124,8 @@ The UI subscribes at the adapter level — no brand logic reaches the presentati
 
 | ID | Task | Skills | Deps | Risk | Status |
 |----|------|--------|------|------|--------|
-| 4.1 | Reposition connection icon: move beside cog, resize smaller, change to remote+wifi glyph | `framework-mastery` | — | LOW | pending |
-| 4.2 | Show "Connect a TV to begin" bubble guide when no TVs are paired, pointing to the remote-selection button | `ux-constraints-awareness`, `framework-mastery` | — | LOW | pending |
+| 4.1 | Reposition connection button/icon: move to the right of currently selected device place, resize smaller, change to remote+wifi glyph | `framework-mastery` | — | LOW | pending |
+| 4.2 | Show "Connect a TV to begin" bubble guide, pointing to the 4.1 button/icon, when no TVs are paired, pointing to the remote-selection button | `ux-constraints-awareness`, `framework-mastery` | — | LOW | pending |
 | 4.3 | Grey out all remote buttons pre-pairing; only remote-selection button and cog remain fully active | `framework-mastery` | — | LOW | pending |
 | 4.4 | On first pairing for a TV: auto-load brand-default button grid (only show commands supported by that brand) | `framework-mastery`, `modularity` | — | MEDIUM | pending |
 | 4.5 | Implement gesture to switch between paired remotes (e.g., horizontal swipe on remote body) — confirm gesture doesn't conflict with existing scroll/button interactions | `ux-constraints-awareness`, `framework-mastery` | — | MEDIUM | pending |

@@ -27,6 +27,10 @@ abstract class LgTransportClient implements TransportClient, TransportEventSourc
 
   Future<void> disconnect({required String deviceId});
 
+  /// Lightweight TCP reachability check. Tries LG ports in order.
+  /// Completes if the TV is reachable; throws otherwise.
+  Future<void> probe(String host);
+
   /// Disconnects, clears the stored client-key, and resets all in-memory
   /// pairing state for [deviceId]. Call when the user explicitly removes the device.
   Future<void> clearPairing({required String deviceId});
