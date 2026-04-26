@@ -109,6 +109,11 @@ lib/
 | 3.5 | Add per-TV online indicator (for already paired device) (green wifi icon = reachable; greyed = not) | `framework-mastery` | 3.3 | LOW | ✓ done |
 | 3.6 | Add rename option to paired TV from list (swipe-reveal or long-press or edit buton (pencil) beside wifi reachability icon) in pair/selection page | `framework-mastery` | 3.3 | LOW | ✓ done |
 | 3.7 | Add sub-text for an already paired TV. Probably have format `Brand | Model | Variant`, has to be information directly received from the TV  | `framework-mastery`, `abstraction-domain-modeling` | 3.3 | LOW | ✓ done |
+| 3.8a | Fix search loading indicator: clear discovered list and show spinner when search is triggered (currently hidden if list already has items) | `framework-mastery`, `bug-diagnosis` | 3.3 | LOW | pending |
+| 3.8b | Fix paired TV tap showing pre-pairing prompt: paired TVs should close the selection screen immediately (already paired); only available TVs go through the pairing flow | `framework-mastery`, `bug-diagnosis` | 3.1, 3.3 | LOW | pending |
+| 3.8c | Remove duplicate delete confirmation: swipe-to-delete currently shows two dialogs ("Remove?" then "type REMOVE"); keep only the first | `framework-mastery`, `bug-diagnosis` | 3.3 | LOW | pending |
+| 3.8d | Fix wifi icon not refreshing on search: reachability probe is only run once on widget creation; re-probe all paired TVs whenever a search is triggered | `framework-mastery`, `bug-diagnosis` | 3.5 | LOW | pending |
+| 3.8e | Replace `>` chevron on paired TV rows with an `ⓘ` (info_outline) icon button; tapping it shows a dialog with: display name, brand, model, protocol variant, pairing date, and IP address. Requires adding `hostAddress: String?` to `TvDevice` (currently not stored — id encodes IP only for manually-added devices, not SSDP-discovered ones); persist and restore it through `toJson`/`fromJson` and the pairing coordinator | `framework-mastery`, `abstraction-domain-modeling` | 3.3, 3.7 | MEDIUM | pending |
 | 3.9 | End-to-end pairing regression across LG, Samsung, Hisense | `regression-prevention` | 3.1, 3.2, 3.3 | MEDIUM | pending |
 
 ---
