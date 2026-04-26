@@ -34,6 +34,9 @@ import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_
 class LgWebSocketTransportClient
     with TransportEventEmitterMixin
     implements LgTransportClient {
+  static const int _tlsPort = 3001;
+  static const int _plainPort = 3000;
+
   LgWebSocketTransportClient({
     required String Function(String deviceId) hostResolver,
     this.connectTimeout = const Duration(seconds: 8),
@@ -99,8 +102,8 @@ class LgWebSocketTransportClient
     _hadStoredKey[deviceId] = hasStoredKey;
 
     final uris = [
-      Uri.parse('wss://$host:3001'),
-      Uri.parse('ws://$host:3000'),
+      Uri.parse('wss://$host:$_tlsPort'),
+      Uri.parse('ws://$host:$_plainPort'),
     ];
 
     Object? lastError;
@@ -562,7 +565,7 @@ class LgWebSocketTransportClient
 
   @override
   Future<void> probe(String host) async {
-    for (final port in const [3001, 3000]) {
+    for (final port in const [_tlsPort, _plainPort]) {
       try {
         final socket = await Socket.connect(
           host,

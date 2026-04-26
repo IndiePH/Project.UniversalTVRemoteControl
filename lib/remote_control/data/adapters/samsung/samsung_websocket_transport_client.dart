@@ -27,6 +27,10 @@ import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transpor
 class SamsungWebSocketTransportClient
     with TransportEventEmitterMixin
     implements SamsungTransportClient {
+  static const int _tlsPort = 8002;
+  static const int _plainPort = 8001;
+  static const String _channelPath = '/api/v2/channels/samsung.remote.control';
+
   static const bool _sendInputEndAfterEachText = bool.fromEnvironment(
     'SAMSUNG_SEND_INPUT_END_PER_TEXT',
     defaultValue: false,
@@ -83,15 +87,11 @@ class SamsungWebSocketTransportClient
     final uriCandidates = <Uri>[
       if (secureToken != null && secureToken.isNotEmpty)
         Uri.parse(
-          'wss://$host:8002/api/v2/channels/samsung.remote.control'
+          'wss://$host:$_tlsPort$_channelPath'
           '?name=$encodedName&token=$secureToken',
         ),
-      Uri.parse(
-        'wss://$host:8002/api/v2/channels/samsung.remote.control?name=$encodedName',
-      ),
-      Uri.parse(
-        'ws://$host:8001/api/v2/channels/samsung.remote.control?name=$encodedName',
-      ),
+      Uri.parse('wss://$host:$_tlsPort$_channelPath?name=$encodedName'),
+      Uri.parse('ws://$host:$_plainPort$_channelPath?name=$encodedName'),
     ];
 
     Object? lastError;
@@ -157,7 +157,7 @@ class SamsungWebSocketTransportClient
     final deadline = DateTime.now().add(approvalTimeout);
 
     await SamsungTlsTrustStore.instance.ensureLoaded();
-    await SamsungTlsTrustStore.instance.clearEndpoint(host, 8002);
+    await SamsungTlsTrustStore.instance.clearEndpoint(host, _tlsPort);
     emitTransportEvent(
       TransportEvent(
         transport: 'samsung',
@@ -311,9 +311,8 @@ class SamsungWebSocketTransportClient
     final encodedName = base64Encode(utf8.encode(clientName));
     final uri = Uri.parse(
       token != null
-          ? 'wss://$host:8002/api/v2/channels/samsung.remote.control'
-              '?name=$encodedName&token=$token'
-          : 'wss://$host:8002/api/v2/channels/samsung.remote.control?name=$encodedName',
+          ? 'wss://$host:$_tlsPort$_channelPath?name=$encodedName&token=$token'
+          : 'wss://$host:$_tlsPort$_channelPath?name=$encodedName',
     );
     try {
       final socket = await _openSocket(uri).timeout(connectTimeout);
@@ -528,7 +527,7 @@ class SamsungWebSocketTransportClient
 
   @override
   Future<void> probe(String host) async {
-    for (final port in const [8002, 8001]) {
+    for (final port in const [_tlsPort, _plainPort]) {
       try {
         final socket = await Socket.connect(
           host,
