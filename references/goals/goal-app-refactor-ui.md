@@ -108,7 +108,7 @@ lib/
 | 3.4 | Implement option-3 button layout: search icon (auto-scan on load) + "Manual Setup" button | `framework-mastery` | 3.3 | LOW | ✓ done |
 | 3.5 | Add per-TV online indicator (for already paired device) (green wifi icon = reachable; greyed = not) | `framework-mastery` | 3.3 | LOW | ✓ done |
 | 3.6 | Add rename option to paired TV from list (swipe-reveal or long-press or edit buton (pencil) beside wifi reachability icon) in pair/selection page | `framework-mastery` | 3.3 | LOW | ✓ done |
-| 3.7 | Add sub-text for an already paired TV. Probably have format `Brand | Model | Variant`, has to be information directly received from the TV  | to-be-determined | 3.3 | LOW | pending |
+| 3.7 | Add sub-text for an already paired TV. Probably have format `Brand | Model | Variant`, has to be information directly received from the TV  | `framework-mastery`, `abstraction-domain-modeling` | 3.3 | LOW | ✓ done |
 | 3.9 | End-to-end pairing regression across LG, Samsung, Hisense | `regression-prevention` | 3.1, 3.2, 3.3 | MEDIUM | pending |
 
 ---

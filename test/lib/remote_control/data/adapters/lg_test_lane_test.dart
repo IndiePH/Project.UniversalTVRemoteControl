@@ -93,7 +93,7 @@ void main() {
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isFalse);
-    expect(result.message, 'Something went wrong.');
+    expect(result.message, 'Pairing failed for LG Test TV.');
     expect(result.exception, isA<LgPairingTimeoutException>());
     expect(result.exception.toString(), contains('Timed out'));
   });
@@ -106,7 +106,7 @@ void main() {
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isFalse);
-    expect(result.message, 'Something went wrong.');
+    expect(result.message, 'Pairing failed for LG Test TV.');
     expect(result.exception, isA<LgPairingSessionExpiredException>());
     expect(result.exception.toString(), contains('Re-pairing'));
   });
@@ -147,7 +147,7 @@ void main() {
       command: RemoteCommand.volumeUp,
     );
     expect(result.isSuccess, isFalse);
-    expect(result.message, 'Something went wrong.');
+    expect(result.message, 'Failed to send command to LG Test TV.');
     expect(result.exception, isA<StateError>());
     expect((result.exception as StateError).message, contains('send error'));
   });
