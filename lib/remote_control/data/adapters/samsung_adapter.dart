@@ -7,13 +7,13 @@ import 'package:one_remote/remote_control/data/adapters/samsung/samsung_key_mapp
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_protocol_variants.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
-
   SamsungAdapter({
     required SamsungTransportClient transportClient,
     CommandKeyMap? keyMapper,
@@ -31,7 +31,8 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
       const TvDeviceInfo();
 
   @override
-  TransportLogReader get transportLogReader => const SamsungTransportLogReader();
+  TransportLogReader get transportLogReader =>
+      const SamsungTransportLogReader();
 
   @override
   bool get supportsTextInput => true;
@@ -109,5 +110,16 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
       return;
     }
     yield* _transportClient.watchRemoteTextInputReady(device.id);
+  }
+
+  @override
+  Stream<ConnectionState> watchConnectionState(TvDevice device) async* {
+    try {
+      await _transportClient.connect(deviceId: device.id);
+    } catch (_) {
+      yield ConnectionState.error;
+      return;
+    }
+    yield* _transportClient.watchConnectionState(device.id);
   }
 }

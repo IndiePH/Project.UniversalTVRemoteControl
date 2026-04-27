@@ -5,16 +5,15 @@ import 'package:one_remote/remote_control/data/adapters/lg/lg_protocol_variants.
 import 'package:one_remote/remote_control/data/adapters/lg/lg_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class LgAdapter implements TvBrandAdapter {
-  LgAdapter({
-    required LgTransportClient transportClient,
-    CommandKeyMap? keyMap,
-  }) : _transportClient = transportClient,
-       _keyMap = keyMap ?? const LgKeyMapper();
+  LgAdapter({required LgTransportClient transportClient, CommandKeyMap? keyMap})
+    : _transportClient = transportClient,
+      _keyMap = keyMap ?? const LgKeyMapper();
 
   @override
   TvBrand get brand => TvBrand.lg;
@@ -99,5 +98,16 @@ class LgAdapter implements TvBrandAdapter {
       return;
     }
     yield* _transportClient.watchRemoteTextInputReady(device.id);
+  }
+
+  @override
+  Stream<ConnectionState> watchConnectionState(TvDevice device) async* {
+    try {
+      await _transportClient.connect(deviceId: device.id);
+    } catch (_) {
+      yield ConnectionState.error;
+      return;
+    }
+    yield* _transportClient.watchConnectionState(device.id);
   }
 }

@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
@@ -64,4 +65,12 @@ class InMemoryRemoteCommandService implements RemoteCommandService {
   @override
   Stream<bool> watchRemoteTextInputReady({required TvDevice device}) =>
       Stream<bool>.value(true);
+
+  @override
+  Set<RemoteCommand> supportedCommandsFor({required TvDevice device}) =>
+      RemoteCommand.values.toSet();
+
+  @override
+  Stream<ConnectionState> watchConnectionState({required TvDevice device}) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
 }

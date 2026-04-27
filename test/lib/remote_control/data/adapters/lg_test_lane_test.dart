@@ -10,6 +10,7 @@ import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -21,10 +22,7 @@ void main() {
     id: 'lg-test',
     displayName: 'LG Test TV',
     brand: TvBrand.lg,
-    capabilities: {
-      DeviceCapability.keyCommands,
-      DeviceCapability.powerControl,
-    },
+    capabilities: {DeviceCapability.keyCommands, DeviceCapability.powerControl},
   );
 
   const lgDeviceWithTextInput = TvDevice(
@@ -40,13 +38,16 @@ void main() {
 
   // --- T-1.5: Adapter wiring ---
 
-  test('LG adapter: sendCommand with fake transport completes without error', () async {
-    final adapter = LgAdapter(transportClient: FakeLgTransportClient());
-    await expectLater(
-      adapter.sendCommand(device: lgDevice, command: RemoteCommand.volumeUp),
-      completes,
-    );
-  });
+  test(
+    'LG adapter: sendCommand with fake transport completes without error',
+    () async {
+      final adapter = LgAdapter(transportClient: FakeLgTransportClient());
+      await expectLater(
+        adapter.sendCommand(device: lgDevice, command: RemoteCommand.volumeUp),
+        completes,
+      );
+    },
+  );
 
   test('LG lane: unsupported command returns UI-safe result', () async {
     final service = BrandRoutedRemoteCommandService(
@@ -64,7 +65,10 @@ void main() {
   test('LG adapter: connect hook runs before key sends', () async {
     final adapter = LgAdapter(transportClient: FakeLgTransportClient());
     await adapter.sendCommand(device: lgDevice, command: RemoteCommand.power);
-    await adapter.sendCommand(device: lgDevice, command: RemoteCommand.volumeUp);
+    await adapter.sendCommand(
+      device: lgDevice,
+      command: RemoteCommand.volumeUp,
+    );
     await expectLater(
       adapter.sendCommand(device: lgDevice, command: RemoteCommand.home),
       completes,
@@ -73,38 +77,47 @@ void main() {
 
   // --- T-4.2: Pairing and reconnection ---
 
-  test('LG lane: preparePairing completes when fake transport issues a key', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final result = await service.preparePairing(device: lgDevice);
-    expect(result.isSuccess, isTrue);
-  });
+  test(
+    'LG lane: preparePairing completes when fake transport issues a key',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final result = await service.preparePairing(device: lgDevice);
+      expect(result.isSuccess, isTrue);
+    },
+  );
 
-  test('LG lane: pairing timeout surfaces as CommandDispatchResult.failure', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter(transportClient: _TimeoutLgTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final result = await service.preparePairing(device: lgDevice);
-    expect(result.isSuccess, isFalse);
-    expect(result.message, 'Pairing failed for LG Test TV.');
-    expect(result.exception, isA<LgPairingTimeoutException>());
-    expect(result.exception.toString(), contains('Timed out'));
-  });
+  test(
+    'LG lane: pairing timeout surfaces as CommandDispatchResult.failure',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [LgAdapter(transportClient: _TimeoutLgTransportClient())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final result = await service.preparePairing(device: lgDevice);
+      expect(result.isSuccess, isFalse);
+      expect(result.message, 'Pairing failed for LG Test TV.');
+      expect(result.exception, isA<LgPairingTimeoutException>());
+      expect(result.exception.toString(), contains('Timed out'));
+    },
+  );
 
-  test('LG lane: stale key rejection surfaces as CommandDispatchResult.failure', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter(transportClient: _StaleKeyLgTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final result = await service.preparePairing(device: lgDevice);
-    expect(result.isSuccess, isFalse);
-    expect(result.message, 'Pairing failed for LG Test TV.');
-    expect(result.exception, isA<LgPairingSessionExpiredException>());
-    expect(result.exception.toString(), contains('Re-pairing'));
-  });
+  test(
+    'LG lane: stale key rejection surfaces as CommandDispatchResult.failure',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [LgAdapter(transportClient: _StaleKeyLgTransportClient())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final result = await service.preparePairing(device: lgDevice);
+      expect(result.isSuccess, isFalse);
+      expect(result.message, 'Pairing failed for LG Test TV.');
+      expect(result.exception, isA<LgPairingSessionExpiredException>());
+      expect(result.exception.toString(), contains('Re-pairing'));
+    },
+  );
 
   // --- T-4.3: Text-input and compatibility ---
 
@@ -117,56 +130,76 @@ void main() {
     expect(result.isSuccess, isTrue);
   });
 
-  test('LG lane: IME rejection surfaces as CommandDispatchResult.compatibility', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter(transportClient: _ImeRejectingLgTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final result = await service.sendText(device: lgDevice, text: 'hello');
-    expect(result.isSuccess, isFalse);
-    expect(result.message, contains('focused'));
-  });
+  test(
+    'LG lane: IME rejection surfaces as CommandDispatchResult.compatibility',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          LgAdapter(transportClient: _ImeRejectingLgTransportClient()),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final result = await service.sendText(device: lgDevice, text: 'hello');
+      expect(result.isSuccess, isFalse);
+      expect(result.message, contains('focused'));
+    },
+  );
 
   // --- T-4.4: Error and reconnect hook tests ---
 
-  test('LG lane: transport throw on sendCommand surfaces as CommandDispatchResult.failure', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter(transportClient: _ErrorOnSendLgTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final result = await service.sendCommand(
-      device: lgDevice,
-      command: RemoteCommand.volumeUp,
-    );
-    expect(result.isSuccess, isFalse);
-    expect(result.message, 'Failed to send command to LG Test TV.');
-    expect(result.exception, isA<StateError>());
-    expect((result.exception as StateError).message, contains('send error'));
-  });
+  test(
+    'LG lane: transport throw on sendCommand surfaces as CommandDispatchResult.failure',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [LgAdapter(transportClient: _ErrorOnSendLgTransportClient())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final result = await service.sendCommand(
+        device: lgDevice,
+        command: RemoteCommand.volumeUp,
+      );
+      expect(result.isSuccess, isFalse);
+      expect(result.message, 'Failed to send command to LG Test TV.');
+      expect(result.exception, isA<StateError>());
+      expect((result.exception as StateError).message, contains('send error'));
+    },
+  );
 
-  test('LG adapter: reconnects automatically when socket is not open', () async {
-    final transport = _ReconnectTrackingLgTransportClient();
-    final adapter = LgAdapter(transportClient: transport);
-    await adapter.sendCommand(device: lgDevice, command: RemoteCommand.volumeUp);
-    await adapter.sendCommand(device: lgDevice, command: RemoteCommand.volumeDown);
-    expect(transport.connectCallCount, greaterThanOrEqualTo(1));
-  });
+  test(
+    'LG adapter: reconnects automatically when socket is not open',
+    () async {
+      final transport = _ReconnectTrackingLgTransportClient();
+      final adapter = LgAdapter(transportClient: transport);
+      await adapter.sendCommand(
+        device: lgDevice,
+        command: RemoteCommand.volumeUp,
+      );
+      await adapter.sendCommand(
+        device: lgDevice,
+        command: RemoteCommand.volumeDown,
+      );
+      expect(transport.connectCallCount, greaterThanOrEqualTo(1));
+    },
+  );
 
   // --- T-06: submitPairingCode ---
 
-  test('LG lane: submitPairingCode returns unsupported (LG uses client-key flow, not PIN)', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final result = await service.submitPairingCode(
-      device: lgDevice,
-      fourDigitPin: '1234',
-    );
-    expect(result.isSuccess, isFalse);
-    expect(result.getOutcome(), CommandOutcome.unsupported);
-    expect(result.message, contains('client-key'));
-  });
+  test(
+    'LG lane: submitPairingCode returns unsupported (LG uses client-key flow, not PIN)',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final result = await service.submitPairingCode(
+        device: lgDevice,
+        fourDigitPin: '1234',
+      );
+      expect(result.isSuccess, isFalse);
+      expect(result.getOutcome(), CommandOutcome.unsupported);
+      expect(result.message, contains('client-key'));
+    },
+  );
 
   // --- T-06: unpairDevice ---
 
@@ -182,47 +215,57 @@ void main() {
       adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
     );
-    await expectLater(
-      service.unpairDevice(device: lgDevice),
-      completes,
-    );
+    await expectLater(service.unpairDevice(device: lgDevice), completes);
   });
 
   // --- T-06: watchRemoteTextInputReady ---
 
-  test('LG lane: watchRemoteTextInputReady returns adapter stream when device has textInput capability', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter(transportClient: _TextInputReadyLgTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final values = await service
-        .watchRemoteTextInputReady(device: lgDeviceWithTextInput)
-        .toList();
-    expect(values, contains(true));
-  });
+  test(
+    'LG lane: watchRemoteTextInputReady returns adapter stream when device has textInput capability',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          LgAdapter(transportClient: _TextInputReadyLgTransportClient()),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final values = await service
+          .watchRemoteTextInputReady(device: lgDeviceWithTextInput)
+          .toList();
+      expect(values, contains(true));
+    },
+  );
 
-  test('LG lane: watchRemoteTextInputReady returns false when no adapter registered', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final values = await service
-        .watchRemoteTextInputReady(device: lgDeviceWithTextInput)
-        .toList();
-    expect(values, [false]);
-  });
+  test(
+    'LG lane: watchRemoteTextInputReady returns false when no adapter registered',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final values = await service
+          .watchRemoteTextInputReady(device: lgDeviceWithTextInput)
+          .toList();
+      expect(values, [false]);
+    },
+  );
 
-  test('LG lane: watchRemoteTextInputReady returns false when device lacks textInput capability', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter(transportClient: _TextInputReadyLgTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    // lgDevice has no DeviceCapability.textInput
-    final values = await service
-        .watchRemoteTextInputReady(device: lgDevice)
-        .toList();
-    expect(values, [false]);
-  });
+  test(
+    'LG lane: watchRemoteTextInputReady returns false when device lacks textInput capability',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          LgAdapter(transportClient: _TextInputReadyLgTransportClient()),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      // lgDevice has no DeviceCapability.textInput
+      final values = await service
+          .watchRemoteTextInputReady(device: lgDevice)
+          .toList();
+      expect(values, [false]);
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -270,11 +313,18 @@ class _SubsetLgAdapter implements TvBrandAdapter {
   Future<void> probeConnection({required TvDevice device}) async {}
 
   @override
-  Future<void> sendText({required TvDevice device, required String text}) async {}
+  Future<void> sendText({
+    required TvDevice device,
+    required String text,
+  }) async {}
 
   @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
       Stream<bool>.value(false);
+
+  @override
+  Stream<ConnectionState> watchConnectionState(TvDevice device) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
 }
 
 class _TimeoutLgTransportClient
@@ -294,10 +344,16 @@ class _TimeoutLgTransportClient
   }
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) async {}
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {}
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
 
   @override
   Stream<LgRegistrationState> watchRegistrationState(String deviceId) =>
@@ -308,7 +364,9 @@ class _TimeoutLgTransportClient
       Stream<bool>.value(false);
 
   @override
-  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+  Future<Map<String, dynamic>?> querySystemInfo({
+    required String deviceId,
+  }) async => null;
 
   @override
   Future<void> clearPairing({required String deviceId}) async {}
@@ -318,6 +376,10 @@ class _TimeoutLgTransportClient
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.disconnected);
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -336,12 +398,18 @@ class _ErrorOnSendLgTransportClient
   }) async => 'key';
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) async {
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {
     throw StateError('send error');
   }
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {}
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
 
   @override
   Stream<LgRegistrationState> watchRegistrationState(String deviceId) =>
@@ -352,7 +420,9 @@ class _ErrorOnSendLgTransportClient
       Stream<bool>.value(false);
 
   @override
-  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+  Future<Map<String, dynamic>?> querySystemInfo({
+    required String deviceId,
+  }) async => null;
 
   @override
   Future<void> clearPairing({required String deviceId}) async {}
@@ -362,6 +432,10 @@ class _ErrorOnSendLgTransportClient
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -384,10 +458,16 @@ class _ReconnectTrackingLgTransportClient
   }) async => 'key';
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) async {}
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {}
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
 
   @override
   Stream<LgRegistrationState> watchRegistrationState(String deviceId) =>
@@ -398,7 +478,9 @@ class _ReconnectTrackingLgTransportClient
       Stream<bool>.value(false);
 
   @override
-  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+  Future<Map<String, dynamic>?> querySystemInfo({
+    required String deviceId,
+  }) async => null;
 
   @override
   Future<void> clearPairing({required String deviceId}) async {}
@@ -408,6 +490,10 @@ class _ReconnectTrackingLgTransportClient
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -426,10 +512,16 @@ class _ImeRejectingLgTransportClient
   }) async => 'key';
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) async {}
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {
     throw TextInputCompatibilityException(
       'LG IME text injection rejected — ensure a text field is focused on the TV.',
     );
@@ -444,7 +536,9 @@ class _ImeRejectingLgTransportClient
       Stream<bool>.value(false);
 
   @override
-  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+  Future<Map<String, dynamic>?> querySystemInfo({
+    required String deviceId,
+  }) async => null;
 
   @override
   Future<void> clearPairing({required String deviceId}) async {}
@@ -454,6 +548,10 @@ class _ImeRejectingLgTransportClient
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -474,10 +572,16 @@ class _ClearPairingTrackingLgTransportClient
   }) async => 'key';
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) async {}
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {}
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
 
   @override
   Stream<LgRegistrationState> watchRegistrationState(String deviceId) =>
@@ -488,7 +592,9 @@ class _ClearPairingTrackingLgTransportClient
       Stream<bool>.value(false);
 
   @override
-  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+  Future<Map<String, dynamic>?> querySystemInfo({
+    required String deviceId,
+  }) async => null;
 
   @override
   Future<void> clearPairing({required String deviceId}) async {
@@ -500,6 +606,10 @@ class _ClearPairingTrackingLgTransportClient
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -518,10 +628,16 @@ class _TextInputReadyLgTransportClient
   }) async => 'key';
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) async {}
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {}
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
 
   @override
   Stream<LgRegistrationState> watchRegistrationState(String deviceId) =>
@@ -532,7 +648,9 @@ class _TextInputReadyLgTransportClient
       Stream<bool>.value(true);
 
   @override
-  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+  Future<Map<String, dynamic>?> querySystemInfo({
+    required String deviceId,
+  }) async => null;
 
   @override
   Future<void> clearPairing({required String deviceId}) async {}
@@ -542,6 +660,10 @@ class _TextInputReadyLgTransportClient
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -564,10 +686,16 @@ class _StaleKeyLgTransportClient
   }
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) async {}
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {}
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
 
   @override
   Stream<LgRegistrationState> watchRegistrationState(String deviceId) =>
@@ -578,7 +706,9 @@ class _StaleKeyLgTransportClient
       Stream<bool>.value(false);
 
   @override
-  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+  Future<Map<String, dynamic>?> querySystemInfo({
+    required String deviceId,
+  }) async => null;
 
   @override
   Future<void> clearPairing({required String deviceId}) async {}
@@ -588,6 +718,10 @@ class _StaleKeyLgTransportClient
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();

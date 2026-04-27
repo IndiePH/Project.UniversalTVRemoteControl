@@ -10,7 +10,7 @@ class RemoteHomeAppBarActions extends StatelessWidget {
   });
 
   final bool isLayoutEditMode;
-  final VoidCallback onToggleLayoutEditMode;
+  final VoidCallback? onToggleLayoutEditMode;
   final VoidCallback onShowDebugSettings;
 
   @override

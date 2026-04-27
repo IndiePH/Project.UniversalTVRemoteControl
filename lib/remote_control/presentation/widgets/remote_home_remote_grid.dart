@@ -5,6 +5,7 @@ import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_circular_dpad.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_icon_circle_button.dart';
+import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_grid_geometry.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_vertical_rocker.dart';
 import 'package:one_remote/theme/app_theme.dart';
@@ -17,9 +18,8 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     required this.gridColumns,
     required this.gridRows,
     required this.gridGap,
-    required this.hasActiveDevice,
+    required this.controlsEnabled,
     required this.onSendCommand,
-    required this.onOpenPairing,
     required this.onSearchInputPressed,
   });
 
@@ -27,22 +27,9 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
   final int gridColumns;
   final int gridRows;
   final double gridGap;
-  final bool hasActiveDevice;
+  final bool controlsEnabled;
   final void Function(RemoteCommand command) onSendCommand;
-  final VoidCallback onOpenPairing;
   final VoidCallback onSearchInputPressed;
-
-  static const Map<String, RemoteCommand> _commandByItemId = <String, RemoteCommand>{
-    'home': RemoteCommand.home,
-    'power': RemoteCommand.power,
-    'back': RemoteCommand.back,
-    'menu': RemoteCommand.menu,
-    'www': RemoteCommand.web,
-    'netflix': RemoteCommand.netflix,
-    'prime': RemoteCommand.primeVideo,
-    'disney': RemoteCommand.disneyPlus,
-    'mute': RemoteCommand.mute,
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +37,16 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
         final maxHeight = constraints.maxHeight;
-        final cellSize = _fitCellSize(maxWidth: maxWidth, maxHeight: maxHeight);
+        final cellSize = RemoteLayoutEditorGridGeometry.fitCellSize(
+          gridColumns: gridColumns,
+          gridRows: gridRows,
+          gridGap: gridGap,
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
+        );
         final gridWidth =
             (gridColumns * cellSize) + ((gridColumns - 1) * gridGap);
-        final gridHeight =
-            (gridRows * cellSize) + ((gridRows - 1) * gridGap);
+        final gridHeight = (gridRows * cellSize) + ((gridRows - 1) * gridGap);
 
         return Center(
           child: SizedBox(
@@ -80,12 +72,6 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     );
   }
 
-  double _fitCellSize({required double maxWidth, required double maxHeight}) {
-    final widthLimited = (maxWidth - ((gridColumns - 1) * gridGap)) / gridColumns;
-    final heightLimited = (maxHeight - ((gridRows - 1) * gridGap)) / gridRows;
-    return math.max(1, math.min(widthLimited, heightLimited));
-  }
-
   Widget _buildRemoteLayoutItem({
     required BuildContext context,
     required LayoutEditItem item,
@@ -102,23 +88,26 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
         return _buildChannelItem(item, cellSize);
       case 'volume':
         return _buildVolumeItem(item, cellSize);
-      case 'pair':
-        return _buildPairItem(context, item, cellSize);
       default:
         final width = (item.width * cellSize) + ((item.width - 1) * gridGap);
         final height = (item.height * cellSize) + ((item.height - 1) * gridGap);
-        final command = _commandByItemId[item.id];
+        final command = commandForLayoutItemId(item.id);
         final onPressed = command == null
             ? _noopAction
-            : () => onSendCommand(command);
+            : controlsEnabled
+            ? () => onSendCommand(command)
+            : null;
         return SizedBox(
           width: width,
           height: height,
-          child: RemoteIconCircleButton(
-            icon: item.icon,
-            label: item.label,
-            isPower: item.isPower,
-            onPressed: onPressed,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: RemoteIconCircleButton(
+              icon: item.icon,
+              label: item.label,
+              isPower: item.isPower,
+              onPressed: onPressed,
+            ),
           ),
         );
     }
@@ -133,11 +122,21 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
       child: FittedBox(
         fit: BoxFit.contain,
         child: RemoteCircularDpad(
-          onUp: () => onSendCommand(RemoteCommand.dpadUp),
-          onDown: () => onSendCommand(RemoteCommand.dpadDown),
-          onLeft: () => onSendCommand(RemoteCommand.dpadLeft),
-          onRight: () => onSendCommand(RemoteCommand.dpadRight),
-          onOk: () => onSendCommand(RemoteCommand.dpadOk),
+          onUp: controlsEnabled
+              ? () => onSendCommand(RemoteCommand.dpadUp)
+              : _noopAction,
+          onDown: controlsEnabled
+              ? () => onSendCommand(RemoteCommand.dpadDown)
+              : _noopAction,
+          onLeft: controlsEnabled
+              ? () => onSendCommand(RemoteCommand.dpadLeft)
+              : _noopAction,
+          onRight: controlsEnabled
+              ? () => onSendCommand(RemoteCommand.dpadRight)
+              : _noopAction,
+          onOk: controlsEnabled
+              ? () => onSendCommand(RemoteCommand.dpadOk)
+              : _noopAction,
         ),
       ),
     );
@@ -147,14 +146,18 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     final width = (item.width * cellSize) + ((item.width - 1) * gridGap);
     final height = (item.height * cellSize) + ((item.height - 1) * gridGap);
     final definition = kRemoteLayoutItemDefinitionById[item.id];
-    final keyboardIcon = definition?.icon ?? item.icon ?? Icons.keyboard_outlined;
+    final keyboardIcon =
+        definition?.icon ?? item.icon ?? Icons.keyboard_outlined;
     return SizedBox(
       width: width,
       height: height,
       child: Center(
-        child: RemoteIconCircleButton(
-          icon: keyboardIcon,
-          onPressed: onSearchInputPressed,
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: RemoteIconCircleButton(
+            icon: keyboardIcon,
+            onPressed: controlsEnabled ? onSearchInputPressed : null,
+          ),
         ),
       ),
     );
@@ -177,7 +180,9 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
         borderRadius: BorderRadius.circular(height / 2),
         child: InkWell(
           borderRadius: BorderRadius.circular(height / 2),
-          onTap: () => onSendCommand(RemoteCommand.playPause),
+          onTap: controlsEnabled
+              ? () => onSendCommand(RemoteCommand.playPause)
+              : null,
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(height / 2),
@@ -218,8 +223,12 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
           topText: '+',
           centerText: 'CH',
           bottomText: '-',
-          onTopTap: () => onSendCommand(RemoteCommand.channelUp),
-          onBottomTap: () => onSendCommand(RemoteCommand.channelDown),
+          onTopTap: controlsEnabled
+              ? () => onSendCommand(RemoteCommand.channelUp)
+              : _noopAction,
+          onBottomTap: controlsEnabled
+              ? () => onSendCommand(RemoteCommand.channelDown)
+              : _noopAction,
         ),
       ),
     );
@@ -237,32 +246,13 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
           topText: '+',
           centerText: 'VOL',
           bottomText: '-',
-          onTopTap: () => onSendCommand(RemoteCommand.volumeUp),
-          onBottomTap: () => onSendCommand(RemoteCommand.volumeDown),
+          onTopTap: controlsEnabled
+              ? () => onSendCommand(RemoteCommand.volumeUp)
+              : _noopAction,
+          onBottomTap: controlsEnabled
+              ? () => onSendCommand(RemoteCommand.volumeDown)
+              : _noopAction,
         ),
-      ),
-    );
-  }
-
-  Widget _buildPairItem(
-    BuildContext context,
-    LayoutEditItem item,
-    double cellSize,
-  ) {
-    final appColors = AppTheme.colorsOf(context);
-    final width = (item.width * cellSize) + ((item.width - 1) * gridGap);
-    final height = (item.height * cellSize) + ((item.height - 1) * gridGap);
-    return SizedBox(
-      width: width,
-      height: height,
-      child: RemoteIconCircleButton(
-        icon: item.icon,
-        label: item.label,
-        onPressed: onOpenPairing,
-        backgroundColor: hasActiveDevice
-            ? appColors.remoteActionSuccessFill
-            : appColors.remoteSurface,
-        foregroundColor: appColors.remoteGlyphOnRemote,
       ),
     );
   }

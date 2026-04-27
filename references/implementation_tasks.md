@@ -21,7 +21,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 ### Completed
 - [x] Workspace hygiene baseline (`TVREMOTE-1`):
   - [x] Verified generated/transient artifacts are excluded by repo/platform `.gitignore` rules (`.dart_tool/`, `build/`, platform `Flutter/ephemeral`, plugin registrants, local gradle/IDE outputs)
-  - [x] Added root `__pycache__/` ignore to prevent incidental `.cursor` Python cache churn
+  - [x] Added root `__pycache__/` ignore to prevent incidental Python cache churn
   - [x] Verified tracked generated plugin glue files remain intentional and clean (`linux/flutter/generated_plugins.cmake`, `windows/flutter/generated_plugins.cmake` show no diff)
 - [x] Milestone 0 / Task 0.1:
   - [x] Established layered structure (`presentation` / `application` / `data` / `domain`)

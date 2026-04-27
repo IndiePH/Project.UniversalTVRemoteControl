@@ -6,6 +6,7 @@ import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -16,38 +17,49 @@ void main() {
     id: 'hisense-test',
     displayName: 'Hisense Test TV',
     brand: TvBrand.hisense,
-    capabilities: {
-      DeviceCapability.keyCommands,
-      DeviceCapability.powerControl,
-    },
+    capabilities: {DeviceCapability.keyCommands, DeviceCapability.powerControl},
   );
 
   // --- preparePairing ---
 
-  test('Hisense adapter: preparePairing calls connect on the transport', () async {
-    final transport = _SpyHisenseTransportClient();
-    final adapter = HisenseAdapter(transportClient: transport);
-    await adapter.preparePairing(device: hisenseDevice);
-    expect(transport.connectCalls, 1);
-  });
+  test(
+    'Hisense adapter: preparePairing calls connect on the transport',
+    () async {
+      final transport = _SpyHisenseTransportClient();
+      final adapter = HisenseAdapter(transportClient: transport);
+      await adapter.preparePairing(device: hisenseDevice);
+      expect(transport.connectCalls, 1);
+    },
+  );
 
-  test('Hisense lane: preparePairing success when transport connects cleanly', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final result = await service.preparePairing(device: hisenseDevice);
-    expect(result.isSuccess, isTrue);
-  });
+  test(
+    'Hisense lane: preparePairing success when transport connects cleanly',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          HisenseAdapter(transportClient: _SpyHisenseTransportClient()),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final result = await service.preparePairing(device: hisenseDevice);
+      expect(result.isSuccess, isTrue);
+    },
+  );
 
   // --- sendCommand: key routing ---
 
-  test('Hisense adapter: sendCommand routes key command to transport sendKey', () async {
-    final transport = _SpyHisenseTransportClient();
-    final adapter = HisenseAdapter(transportClient: transport);
-    await adapter.sendCommand(device: hisenseDevice, command: RemoteCommand.volumeUp);
-    expect(transport.sentKeys, contains('KEY_VOLUMEUP'));
-  });
+  test(
+    'Hisense adapter: sendCommand routes key command to transport sendKey',
+    () async {
+      final transport = _SpyHisenseTransportClient();
+      final adapter = HisenseAdapter(transportClient: transport);
+      await adapter.sendCommand(
+        device: hisenseDevice,
+        command: RemoteCommand.volumeUp,
+      );
+      expect(transport.sentKeys, contains('KEY_VOLUMEUP'));
+    },
+  );
 
   test('Hisense lane: sendCommand key route completes successfully', () async {
     final service = BrandRoutedRemoteCommandService(
@@ -63,80 +75,124 @@ void main() {
 
   // --- sendCommand: app-launch routing ---
 
-  test('Hisense adapter: sendCommand routes netflix to launchVidaaApp', () async {
-    final transport = _SpyHisenseTransportClient();
-    final adapter = HisenseAdapter(transportClient: transport);
-    await adapter.sendCommand(device: hisenseDevice, command: RemoteCommand.netflix);
-    expect(transport.launchedApps, contains('Netflix'));
-    expect(transport.sentKeys, isEmpty);
-  });
+  test(
+    'Hisense adapter: sendCommand routes netflix to launchVidaaApp',
+    () async {
+      final transport = _SpyHisenseTransportClient();
+      final adapter = HisenseAdapter(transportClient: transport);
+      await adapter.sendCommand(
+        device: hisenseDevice,
+        command: RemoteCommand.netflix,
+      );
+      expect(transport.launchedApps, contains('Netflix'));
+      expect(transport.sentKeys, isEmpty);
+    },
+  );
 
-  test('Hisense adapter: sendCommand routes primeVideo to launchVidaaApp', () async {
-    final transport = _SpyHisenseTransportClient();
-    final adapter = HisenseAdapter(transportClient: transport);
-    await adapter.sendCommand(device: hisenseDevice, command: RemoteCommand.primeVideo);
-    expect(transport.launchedApps, contains('Amazon'));
-  });
+  test(
+    'Hisense adapter: sendCommand routes primeVideo to launchVidaaApp',
+    () async {
+      final transport = _SpyHisenseTransportClient();
+      final adapter = HisenseAdapter(transportClient: transport);
+      await adapter.sendCommand(
+        device: hisenseDevice,
+        command: RemoteCommand.primeVideo,
+      );
+      expect(transport.launchedApps, contains('Amazon'));
+    },
+  );
 
-  test('Hisense adapter: sendCommand routes disneyPlus to launchVidaaApp', () async {
-    final transport = _SpyHisenseTransportClient();
-    final adapter = HisenseAdapter(transportClient: transport);
-    await adapter.sendCommand(device: hisenseDevice, command: RemoteCommand.disneyPlus);
-    expect(transport.launchedApps, contains('Disney+'));
-  });
+  test(
+    'Hisense adapter: sendCommand routes disneyPlus to launchVidaaApp',
+    () async {
+      final transport = _SpyHisenseTransportClient();
+      final adapter = HisenseAdapter(transportClient: transport);
+      await adapter.sendCommand(
+        device: hisenseDevice,
+        command: RemoteCommand.disneyPlus,
+      );
+      expect(transport.launchedApps, contains('Disney+'));
+    },
+  );
 
   test('Hisense adapter: sendCommand routes web to launchVidaaApp', () async {
     final transport = _SpyHisenseTransportClient();
     final adapter = HisenseAdapter(transportClient: transport);
-    await adapter.sendCommand(device: hisenseDevice, command: RemoteCommand.web);
+    await adapter.sendCommand(
+      device: hisenseDevice,
+      command: RemoteCommand.web,
+    );
     expect(transport.launchedApps, contains('YouTube'));
   });
 
   // --- sendText ---
 
   test('Hisense adapter: sendText throws UnsupportedError', () async {
-    final adapter = HisenseAdapter(transportClient: _SpyHisenseTransportClient());
+    final adapter = HisenseAdapter(
+      transportClient: _SpyHisenseTransportClient(),
+    );
     await expectLater(
       () => adapter.sendText(device: hisenseDevice, text: 'hello'),
       throwsUnsupportedError,
     );
   });
 
-  test('Hisense lane: sendText returns unsupported (supportsTextInput is false)', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final result = await service.sendText(device: hisenseDevice, text: 'hello');
-    expect(result.isSuccess, isFalse);
-    expect(result.getOutcome(), CommandOutcome.unsupported);
-    expect(result.message, contains('not supported'));
-  });
+  test(
+    'Hisense lane: sendText returns unsupported (supportsTextInput is false)',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          HisenseAdapter(transportClient: _SpyHisenseTransportClient()),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final result = await service.sendText(
+        device: hisenseDevice,
+        text: 'hello',
+      );
+      expect(result.isSuccess, isFalse);
+      expect(result.getOutcome(), CommandOutcome.unsupported);
+      expect(result.message, contains('not supported'));
+    },
+  );
 
   // --- submitPairingCode ---
 
-  test('Hisense adapter: submitPairingCode forwards pin to transport', () async {
-    final transport = _SpyHisenseTransportClient();
-    final adapter = HisenseAdapter(transportClient: transport);
-    await adapter.submitPairingCode(device: hisenseDevice, fourDigitPin: '5678');
-    expect(transport.submittedPins, contains('5678'));
-  });
+  test(
+    'Hisense adapter: submitPairingCode forwards pin to transport',
+    () async {
+      final transport = _SpyHisenseTransportClient();
+      final adapter = HisenseAdapter(transportClient: transport);
+      await adapter.submitPairingCode(
+        device: hisenseDevice,
+        fourDigitPin: '5678',
+      );
+      expect(transport.submittedPins, contains('5678'));
+    },
+  );
 
-  test('Hisense lane: submitPairingCode success when transport accepts pin', () async {
-    final service = BrandRoutedRemoteCommandService(
-      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-    final result = await service.submitPairingCode(
-      device: hisenseDevice,
-      fourDigitPin: '5678',
-    );
-    expect(result.isSuccess, isTrue);
-  });
+  test(
+    'Hisense lane: submitPairingCode success when transport accepts pin',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          HisenseAdapter(transportClient: _SpyHisenseTransportClient()),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
+      final result = await service.submitPairingCode(
+        device: hisenseDevice,
+        fourDigitPin: '5678',
+      );
+      expect(result.isSuccess, isTrue);
+    },
+  );
 
   test('Hisense lane: submitPairingCode error surfaces as failure', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [HisenseAdapter(transportClient: _ErrorOnPinHisenseTransportClient())],
+      adapters: [
+        HisenseAdapter(transportClient: _ErrorOnPinHisenseTransportClient()),
+      ],
       variantRegistry: const DefaultVariantResolutionRegistry(),
     );
     final result = await service.submitPairingCode(
@@ -148,23 +204,22 @@ void main() {
 
   // --- unpairDevice ---
 
-  test('Hisense adapter: unpairDevice is a no-op and completes without error', () async {
-    final adapter = HisenseAdapter(transportClient: _SpyHisenseTransportClient());
-    await expectLater(
-      adapter.unpairDevice(device: hisenseDevice),
-      completes,
-    );
-  });
+  test(
+    'Hisense adapter: unpairDevice is a no-op and completes without error',
+    () async {
+      final adapter = HisenseAdapter(
+        transportClient: _SpyHisenseTransportClient(),
+      );
+      await expectLater(adapter.unpairDevice(device: hisenseDevice), completes);
+    },
+  );
 
   test('Hisense lane: unpairDevice completes without error', () async {
     final service = BrandRoutedRemoteCommandService(
       adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
     );
-    await expectLater(
-      service.unpairDevice(device: hisenseDevice),
-      completes,
-    );
+    await expectLater(service.unpairDevice(device: hisenseDevice), completes);
   });
 }
 
@@ -194,7 +249,10 @@ class _SpyHisenseTransportClient
   }
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyName}) async {
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyName,
+  }) async {
     sentKeys.add(keyName);
   }
 
@@ -211,6 +269,10 @@ class _SpyHisenseTransportClient
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -231,7 +293,10 @@ class _ErrorOnPinHisenseTransportClient
   }
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyName}) async {}
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyName,
+  }) async {}
 
   @override
   Future<void> launchVidaaApp({
@@ -244,6 +309,10 @@ class _ErrorOnPinHisenseTransportClient
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.error);
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();

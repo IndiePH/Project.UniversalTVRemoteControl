@@ -6,6 +6,10 @@ Keep entries short and append new updates at the top.
 ## 2026-04-27
 
 ### Changed
+- Branch 4 remote-screen UX update: moved remote selection to a compact header `remote+wifi` control and removed the old `pair` tile from the editable grid
+- Added no-TV onboarding hint (`Connect a TV to begin`) and disabled command/search controls when no active TV is selected; remote-selection + settings remain available
+- Added brand-aware default layout filtering based on supported commands/capabilities, while still honoring persisted user layout overrides
+- Added normalized `Stream<ConnectionState>` flow across transport interfaces, adapters, and `RemoteCommandService`; remote header now shows live connection state
 - Collapsed `TvBrandCapabilities` (extension on `TvBrand`) and `TvModelCapabilityRegistry` (injectable interface + predicate-driven list) into a single `TvCapabilities` instance class with a `const` constructor and a static `_map` keyed on `(TvBrand, String)` record tuples
 - `capabilitiesFor(brand, [variant])` falls back to the brand's default-variant entry when an unknown variant is supplied — variant resolution stays clean even for devices paired on older builds
 - `TvDevice.fromJson` capability fallback is now variant-aware: restores `capabilitiesFor(brand, protocolVariant)` instead of the old brand-only `defaultCapabilities`
@@ -14,6 +18,7 @@ Keep entries short and append new updates at the top.
 - Updated `references/guide-adding-protocol-variant.md`: replaced `TvModelCapabilityRegistry` section with `TvCapabilities` section; updated flow diagram, Step 1–4 examples, checklist, and added a design note explaining the map-over-predicates choice
 
 ### Added
+- Branch 4 regression coverage updates for remote header selection flow, pre-pairing disabled controls, and transport connection-state contract stubs in lane/widget tests
 - `TvCapabilities` (`lib/remote_control/domain/models/tv_capabilities.dart`) — replaces both deleted files
 - `tv_capabilities_test.dart`: brand default, unknown-variant fallback, and non-empty coverage for every registered brand
 

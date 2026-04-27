@@ -5,6 +5,7 @@ import 'package:one_remote/remote_control/application/transport_log_reader.dart'
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -42,9 +43,9 @@ void main() {
       final samsung = _RecordingAdapter(brand: TvBrand.samsung);
       final lg = _RecordingAdapter(brand: TvBrand.lg);
       final service = BrandRoutedRemoteCommandService(
-      adapters: [samsung, lg],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
+        adapters: [samsung, lg],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
 
       await service.preparePairing(device: device);
 
@@ -54,9 +55,9 @@ void main() {
 
     test('returns unsupported when no adapter configured for brand', () async {
       final service = BrandRoutedRemoteCommandService(
-      adapters: [],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
       final result = await service.preparePairing(device: device);
       expect(result.isSuccess, isFalse);
       expect(result.message, contains('samsung'));
@@ -86,54 +87,94 @@ void main() {
       expect(result.device, isNotNull);
     });
 
-    test('result.device carries capabilities for the resolved variant', () async {
-      const resolvedVariant = 'webos_v2';
-      final service = BrandRoutedRemoteCommandService(
-        adapters: [_InfoReturningAdapter(const TvDeviceInfo(modelIdentifier: 'ModelX'))],
-        variantRegistry: const _StubVariantRegistry(resolvedVariant),
-      );
-      final result = await service.preparePairing(device: device);
-      expect(result.device!.capabilities,
-          equals(const TvCapabilities().capabilitiesFor(device.brand, resolvedVariant)));
-    });
+    test(
+      'result.device carries capabilities for the resolved variant',
+      () async {
+        const resolvedVariant = 'webos_v2';
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [
+            _InfoReturningAdapter(
+              const TvDeviceInfo(modelIdentifier: 'ModelX'),
+            ),
+          ],
+          variantRegistry: const _StubVariantRegistry(resolvedVariant),
+        );
+        final result = await service.preparePairing(device: device);
+        expect(
+          result.device!.capabilities,
+          equals(
+            const TvCapabilities().capabilitiesFor(
+              device.brand,
+              resolvedVariant,
+            ),
+          ),
+        );
+      },
+    );
 
-    test('result.device carries protocolVariant resolved by variantRegistry', () async {
-      const variant = 'webos_v2';
-      final service = BrandRoutedRemoteCommandService(
-        adapters: [_InfoReturningAdapter(const TvDeviceInfo(modelIdentifier: 'ModelX'))],
-        variantRegistry: const _StubVariantRegistry(variant),
-      );
-      final result = await service.preparePairing(device: device);
-      expect(result.device!.protocolVariant, equals(variant));
-    });
+    test(
+      'result.device carries protocolVariant resolved by variantRegistry',
+      () async {
+        const variant = 'webos_v2';
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [
+            _InfoReturningAdapter(
+              const TvDeviceInfo(modelIdentifier: 'ModelX'),
+            ),
+          ],
+          variantRegistry: const _StubVariantRegistry(variant),
+        );
+        final result = await service.preparePairing(device: device);
+        expect(result.device!.protocolVariant, equals(variant));
+      },
+    );
 
-    test('result.device uses brand defaults when queryDeviceInfo returns null', () async {
-      final service = BrandRoutedRemoteCommandService(
-        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
-      );
-      final result = await service.preparePairing(device: device);
-      expect(result.device!.capabilities, equals(const TvCapabilities().capabilitiesFor(TvBrand.samsung)));
-      expect(result.device!.protocolVariant, equals(TvDevice.defaultProtocolVariant));
-    });
+    test(
+      'result.device uses brand defaults when queryDeviceInfo returns null',
+      () async {
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [_RecordingAdapter(brand: TvBrand.samsung)],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+        );
+        final result = await service.preparePairing(device: device);
+        expect(
+          result.device!.capabilities,
+          equals(const TvCapabilities().capabilitiesFor(TvBrand.samsung)),
+        );
+        expect(
+          result.device!.protocolVariant,
+          equals(TvDevice.defaultProtocolVariant),
+        );
+      },
+    );
 
-    test('result.device carries modelIdentifier from queryDeviceInfo', () async {
-      final service = BrandRoutedRemoteCommandService(
-        adapters: [_InfoReturningAdapter(const TvDeviceInfo(modelIdentifier: 'OLED65C2PSA'))],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
-      );
-      final result = await service.preparePairing(device: device);
-      expect(result.device!.modelIdentifier, equals('OLED65C2PSA'));
-    });
+    test(
+      'result.device carries modelIdentifier from queryDeviceInfo',
+      () async {
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [
+            _InfoReturningAdapter(
+              const TvDeviceInfo(modelIdentifier: 'OLED65C2PSA'),
+            ),
+          ],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+        );
+        final result = await service.preparePairing(device: device);
+        expect(result.device!.modelIdentifier, equals('OLED65C2PSA'));
+      },
+    );
 
-    test('result.device modelIdentifier is null when queryDeviceInfo returns no model', () async {
-      final service = BrandRoutedRemoteCommandService(
-        adapters: [_InfoReturningAdapter(const TvDeviceInfo())],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
-      );
-      final result = await service.preparePairing(device: device);
-      expect(result.device!.modelIdentifier, isNull);
-    });
+    test(
+      'result.device modelIdentifier is null when queryDeviceInfo returns no model',
+      () async {
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [_InfoReturningAdapter(const TvDeviceInfo())],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+        );
+        final result = await service.preparePairing(device: device);
+        expect(result.device!.modelIdentifier, isNull);
+      },
+    );
   });
 
   group('brand dispatch — submitPairingCode', () {
@@ -141,9 +182,9 @@ void main() {
       final samsung = _RecordingAdapter(brand: TvBrand.samsung);
       final lg = _RecordingAdapter(brand: TvBrand.lg);
       final service = BrandRoutedRemoteCommandService(
-      adapters: [samsung, lg],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
+        adapters: [samsung, lg],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
 
       await service.submitPairingCode(device: device, fourDigitPin: '1234');
 
@@ -153,9 +194,9 @@ void main() {
 
     test('returns unsupported when no adapter configured for brand', () async {
       final service = BrandRoutedRemoteCommandService(
-      adapters: [],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
       final result = await service.submitPairingCode(
         device: device,
         fourDigitPin: '0000',
@@ -181,11 +222,14 @@ void main() {
       final samsung = _RecordingAdapter(brand: TvBrand.samsung);
       final lg = _RecordingAdapter(brand: TvBrand.lg);
       final service = BrandRoutedRemoteCommandService(
-      adapters: [samsung, lg],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
+        adapters: [samsung, lg],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
 
-      await service.sendCommand(device: device, command: RemoteCommand.volumeUp);
+      await service.sendCommand(
+        device: device,
+        command: RemoteCommand.volumeUp,
+      );
 
       expect(samsung.sendCommandCallCount, 1);
       expect(lg.sendCommandCallCount, 0);
@@ -193,9 +237,9 @@ void main() {
 
     test('returns unsupported when no adapter configured for brand', () async {
       final service = BrandRoutedRemoteCommandService(
-      adapters: [],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
       final result = await service.sendCommand(
         device: device,
         command: RemoteCommand.volumeUp,
@@ -203,24 +247,27 @@ void main() {
       expect(result.isSuccess, isFalse);
     });
 
-    test('returns unsupported and skips adapter when command not supported', () async {
-      final adapter = _RecordingAdapter(
-        brand: TvBrand.samsung,
-        supportedCommands: {},
-      );
-      final service = BrandRoutedRemoteCommandService(
-      adapters: [adapter],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
+    test(
+      'returns unsupported and skips adapter when command not supported',
+      () async {
+        final adapter = _RecordingAdapter(
+          brand: TvBrand.samsung,
+          supportedCommands: {},
+        );
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [adapter],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+        );
+
+        final result = await service.sendCommand(
+          device: device,
+          command: RemoteCommand.volumeUp,
+        );
+
+        expect(result.isSuccess, isFalse);
+        expect(adapter.sendCommandCallCount, 0);
+      },
     );
-
-      final result = await service.sendCommand(
-        device: device,
-        command: RemoteCommand.volumeUp,
-      );
-
-      expect(result.isSuccess, isFalse);
-      expect(adapter.sendCommandCallCount, 0);
-    });
 
     test('returns success when adapter succeeds', () async {
       final service = BrandRoutedRemoteCommandService(
@@ -240,9 +287,9 @@ void main() {
       final samsung = _RecordingAdapter(brand: TvBrand.samsung);
       final lg = _RecordingAdapter(brand: TvBrand.lg);
       final service = BrandRoutedRemoteCommandService(
-      adapters: [samsung, lg],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
+        adapters: [samsung, lg],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
 
       await service.sendText(device: device, text: 'hello');
 
@@ -252,28 +299,31 @@ void main() {
 
     test('returns unsupported when no adapter configured for brand', () async {
       final service = BrandRoutedRemoteCommandService(
-      adapters: [],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-      final result = await service.sendText(device: device, text: 'hello');
-      expect(result.isSuccess, isFalse);
-    });
-
-    test('returns unsupported and skips adapter when text input not supported', () async {
-      final adapter = _RecordingAdapter(
-        brand: TvBrand.samsung,
-        supportsTextInput: false,
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
       );
-      final service = BrandRoutedRemoteCommandService(
-      adapters: [adapter],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-
       final result = await service.sendText(device: device, text: 'hello');
-
       expect(result.isSuccess, isFalse);
-      expect(adapter.sendTextCallCount, 0);
     });
+
+    test(
+      'returns unsupported and skips adapter when text input not supported',
+      () async {
+        final adapter = _RecordingAdapter(
+          brand: TvBrand.samsung,
+          supportsTextInput: false,
+        );
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [adapter],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+        );
+
+        final result = await service.sendText(device: device, text: 'hello');
+
+        expect(result.isSuccess, isFalse);
+        expect(adapter.sendTextCallCount, 0);
+      },
+    );
 
     test('returns success when adapter succeeds', () async {
       final service = BrandRoutedRemoteCommandService(
@@ -288,41 +338,47 @@ void main() {
   group('brand dispatch — watchRemoteTextInputReady', () {
     test('returns false stream when no adapter configured for brand', () async {
       final service = BrandRoutedRemoteCommandService(
-      adapters: [],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
-      final result = await service
-          .watchRemoteTextInputReady(device: device)
-          .first;
-      expect(result, isFalse);
-    });
-
-    test('returns false stream when adapter does not support text input', () async {
-      final adapter = _RecordingAdapter(
-        brand: TvBrand.samsung,
-        supportsTextInput: false,
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
       );
-      final service = BrandRoutedRemoteCommandService(
-      adapters: [adapter],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
       final result = await service
           .watchRemoteTextInputReady(device: device)
           .first;
       expect(result, isFalse);
     });
 
-    test('returns false stream when device lacks textInput capability', () async {
-      final adapter = _RecordingAdapter(brand: TvBrand.samsung);
-      final service = BrandRoutedRemoteCommandService(
-      adapters: [adapter],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
+    test(
+      'returns false stream when adapter does not support text input',
+      () async {
+        final adapter = _RecordingAdapter(
+          brand: TvBrand.samsung,
+          supportsTextInput: false,
+        );
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [adapter],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+        );
+        final result = await service
+            .watchRemoteTextInputReady(device: device)
+            .first;
+        expect(result, isFalse);
+      },
     );
-      final result = await service
-          .watchRemoteTextInputReady(device: deviceNoTextInput)
-          .first;
-      expect(result, isFalse);
-    });
+
+    test(
+      'returns false stream when device lacks textInput capability',
+      () async {
+        final adapter = _RecordingAdapter(brand: TvBrand.samsung);
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [adapter],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+        );
+        final result = await service
+            .watchRemoteTextInputReady(device: deviceNoTextInput)
+            .first;
+        expect(result, isFalse);
+      },
+    );
 
     test('delegates to adapter stream when all conditions are met', () async {
       final adapter = _RecordingAdapter(
@@ -330,9 +386,9 @@ void main() {
         textInputReadyStream: Stream.value(true),
       );
       final service = BrandRoutedRemoteCommandService(
-      adapters: [adapter],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
+        adapters: [adapter],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
       final result = await service
           .watchRemoteTextInputReady(device: device)
           .first;
@@ -349,9 +405,9 @@ void main() {
         textInputReadyStream: Stream.value(false),
       );
       final service = BrandRoutedRemoteCommandService(
-      adapters: [samsung, lg],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
+        adapters: [samsung, lg],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
       final result = await service
           .watchRemoteTextInputReady(device: device)
           .first;
@@ -368,9 +424,9 @@ void main() {
         textInputReadyStream: Stream.value(true),
       );
       final service = BrandRoutedRemoteCommandService(
-      adapters: [samsung, lg],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
-    );
+        adapters: [samsung, lg],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+      );
       final result = await service
           .watchRemoteTextInputReady(device: lgDevice)
           .first;
@@ -435,7 +491,10 @@ void main() {
         device: device,
         fourDigitPin: '1234',
       );
-      expect(result.message, 'Failed to submit pairing code for ${device.displayName}.');
+      expect(
+        result.message,
+        'Failed to submit pairing code for ${device.displayName}.',
+      );
     });
 
     test('exception carries the raw error', () async {
@@ -475,7 +534,10 @@ void main() {
         device: device,
         command: RemoteCommand.volumeUp,
       );
-      expect(result.message, 'Failed to send command to ${device.displayName}.');
+      expect(
+        result.message,
+        'Failed to send command to ${device.displayName}.',
+      );
     });
 
     test('exception carries the raw error', () async {
@@ -527,37 +589,46 @@ void main() {
   // adapter implements TransportLogProvider; falls back to noop otherwise.
 
   group('TransportLogReaderProvider — readerForDevice', () {
-    test('returns reader from adapter when adapter implements TransportLogProvider', () {
-      final adapter = _LogProviderAdapter(brand: TvBrand.samsung);
-      final service = BrandRoutedRemoteCommandService(
-      adapters: [adapter],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
+    test(
+      'returns reader from adapter when adapter implements TransportLogProvider',
+      () {
+        final adapter = _LogProviderAdapter(brand: TvBrand.samsung);
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [adapter],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+        );
+
+        final reader = service.readerForDevice(device);
+        expect(reader, same(adapter.transportLogReader));
+      },
     );
 
-      final reader = service.readerForDevice(device);
-      expect(reader, same(adapter.transportLogReader));
-    });
+    test(
+      'returns NoopTransportLogReader when adapter does not implement TransportLogProvider',
+      () {
+        final lg = _RecordingAdapter(brand: TvBrand.lg);
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [lg],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+        );
 
-    test('returns NoopTransportLogReader when adapter does not implement TransportLogProvider', () {
-      final lg = _RecordingAdapter(brand: TvBrand.lg);
-      final service = BrandRoutedRemoteCommandService(
-      adapters: [lg],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
+        final reader = service.readerForDevice(lgDevice);
+        expect(reader, isA<NoopTransportLogReader>());
+      },
     );
 
-      final reader = service.readerForDevice(lgDevice);
-      expect(reader, isA<NoopTransportLogReader>());
-    });
+    test(
+      'returns NoopTransportLogReader when no adapter configured for brand',
+      () {
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+        );
 
-    test('returns NoopTransportLogReader when no adapter configured for brand', () {
-      final service = BrandRoutedRemoteCommandService(
-      adapters: [],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
+        final reader = service.readerForDevice(device);
+        expect(reader, isA<NoopTransportLogReader>());
+      },
     );
-
-      final reader = service.readerForDevice(device);
-      expect(reader, isA<NoopTransportLogReader>());
-    });
   });
 }
 
@@ -571,9 +642,9 @@ class _RecordingAdapter implements TvBrandAdapter {
     bool supportsTextInput = true,
     Set<RemoteCommand>? supportedCommands,
     Stream<bool>? textInputReadyStream,
-  })  : _supportsTextInput = supportsTextInput,
-        _supportedCommands = supportedCommands ?? RemoteCommand.values.toSet(),
-        _textInputReadyStream = textInputReadyStream ?? const Stream.empty();
+  }) : _supportsTextInput = supportsTextInput,
+       _supportedCommands = supportedCommands ?? RemoteCommand.values.toSet(),
+       _textInputReadyStream = textInputReadyStream ?? const Stream.empty();
 
   @override
   final TvBrand brand;
@@ -621,7 +692,10 @@ class _RecordingAdapter implements TvBrandAdapter {
   }
 
   @override
-  Future<void> sendText({required TvDevice device, required String text}) async {
+  Future<void> sendText({
+    required TvDevice device,
+    required String text,
+  }) async {
     sendTextCallCount++;
   }
 
@@ -631,6 +705,10 @@ class _RecordingAdapter implements TvBrandAdapter {
   @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
       _textInputReadyStream;
+
+  @override
+  Stream<ConnectionState> watchConnectionState(TvDevice device) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
 
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
@@ -675,7 +753,10 @@ class _ThrowingAdapter implements TvBrandAdapter {
   }
 
   @override
-  Future<void> sendText({required TvDevice device, required String text}) async {
+  Future<void> sendText({
+    required TvDevice device,
+    required String text,
+  }) async {
     throw StateError('text error');
   }
 
@@ -687,12 +768,18 @@ class _ThrowingAdapter implements TvBrandAdapter {
       Stream<bool>.value(false);
 
   @override
+  Stream<ConnectionState> watchConnectionState(TvDevice device) =>
+      Stream<ConnectionState>.value(ConnectionState.error);
+
+  @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
       null;
 }
 
-class _LogProviderAdapter extends _RecordingAdapter implements TransportLogProvider {
-  _LogProviderAdapter({required super.brand}) : _logReader = _StubTransportLogReader();
+class _LogProviderAdapter extends _RecordingAdapter
+    implements TransportLogProvider {
+  _LogProviderAdapter({required super.brand})
+    : _logReader = _StubTransportLogReader();
 
   final _StubTransportLogReader _logReader;
 
@@ -711,7 +798,8 @@ class _InfoReturningAdapter extends _RecordingAdapter {
   final TvDeviceInfo _info;
 
   @override
-  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async => _info;
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      _info;
 }
 
 class _StubVariantRegistry implements VariantResolutionRegistry {
@@ -720,5 +808,6 @@ class _StubVariantRegistry implements VariantResolutionRegistry {
   final String _variant;
 
   @override
-  String resolve({required TvBrand brand, required TvDeviceInfo? info}) => _variant;
+  String resolve({required TvBrand brand, required TvDeviceInfo? info}) =>
+      _variant;
 }

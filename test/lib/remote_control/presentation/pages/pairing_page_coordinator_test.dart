@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -28,20 +29,23 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('_attemptPinPairing', () {
-    test('returns success when pin provided and submitPairingCode succeeds', () async {
-      final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
-        submitPairingResults: [CommandDispatchResult.success('OK')],
-      );
+    test(
+      'returns success when pin provided and submitPairingCode succeeds',
+      () async {
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+          submitPairingResults: [CommandDispatchResult.success('OK')],
+        );
 
-      final result = await coordinator.pairSelectedDevice(
-        device: pinPairingDevice,
-        promptPin: (_) async => '1234',
-        onPinRejected: (_) {},
-      );
+        final result = await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_) async => '1234',
+          onPinRejected: (_) {},
+        );
 
-      expect(result.isSuccess, isTrue);
-    });
+        expect(result.isSuccess, isTrue);
+      },
+    );
 
     test('returns failure when user cancels pin prompt', () async {
       final coordinator = _makeCoordinator(
@@ -57,28 +61,31 @@ void main() {
       expect(result.isSuccess, isFalse);
     });
 
-    test('retries loop after rejected pin and succeeds on next attempt', () async {
-      var promptCallCount = 0;
-      final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
-        submitPairingResults: [
-          CommandDispatchResult.failure('Wrong PIN'),
-          CommandDispatchResult.success('OK'),
-        ],
-      );
+    test(
+      'retries loop after rejected pin and succeeds on next attempt',
+      () async {
+        var promptCallCount = 0;
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+          submitPairingResults: [
+            CommandDispatchResult.failure('Wrong PIN'),
+            CommandDispatchResult.success('OK'),
+          ],
+        );
 
-      final result = await coordinator.pairSelectedDevice(
-        device: pinPairingDevice,
-        promptPin: (_) async {
-          promptCallCount++;
-          return '1234';
-        },
-        onPinRejected: (_) {},
-      );
+        final result = await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_) async {
+            promptCallCount++;
+            return '1234';
+          },
+          onPinRejected: (_) {},
+        );
 
-      expect(result.isSuccess, isTrue);
-      expect(promptCallCount, 2);
-    });
+        expect(result.isSuccess, isTrue);
+        expect(promptCallCount, 2);
+      },
+    );
 
     test('cancels after rejection when user returns null on retry', () async {
       var promptCallCount = 0;
@@ -96,45 +103,51 @@ void main() {
       expect(result.isSuccess, isFalse);
     });
 
-    test('calls onPinRejected with failure message when pin is wrong', () async {
-      const rejectionMessage = 'Wrong PIN';
-      var promptCallCount = 0;
-      final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
-        submitPairingResults: [
-          CommandDispatchResult.failure(rejectionMessage),
-          CommandDispatchResult.success('OK'),
-        ],
-      );
+    test(
+      'calls onPinRejected with failure message when pin is wrong',
+      () async {
+        const rejectionMessage = 'Wrong PIN';
+        var promptCallCount = 0;
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+          submitPairingResults: [
+            CommandDispatchResult.failure(rejectionMessage),
+            CommandDispatchResult.success('OK'),
+          ],
+        );
 
-      final rejectedMessages = <String>[];
-      await coordinator.pairSelectedDevice(
-        device: pinPairingDevice,
-        promptPin: (_) async => ++promptCallCount <= 2 ? '0000' : null,
-        onPinRejected: rejectedMessages.add,
-      );
+        final rejectedMessages = <String>[];
+        await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_) async => ++promptCallCount <= 2 ? '0000' : null,
+          onPinRejected: rejectedMessages.add,
+        );
 
-      expect(rejectedMessages, [rejectionMessage]);
-    });
+        expect(rejectedMessages, [rejectionMessage]);
+      },
+    );
 
-    test('does not attempt pin pairing when device lacks pinPairing capability', () async {
-      var promptCalled = false;
-      final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Pairing failed'),
-      );
+    test(
+      'does not attempt pin pairing when device lacks pinPairing capability',
+      () async {
+        var promptCalled = false;
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.failure('Pairing failed'),
+        );
 
-      final result = await coordinator.pairSelectedDevice(
-        device: nonPinDevice,
-        promptPin: (_) async {
-          promptCalled = true;
-          return '1234';
-        },
-        onPinRejected: (_) {},
-      );
+        final result = await coordinator.pairSelectedDevice(
+          device: nonPinDevice,
+          promptPin: (_) async {
+            promptCalled = true;
+            return '1234';
+          },
+          onPinRejected: (_) {},
+        );
 
-      expect(result.isSuccess, isFalse);
-      expect(promptCalled, isFalse);
-    });
+        expect(result.isSuccess, isFalse);
+        expect(promptCalled, isFalse);
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -210,15 +223,18 @@ class _StubCommandService implements RemoteCommandService {
   int _submitCallIndex = 0;
 
   @override
-  Future<CommandDispatchResult> preparePairing({required TvDevice device}) async =>
-      preparePairingResult;
+  Future<CommandDispatchResult> preparePairing({
+    required TvDevice device,
+  }) async => preparePairingResult;
 
   @override
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
     required String fourDigitPin,
   }) async {
-    if (submitPairingResults.isEmpty) return CommandDispatchResult.success('OK');
+    if (submitPairingResults.isEmpty) {
+      return CommandDispatchResult.success('OK');
+    }
     final index = _submitCallIndex.clamp(0, submitPairingResults.length - 1);
     _submitCallIndex++;
     return submitPairingResults[index];
@@ -231,18 +247,24 @@ class _StubCommandService implements RemoteCommandService {
   Future<CommandDispatchResult> sendCommand({
     required TvDevice device,
     required RemoteCommand command,
-  }) async =>
-      CommandDispatchResult.unsupported('not used in this test');
+  }) async => CommandDispatchResult.unsupported('not used in this test');
 
   @override
   Future<CommandDispatchResult> sendText({
     required TvDevice device,
     required String text,
-  }) async =>
-      CommandDispatchResult.unsupported('not used in this test');
+  }) async => CommandDispatchResult.unsupported('not used in this test');
 
   @override
   Stream<bool> watchRemoteTextInputReady({required TvDevice device}) =>
+      const Stream.empty();
+
+  @override
+  Set<RemoteCommand> supportedCommandsFor({required TvDevice device}) =>
+      RemoteCommand.values.toSet();
+
+  @override
+  Stream<ConnectionState> watchConnectionState({required TvDevice device}) =>
       const Stream.empty();
 }
 
@@ -280,8 +302,12 @@ class _StubDeviceRepository implements DeviceRepository {
   Future<void> setLastUsedDevice(String deviceId) async {}
 
   @override
-  Future<void> saveDeviceSystemInfo(String deviceId, Map<String, dynamic> info) async {}
+  Future<void> saveDeviceSystemInfo(
+    String deviceId,
+    Map<String, dynamic> info,
+  ) async {}
 
   @override
-  Future<Map<String, dynamic>?> getDeviceSystemInfo(String deviceId) async => null;
+  Future<Map<String, dynamic>?> getDeviceSystemInfo(String deviceId) async =>
+      null;
 }
