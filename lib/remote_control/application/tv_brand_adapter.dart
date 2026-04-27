@@ -1,3 +1,4 @@
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -16,7 +17,9 @@ abstract class TvBrandAdapter {
   /// Probes whether the TV is reachable on the network.
   /// Completes normally if reachable; throws if not.
   Future<void> probeConnection({required TvDevice device}) async =>
-      throw UnsupportedError('probeConnection not implemented for ${device.brand}');
+      throw UnsupportedError(
+        'probeConnection not implemented for ${device.brand}',
+      );
 
   /// Queries the TV for model and firmware information after pairing.
   /// Returns null if the brand's protocol does not support device probing.
@@ -47,4 +50,8 @@ abstract class TvBrandAdapter {
   /// Whether the TV UI currently accepts remote-typed text (IME / protocol-specific).
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
       Stream<bool>.value(false);
+
+  /// Normalized connectivity state emitted by the brand transport.
+  Stream<ConnectionState> watchConnectionState(TvDevice device) =>
+      Stream<ConnectionState>.value(ConnectionState.disconnected);
 }

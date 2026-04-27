@@ -6,6 +6,7 @@ import 'package:one_remote/remote_control/application/transport_log_reader.dart'
 import 'package:one_remote/remote_control/application/transport_log_reader_provider.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -20,9 +21,7 @@ class BrandRoutedRemoteCommandService
   BrandRoutedRemoteCommandService({
     required List<TvBrandAdapter> adapters,
     required VariantResolutionRegistry variantRegistry,
-  }) : _adapters = {
-         for (final a in adapters) (a.brand, a.protocolVariant): a
-       },
+  }) : _adapters = {for (final a in adapters) (a.brand, a.protocolVariant): a},
        _variantRegistry = variantRegistry;
 
   final Map<(TvBrand, String), TvBrandAdapter> _adapters;
@@ -30,9 +29,10 @@ class BrandRoutedRemoteCommandService
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {
-    await _adapterFor(device.brand, device.protocolVariant)?.unpairDevice(
-      device: device,
-    );
+    await _adapterFor(
+      device.brand,
+      device.protocolVariant,
+    )?.unpairDevice(device: device);
   }
 
   @override
@@ -49,7 +49,10 @@ class BrandRoutedRemoteCommandService
       await adapter.preparePairing(device: device);
       final info = await adapter.queryDeviceInfo(device: device);
       final variant = _variantRegistry.resolve(brand: device.brand, info: info);
-      final capabilities = const TvCapabilities().capabilitiesFor(device.brand, variant);
+      final capabilities = const TvCapabilities().capabilitiesFor(
+        device.brand,
+        variant,
+      );
       final enriched = device.copyWith(
         capabilities: capabilities,
         protocolVariant: variant,
@@ -60,7 +63,10 @@ class BrandRoutedRemoteCommandService
         device: enriched,
       );
     } catch (error) {
-      return CommandDispatchResult.failure('Pairing failed for ${device.displayName}.', exception: error);
+      return CommandDispatchResult.failure(
+        'Pairing failed for ${device.displayName}.',
+        exception: error,
+      );
     }
   }
 
@@ -84,9 +90,14 @@ class BrandRoutedRemoteCommandService
         'Pairing code accepted for ${device.displayName}.',
       );
     } on UnsupportedError catch (error) {
-      return CommandDispatchResult.unsupported(error.message?.toString() ?? '$error');
+      return CommandDispatchResult.unsupported(
+        error.message?.toString() ?? '$error',
+      );
     } catch (error) {
-      return CommandDispatchResult.failure('Failed to submit pairing code for ${device.displayName}.', exception: error);
+      return CommandDispatchResult.failure(
+        'Failed to submit pairing code for ${device.displayName}.',
+        exception: error,
+      );
     }
   }
 
@@ -110,7 +121,10 @@ class BrandRoutedRemoteCommandService
       await adapter.sendCommand(device: device, command: command);
       return CommandDispatchResult.success('Sent: ${command.name}');
     } catch (error) {
-      return CommandDispatchResult.failure('Failed to send command to ${device.displayName}.', exception: error);
+      return CommandDispatchResult.failure(
+        'Failed to send command to ${device.displayName}.',
+        exception: error,
+      );
     }
   }
 
@@ -136,8 +150,17 @@ class BrandRoutedRemoteCommandService
     } on TextInputCompatibilityException catch (error) {
       return CommandDispatchResult.compatibility(error.userMessage);
     } catch (error) {
-      return CommandDispatchResult.failure('Failed to send text to ${device.displayName}.', exception: error);
+      return CommandDispatchResult.failure(
+        'Failed to send text to ${device.displayName}.',
+        exception: error,
+      );
     }
+  }
+
+  @override
+  Set<RemoteCommand> supportedCommandsFor({required TvDevice device}) {
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
+    return adapter?.supportedCommands ?? <RemoteCommand>{};
   }
 
   @override
@@ -153,6 +176,15 @@ class BrandRoutedRemoteCommandService
       return Stream<bool>.value(false);
     }
     return adapter.watchRemoteTextInputReady(device);
+  }
+
+  @override
+  Stream<ConnectionState> watchConnectionState({required TvDevice device}) {
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
+    if (adapter == null) {
+      return Stream<ConnectionState>.value(ConnectionState.disconnected);
+    }
+    return adapter.watchConnectionState(device);
   }
 
   @override

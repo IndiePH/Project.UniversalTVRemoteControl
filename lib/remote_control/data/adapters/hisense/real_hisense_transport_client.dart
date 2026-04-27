@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' show log;
 import 'dart:io';
 
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/data/adapters/adapter_device_info_log_gate.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
@@ -17,17 +19,22 @@ class RealHisenseTransportClient
     implements HisenseTransportClient {
   RealHisenseTransportClient({
     required String Function(String deviceId) hostResolver,
-    String mqttClientId =
-        const String.fromEnvironment('HISENSE_MQTT_CLIENT_ID', defaultValue: 'OneRemote'),
-    bool usePlaintextMqtt =
-        const bool.fromEnvironment('HISENSE_MQTT_PLAINTEXT', defaultValue: false),
+    String mqttClientId = const String.fromEnvironment(
+      'HISENSE_MQTT_CLIENT_ID',
+      defaultValue: 'OneRemote',
+    ),
+    bool usePlaintextMqtt = const bool.fromEnvironment(
+      'HISENSE_MQTT_PLAINTEXT',
+      defaultValue: false,
+    ),
     int brokerPort = 36669,
     this.connectTimeoutSeconds = 12,
-  })  : _hostResolver = hostResolver,
-        _mqttTopicClientSegment =
-            mqttClientId.trim().isEmpty ? 'OneRemote' : mqttClientId.trim(),
-        _usePlaintextMqtt = usePlaintextMqtt,
-        _brokerPort = brokerPort > 0 ? brokerPort : 36669;
+  }) : _hostResolver = hostResolver,
+       _mqttTopicClientSegment = mqttClientId.trim().isEmpty
+           ? 'OneRemote'
+           : mqttClientId.trim(),
+       _usePlaintextMqtt = usePlaintextMqtt,
+       _brokerPort = brokerPort > 0 ? brokerPort : 36669;
 
   static const String _username = 'hisenseservice';
   static const String _password = 'multimqttservice';
@@ -38,9 +45,16 @@ class RealHisenseTransportClient
   final int _brokerPort;
   final int connectTimeoutSeconds;
 
-  final Map<String, MqttServerClient> _mqttByDeviceId = <String, MqttServerClient>{};
+  final Map<String, MqttServerClient> _mqttByDeviceId =
+      <String, MqttServerClient>{};
+  final Map<String, StreamController<ConnectionState>> _connectionControllers =
+      <String, StreamController<ConnectionState>>{};
+  final Map<String, ConnectionState> _lastConnectionStates =
+      <String, ConnectionState>{};
+  final Map<String, Timer> _connectivityPollTimers = <String, Timer>{};
   final Set<String> _authorizedDeviceIds = <String>{};
-  final AdapterDeviceInfoLogGate _deviceInfoLogGate = AdapterDeviceInfoLogGate();
+  final AdapterDeviceInfoLogGate _deviceInfoLogGate =
+      AdapterDeviceInfoLogGate();
 
   String _sendKeyTopic() =>
       '/remoteapp/tv/remote_service/$_mqttTopicClientSegment/actions/sendkey';
@@ -53,19 +67,26 @@ class RealHisenseTransportClient
 
   @override
   Future<void> connect({required String deviceId}) async {
-    await _ensureConnected(deviceId);
-    if (!_authorizedDeviceIds.contains(deviceId)) {
-      throw StateError(
-        'Hisense pairing requires a 4-digit code shown on TV. Enter it to continue.',
+    _emitConnectionState(deviceId, ConnectionState.connecting);
+    try {
+      await _ensureConnected(deviceId);
+      if (!_authorizedDeviceIds.contains(deviceId)) {
+        throw StateError(
+          'Hisense pairing requires a 4-digit code shown on TV. Enter it to continue.',
+        );
+      }
+      emitTransportEvent(
+        TransportEvent(
+          transport: 'hisense',
+          deviceId: deviceId,
+          type: 'connected',
+        ),
       );
+      _emitConnectionState(deviceId, ConnectionState.connected);
+    } catch (error) {
+      _emitConnectionState(deviceId, ConnectionState.error);
+      rethrow;
     }
-    emitTransportEvent(
-      TransportEvent(
-        transport: 'hisense',
-        deviceId: deviceId,
-        type: 'connected',
-      ),
-    );
   }
 
   @override
@@ -76,7 +97,11 @@ class RealHisenseTransportClient
     final client = await _connectedClientFor(deviceId);
     final cleaned = fourDigitPin.trim();
     if (!RegExp(r'^\d{4}$').hasMatch(cleaned)) {
-      throw ArgumentError.value(fourDigitPin, 'fourDigitPin', 'Expected exactly 4 digits');
+      throw ArgumentError.value(
+        fourDigitPin,
+        'fourDigitPin',
+        'Expected exactly 4 digits',
+      );
     }
     if (cleaned != '1234') {
       throw StateError('Incorrect pairing code. Please try again.');
@@ -94,7 +119,10 @@ class RealHisenseTransportClient
   }
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyName}) async {
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyName,
+  }) async {
     final client = await _clientFor(deviceId);
     _publishString(client, _sendKeyTopic(), keyName);
     emitTransportEvent(
@@ -151,6 +179,8 @@ class RealHisenseTransportClient
   Future<void> _ensureConnected(String deviceId) async {
     final existing = _mqttByDeviceId[deviceId];
     if (existing?.connectionStatus?.state == MqttConnectionState.connected) {
+      _startConnectivityPolling(deviceId);
+      _emitConnectionState(deviceId, ConnectionState.connected);
       return;
     }
     existing?.disconnect();
@@ -158,13 +188,16 @@ class RealHisenseTransportClient
 
     final host = _hostResolver(deviceId).trim();
     if (host.isEmpty) {
-      throw StateError('Hisense TV host could not be resolved for device $deviceId');
+      throw StateError(
+        'Hisense TV host could not be resolved for device $deviceId',
+      );
     }
 
-    final client = MqttServerClient.withPort(host, _mqttTopicClientSegment, _brokerPort)
-      ..connectTimeoutPeriod = connectTimeoutSeconds * 1000
-      ..keepAlivePeriod = 30
-      ..logging(on: false);
+    final client =
+        MqttServerClient.withPort(host, _mqttTopicClientSegment, _brokerPort)
+          ..connectTimeoutPeriod = connectTimeoutSeconds * 1000
+          ..keepAlivePeriod = 30
+          ..logging(on: false);
 
     if (_usePlaintextMqtt) {
       client.secure = false;
@@ -177,9 +210,13 @@ class RealHisenseTransportClient
     final status = await client.connect(_username, _password);
     if (status?.state != MqttConnectionState.connected) {
       client.disconnect();
-      throw StateError('Hisense MQTT connect failed (${status?.state}): $status');
+      throw StateError(
+        'Hisense MQTT connect failed (${status?.state}): $status',
+      );
     }
     _mqttByDeviceId[deviceId] = client;
+    _emitConnectionState(deviceId, ConnectionState.connected);
+    _startConnectivityPolling(deviceId);
     if (_deviceInfoLogGate.shouldLog(deviceId)) {
       log(
         '[$deviceId] hisense transport connected: host=$host port=$_brokerPort '
@@ -206,5 +243,69 @@ class RealHisenseTransportClient
   void _publishString(MqttServerClient client, String topic, String body) {
     final builder = MqttClientPayloadBuilder()..addString(body);
     client.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);
+  }
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      _connectionControllerFor(deviceId).stream;
+
+  StreamController<ConnectionState> _connectionControllerFor(String deviceId) {
+    return _connectionControllers.putIfAbsent(
+      deviceId,
+      () => StreamController<ConnectionState>.broadcast(
+        onListen: () {
+          _connectionControllers[deviceId]?.add(
+            _lastConnectionStates[deviceId] ?? ConnectionState.disconnected,
+          );
+        },
+      ),
+    );
+  }
+
+  void _emitConnectionState(String deviceId, ConnectionState state) {
+    if (_lastConnectionStates[deviceId] == state) {
+      return;
+    }
+    _lastConnectionStates[deviceId] = state;
+    final ctrl = _connectionControllers[deviceId];
+    if (ctrl != null && !ctrl.isClosed) {
+      ctrl.add(state);
+    }
+  }
+
+  void _startConnectivityPolling(String deviceId) {
+    _connectivityPollTimers[deviceId]?.cancel();
+    _connectivityPollTimers[deviceId] = Timer.periodic(
+      const Duration(seconds: 8),
+      (_) => unawaited(_pollConnectivity(deviceId)),
+    );
+  }
+
+  Future<void> _pollConnectivity(String deviceId) async {
+    final client = _mqttByDeviceId[deviceId];
+    if (client == null) {
+      _emitConnectionState(deviceId, ConnectionState.disconnected);
+      return;
+    }
+    if (client.connectionStatus?.state != MqttConnectionState.connected) {
+      _emitConnectionState(deviceId, ConnectionState.disconnected);
+      return;
+    }
+    final host = _hostResolver(deviceId).trim();
+    if (host.isEmpty) {
+      _emitConnectionState(deviceId, ConnectionState.error);
+      return;
+    }
+    try {
+      final socket = await Socket.connect(
+        host,
+        _brokerPort,
+        timeout: const Duration(seconds: 2),
+      );
+      socket.destroy();
+      _emitConnectionState(deviceId, ConnectionState.connected);
+    } catch (_) {
+      _emitConnectionState(deviceId, ConnectionState.disconnected);
+    }
   }
 }

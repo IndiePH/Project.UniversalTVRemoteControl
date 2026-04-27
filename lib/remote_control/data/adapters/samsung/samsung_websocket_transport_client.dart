@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/data/adapters/adapter_device_info_log_gate.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
@@ -63,12 +64,21 @@ class SamsungWebSocketTransportClient
   final Map<String, StreamSubscription<dynamic>> _subscriptionsByDeviceId =
       <String, StreamSubscription<dynamic>>{};
   final Map<String, DateTime> _lastSendAtByDeviceId = <String, DateTime>{};
-  final AdapterDeviceInfoLogGate _deviceInfoLogGate = AdapterDeviceInfoLogGate();
+  final Map<String, StreamController<ConnectionState>> _connectionControllers =
+      <String, StreamController<ConnectionState>>{};
+  final Map<String, ConnectionState> _lastConnectionStates =
+      <String, ConnectionState>{};
+  final AdapterDeviceInfoLogGate _deviceInfoLogGate =
+      AdapterDeviceInfoLogGate();
 
   @override
   Stream<bool> watchRemoteTextInputReady(String deviceId) {
     return _text.watchRemoteTextInputReady(deviceId);
   }
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      _connectionControllerFor(deviceId).stream;
 
   @override
   Future<void> connect({required String deviceId}) async {
@@ -83,6 +93,7 @@ class SamsungWebSocketTransportClient
     }
     final secureToken = _pairing.tokenForHost(host);
     final encodedName = base64Encode(utf8.encode(clientName));
+    _emitConnectionState(deviceId, ConnectionState.connecting);
 
     final uriCandidates = <Uri>[
       if (secureToken != null && secureToken.isNotEmpty)
@@ -121,6 +132,7 @@ class SamsungWebSocketTransportClient
             message: '$host:${uri.port}',
           ),
         );
+        _emitConnectionState(deviceId, ConnectionState.connected);
         return;
       } on Object catch (error, stackTrace) {
         lastError = error;
@@ -135,6 +147,7 @@ class SamsungWebSocketTransportClient
         if (SamsungTransportAuthorization.isAuthorizationError(error)) {
           _pairing.clearTokenForHost(host);
         }
+        _emitConnectionState(deviceId, ConnectionState.error);
       }
     }
 
@@ -392,6 +405,7 @@ class SamsungWebSocketTransportClient
             type: 'connection_closed',
           ),
         );
+        _emitConnectionState(deviceId, ConnectionState.disconnected);
       },
       onError: (Object error, StackTrace stackTrace) {
         if (handshakeCompleter != null && !handshakeCompleter.isCompleted) {
@@ -408,6 +422,7 @@ class SamsungWebSocketTransportClient
             message: error.toString(),
           ),
         );
+        _emitConnectionState(deviceId, ConnectionState.error);
       },
       cancelOnError: false,
     );
@@ -496,9 +511,13 @@ class SamsungWebSocketTransportClient
     final frameVersion = data['version']?.toString().trim();
     final id = data['id']?.toString().trim();
 
-    final hasInfo = <String?>[model, os, firmware, frameVersion, id].any(
-      (value) => value != null && value.isNotEmpty,
-    );
+    final hasInfo = <String?>[
+      model,
+      os,
+      firmware,
+      frameVersion,
+      id,
+    ].any((value) => value != null && value.isNotEmpty);
     if (!hasInfo) {
       return;
     }
@@ -554,6 +573,31 @@ class SamsungWebSocketTransportClient
       await socket.close();
     } catch (_) {
       // Ignore close failures for broken sockets.
+    }
+    _emitConnectionState(deviceId, ConnectionState.disconnected);
+  }
+
+  StreamController<ConnectionState> _connectionControllerFor(String deviceId) {
+    return _connectionControllers.putIfAbsent(
+      deviceId,
+      () => StreamController<ConnectionState>.broadcast(
+        onListen: () {
+          _connectionControllers[deviceId]?.add(
+            _lastConnectionStates[deviceId] ?? ConnectionState.disconnected,
+          );
+        },
+      ),
+    );
+  }
+
+  void _emitConnectionState(String deviceId, ConnectionState state) {
+    if (_lastConnectionStates[deviceId] == state) {
+      return;
+    }
+    _lastConnectionStates[deviceId] = state;
+    final ctrl = _connectionControllers[deviceId];
+    if (ctrl != null && !ctrl.isClosed) {
+      ctrl.add(state);
     }
   }
 }

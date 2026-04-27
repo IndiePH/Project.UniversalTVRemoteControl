@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/data/adapters/adapter_device_info_log_gate.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_exceptions.dart';
@@ -63,7 +64,11 @@ class LgWebSocketTransportClient
   // Resolved by message handler for specific SSAP request IDs (e.g. pointer socket URL).
   final Map<String, Completer<Map<String, dynamic>?>> _pendingRequests = {};
 
-  final Map<String, StreamController<LgRegistrationState>> _registrationControllers = {};
+  final Map<String, StreamController<LgRegistrationState>>
+  _registrationControllers = {};
+  final Map<String, StreamController<ConnectionState>> _connectionControllers =
+      {};
+  final Map<String, ConnectionState> _lastConnectionStates = {};
 
   // Tracks whether the current connect attempt included a stored key, so the
   // message handler can distinguish a stale-key rejection from a fresh rejection.
@@ -80,7 +85,8 @@ class LgWebSocketTransportClient
   final Map<String, StreamController<bool>> _imeReadyControllers = {};
   final Map<String, String> _imeSubIds = {};
   // Keyed by SSAP request ID; invoked on every matching response (unlike _pendingRequests).
-  final Map<String, void Function(Map<String, dynamic>)> _subscriptionHandlers = {};
+  final Map<String, void Function(Map<String, dynamic>)> _subscriptionHandlers =
+      {};
 
   late final _LgCommandFactory _commandFactory = _LgCommandFactory(this);
 
@@ -96,6 +102,7 @@ class LgWebSocketTransportClient
     if (host.isEmpty) throw StateError('LG host resolver returned empty host.');
 
     _emitRegistrationState(deviceId, LgRegistrationState.connecting);
+    _emitConnectionState(deviceId, ConnectionState.connecting);
 
     final storedKey = await _keyStore?.keyForHost(host);
     final hasStoredKey = storedKey != null && storedKey.isNotEmpty;
@@ -121,13 +128,19 @@ class LgWebSocketTransportClient
         final socket = await _openSocket(uri).timeout(connectTimeout);
         _bindSocket(deviceId: deviceId, socket: socket);
         socket.add(jsonEncode(buildLgRegisterPayload(clientKey: storedKey)));
-        log('LG socket open, register sent → $uri for $deviceId', name: 'lg_transport');
-        emitTransportEvent(TransportEvent(
-          transport: 'lg',
-          deviceId: deviceId,
-          type: 'connected',
-          message: '$host:${uri.port}',
-        ));
+        log(
+          'LG socket open, register sent → $uri for $deviceId',
+          name: 'lg_transport',
+        );
+        emitTransportEvent(
+          TransportEvent(
+            transport: 'lg',
+            deviceId: deviceId,
+            type: 'connected',
+            message: '$host:${uri.port}',
+          ),
+        );
+        _emitConnectionState(deviceId, ConnectionState.connected);
 
         if (registrationCompleter != null) {
           await registrationCompleter.future.timeout(
@@ -145,6 +158,7 @@ class LgWebSocketTransportClient
         lastError = e;
         _registrationCompleters.remove(deviceId);
         await _resetConnection(deviceId);
+        _emitConnectionState(deviceId, ConnectionState.error);
         // Propagate session-expired immediately — retrying with a stale key
         // on a different port would just fail again.
         if (e is LgPairingSessionExpiredException) rethrow;
@@ -152,8 +166,8 @@ class LgWebSocketTransportClient
     }
 
     _emitRegistrationState(deviceId, LgRegistrationState.failed);
-    throw lastError ??
-        StateError('Failed to connect to LG TV at $host.');
+    _emitConnectionState(deviceId, ConnectionState.error);
+    throw lastError ?? StateError('Failed to connect to LG TV at $host.');
   }
 
   @override
@@ -186,14 +200,18 @@ class LgWebSocketTransportClient
       _commandFactory.getCommand(deviceId, keyCode).execute();
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {
     final response = await _sendSsapWithResponse(
       deviceId: deviceId,
       uri: 'ssap://com.webos.service.ime/insertText',
       payload: {'text': text, 'replace': 0},
     );
     final returnValue =
-        (response?['payload'] as Map<String, dynamic>?)?['returnValue'] as bool?;
+        (response?['payload'] as Map<String, dynamic>?)?['returnValue']
+            as bool?;
     if (returnValue == false) {
       throw TextInputCompatibilityException(
         'LG IME text injection rejected — ensure a text field is focused on the TV.',
@@ -215,6 +233,10 @@ class LgWebSocketTransportClient
     return ctrl.stream;
   }
 
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      _connectionControllerFor(deviceId).stream;
+
   void _ensureImeSubscription(String deviceId) {
     if (_imeSubIds.containsKey(deviceId)) return;
     final socket = _sockets[deviceId];
@@ -227,18 +249,23 @@ class LgWebSocketTransportClient
       final focus = currentWidget?['focus'] as bool?;
       if (focus != null) _imeReadyControllers[deviceId]?.add(focus);
     };
-    socket.add(jsonEncode(buildLgSsapRequest(
-      requestId: id,
-      uri: 'ssap://com.webos.service.ime/registerRemoteKeyboard',
-      payload: const {},
-      type: 'subscribe',
-    )));
+    socket.add(
+      jsonEncode(
+        buildLgSsapRequest(
+          requestId: id,
+          uri: 'ssap://com.webos.service.ime/registerRemoteKeyboard',
+          payload: const {},
+          type: 'subscribe',
+        ),
+      ),
+    );
   }
 
   @override
   Future<void> disconnect({required String deviceId}) async {
     await _resetConnection(deviceId);
     _emitRegistrationState(deviceId, LgRegistrationState.failed);
+    _emitConnectionState(deviceId, ConnectionState.disconnected);
   }
 
   @override
@@ -246,6 +273,7 @@ class LgWebSocketTransportClient
     final host = _hostResolver(deviceId).trim();
     await _resetConnection(deviceId);
     _emitRegistrationState(deviceId, LgRegistrationState.failed);
+    _emitConnectionState(deviceId, ConnectionState.disconnected);
     if (host.isNotEmpty) {
       final clearFuture = _keyStore?.clearKeyForHost(host);
       if (clearFuture != null) await clearFuture;
@@ -270,13 +298,17 @@ class LgWebSocketTransportClient
       throw StateError('LG socket unavailable for $deviceId after connect.');
     }
     final id = 'req_${_reqCounter++}';
-    socket.add(jsonEncode(buildLgSsapRequest(requestId: id, uri: uri, payload: payload)));
-    emitTransportEvent(TransportEvent(
-      transport: 'lg',
-      deviceId: deviceId,
-      type: 'ssap_sent',
-      message: uri,
-    ));
+    socket.add(
+      jsonEncode(buildLgSsapRequest(requestId: id, uri: uri, payload: payload)),
+    );
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'lg',
+        deviceId: deviceId,
+        type: 'ssap_sent',
+        message: uri,
+      ),
+    );
   }
 
   Future<Map<String, dynamic>?> _sendSsapWithResponse({
@@ -294,13 +326,17 @@ class LgWebSocketTransportClient
     final id = 'req_${_reqCounter++}';
     final completer = Completer<Map<String, dynamic>?>();
     _pendingRequests[id] = completer;
-    socket.add(jsonEncode(buildLgSsapRequest(requestId: id, uri: uri, payload: payload)));
-    emitTransportEvent(TransportEvent(
-      transport: 'lg',
-      deviceId: deviceId,
-      type: 'ssap_sent',
-      message: uri,
-    ));
+    socket.add(
+      jsonEncode(buildLgSsapRequest(requestId: id, uri: uri, payload: payload)),
+    );
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'lg',
+        deviceId: deviceId,
+        type: 'ssap_sent',
+        message: uri,
+      ),
+    );
     return completer.future.timeout(connectTimeout);
   }
 
@@ -314,39 +350,50 @@ class LgWebSocketTransportClient
   }) async {
     final pointerSocket = await _ensurePointerSocket(deviceId);
     pointerSocket.add("type:button\nname:$button\n\n");
-    emitTransportEvent(TransportEvent(
-      transport: 'lg',
-      deviceId: deviceId,
-      type: 'pointer_sent',
-      message: button,
-    ));
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'lg',
+        deviceId: deviceId,
+        type: 'pointer_sent',
+        message: button,
+      ),
+    );
   }
 
   Future<WebSocket> _ensurePointerSocket(String deviceId) async {
     final existing = _pointerSockets[deviceId];
-    if (existing != null && existing.readyState == WebSocket.open) return existing;
+    if (existing != null && existing.readyState == WebSocket.open) {
+      return existing;
+    }
 
     if (_sockets[deviceId]?.readyState != WebSocket.open) {
       await connect(deviceId: deviceId);
     }
     final socket = _sockets[deviceId];
     if (socket == null || socket.readyState != WebSocket.open) {
-      throw StateError('LG main socket unavailable for $deviceId after connect.');
+      throw StateError(
+        'LG main socket unavailable for $deviceId after connect.',
+      );
     }
 
     final id = 'ptr_${_reqCounter++}';
     final completer = Completer<Map<String, dynamic>?>();
     _pendingRequests[id] = completer;
-    socket.add(jsonEncode(buildLgSsapRequest(
-      requestId: id,
-      uri: 'ssap://com.webos.service.networkinput/getPointerInputSocket',
-      payload: const {},
-      type: 'request',
-    )));
+    socket.add(
+      jsonEncode(
+        buildLgSsapRequest(
+          requestId: id,
+          uri: 'ssap://com.webos.service.networkinput/getPointerInputSocket',
+          payload: const {},
+          type: 'request',
+        ),
+      ),
+    );
 
     final response = await completer.future.timeout(connectTimeout);
     final socketPath =
-        (response?['payload'] as Map<String, dynamic>?)?['socketPath'] as String?;
+        (response?['payload'] as Map<String, dynamic>?)?['socketPath']
+            as String?;
     if (socketPath == null || socketPath.isEmpty) {
       throw StateError(
         'LG pointer socket unavailable for $deviceId. '
@@ -354,8 +401,9 @@ class LgWebSocketTransportClient
       );
     }
 
-    final pointerSocket =
-        await _openSocket(Uri.parse(socketPath)).timeout(connectTimeout);
+    final pointerSocket = await _openSocket(
+      Uri.parse(socketPath),
+    ).timeout(connectTimeout);
     _pointerSockets[deviceId] = pointerSocket;
     _pointerSubs[deviceId]?.cancel();
     _pointerSubs[deviceId] = pointerSocket.listen(
@@ -376,30 +424,40 @@ class LgWebSocketTransportClient
     _subs[deviceId]?.cancel();
     _subs[deviceId] = socket.listen(
       (message) {
-        if (message is! String) return;
+        if (message is! String) {
+          return;
+        }
         final decoded = _tryDecode(message);
-        if (decoded != null) _handleMessage(deviceId: deviceId, decoded: decoded);
+        if (decoded != null) {
+          _handleMessage(deviceId: deviceId, decoded: decoded);
+        }
       },
       onDone: () {
         _subs.remove(deviceId);
         _sockets.remove(deviceId);
         _emitRegistrationState(deviceId, LgRegistrationState.failed);
-        emitTransportEvent(TransportEvent(
-          transport: 'lg',
-          deviceId: deviceId,
-          type: 'connection_closed',
-        ));
+        emitTransportEvent(
+          TransportEvent(
+            transport: 'lg',
+            deviceId: deviceId,
+            type: 'connection_closed',
+          ),
+        );
+        _emitConnectionState(deviceId, ConnectionState.disconnected);
       },
       onError: (Object error) {
         _subs.remove(deviceId);
         _sockets.remove(deviceId);
         _emitRegistrationState(deviceId, LgRegistrationState.failed);
-        emitTransportEvent(TransportEvent(
-          transport: 'lg',
-          deviceId: deviceId,
-          type: 'connection_error',
-          message: error.toString(),
-        ));
+        emitTransportEvent(
+          TransportEvent(
+            transport: 'lg',
+            deviceId: deviceId,
+            type: 'connection_error',
+            message: error.toString(),
+          ),
+        );
+        _emitConnectionState(deviceId, ConnectionState.error);
       },
       cancelOnError: false,
     );
@@ -424,7 +482,8 @@ class LgWebSocketTransportClient
     // OR type:"response" with id:"register_0" on reconnect (some firmware skips "registered").
     // The type:"response" guard requires a stored key so intermediate ack messages sent
     // during first-time pairing (before user approves the prompt) are not misread as rejections.
-    final isRegistrationResponse = type == 'registered' ||
+    final isRegistrationResponse =
+        type == 'registered' ||
         (type == 'response' &&
             id == 'register_0' &&
             _hadStoredKey[deviceId] == true);
@@ -455,7 +514,9 @@ class LgWebSocketTransportClient
           _registrationCompleters.remove(deviceId)?.completeError(error);
           _pairingCompleters[deviceId]?.completeError(error);
         } else {
-          final error = LgPairingRejectedException('LG TV rejected the pairing request.');
+          final error = LgPairingRejectedException(
+            'LG TV rejected the pairing request.',
+          );
           _registrationCompleters.remove(deviceId)?.completeError(error);
           _pairingCompleters[deviceId]?.completeError(error);
         }
@@ -463,7 +524,8 @@ class LgWebSocketTransportClient
     } else if (type == 'error') {
       // webOS 3.x+ sends type:"error" when the user dismisses the pairing prompt.
       // Guard to avoid interfering with SSAP command error responses.
-      final hasPairingWaiter = _pairingCompleters.containsKey(deviceId) ||
+      final hasPairingWaiter =
+          _pairingCompleters.containsKey(deviceId) ||
           _registrationCompleters.containsKey(deviceId);
       if (hasPairingWaiter) {
         _emitRegistrationState(deviceId, LgRegistrationState.failed);
@@ -477,7 +539,9 @@ class LgWebSocketTransportClient
           _registrationCompleters.remove(deviceId)?.completeError(error);
           _pairingCompleters[deviceId]?.completeError(error);
         } else {
-          final error = LgPairingRejectedException('LG TV rejected the pairing request.');
+          final error = LgPairingRejectedException(
+            'LG TV rejected the pairing request.',
+          );
           _registrationCompleters.remove(deviceId)?.completeError(error);
           _pairingCompleters[deviceId]?.completeError(error);
         }
@@ -486,7 +550,9 @@ class LgWebSocketTransportClient
   }
 
   @override
-  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async {
+  Future<Map<String, dynamic>?> querySystemInfo({
+    required String deviceId,
+  }) async {
     try {
       final response = await _sendSsapWithResponse(
         deviceId: deviceId,
@@ -537,10 +603,25 @@ class LgWebSocketTransportClient
     } catch (_) {}
   }
 
-  StreamController<LgRegistrationState> _registrationControllerFor(String deviceId) {
+  StreamController<LgRegistrationState> _registrationControllerFor(
+    String deviceId,
+  ) {
     return _registrationControllers.putIfAbsent(
       deviceId,
       () => StreamController<LgRegistrationState>.broadcast(),
+    );
+  }
+
+  StreamController<ConnectionState> _connectionControllerFor(String deviceId) {
+    return _connectionControllers.putIfAbsent(
+      deviceId,
+      () => StreamController<ConnectionState>.broadcast(
+        onListen: () {
+          _connectionControllers[deviceId]?.add(
+            _lastConnectionStates[deviceId] ?? ConnectionState.disconnected,
+          );
+        },
+      ),
     );
   }
 
@@ -552,6 +633,17 @@ class LgWebSocketTransportClient
     }
     final ctrl = _registrationControllers[deviceId];
     if (ctrl != null && !ctrl.isClosed) ctrl.add(state);
+  }
+
+  void _emitConnectionState(String deviceId, ConnectionState state) {
+    if (_lastConnectionStates[deviceId] == state) {
+      return;
+    }
+    _lastConnectionStates[deviceId] = state;
+    final ctrl = _connectionControllers[deviceId];
+    if (ctrl != null && !ctrl.isClosed) {
+      ctrl.add(state);
+    }
   }
 
   Map<String, dynamic>? _tryDecode(String message) {
@@ -618,8 +710,11 @@ class _LgCommandFactory implements TransportCommandFactory {
     }
     if (keyCode == 'ssap://audio/setMute') {
       return _LgTransportCommand(() async {
-        final newMute = !(_client._remoteStates[deviceId]?[_RemoteStateKey.mute] as bool? ?? false);
-        (_client._remoteStates[deviceId] ??= {})[_RemoteStateKey.mute] = newMute;
+        final newMute =
+            !(_client._remoteStates[deviceId]?[_RemoteStateKey.mute] as bool? ??
+                false);
+        (_client._remoteStates[deviceId] ??= {})[_RemoteStateKey.mute] =
+            newMute;
         await _client._sendSsap(
           deviceId: deviceId,
           uri: keyCode,
@@ -629,8 +724,12 @@ class _LgCommandFactory implements TransportCommandFactory {
     }
     if (keyCode == lgPowerToggleKey) {
       return _LgTransportCommand(() async {
-        final newPower = !(_client._remoteStates[deviceId]?[_RemoteStateKey.power] as bool? ?? true);
-        (_client._remoteStates[deviceId] ??= {})[_RemoteStateKey.power] = newPower;
+        final newPower =
+            !(_client._remoteStates[deviceId]?[_RemoteStateKey.power]
+                    as bool? ??
+                true);
+        (_client._remoteStates[deviceId] ??= {})[_RemoteStateKey.power] =
+            newPower;
         await _client._sendSsap(
           deviceId: deviceId,
           uri: newPower ? 'ssap://system/turnOn' : 'ssap://system/turnOff',
@@ -640,17 +739,27 @@ class _LgCommandFactory implements TransportCommandFactory {
     }
     if (keyCode == lgPlayPauseToggleKey) {
       return _LgTransportCommand(() async {
-        final nowPlaying = !(_client._remoteStates[deviceId]?[_RemoteStateKey.playing] as bool? ?? true);
-        (_client._remoteStates[deviceId] ??= {})[_RemoteStateKey.playing] = nowPlaying;
+        final nowPlaying =
+            !(_client._remoteStates[deviceId]?[_RemoteStateKey.playing]
+                    as bool? ??
+                true);
+        (_client._remoteStates[deviceId] ??= {})[_RemoteStateKey.playing] =
+            nowPlaying;
         await _client._sendSsap(
           deviceId: deviceId,
-          uri: nowPlaying ? 'ssap://media.controls/play' : 'ssap://media.controls/pause',
+          uri: nowPlaying
+              ? 'ssap://media.controls/play'
+              : 'ssap://media.controls/pause',
           payload: const {},
         );
       });
     }
     return _LgTransportCommand(
-      () => _client._sendSsap(deviceId: deviceId, uri: keyCode, payload: const {}),
+      () => _client._sendSsap(
+        deviceId: deviceId,
+        uri: keyCode,
+        payload: const {},
+      ),
     );
   }
 }

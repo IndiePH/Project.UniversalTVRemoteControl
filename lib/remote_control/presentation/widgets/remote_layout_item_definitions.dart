@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 
 /// Default metadata for each control id (ids, labels, icons, default grid footprint).
@@ -63,8 +64,7 @@ const List<RemoteLayoutItemDefinition> kRemoteLayoutItemDefinitions = [
     row: 0,
     isPower: true,
   ),
-  RemoteLayoutItemDefinition(id: 'pair', icon: Icons.wifi, col: 4, row: 0),
-  RemoteLayoutItemDefinition(id: 'menu', label: 'MENU', col: 2, row: 0),
+  RemoteLayoutItemDefinition(id: 'menu', label: 'MENU', col: 4, row: 0),
   RemoteLayoutItemDefinition(
     id: 'volume',
     label: 'VOL',
@@ -98,10 +98,30 @@ const List<RemoteLayoutItemDefinition> kRemoteLayoutItemDefinitions = [
     height: 3,
     previewStyle: RemoteLayoutPreviewStyle.verticalRocker,
   ),
-  RemoteLayoutItemDefinition(id: 'home', icon: Icons.home_outlined, col: 2, row: 1),
-  RemoteLayoutItemDefinition(id: 'back', icon: Icons.arrow_back, col: 0, row: 6),
-  RemoteLayoutItemDefinition(id: 'mute', icon: Icons.volume_off, col: 4, row: 6),
-  RemoteLayoutItemDefinition(id: 'netflix', icon: Icons.movie_filter, col: 1, row: 7),
+  RemoteLayoutItemDefinition(
+    id: 'home',
+    icon: Icons.home_outlined,
+    col: 2,
+    row: 1,
+  ),
+  RemoteLayoutItemDefinition(
+    id: 'back',
+    icon: Icons.arrow_back,
+    col: 0,
+    row: 6,
+  ),
+  RemoteLayoutItemDefinition(
+    id: 'mute',
+    icon: Icons.volume_off,
+    col: 4,
+    row: 6,
+  ),
+  RemoteLayoutItemDefinition(
+    id: 'netflix',
+    icon: Icons.movie_filter,
+    col: 1,
+    row: 7,
+  ),
   RemoteLayoutItemDefinition(id: 'disney', icon: Icons.live_tv, col: 2, row: 7),
   RemoteLayoutItemDefinition(
     id: 'prime',
@@ -109,6 +129,7 @@ const List<RemoteLayoutItemDefinition> kRemoteLayoutItemDefinitions = [
     col: 3,
     row: 7,
   ),
+
   /// Single cell; same footprint on main remote and layout editor.
   RemoteLayoutItemDefinition(
     id: 'searchInput',
@@ -119,12 +140,82 @@ const List<RemoteLayoutItemDefinition> kRemoteLayoutItemDefinitions = [
   ),
 ];
 
-final Map<String, RemoteLayoutItemDefinition> kRemoteLayoutItemDefinitionById = {
-  for (final definition in kRemoteLayoutItemDefinitions) definition.id: definition,
-};
+final Map<String, RemoteLayoutItemDefinition> kRemoteLayoutItemDefinitionById =
+    {
+      for (final definition in kRemoteLayoutItemDefinitions)
+        definition.id: definition,
+    };
 
 List<LayoutEditItem> buildInitialRemoteLayoutItems() {
   return kRemoteLayoutItemDefinitions
       .map((definition) => definition.toLayoutEditItem())
       .toList(growable: true);
+}
+
+Set<RemoteCommand> requiredCommandsForLayoutItemId(String itemId) {
+  return switch (itemId) {
+    'home' => {RemoteCommand.home},
+    'power' => {RemoteCommand.power},
+    'back' => {RemoteCommand.back},
+    'menu' => {RemoteCommand.menu},
+    'www' => {RemoteCommand.web},
+    'netflix' => {RemoteCommand.netflix},
+    'prime' => {RemoteCommand.primeVideo},
+    'disney' => {RemoteCommand.disneyPlus},
+    'mute' => {RemoteCommand.mute},
+    'playPause' => {RemoteCommand.playPause},
+    'channel' => {RemoteCommand.channelUp, RemoteCommand.channelDown},
+    'volume' => {RemoteCommand.volumeUp, RemoteCommand.volumeDown},
+    'dpad' => {
+      RemoteCommand.dpadUp,
+      RemoteCommand.dpadDown,
+      RemoteCommand.dpadLeft,
+      RemoteCommand.dpadRight,
+      RemoteCommand.dpadOk,
+    },
+    _ => const <RemoteCommand>{},
+  };
+}
+
+RemoteCommand? commandForLayoutItemId(String itemId) {
+  return switch (itemId) {
+    'home' => RemoteCommand.home,
+    'power' => RemoteCommand.power,
+    'back' => RemoteCommand.back,
+    'menu' => RemoteCommand.menu,
+    'www' => RemoteCommand.web,
+    'netflix' => RemoteCommand.netflix,
+    'prime' => RemoteCommand.primeVideo,
+    'disney' => RemoteCommand.disneyPlus,
+    'mute' => RemoteCommand.mute,
+    'playPause' => RemoteCommand.playPause,
+    _ => null,
+  };
+}
+
+List<LayoutEditItem> buildFilteredRemoteLayoutItems({
+  required Set<RemoteCommand> supportedCommands,
+  required bool supportsTextInput,
+  Set<String> forceIncludeIds = const <String>{},
+}) {
+  final items = <LayoutEditItem>[];
+  for (final definition in kRemoteLayoutItemDefinitions) {
+    final id = definition.id;
+    if (id == 'searchInput') {
+      if (!supportsTextInput && !forceIncludeIds.contains(id)) {
+        continue;
+      }
+      items.add(definition.toLayoutEditItem());
+      continue;
+    }
+    final requiredCommands = requiredCommandsForLayoutItemId(id);
+    if (requiredCommands.isEmpty || forceIncludeIds.contains(id)) {
+      items.add(definition.toLayoutEditItem());
+      continue;
+    }
+    if (supportedCommands.containsAll(requiredCommands)) {
+      items.add(definition.toLayoutEditItem());
+    }
+  }
+  return items;
 }

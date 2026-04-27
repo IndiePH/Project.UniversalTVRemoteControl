@@ -9,6 +9,8 @@ import 'package:one_remote/remote_control/application/remote_command_service.dar
 import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart'
+    as remote_connection;
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -31,7 +33,8 @@ void main() {
         deviceRepository: deviceRepository ?? _StubDeviceRepository(),
         stepsRegistry: stepsRegistry ?? _StubPrePairingStepsRegistry(),
         hintRegistry: hintRegistry ?? _StubPairingProgressHintRegistry(),
-        reachabilityService: reachabilityService ?? _StubTvReachabilityService(),
+        reachabilityService:
+            reachabilityService ?? _StubTvReachabilityService(),
       ),
     );
   }
@@ -41,13 +44,17 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('outcome dialog on success', () {
-    testWidgets('shows success dialog after successful pairing', (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+    testWidgets('shows success dialog after successful pairing', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
         ),
-        stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.text('LG TV'));
@@ -70,7 +77,9 @@ void main() {
                   MaterialPageRoute(
                     builder: (_) => PairingPage(
                       commandService: _StubCommandService(
-                        preparePairingResult: CommandDispatchResult.success('OK'),
+                        preparePairingResult: CommandDispatchResult.success(
+                          'OK',
+                        ),
                       ),
                       discoveryService: _StubDiscoveryService(),
                       deviceRepository: _StubDeviceRepository(),
@@ -107,12 +116,16 @@ void main() {
 
   group('outcome dialog on failure', () {
     testWidgets('shows failure dialog after failed pairing', (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.failure('Connection refused'),
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.failure(
+              'Connection refused',
+            ),
+          ),
+          stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
         ),
-        stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.text('LG TV'));
@@ -123,14 +136,19 @@ void main() {
       expect(find.text('Done'), findsNothing);
     });
 
-    testWidgets('stays on pairing page after tapping Dismiss on failure',
-        (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.failure('Connection refused'),
+    testWidgets('stays on pairing page after tapping Dismiss on failure', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.failure(
+              'Connection refused',
+            ),
+          ),
+          stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
         ),
-        stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.text('LG TV'));
@@ -148,14 +166,17 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('progress hint', () {
-    testWidgets('shows hint from registry while pairing is in progress',
-        (tester) async {
+    testWidgets('shows hint from registry while pairing is in progress', (
+      tester,
+    ) async {
       const hint = 'Look at your TV screen.';
-      await tester.pumpWidget(buildPage(
-        commandService: _SlowCommandService(),
-        stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
-        hintRegistry: _StubPairingProgressHintRegistry(hint: hint),
-      ));
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _SlowCommandService(),
+          stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
+          hintRegistry: _StubPairingProgressHintRegistry(hint: hint),
+        ),
+      );
       await tester.pump();
 
       await tester.tap(find.text('LG TV'));
@@ -164,20 +185,25 @@ void main() {
       expect(find.text(hint), findsOneWidget);
     });
 
-    testWidgets('shows no hint when registry returns null for brand',
-        (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _SlowCommandService(),
-        stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
-        hintRegistry: _StubPairingProgressHintRegistry(hint: null),
-      ));
+    testWidgets('shows no hint when registry returns null for brand', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _SlowCommandService(),
+          stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
+          hintRegistry: _StubPairingProgressHintRegistry(hint: null),
+        ),
+      );
       await tester.pump();
 
       await tester.tap(find.text('LG TV'));
       await tester.pump();
 
-      expect(find.text('Look at your TV screen and accept the pairing prompt.'),
-          findsNothing);
+      expect(
+        find.text('Look at your TV screen and accept the pairing prompt.'),
+        findsNothing,
+      );
     });
   });
 
@@ -193,26 +219,33 @@ void main() {
       capabilities: {DeviceCapability.keyCommands},
     );
 
-    testWidgets('saved device appears under Paired section header', (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+    testWidgets('saved device appears under Paired section header', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
         ),
-        deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
-      ));
+      );
       await tester.pump();
 
       expect(find.text('Paired'), findsOneWidget);
       expect(find.text('Saved TV'), findsOneWidget);
     });
 
-    testWidgets('discovery results appear under Available section header',
-        (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+    testWidgets('discovery results appear under Available section header', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
         ),
-      ));
+      );
       await tester.pump();
 
       expect(find.text('Available'), findsOneWidget);
@@ -220,14 +253,17 @@ void main() {
       expect(find.text('Hisense TV'), findsOneWidget);
     });
 
-    testWidgets('swipe left on paired TV shows remove confirmation dialog',
-        (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+    testWidgets('swipe left on paired TV shows remove confirmation dialog', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
         ),
-        deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
-      ));
+      );
       await tester.pump();
 
       await tester.drag(find.text('Saved TV'), const Offset(-500, 0));
@@ -237,12 +273,14 @@ void main() {
     });
 
     testWidgets('cancelling swipe keeps item in paired list', (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
         ),
-        deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
-      ));
+      );
       await tester.pump();
 
       await tester.drag(find.text('Saved TV'), const Offset(-500, 0));
@@ -267,32 +305,41 @@ void main() {
       capabilities: {DeviceCapability.keyCommands},
     );
 
-    testWidgets('tapping rename button opens rename dialog pre-filled with current name',
-        (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
-        ),
-        deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
-      ));
-      await tester.pump();
+    testWidgets(
+      'tapping rename button opens rename dialog pre-filled with current name',
+      (tester) async {
+        await tester.pumpWidget(
+          buildPage(
+            commandService: _StubCommandService(
+              preparePairingResult: CommandDispatchResult.success('OK'),
+            ),
+            deviceRepository: _StubDeviceRepository(
+              savedDevices: [savedDevice],
+            ),
+          ),
+        );
+        await tester.pump();
 
-      await tester.tap(find.byTooltip('Rename'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('Rename'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Rename TV'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Saved TV'), findsOneWidget);
-    });
+        expect(find.text('Rename TV'), findsOneWidget);
+        expect(find.widgetWithText(TextField, 'Saved TV'), findsOneWidget);
+      },
+    );
 
-    testWidgets('submitting new name saves device with updated displayName',
-        (tester) async {
+    testWidgets('submitting new name saves device with updated displayName', (
+      tester,
+    ) async {
       final repo = _SpyDeviceRepository(savedDevices: [savedDevice]);
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: repo,
         ),
-        deviceRepository: repo,
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.byTooltip('Rename'));
@@ -307,12 +354,14 @@ void main() {
 
     testWidgets('cancelling rename does not call saveDevice', (tester) async {
       final repo = _SpyDeviceRepository(savedDevices: [savedDevice]);
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: repo,
         ),
-        deviceRepository: repo,
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.byTooltip('Rename'));
@@ -325,12 +374,14 @@ void main() {
     });
 
     testWidgets('submitting empty name shows validation error', (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
         ),
-        deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.byTooltip('Rename'));
@@ -350,37 +401,50 @@ void main() {
 
   group('FAB layout', () {
     testWidgets('search FAB is present', (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
         ),
-      ));
+      );
       await tester.pump();
 
       expect(find.byTooltip('Scan for TVs'), findsOneWidget);
-      expect(find.widgetWithIcon(FloatingActionButton, Icons.search), findsOneWidget);
+      expect(
+        find.widgetWithIcon(FloatingActionButton, Icons.search),
+        findsOneWidget,
+      );
     });
 
     testWidgets('keyboard FAB is present', (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
         ),
-      ));
+      );
       await tester.pump();
 
       expect(find.byTooltip('Add manually'), findsOneWidget);
-      expect(find.widgetWithIcon(FloatingActionButton, Icons.keyboard), findsOneWidget);
+      expect(
+        find.widgetWithIcon(FloatingActionButton, Icons.keyboard),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('tapping search FAB re-triggers scan loading indicator',
-        (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+    testWidgets('tapping search FAB re-triggers scan loading indicator', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          discoveryService: _SlowDiscoveryService(),
         ),
-        discoveryService: _SlowDiscoveryService(),
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.byTooltip('Scan for TVs'));
@@ -390,11 +454,13 @@ void main() {
     });
 
     testWidgets('tapping keyboard FAB opens manual add sheet', (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
         ),
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.byTooltip('Add manually'));
@@ -404,13 +470,17 @@ void main() {
       expect(find.text('Add Manually'), findsOneWidget);
     });
 
-    testWidgets('manual add sheet initiates pairing on valid IP', (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.success('OK'),
+    testWidgets('manual add sheet initiates pairing on valid IP', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
         ),
-        stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.byTooltip('Add manually'));
@@ -429,15 +499,18 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('pin flow regression', () {
-    testWidgets('prompts for PIN and shows success dialog after correct PIN',
-        (tester) async {
-      await tester.pumpWidget(buildPage(
-        commandService: _StubCommandService(
-          preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
-          submitPairingResults: [CommandDispatchResult.success('OK')],
+    testWidgets('prompts for PIN and shows success dialog after correct PIN', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+            submitPairingResults: [CommandDispatchResult.success('OK')],
+          ),
+          stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
         ),
-        stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
-      ));
+      );
       await tester.pump();
 
       await tester.tap(find.text('Hisense TV'));
@@ -475,15 +548,18 @@ class _StubCommandService implements RemoteCommandService {
   int _submitIndex = 0;
 
   @override
-  Future<CommandDispatchResult> preparePairing({required TvDevice device}) async =>
-      preparePairingResult;
+  Future<CommandDispatchResult> preparePairing({
+    required TvDevice device,
+  }) async => preparePairingResult;
 
   @override
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
     required String fourDigitPin,
   }) async {
-    if (submitPairingResults.isEmpty) return CommandDispatchResult.success('OK');
+    if (submitPairingResults.isEmpty) {
+      return CommandDispatchResult.success('OK');
+    }
     final i = _submitIndex.clamp(0, submitPairingResults.length - 1);
     _submitIndex++;
     return submitPairingResults[i];
@@ -496,19 +572,26 @@ class _StubCommandService implements RemoteCommandService {
   Future<CommandDispatchResult> sendCommand({
     required TvDevice device,
     required RemoteCommand command,
-  }) async =>
-      CommandDispatchResult.unsupported('unused');
+  }) async => CommandDispatchResult.unsupported('unused');
 
   @override
   Future<CommandDispatchResult> sendText({
     required TvDevice device,
     required String text,
-  }) async =>
-      CommandDispatchResult.unsupported('unused');
+  }) async => CommandDispatchResult.unsupported('unused');
 
   @override
   Stream<bool> watchRemoteTextInputReady({required TvDevice device}) =>
       const Stream.empty();
+
+  @override
+  Set<RemoteCommand> supportedCommandsFor({required TvDevice device}) =>
+      RemoteCommand.values.toSet();
+
+  @override
+  Stream<remote_connection.ConnectionState> watchConnectionState({
+    required TvDevice device,
+  }) => const Stream.empty();
 }
 
 class _SlowCommandService implements RemoteCommandService {
@@ -520,8 +603,7 @@ class _SlowCommandService implements RemoteCommandService {
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
     required String fourDigitPin,
-  }) async =>
-      CommandDispatchResult.unsupported('unused');
+  }) async => CommandDispatchResult.unsupported('unused');
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {}
@@ -530,19 +612,26 @@ class _SlowCommandService implements RemoteCommandService {
   Future<CommandDispatchResult> sendCommand({
     required TvDevice device,
     required RemoteCommand command,
-  }) async =>
-      CommandDispatchResult.unsupported('unused');
+  }) async => CommandDispatchResult.unsupported('unused');
 
   @override
   Future<CommandDispatchResult> sendText({
     required TvDevice device,
     required String text,
-  }) async =>
-      CommandDispatchResult.unsupported('unused');
+  }) async => CommandDispatchResult.unsupported('unused');
 
   @override
   Stream<bool> watchRemoteTextInputReady({required TvDevice device}) =>
       const Stream.empty();
+
+  @override
+  Set<RemoteCommand> supportedCommandsFor({required TvDevice device}) =>
+      RemoteCommand.values.toSet();
+
+  @override
+  Stream<remote_connection.ConnectionState> watchConnectionState({
+    required TvDevice device,
+  }) => const Stream.empty();
 }
 
 class _StubDiscoveryService implements DeviceDiscoveryService {
@@ -552,7 +641,8 @@ class _StubDiscoveryService implements DeviceDiscoveryService {
 
 class _SlowDiscoveryService implements DeviceDiscoveryService {
   @override
-  Future<List<TvDevice>> discoverDevices() => Completer<List<TvDevice>>().future;
+  Future<List<TvDevice>> discoverDevices() =>
+      Completer<List<TvDevice>>().future;
 }
 
 const lgDevice = TvDevice(
@@ -595,9 +685,13 @@ class _StubDeviceRepository implements DeviceRepository {
   @override
   Future<void> setLastUsedDevice(String deviceId) async {}
   @override
-  Future<void> saveDeviceSystemInfo(String deviceId, Map<String, dynamic> info) async {}
+  Future<void> saveDeviceSystemInfo(
+    String deviceId,
+    Map<String, dynamic> info,
+  ) async {}
   @override
-  Future<Map<String, dynamic>?> getDeviceSystemInfo(String deviceId) async => null;
+  Future<Map<String, dynamic>?> getDeviceSystemInfo(String deviceId) async =>
+      null;
 }
 
 class _SpyDeviceRepository extends _StubDeviceRepository {

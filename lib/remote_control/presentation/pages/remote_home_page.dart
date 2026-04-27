@@ -12,9 +12,10 @@ import 'package:one_remote/remote_control/application/transport_log_reader_provi
 import 'package:one_remote/remote_control/debug/runtime_flags_template_debug.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart'
+    as remote_connection;
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/utils/two_digit_format.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_actions.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_keyboard_availability.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
@@ -61,10 +62,14 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   final TextEditingController _textController = TextEditingController();
   final List<LayoutEditItem> _layoutItems = buildInitialRemoteLayoutItems();
   TvDevice? _activeDevice;
-  String _status = 'Ready';
+  String _status = 'Connect a TV to begin';
   bool _isLayoutEditMode = false;
   StreamSubscription<bool>? _remoteTextReadySub;
+  StreamSubscription<remote_connection.ConnectionState>? _connectionStateSub;
   bool _remoteTextInputReady = false;
+  remote_connection.ConnectionState _connectionState =
+      remote_connection.ConnectionState.disconnected;
+  bool _hasAnyPairedDevice = false;
 
   @override
   void initState() {
@@ -77,12 +82,14 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.commandService != widget.commandService) {
       _subscribeRemoteTextReady(_activeDevice);
+      _subscribeConnectionState(_activeDevice);
     }
   }
 
   @override
   void dispose() {
     _remoteTextReadySub?.cancel();
+    _connectionStateSub?.cancel();
     _textController.dispose();
     super.dispose();
   }
@@ -109,23 +116,51 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         });
   }
 
+  void _subscribeConnectionState(TvDevice? device) {
+    _connectionStateSub?.cancel();
+    _connectionStateSub = null;
+    if (device == null) {
+      if (mounted) {
+        setState(
+          () =>
+              _connectionState = remote_connection.ConnectionState.disconnected,
+        );
+      } else {
+        _connectionState = remote_connection.ConnectionState.disconnected;
+      }
+      return;
+    }
+    _connectionStateSub = widget.commandService
+        .watchConnectionState(device: device)
+        .listen((state) {
+          if (!mounted) {
+            return;
+          }
+          setState(() => _connectionState = state);
+        });
+  }
+
   Future<void> _loadInitialDevice() async {
+    final savedDevices = await widget.deviceRepository.getSavedDevices();
     final lastUsed = await widget.deviceRepository.getLastUsedDevice();
     if (!mounted) {
       return;
     }
+    _hasAnyPairedDevice = savedDevices.isNotEmpty;
     if (lastUsed == null) {
       _subscribeRemoteTextReady(null);
+      _subscribeConnectionState(null);
+      _resetLayoutToDefaults();
+      setState(() {});
       return;
     }
-    final lastPairedAt = await widget.deviceRepository
-        .getLastSuccessfulPairingAt(lastUsed.id);
     setState(() {
       _activeDevice = lastUsed;
-      _status = _statusForConnectedDevice(lastUsed.displayName, lastPairedAt);
+      _status = 'Ready';
     });
     _subscribeRemoteTextReady(lastUsed);
-    await _loadLayoutForDevice(lastUsed.id);
+    _subscribeConnectionState(lastUsed);
+    await _loadLayoutForDevice(lastUsed);
   }
 
   Future<bool> _send(RemoteCommand command) async {
@@ -256,44 +291,38 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     // used device so any rename made in the pairing screen is reflected here.
     final device =
         selectedDevice ?? await widget.deviceRepository.getLastUsedDevice();
-    if (!mounted || device == null) return;
-
-    final lastPairedAt =
-        await widget.deviceRepository.getLastSuccessfulPairingAt(device.id);
     if (!mounted) return;
+    final savedDevices = await widget.deviceRepository.getSavedDevices();
+    if (!mounted) return;
+    _hasAnyPairedDevice = savedDevices.isNotEmpty;
+    if (device == null) {
+      setState(() {
+        _activeDevice = null;
+        _status = 'Connect a TV to begin';
+        _isLayoutEditMode = false;
+      });
+      _subscribeRemoteTextReady(null);
+      _subscribeConnectionState(null);
+      _resetLayoutToDefaults();
+      if (!mounted) return;
+      setState(() {});
+      return;
+    }
 
     setState(() {
       _activeDevice = device;
-      _status = _statusForConnectedDevice(device.displayName, lastPairedAt);
+      _status = 'Ready';
     });
 
-    if (selectedDevice != null) {
-      _subscribeRemoteTextReady(device);
-      await _loadLayoutForDevice(device.id);
-    }
-  }
-
-  String _statusForConnectedDevice(String deviceName, DateTime? lastPairedAt) {
-    final formatted = _formatTimestamp(lastPairedAt);
-    if (formatted == null) {
-      return 'Connected: $deviceName';
-    }
-    return 'Connected: $deviceName (last paired $formatted)';
-  }
-
-  String? _formatTimestamp(DateTime? timestamp) {
-    if (timestamp == null) {
-      return null;
-    }
-    final local = timestamp.toLocal();
-    final date =
-        '${local.year}-${formatTwoDigits(local.month)}-${formatTwoDigits(local.day)}';
-    final time =
-        '${formatTwoDigits(local.hour)}:${formatTwoDigits(local.minute)}';
-    return '$date $time';
+    _subscribeRemoteTextReady(device);
+    _subscribeConnectionState(device);
+    await _loadLayoutForDevice(device);
   }
 
   void _toggleLayoutEditMode() {
+    if (_activeDevice == null && !_isLayoutEditMode) {
+      return;
+    }
     setState(() {
       _isLayoutEditMode = !_isLayoutEditMode;
     });
@@ -331,23 +360,39 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   }
 
   void _showTransportDebugSheet() {
-    unawaited(RemoteHomeActions.showTransportDebugSheet(
-      context: context,
-      onCopyTransportLogs: _copyLatestTransportLog,
-      onCopyRuntimeFlagsTemplate: _copyRuntimeFlagsTemplate,
-      onRestartApp: widget.onRestartApp,
-    ));
+    unawaited(
+      RemoteHomeActions.showTransportDebugSheet(
+        context: context,
+        onCopyTransportLogs: _copyLatestTransportLog,
+        onCopyRuntimeFlagsTemplate: _copyRuntimeFlagsTemplate,
+        onRestartApp: widget.onRestartApp,
+      ),
+    );
   }
 
   void _resetLayoutToDefaults() {
     _layoutItems
       ..clear()
-      ..addAll(buildInitialRemoteLayoutItems());
+      ..addAll(
+        _buildLayoutDefaultsForDevice(
+          _activeDevice,
+          forceIncludeIds: const <String>{},
+        ),
+      );
   }
 
-  Future<void> _loadLayoutForDevice(String deviceId) async {
-    _resetLayoutToDefaults();
-    final saved = await widget.layoutRepository.loadLayout(deviceId: deviceId);
+  Future<void> _loadLayoutForDevice(TvDevice device) async {
+    final saved = await widget.layoutRepository.loadLayout(deviceId: device.id);
+    _layoutItems
+      ..clear()
+      ..addAll(
+        _buildLayoutDefaultsForDevice(
+          device,
+          forceIncludeIds: saved.isEmpty
+              ? const <String>{}
+              : saved.keys.toSet(),
+        ),
+      );
 
     for (final item in _layoutItems) {
       final position = saved[item.id];
@@ -370,6 +415,26 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       return;
     }
     setState(() {});
+  }
+
+  List<LayoutEditItem> _buildLayoutDefaultsForDevice(
+    TvDevice? device, {
+    required Set<String> forceIncludeIds,
+  }) {
+    if (device == null) {
+      return buildInitialRemoteLayoutItems();
+    }
+    final supportsTextInput = device.capabilities.contains(
+      DeviceCapability.textInput,
+    );
+    final supportedCommands = widget.commandService.supportedCommandsFor(
+      device: device,
+    );
+    return buildFilteredRemoteLayoutItems(
+      supportedCommands: supportedCommands,
+      supportsTextInput: supportsTextInput,
+      forceIncludeIds: forceIncludeIds,
+    );
   }
 
   Future<void> _persistLayoutForActiveDevice() async {
@@ -498,7 +563,9 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         actions: [
           RemoteHomeAppBarActions(
             isLayoutEditMode: _isLayoutEditMode,
-            onToggleLayoutEditMode: _toggleLayoutEditMode,
+            onToggleLayoutEditMode: _activeDevice == null && !_isLayoutEditMode
+                ? null
+                : _toggleLayoutEditMode,
             onShowDebugSettings: _showTransportDebugSheet,
           ),
         ],
@@ -519,14 +586,17 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
               : RemoteHomeStatusPanel(
                   deviceName: deviceName,
                   status: _status,
+                  connectionState: _connectionState,
+                  onOpenPairing: _openPairing,
+                  hasActiveDevice: _activeDevice != null,
+                  hasAnyPairedDevice: _hasAnyPairedDevice,
                   child: RemoteHomeRemoteGrid(
                     layoutItems: _layoutItems,
                     gridColumns: _gridColumns,
                     gridRows: _gridRows,
                     gridGap: _gridGap,
-                    hasActiveDevice: _activeDevice != null,
+                    controlsEnabled: _activeDevice != null,
                     onSendCommand: _sendCommandFromGrid,
-                    onOpenPairing: _openPairing,
                     onSearchInputPressed: _onSearchInputKeyboardPressed,
                   ),
                 ),

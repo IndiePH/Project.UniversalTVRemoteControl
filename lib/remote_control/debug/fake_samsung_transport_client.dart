@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
@@ -12,6 +13,10 @@ class FakeSamsungTransportClient
   final Set<String> _connectedDeviceIds = <String>{};
   final Map<String, StreamController<bool>> _imeReadyBroadcasters =
       <String, StreamController<bool>>{};
+  final Map<String, StreamController<ConnectionState>> _connectionControllers =
+      <String, StreamController<ConnectionState>>{};
+  final Map<String, ConnectionState> _lastConnectionStates =
+      <String, ConnectionState>{};
 
   void _notifyImeReady(String deviceId, bool value) {
     final c = _imeReadyBroadcasters[deviceId];
@@ -22,8 +27,10 @@ class FakeSamsungTransportClient
 
   @override
   Future<void> connect({required String deviceId}) async {
+    _emitConnectionState(deviceId, ConnectionState.connecting);
     _connectedDeviceIds.add(deviceId);
     _notifyImeReady(deviceId, true);
+    _emitConnectionState(deviceId, ConnectionState.connected);
     emitTransportEvent(
       TransportEvent(
         transport: 'samsung',
@@ -113,6 +120,11 @@ class FakeSamsungTransportClient
   }
 
   @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) {
+    return _connectionControllerFor(deviceId).stream;
+  }
+
+  @override
   Future<void> probe(String host) async {}
 
   Future<void> _ensureConnected(String deviceId) async {
@@ -120,5 +132,29 @@ class FakeSamsungTransportClient
       return;
     }
     await connect(deviceId: deviceId);
+  }
+
+  StreamController<ConnectionState> _connectionControllerFor(String deviceId) {
+    return _connectionControllers.putIfAbsent(
+      deviceId,
+      () => StreamController<ConnectionState>.broadcast(
+        onListen: () {
+          _connectionControllers[deviceId]?.add(
+            _lastConnectionStates[deviceId] ?? ConnectionState.disconnected,
+          );
+        },
+      ),
+    );
+  }
+
+  void _emitConnectionState(String deviceId, ConnectionState state) {
+    if (_lastConnectionStates[deviceId] == state) {
+      return;
+    }
+    _lastConnectionStates[deviceId] = state;
+    final ctrl = _connectionControllers[deviceId];
+    if (ctrl != null && !ctrl.isClosed) {
+      ctrl.add(state);
+    }
   }
 }

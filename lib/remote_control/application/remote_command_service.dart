@@ -1,4 +1,5 @@
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
@@ -25,6 +26,11 @@ abstract class RemoteCommandService {
     required String text,
   });
 
+  Set<RemoteCommand> supportedCommandsFor({required TvDevice device});
+
   /// Whether the TV UI is ready to accept remote-typed text (brand-specific; e.g. Samsung IME).
   Stream<bool> watchRemoteTextInputReady({required TvDevice device});
+
+  /// Normalized remote connection state for the selected TV session.
+  Stream<ConnectionState> watchConnectionState({required TvDevice device});
 }

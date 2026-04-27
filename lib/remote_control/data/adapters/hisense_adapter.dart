@@ -4,6 +4,7 @@ import 'package:one_remote/remote_control/data/adapters/hisense/hisense_key_mapp
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_protocol_variants.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
+import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -96,6 +97,17 @@ class HisenseAdapter implements TvBrandAdapter {
   @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
       Stream<bool>.value(false);
+
+  @override
+  Stream<ConnectionState> watchConnectionState(TvDevice device) async* {
+    try {
+      await _transportClient.connect(deviceId: device.id);
+    } catch (_) {
+      yield ConnectionState.error;
+      return;
+    }
+    yield* _transportClient.watchConnectionState(device.id);
+  }
 
   /// Hisense uses VIDAA/MQTT keying and app launch; a separate “type text from phone”
   /// path may land later and will not mirror LG’s webOS approach. Until then,
