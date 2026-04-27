@@ -9,8 +9,8 @@ import 'package:one_remote/remote_control/data/variant_resolution_registry.dart'
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/remote_control/domain/models/tv_model_capability_registry.dart';
 
 /// Routes generic remote actions to a brand-specific adapter.
 ///
@@ -20,16 +20,13 @@ class BrandRoutedRemoteCommandService
   BrandRoutedRemoteCommandService({
     required List<TvBrandAdapter> adapters,
     required VariantResolutionRegistry variantRegistry,
-    required TvModelCapabilityRegistry capabilityRegistry,
   }) : _adapters = {
          for (final a in adapters) (a.brand, a.protocolVariant): a
        },
-       _variantRegistry = variantRegistry,
-       _capabilityRegistry = capabilityRegistry;
+       _variantRegistry = variantRegistry;
 
   final Map<(TvBrand, String), TvBrandAdapter> _adapters;
   final VariantResolutionRegistry _variantRegistry;
-  final TvModelCapabilityRegistry _capabilityRegistry;
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {
@@ -52,10 +49,7 @@ class BrandRoutedRemoteCommandService
       await adapter.preparePairing(device: device);
       final info = await adapter.queryDeviceInfo(device: device);
       final variant = _variantRegistry.resolve(brand: device.brand, info: info);
-      final capabilities = _capabilityRegistry.resolve(
-        brand: device.brand,
-        info: info,
-      );
+      final capabilities = const TvCapabilities().capabilitiesFor(device.brand, variant);
       final enriched = device.copyWith(
         capabilities: capabilities,
         protocolVariant: variant,

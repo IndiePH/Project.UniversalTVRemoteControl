@@ -13,9 +13,9 @@ path to use.
 
 ```
 preparePairing()
-  └─ adapter.queryDeviceInfo()   → TvDeviceInfo? (model, firmware)
-  └─ variantRegistry.resolve()   → String (variant tag)
-  └─ capabilityRegistry.resolve() → Set<DeviceCapability>
+  └─ adapter.queryDeviceInfo()        → TvDeviceInfo? (model, firmware)
+  └─ variantRegistry.resolve()        → String (variant tag)
+  └─ TvCapabilities().capabilitiesFor() → Set<DeviceCapability>
   └─ device.copyWith(protocolVariant: ..., capabilities: ...) → stored / returned
 ```
 
@@ -43,14 +43,25 @@ entry.brand == brand  &&  entry.matches(info)
 All current entries use `(_) => true` — a catch-all that always matches. To add a
 specific variant you add a **more-specific entry before the catch-all** for that brand.
 
-### DefaultTvModelCapabilityRegistry
+### TvCapabilities
 
-**File:** `lib/remote_control/domain/models/tv_model_capability_registry.dart`
+**File:** `lib/remote_control/domain/models/tv_capabilities.dart`
 
-Follows the same entry pattern as `DefaultVariantResolutionRegistry`. Both registries
-use the same predicate type — `bool Function(TvDeviceInfo info)` — so a predicate
-defined once in `*ProtocolVariants` can be referenced in both entry lists without
-duplication.
+Holds all capability sets indexed by `(TvBrand, String variant)`. After the variant is
+resolved by `VariantResolutionRegistry`, capabilities are looked up directly by key — no
+predicate re-evaluation needed.
+
+```dart
+static const Map<(TvBrand, String), Set<DeviceCapability>> _map = { ... };
+
+Set<DeviceCapability> capabilitiesFor(TvBrand brand, [String? variant]) {
+  final v = variant ?? TvDevice.defaultProtocolVariant;
+  return _map[(brand, v)] ?? _map[(brand, TvDevice.defaultProtocolVariant)] ?? {};
+}
+```
+
+Unknown variants fall back to the brand's default-variant entry. This is used at every
+call site as `const TvCapabilities().capabilitiesFor(brand, variant)`.
 
 ---
 
@@ -59,11 +70,11 @@ duplication.
 The example below adds a hypothetical `Samsung Frame` variant that uses a different
 power-toggle command path.
 
-### Step 1 — Declare the variant constant
+### Step 1 — Declare the variant constant and predicate
 
 Add a new constant **and a matching predicate** to the brand's `*ProtocolVariants` class.
-The predicate is the single source of truth — both registries reference it directly so
-the detection logic is never duplicated.
+The predicate is used by `VariantResolutionRegistry` to detect the variant from device
+info at pairing time.
 
 **File:** `lib/remote_control/data/adapters/samsung/samsung_protocol_variants.dart`
 
@@ -72,7 +83,7 @@ abstract final class SamsungProtocolVariants {
   static const String defaultVariant = TvDevice.defaultProtocolVariant;
   static const String frameVariant = 'samsung_frame'; // ← add constant
 
-  // ← add predicate alongside its constant; referenced by both registries
+  // ← add predicate alongside its constant
   static bool isFrameSeries(TvDeviceInfo info) {
     final model = info.modelIdentifier ?? '';
     return model.startsWith('QM') || model.startsWith('LS');
@@ -95,7 +106,7 @@ static final _entries = <_VariantResolutionEntry>[
   // ── Samsung ──────────────────────────────────────────────────────────────
   _VariantResolutionEntry(              // ← specific rule, checked first
     brand: TvBrand.samsung,
-    matches: SamsungProtocolVariants.isFrameSeries, // ← shared predicate
+    matches: SamsungProtocolVariants.isFrameSeries, // ← predicate
     variant: SamsungProtocolVariants.frameVariant,
   ),
   _VariantResolutionEntry(              // ← catch-all stays last for the brand
@@ -166,69 +177,55 @@ final commandService = BrandRoutedRemoteCommandService(
     HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
   ],
   variantRegistry: sl<VariantResolutionRegistry>(),
-  capabilityRegistry: sl<TvModelCapabilityRegistry>(),
 );
 ```
 
 ### Step 4 — Capability override (only if needed)
 
-If the new variant also changes which capabilities the device has, add a
-`_CapabilityEntry` before the brand catch-all in `DefaultTvModelCapabilityRegistry`,
-following the same first-match ordering as `DefaultVariantResolutionRegistry`.
+If the new variant also changes which capabilities the device has, add a new entry to
+`TvCapabilities._map` keyed on `(brand, variantConstant)`. Place it before the brand's
+default-variant entry so it is unambiguous which entry applies to which variant.
 
-**File:** `lib/remote_control/domain/models/tv_model_capability_registry.dart`
+**File:** `lib/remote_control/domain/models/tv_capabilities.dart`
 
 ```dart
-static final _entries = <_CapabilityEntry>[
-  // ── Samsung ──────────────────────────────────────────────────────────────
-  _CapabilityEntry(                           // ← specific rule, checked first
-    brand: TvBrand.samsung,
-    matches: SamsungProtocolVariants.isFrameSeries, // ← same predicate as Step 2
-    capabilities: {
-      DeviceCapability.keyCommands,
-      DeviceCapability.powerControl,           // no textInput on Frame series
-    },
-  ),
-  _CapabilityEntry(                           // ← catch-all
-    brand: TvBrand.samsung,
-    matches: (_) => true,
-    capabilities: TvBrand.samsung.defaultCapabilities,
-  ),
-  // ── LG ───────────────────────────────────────────────────────────────────
-  _CapabilityEntry(
-    brand: TvBrand.lg,
-    matches: (_) => true,
-    capabilities: TvBrand.lg.defaultCapabilities,
-  ),
-  // ── Hisense ──────────────────────────────────────────────────────────────
-  _CapabilityEntry(
-    brand: TvBrand.hisense,
-    matches: (_) => true,
-    capabilities: TvBrand.hisense.defaultCapabilities,
-  ),
-];
+static const Map<(TvBrand, String), Set<DeviceCapability>> _map = {
+  // ── Samsung Frame ─────────────────────────────────────────────────────────
+  (TvBrand.samsung, SamsungProtocolVariants.frameVariant): {
+    DeviceCapability.keyCommands,
+    DeviceCapability.powerControl,           // no textInput on Frame series
+  },
+  // ── Samsung (default) ─────────────────────────────────────────────────────
+  (TvBrand.samsung, TvDevice.defaultProtocolVariant): {
+    DeviceCapability.keyCommands,
+    if (_samsungTextInputEnabled) DeviceCapability.textInput,
+    DeviceCapability.powerControl,
+  },
+  // ── LG ────────────────────────────────────────────────────────────────────
+  (TvBrand.lg, TvDevice.defaultProtocolVariant): { ... },
+  // ── Hisense ───────────────────────────────────────────────────────────────
+  (TvBrand.hisense, TvDevice.defaultProtocolVariant): { ... },
+};
 ```
 
-Both `_VariantResolutionEntry.matches` and `_CapabilityEntry.matches` are
-`bool Function(TvDeviceInfo info)` — the same type. Referencing
-`SamsungProtocolVariants.isFrameSeries` in both entry lists means the detection logic
-lives in exactly one place.
+Capabilities are looked up by `(brand, resolvedVariant)` after pairing. If a variant has
+no entry in `_map`, `capabilitiesFor` falls back to the brand's default-variant entry
+automatically — so omitting this step is safe when capabilities don't differ.
 
 Avoid this step unless capabilities genuinely differ — the variant tag is the right
 place for behavioral branching, not the capability set.
-
-To add a different set of capabilities, add/edit TvBrandCapabilities. This can then be used in _CapabilityEntry.
 
 ---
 
 ## Checklist
 
 - [ ] Variant constant added to `*ProtocolVariants`
+- [ ] Predicate added to `*ProtocolVariants` alongside the constant
 - [ ] Entry added in `DefaultVariantResolutionRegistry._entries` before the brand catch-all
 - [ ] `queryDeviceInfo` returns `TvDeviceInfo` with a populated `modelIdentifier` (or `firmwareVersion`) for the matching device
 - [ ] Variant-specific adapter class created, `protocolVariant` getter returns the new constant
 - [ ] Adapter registered in DI config alongside the existing default adapter
-- [ ] Capability override added to `DefaultTvModelCapabilityRegistry` (only if capabilities differ)
+- [ ] Capability override added to `TvCapabilities._map` (only if capabilities differ from brand default)
 - [ ] Test: registry resolves the correct variant for a matching `TvDeviceInfo`
 - [ ] Test: registry falls through to `default` for a non-matching `TvDeviceInfo`
 - [ ] Test: adapter produces the correct transport command for the new variant
@@ -253,10 +250,15 @@ subsequent call with zero extra I/O.
 An adapter's responsibility is communicating with the TV. "Is this device in my variant?"
 is a selection concern — it belongs with the thing being selected (the variant constant),
 not the thing doing the work (the adapter). Putting it on the adapter would also create a
-dependency from the registries down into the adapter layer, reversing the correct flow
+dependency from the registry down into the adapter layer, reversing the correct flow
 (registry selects adapter, so registry must not depend on adapter).
 
-**Why does the catch-all exist?**  
+**Why does `TvCapabilities` use a map keyed on `(brand, variant)` instead of predicates?**  
+By the time capabilities are looked up, the variant string is already resolved. Re-running
+predicates against `TvDeviceInfo` a second time would duplicate detection logic. The map
+lookup is a direct O(1) read — no predicate, no iteration, no duplication.
+
+**Why does the catch-all exist in `VariantResolutionRegistry`?**  
 `resolve()` needs a guaranteed return value for every brand even when no specific rule
 matches. The catch-all at the end of each brand's entries ensures graceful fallback
 without a null check at the call site.

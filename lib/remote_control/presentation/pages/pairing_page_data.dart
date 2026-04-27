@@ -1,7 +1,7 @@
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
-import 'package:one_remote/remote_control/domain/models/tv_brand_capabilities.dart';
+import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/utils/two_digit_format.dart';
 
@@ -51,7 +51,7 @@ final class PairingPageData {
       id: '${brand.name}-$ip',
       displayName: '${brand.displayName} TV ($ip)',
       brand: brand,
-      capabilities: brand.defaultCapabilities,
+      capabilities: const TvCapabilities().capabilitiesFor(brand),
     );
   }
 

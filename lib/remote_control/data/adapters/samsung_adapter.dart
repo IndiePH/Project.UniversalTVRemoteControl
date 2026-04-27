@@ -13,10 +13,6 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
-  static const bool _samsungTextInputEnabled = bool.fromEnvironment(
-    'SAMSUNG_ENABLE_TEXT_INPUT',
-    defaultValue: false,
-  );
 
   SamsungAdapter({
     required SamsungTransportClient transportClient,
@@ -38,7 +34,7 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   TransportLogReader get transportLogReader => const SamsungTransportLogReader();
 
   @override
-  bool get supportsTextInput => _samsungTextInputEnabled;
+  bool get supportsTextInput => true;
 
   @override
   Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;

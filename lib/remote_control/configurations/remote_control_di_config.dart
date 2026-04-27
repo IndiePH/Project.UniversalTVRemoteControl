@@ -9,7 +9,6 @@ import 'package:one_remote/remote_control/application/transport_log_reader_provi
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
-import 'package:one_remote/remote_control/domain/models/tv_model_capability_registry.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/fake_hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/real_hisense_transport_client.dart';
@@ -43,9 +42,6 @@ void _configureShared(GetIt sl) {
   sl.registerSingleton<VariantResolutionRegistry>(
     const DefaultVariantResolutionRegistry(),
   );
-  sl.registerSingleton<TvModelCapabilityRegistry>(
-    const DefaultTvModelCapabilityRegistry(),
-  );
 }
 
 final class RemoteControlDiConfig implements IDiConfig {
@@ -78,7 +74,6 @@ final class RemoteControlDiConfig implements IDiConfig {
     final commandService = BrandRoutedRemoteCommandService(
       adapters: adapters,
       variantRegistry: sl<VariantResolutionRegistry>(),
-      capabilityRegistry: sl<TvModelCapabilityRegistry>(),
     );
     sl.registerSingleton<RemoteCommandService>(commandService);
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
@@ -119,7 +114,6 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
     final commandService = BrandRoutedRemoteCommandService(
       adapters: adapters,
       variantRegistry: sl<VariantResolutionRegistry>(),
-      capabilityRegistry: sl<TvModelCapabilityRegistry>(),
     );
     sl.registerSingleton<RemoteCommandService>(commandService);
     sl.registerSingleton<TransportLogReaderProvider>(commandService);

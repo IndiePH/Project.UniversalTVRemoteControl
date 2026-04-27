@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
-import 'package:one_remote/remote_control/domain/models/tv_brand_capabilities.dart';
+import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 void main() {
@@ -90,7 +90,7 @@ void main() {
       final device = TvDevice.fromJson(json);
 
       expect(device, isNotNull);
-      expect(device!.capabilities, equals(TvBrand.lg.defaultCapabilities));
+      expect(device!.capabilities, equals(const TvCapabilities().capabilitiesFor(TvBrand.lg)));
     });
 
     test('fromJson defaults protocolVariant to "default" when key is absent', () {

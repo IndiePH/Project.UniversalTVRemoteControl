@@ -7,7 +7,6 @@ import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
-import 'package:one_remote/remote_control/domain/models/tv_model_capability_registry.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -42,7 +41,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [const _SubsetSamsungAdapter()],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
 
     final result = await service.sendCommand(
@@ -61,7 +59,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [const _CompatibilitySamsungAdapter()],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
 
     final result = await service.sendText(device: samsungDevice, text: 'hello');
@@ -75,7 +72,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [SamsungAdapter(transportClient: _SpySamsungTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
 
     final result = await service.sendText(device: samsungDevice, text: 'hello');
@@ -112,7 +108,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [SamsungAdapter(transportClient: _SpySamsungTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.preparePairing(device: samsungDevice);
     expect(result.isSuccess, isTrue);
@@ -122,7 +117,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [SamsungAdapter(transportClient: _SpySamsungTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.submitPairingCode(
       device: samsungDevice,
@@ -147,7 +141,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [const _CompatibilitySamsungAdapter()],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final values = await service
         .watchRemoteTextInputReady(device: samsungDeviceNoTextInput)

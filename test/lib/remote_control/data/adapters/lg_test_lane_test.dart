@@ -10,7 +10,6 @@ import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
-import 'package:one_remote/remote_control/domain/models/tv_model_capability_registry.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -53,7 +52,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [const _SubsetLgAdapter()],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.sendCommand(
       device: lgDevice,
@@ -79,7 +77,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isTrue);
@@ -89,7 +86,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _TimeoutLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isFalse);
@@ -102,7 +98,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _StaleKeyLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.preparePairing(device: lgDevice);
     expect(result.isSuccess, isFalse);
@@ -117,7 +112,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.sendText(device: lgDevice, text: 'hello');
     expect(result.isSuccess, isTrue);
@@ -127,7 +121,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _ImeRejectingLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.sendText(device: lgDevice, text: 'hello');
     expect(result.isSuccess, isFalse);
@@ -140,7 +133,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _ErrorOnSendLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.sendCommand(
       device: lgDevice,
@@ -166,7 +158,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final result = await service.submitPairingCode(
       device: lgDevice,
@@ -190,7 +181,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     await expectLater(
       service.unpairDevice(device: lgDevice),
@@ -204,7 +194,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _TextInputReadyLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final values = await service
         .watchRemoteTextInputReady(device: lgDeviceWithTextInput)
@@ -216,7 +205,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     final values = await service
         .watchRemoteTextInputReady(device: lgDeviceWithTextInput)
@@ -228,7 +216,6 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [LgAdapter(transportClient: _TextInputReadyLgTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
     // lgDevice has no DeviceCapability.textInput
     final values = await service
