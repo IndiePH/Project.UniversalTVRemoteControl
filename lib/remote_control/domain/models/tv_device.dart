@@ -1,6 +1,6 @@
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
-import 'package:one_remote/remote_control/domain/models/tv_brand_capabilities.dart';
+import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 
 class TvDevice {
   const TvDevice({
@@ -66,7 +66,7 @@ class TvDevice {
           .nonNulls
           .toSet();
       final capabilities =
-          parsed.isEmpty ? brand.defaultCapabilities : parsed;
+          parsed.isEmpty ? const TvCapabilities().capabilitiesFor(brand, protocolVariant) : parsed;
       return TvDevice(
         id: id,
         displayName: displayName,

@@ -3,6 +3,24 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-04-27
+
+### Changed
+- Collapsed `TvBrandCapabilities` (extension on `TvBrand`) and `TvModelCapabilityRegistry` (injectable interface + predicate-driven list) into a single `TvCapabilities` instance class with a `const` constructor and a static `_map` keyed on `(TvBrand, String)` record tuples
+- `capabilitiesFor(brand, [variant])` falls back to the brand's default-variant entry when an unknown variant is supplied — variant resolution stays clean even for devices paired on older builds
+- `TvDevice.fromJson` capability fallback is now variant-aware: restores `capabilitiesFor(brand, protocolVariant)` instead of the old brand-only `defaultCapabilities`
+- `BrandRoutedRemoteCommandService` loses the `capabilityRegistry` constructor parameter; capability lookup is now the inline `const TvCapabilities().capabilitiesFor(device.brand, variant)` pattern — consistent with all other call sites (SSDP discovery, pairing page, `fromJson`) that cannot receive injection
+- Removed `TvModelCapabilityRegistry` singleton registration from `remote_control_di_config.dart`
+- Updated `references/guide-adding-protocol-variant.md`: replaced `TvModelCapabilityRegistry` section with `TvCapabilities` section; updated flow diagram, Step 1–4 examples, checklist, and added a design note explaining the map-over-predicates choice
+
+### Added
+- `TvCapabilities` (`lib/remote_control/domain/models/tv_capabilities.dart`) — replaces both deleted files
+- `tv_capabilities_test.dart`: brand default, unknown-variant fallback, and non-empty coverage for every registered brand
+
+### Removed
+- `lib/remote_control/domain/models/tv_brand_capabilities.dart`
+- `lib/remote_control/domain/models/tv_model_capability_registry.dart`
+
 ## 2026-04-26
 
 ### Added
