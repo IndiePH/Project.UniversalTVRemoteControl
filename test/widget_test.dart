@@ -22,7 +22,6 @@ import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
-import 'package:one_remote/remote_control/domain/models/tv_model_capability_registry.dart';
 import 'package:one_remote/remote_control/data/in_memory_device_repository.dart';
 import 'package:one_remote/remote_control/data/in_memory_remote_command_service.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
@@ -77,7 +76,6 @@ void main() {
         HisenseAdapter(transportClient: FakeHisenseTransportClient()),
       ],
       variantRegistry: const DefaultVariantResolutionRegistry(),
-      capabilityRegistry: const DefaultTvModelCapabilityRegistry(),
     );
 
     await tester.pumpWidget(

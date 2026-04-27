@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:flutter_multicast_lock/flutter_multicast_lock.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
-import 'package:one_remote/remote_control/domain/models/tv_brand_capabilities.dart';
+import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 /// Discovers TVs over local network via SSDP M-SEARCH.
@@ -97,7 +97,7 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
                 displayName:
                     '${candidate.brand.displayName} TV (${candidate.ip})',
                 brand: candidate.brand,
-                capabilities: candidate.brand.defaultCapabilities,
+                capabilities: const TvCapabilities().capabilitiesFor(candidate.brand),
               ),
             )
             .toList()
