@@ -28,18 +28,18 @@ Items are ordered: high-priority (safe, isolated) first, then medium-priority (s
 | R-06 | `HisenseAdapter` | `sendText` logs instead of throwing `UnsupportedError` | Inconsistency / latent bug | Low | ✅ |
 | R-07 | `OneRemoteApp` | `InMemoryDeviceRepository` used in production | Missing persistence | Medium | ✅ |
 | R-08 | `layout_repository.dart` | `LayoutPosition` model in the application layer | Layer placement | Medium | ✅ |
-| R-09 | `TvBrand`, `SsdpDeviceDiscoveryService`, `PairingPage` | No `displayName` getter — brand naming scattered | Scattered display logic | Medium | ❌ |
+| R-09 | `TvBrand`, `SsdpDeviceDiscoveryService`, `PairingPage` | No `displayName` getter — brand naming scattered | Scattered display logic | Medium | ✅ |
 | R-10 | `SamsungAdapter` | Default constructor silently uses fake transport | Surprising default | Medium | ✅ |
-| R-11 | `CommandDispatchResult` | No discriminated type for `unsupported` vs `failure` | Design gap | Medium | 🔶 |
-| N-01 | `HisenseAdapter` | Default constructor silently uses fake transport | Surprising default | Medium | 🆕 ❌ |
-| N-02 | `SamsungTransportFileLogger` | Private `_twoDigits` duplicates `formatTwoDigits` — unreachable across layers | DRY / layer placement | Low | 🆕 ❌ |
-| N-03 | `LgWebSocketTransportClient` | `sendKey()` growing if/else dispatch chain | Design smell | Medium | 🆕 ❌ |
-| N-04 | `LgWebSocketTransportClient` | `_muteStates`/`_powerStates`/`_playingStates` duplicate toggle boilerplate | DRY violation | Medium | 🆕 ❌ |
-| N-05 | `BrandRoutedRemoteCommandService` | 4 catch blocks expose raw `$error` to users | Error handling | Low | 🆕 ❌ |
-| N-06 | `SamsungAdapter`, `HisenseAdapter` | `unpairDevice` no-ops undocumented | Doc debt | Low | 🆕 ❌ |
-| N-07 | `OneRemoteApp`, host resolvers | Widget doubles as composition root; three identical host resolver methods | SRP / DRY | Medium | 🆕 ❌ |
-| N-08 | `SamsungWebSocketTransportClient` | `_connectWithoutToken` / `_connectWithKnownToken` structurally identical (~60 lines each) | DRY | Low | 🆕 ❌ |
-| N-09 | `OneRemoteApp`, all adapters | No DI container — construction logic entangled with the widget layer | Architecture | Medium | 🆕 ❌ |
+| R-11 | `CommandDispatchResult` | No discriminated type for `unsupported` vs `failure` | Design gap | Medium | ✅ |
+| N-01 | `HisenseAdapter` | Default constructor silently uses fake transport | Surprising default | Medium | ✅ |
+| N-02 | `SamsungTransportFileLogger` | Private `_twoDigits` duplicates `formatTwoDigits` — unreachable across layers | DRY / layer placement | Low | ✅ |
+| N-03 | `LgWebSocketTransportClient` | `sendKey()` growing if/else dispatch chain | Design smell | Medium | ✅ |
+| N-04 | `LgWebSocketTransportClient` | `_muteStates`/`_powerStates`/`_playingStates` duplicate toggle boilerplate | DRY violation | Medium | ✅ |
+| N-05 | `BrandRoutedRemoteCommandService` | 4 catch blocks expose raw `$error` to users | Error handling | Low | ✅ |
+| N-06 | `SamsungAdapter`, `HisenseAdapter` | `unpairDevice` no-ops undocumented | Doc debt | Low | ✅ |
+| N-07 | `OneRemoteApp`, host resolvers | Widget doubles as composition root; three identical host resolver methods | SRP / DRY | Medium | ✅ |
+| N-08 | `SamsungWebSocketTransportClient` | `_connectWithoutToken` / `_connectWithKnownToken` structurally identical (~60 lines each) | DRY | Low | ✅ |
+| N-09 | `OneRemoteApp`, all adapters | No DI container — construction logic entangled with the widget layer | Architecture | Medium | ✅ |
 | N-10 | `LgWebSocketTransportClient`, `SamsungWebSocketTransportClient` | `_openSocket(Uri)` duplicated — difference is intentional (accept-all vs trust-store); deferred to 4.6 | Informational | Low | 🆕 ❌ |
 | N-11 | `TransportClient` | Empty marker interface with no contract and no polymorphic consumers; deferred to 4.6 | Informational | Low | 🆕 ❌ |
 
@@ -121,7 +121,7 @@ Zero-arg construction no longer compiles; all callers must be explicit about the
 
 ## Open — High Priority (Safe, No Behavior Change)
 
-### R-03 · `SamsungKeyMapper.keyCodeFor` duplicates inherited `primaryKeyCodeFor`
+### R-03 · `SamsungKeyMapper.keyCodeFor` duplicates inherited `primaryKeyCodeFor` — ✅ Resolved
 
 **File:** `data/adapters/samsung/samsung_key_mapper.dart:32`
 
@@ -139,7 +139,7 @@ No internal call site in the file uses the distinct name.
 
 ---
 
-### N-02 · `formatTwoDigits` not accessible from the data layer
+### N-02 · `formatTwoDigits` not accessible from the data layer — ✅ Resolved
 
 **File:** `data/adapters/samsung/samsung_transport_file_logger.dart:93`
 
@@ -159,7 +159,7 @@ shared-utils location outside the feature layers). Update all three call sites
 
 ## Open — Medium Priority (Structural)
 
-### R-09 · `TvBrand` has no `displayName`
+### R-09 · `TvBrand` has no `displayName` — ✅ Resolved
 
 **Files:**
 - `data/ssdp_device_discovery_service.dart:159` — private `_brandName()` switch
@@ -186,7 +186,7 @@ Can land in the same commit as N-02 since both touch `tv_brand.dart` adjacently.
 
 ---
 
-### N-01 · `HisenseAdapter` defaults to fake transport
+### N-01 · `HisenseAdapter` defaults to fake transport — ✅ Resolved
 
 **File:** `data/adapters/hisense_adapter.dart:14`
 
@@ -206,7 +206,7 @@ constructor. Update `OneRemoteApp` to call the explicit factory.
 
 ---
 
-### R-11 · `CommandDispatchResult` has no discriminated outcome type — 🔶 Partial
+### R-11 · `CommandDispatchResult` has no discriminated outcome type — ✅ Resolved
 
 **File:** `application/command_dispatch_result.dart`
 
@@ -230,7 +230,7 @@ constructors to assign matching outcomes. Update UI call sites to branch on `out
 
 ---
 
-### N-03 · `LgWebSocketTransportClient.sendKey()` — growing if/else dispatch chain
+### N-03 · `LgWebSocketTransportClient.sendKey()` — growing if/else dispatch chain — ✅ Resolved
 
 **File:** `data/adapters/lg/lg_websocket_transport_client.dart:185–221`
 
@@ -251,7 +251,7 @@ entry owns both the dispatch logic and any per-device state it needs. Best addre
 
 ---
 
-### N-04 · `_muteStates`, `_powerStates`, `_playingStates` — duplicate toggle boilerplate
+### N-04 · `_muteStates`, `_powerStates`, `_playingStates` — duplicate toggle boilerplate — ✅ Resolved
 
 **File:** `data/adapters/lg/lg_websocket_transport_client.dart:72–80` (fields) + `sendKey()` branches
 
@@ -270,7 +270,7 @@ single `Map<String, Map<String, bool>>` keyed by command key). Address together 
 
 ---
 
-### N-05 · `BrandRoutedRemoteCommandService` — raw `$error` in 4 catch blocks
+### N-05 · `BrandRoutedRemoteCommandService` — raw `$error` in 4 catch blocks — ✅ Resolved
 
 **File:** `data/brand_routed_remote_command_service.dart:40, 69, 94, 123`
 
@@ -287,7 +287,7 @@ detail in debug, `'Something went wrong.'` in release. Applies to `preparePairin
 
 ---
 
-### N-06 · `SamsungAdapter` and `HisenseAdapter` `unpairDevice` no-ops undocumented
+### N-06 · `SamsungAdapter` and `HisenseAdapter` `unpairDevice` no-ops undocumented — ✅ Resolved
 
 **Files:** `data/adapters/samsung_adapter.dart:35`, `data/adapters/hisense_adapter.dart:31`
 
@@ -304,7 +304,7 @@ by LG's `clearPairing` / `LgPairingKeyStore`.
 
 ---
 
-### N-07 · `OneRemoteApp` widget doubles as composition root
+### N-07 · `OneRemoteApp` widget doubles as composition root — ✅ Resolved
 
 **Files:** `lib/app/one_remote_app.dart:94–147`
 
@@ -321,7 +321,7 @@ the DI container is adopted). Collapse the three resolver methods into one share
 
 ---
 
-### N-08 · `SamsungWebSocketTransportClient._connectWithoutToken` / `_connectWithKnownToken`
+### N-08 · `SamsungWebSocketTransportClient._connectWithoutToken` / `_connectWithKnownToken` — ✅ Resolved
 
 **File:** `lib/remote_control/data/adapters/samsung/samsung_websocket_transport_client.dart:302–366`
 
@@ -334,7 +334,7 @@ token present = known-token path. Removes ~55 lines of duplication.
 
 ---
 
-### N-09 · No DI container — construction entangled with the app widget
+### N-09 · No DI container — construction entangled with the app widget — ✅ Resolved
 
 **File:** `lib/app/one_remote_app.dart`
 
