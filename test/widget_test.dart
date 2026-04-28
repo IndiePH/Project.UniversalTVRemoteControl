@@ -69,6 +69,76 @@ void main() {
     expect(find.text('VOL'), findsOneWidget);
   });
 
+  testWidgets(
+    'toggling fake transport keeps debug settings sheet open',
+    (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      DiBootstrap.initialize(AppEnvironment.debug);
+      addTearDown(GetIt.instance.reset);
+
+      await tester.pumpWidget(const OneRemoteApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('Use fake transports'), findsOneWidget);
+
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Use fake transports'), findsOneWidget);
+      expect(find.text('Debug'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'toggling fake transport shows fake brands in pairing list',
+    (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      DiBootstrap.initialize(AppEnvironment.debug);
+      addTearDown(GetIt.instance.reset);
+
+      await tester.pumpWidget(const OneRemoteApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(20, 20));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Connect TV'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Samsung QLED - Living Room'), findsOneWidget);
+      expect(find.text('LG OLED - Bedroom'), findsOneWidget);
+      expect(find.text('Hisense U7 - Office'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'copy transport logs keeps debug settings sheet open when no logs exist',
+    (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      DiBootstrap.initialize(AppEnvironment.debug);
+      addTearDown(GetIt.instance.reset);
+
+      await tester.pumpWidget(const OneRemoteApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('Copy transport logs'), findsOneWidget);
+
+      await tester.tap(find.text('Copy transport logs'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No transport log found yet.'), findsOneWidget);
+      expect(find.text('Copy transport logs'), findsOneWidget);
+      expect(find.text('Debug'), findsOneWidget);
+    },
+  );
+
   testWidgets('disables remote actions when no active device', (
     WidgetTester tester,
   ) async {

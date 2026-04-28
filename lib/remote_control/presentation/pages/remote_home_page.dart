@@ -39,7 +39,6 @@ class RemoteHomePage extends StatefulWidget {
     required this.discoveryService,
     required this.layoutRepository,
     this.transportLogReaderProvider = const NoopTransportLogReaderProvider(),
-    this.onRestartApp,
   });
 
   final RemoteCommandService commandService;
@@ -47,7 +46,6 @@ class RemoteHomePage extends StatefulWidget {
   final DeviceDiscoveryService discoveryService;
   final LayoutRepository layoutRepository;
   final TransportLogReaderProvider transportLogReaderProvider;
-  final Future<void> Function()? onRestartApp;
 
   @override
   State<RemoteHomePage> createState() => _RemoteHomePageState();
@@ -75,6 +73,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   bool _pairButtonBlinkOn = false;
   Timer? _pairButtonBlinkTimer;
   Timer? _pairButtonHintResetTimer;
+  OverlayEntry? _toastOverlayEntry;
+  Timer? _toastOverlayTimer;
 
   @override
   void initState() {
@@ -97,6 +97,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     _connectionStateSub?.cancel();
     _pairButtonBlinkTimer?.cancel();
     _pairButtonHintResetTimer?.cancel();
+    _toastOverlayTimer?.cancel();
+    _toastOverlayEntry?.remove();
     _textController.dispose();
     super.dispose();
   }
@@ -274,14 +276,48 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       return;
     }
     final colorScheme = Theme.of(context).colorScheme;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? colorScheme.error : null,
+    _toastOverlayTimer?.cancel();
+    _toastOverlayEntry?.remove();
+
+    final overlay = Overlay.of(context, rootOverlay: true);
+    _toastOverlayEntry = OverlayEntry(
+      builder: (_) => SafeArea(
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            child: Material(
+              color: Colors.transparent,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: isError ? colorScheme.error : colorScheme.inverseSurface,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  child: Text(
+                    message,
+                    style: TextStyle(
+                      color: isError
+                          ? colorScheme.onError
+                          : colorScheme.onInverseSurface,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
-      );
+      ),
+    );
+    overlay.insert(_toastOverlayEntry!);
+    _toastOverlayTimer = Timer(const Duration(seconds: 4), () {
+      _toastOverlayEntry?.remove();
+      _toastOverlayEntry = null;
+    });
   }
 
   Future<void> _openPairing() async {
@@ -341,7 +377,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     }
   }
 
-  Future<void> _copyLatestTransportLog() async {
+  Future<bool> _copyLatestTransportLog() async {
     final device = _activeDevice;
     final reader = device != null
         ? widget.transportLogReaderProvider.readerForDevice(device)
@@ -350,13 +386,14 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       transportLogReader: reader,
     );
     if (!mounted) {
-      return;
+      return didCopy;
     }
     if (!didCopy) {
       _showToast('No transport log found yet.', isError: true);
-      return;
+      return false;
     }
     _showToast('Copied transport log to clipboard.');
+    return true;
   }
 
   Future<void> _copyRuntimeFlagsTemplate() async {
@@ -375,7 +412,6 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         context: context,
         onCopyTransportLogs: _copyLatestTransportLog,
         onCopyRuntimeFlagsTemplate: _copyRuntimeFlagsTemplate,
-        onRestartApp: widget.onRestartApp,
       ),
     );
   }

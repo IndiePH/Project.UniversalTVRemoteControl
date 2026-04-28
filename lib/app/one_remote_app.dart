@@ -44,7 +44,6 @@ class OneRemoteApp extends StatelessWidget {
           discoveryService: sl<DeviceDiscoveryService>(),
           layoutRepository: sl<LayoutRepository>(),
           transportLogReaderProvider: sl<TransportLogReaderProvider>(),
-          onRestartApp: restart,
         ),
       ),
     );
