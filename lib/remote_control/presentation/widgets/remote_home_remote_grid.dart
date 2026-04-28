@@ -132,7 +132,7 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
             child: RemoteIconCircleButton(
               icon: item.icon,
               label: item.label,
-              isPower: item.isPower,
+              isPower: controlsEnabled && item.isPower,
               onPressed: onPressed,
             ),
           ),
