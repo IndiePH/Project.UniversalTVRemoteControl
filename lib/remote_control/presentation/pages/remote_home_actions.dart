@@ -9,6 +9,7 @@ import 'package:one_remote/remote_control/application/device_discovery_service.d
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
+import 'package:one_remote/remote_control/data/fake_device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
@@ -31,12 +32,20 @@ final class RemoteHomeActions {
     required DeviceDiscoveryService discoveryService,
     required DeviceRepository deviceRepository,
     required String? activeDeviceId,
-  }) {
+  }) async {
+    final env = GetIt.instance<AppEnvironment>();
+    final stored = await TransportDebugSettings.readUseFakeTransportsOverride();
+    final useFakeTransports = stored ?? _compileUseFakeTransports;
+    final resolvedDiscoveryService =
+        env == AppEnvironment.debug && useFakeTransports
+        ? FakeDeviceDiscoveryService()
+        : discoveryService;
+
     return Navigator.of(context).push<TvDevice>(
       MaterialPageRoute(
         builder: (_) => PairingPage(
           commandService: commandService,
-          discoveryService: discoveryService,
+          discoveryService: resolvedDiscoveryService,
           deviceRepository: deviceRepository,
           stepsRegistry: GetIt.instance<PrePairingStepsRegistry>(),
           hintRegistry: GetIt.instance<PairingProgressHintRegistry>(),
@@ -60,9 +69,8 @@ final class RemoteHomeActions {
 
   static Future<void> showTransportDebugSheet({
     required BuildContext context,
-    required Future<void> Function() onCopyTransportLogs,
+    required Future<bool> Function() onCopyTransportLogs,
     required Future<void> Function() onCopyRuntimeFlagsTemplate,
-    Future<void> Function()? onRestartApp,
   }) async {
     final env = GetIt.instance<AppEnvironment>();
     final isDebug = env == AppEnvironment.debug;
@@ -86,11 +94,14 @@ final class RemoteHomeActions {
                 setModalState(() {
                   pendingFake = value;
                 });
-                await onRestartApp?.call();
               },
               onCopyTransportLogs: () {
-                Navigator.pop(sheetContext);
-                unawaited(onCopyTransportLogs());
+                unawaited(() async {
+                  final didCopy = await onCopyTransportLogs();
+                  if (didCopy && sheetContext.mounted) {
+                    Navigator.pop(sheetContext);
+                  }
+                }());
               },
               onCopyRuntimeFlagsTemplate: () {
                 Navigator.pop(sheetContext);

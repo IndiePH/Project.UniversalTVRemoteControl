@@ -37,10 +37,18 @@ class RemoteHomeDebugSheet extends StatelessWidget {
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Use fake transports'),
-                subtitle: Text(
-                  useFakeTransports
-                      ? 'Fake SSDP and Samsung/Hisense transports.'
-                      : 'Real SSDP and real Samsung/Hisense transports.',
+                subtitle: SizedBox(
+                  height: 40,
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      useFakeTransports
+                          ? 'Using fake discovery and fake transport clients.'
+                          : 'Using real discovery and real transport clients.',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
                 value: useFakeTransports,
                 onChanged: (value) => onUseFakeTransportsChanged(value),

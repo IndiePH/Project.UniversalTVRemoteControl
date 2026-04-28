@@ -103,8 +103,8 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
   @override
   void configure(GetIt sl, AppEnvironment env) {
     _configureShared(sl);
-    // Keep debug command transports fake-able, but discovery should remain real
-    // so nearby TVs can still be scanned and selected during development.
+    // Debug config keeps command transports fake-able via DI. Discovery mode can
+    // still be switched at runtime from the debug settings flow (pairing path).
     sl.registerSingleton<DeviceDiscoveryService>(SsdpDeviceDiscoveryService());
     sl.registerSingleton<SamsungTransportClient>(FakeSamsungTransportClient());
     sl.registerSingleton<LgTransportClient>(FakeLgTransportClient());
