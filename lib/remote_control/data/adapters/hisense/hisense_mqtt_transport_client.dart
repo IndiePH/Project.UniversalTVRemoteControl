@@ -14,10 +14,10 @@ import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_
 /// MQTT transport to Hisense VIDAA TVs (LAN, port 36669).
 ///
 /// TLS with self-signed broker certs is the common case on newer firmware.
-class RealHisenseTransportClient
+class HisenseMqttTransportClient
     with TransportEventEmitterMixin
     implements HisenseTransportClient {
-  RealHisenseTransportClient({
+  HisenseMqttTransportClient({
     required String Function(String deviceId) hostResolver,
     String mqttClientId = const String.fromEnvironment(
       'HISENSE_MQTT_CLIENT_ID',
