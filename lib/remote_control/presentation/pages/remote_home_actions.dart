@@ -88,7 +88,6 @@ final class RemoteHomeActions {
             return RemoteHomeDebugSheet(
               showTransportToggle: isDebug,
               useFakeTransports: pendingFake,
-              compileTimeUseFakeTransports: _compileUseFakeTransports,
               onUseFakeTransportsChanged: (value) async {
                 await TransportDebugSettings.writeUseFakeTransports(value);
                 setModalState(() {

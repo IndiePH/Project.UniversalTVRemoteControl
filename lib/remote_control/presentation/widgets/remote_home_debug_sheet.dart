@@ -6,7 +6,6 @@ class RemoteHomeDebugSheet extends StatelessWidget {
     super.key,
     required this.showTransportToggle,
     required this.useFakeTransports,
-    required this.compileTimeUseFakeTransports,
     required this.onUseFakeTransportsChanged,
     required this.onCopyTransportLogs,
     required this.onCopyRuntimeFlagsTemplate,
@@ -14,7 +13,6 @@ class RemoteHomeDebugSheet extends StatelessWidget {
 
   final bool showTransportToggle;
   final bool useFakeTransports;
-  final bool compileTimeUseFakeTransports;
   final Future<void> Function(bool value) onUseFakeTransportsChanged;
   final VoidCallback onCopyTransportLogs;
   final VoidCallback onCopyRuntimeFlagsTemplate;
@@ -52,12 +50,6 @@ class RemoteHomeDebugSheet extends StatelessWidget {
                 ),
                 value: useFakeTransports,
                 onChanged: (value) => onUseFakeTransportsChanged(value),
-              ),
-              Text(
-                'Compile-time default: '
-                '${compileTimeUseFakeTransports ? "fake" : "real"} '
-                '(USE_FAKE_TRANSPORTS)',
-                style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 8),
             ],
