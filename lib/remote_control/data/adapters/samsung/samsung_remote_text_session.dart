@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:one_remote/remote_control/application/text_compatibility_error.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 
 /// Per-device IME / on-screen keyboard state derived from Samsung WS events.
@@ -143,16 +144,6 @@ class SamsungRemoteTextSession {
     if (_isImeActiveByDeviceId[deviceId] ?? false) {
       return;
     }
-    final appContext = _appContextByDeviceId[deviceId];
-    final buffer = StringBuffer(
-      'Typing from this phone is not available on this TV screen or app. ',
-    )
-      ..write(
-        'Use the TV on-screen keyboard and direction buttons to enter text.',
-      );
-    if (appContext != null && appContext.isNotEmpty) {
-      buffer.write(' (TV reports app context: $appContext)');
-    }
-    throw TextInputCompatibilityException(buffer.toString());
+    throw TextInputCompatibilityException(TextCompatibilityError.samsungScreenNotAcceptingInput);
   }
 }

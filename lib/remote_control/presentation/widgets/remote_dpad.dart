@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_button.dart';
 
 class RemoteDpad extends StatelessWidget {
@@ -19,27 +20,28 @@ class RemoteDpad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
-        RemoteButton(label: 'Up', onPressed: onUp),
+        RemoteButton(label: l10n.dpadUp, onPressed: onUp),
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: RemoteButton(label: 'Left', onPressed: onLeft)),
+            Expanded(child: RemoteButton(label: l10n.dpadLeft, onPressed: onLeft)),
             const SizedBox(width: 8),
             Expanded(
               child: RemoteButton(
-                label: 'OK',
+                label: l10n.dpadOk,
                 onPressed: onOk,
                 isPrimary: true,
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(child: RemoteButton(label: 'Right', onPressed: onRight)),
+            Expanded(child: RemoteButton(label: l10n.dpadRight, onPressed: onRight)),
           ],
         ),
         const SizedBox(height: 8),
-        RemoteButton(label: 'Down', onPressed: onDown),
+        RemoteButton(label: l10n.dpadDown, onPressed: onDown),
       ],
     );
   }

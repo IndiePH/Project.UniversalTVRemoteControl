@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
     as remote_connection;
 import 'package:one_remote/theme/app_theme.dart';
@@ -26,28 +27,29 @@ class RemoteHomeStatusPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final appColors = AppTheme.colorsOf(context);
     final (connectionLabel, connectionColor) = switch (connectionState) {
       remote_connection.ConnectionState.connected => (
-        'Connected',
+        l10n.connectionStateConnected,
         appColors.remoteActionSuccessFill,
       ),
       remote_connection.ConnectionState.connecting => (
-        'Connecting…',
+        l10n.connectionStateConnecting,
         Theme.of(context).colorScheme.secondary,
       ),
       remote_connection.ConnectionState.error => (
-        'Connection error',
+        l10n.connectionStateError,
         Theme.of(context).colorScheme.error,
       ),
       remote_connection.ConnectionState.disconnected => (
-        'Disconnected',
+        l10n.connectionStateDisconnected,
         Theme.of(context).colorScheme.error,
       ),
     };
     final statusLabel = hasAnyPairedDevice
         ? connectionLabel
-        : 'Disconnected';
+        : l10n.connectionStateDisconnected;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -96,7 +98,7 @@ class _PairButton extends StatelessWidget {
         : colorScheme.onSurface;
 
     return Tooltip(
-      message: 'Connect TV',
+      message: AppLocalizations.of(context)!.connectTvTooltip,
       child: Material(
         color: background,
         shape: CircleBorder(

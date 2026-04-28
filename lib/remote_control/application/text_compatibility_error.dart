@@ -1,0 +1,1 @@
+enum TextCompatibilityError { lgImeFocusRequired, samsungScreenNotAcceptingInput }

@@ -11,6 +11,7 @@ import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import '../../../../fakes/fake_localized_strings.dart';
 
 void main() {
   const hisenseDevice = TvDevice(
@@ -38,8 +39,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           HisenseAdapter(transportClient: _SpyHisenseTransportClient()),
-        ],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: hisenseDevice);
       expect(result.isSuccess, isTrue);
@@ -63,8 +64,8 @@ void main() {
 
   test('Hisense lane: sendCommand key route completes successfully', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
+      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+      localizedStrings: FakeLocalizedStrings(),
     );
     final result = await service.sendCommand(
       device: hisenseDevice,
@@ -143,8 +144,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           HisenseAdapter(transportClient: _SpyHisenseTransportClient()),
-        ],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendText(
         device: hisenseDevice,
@@ -177,8 +178,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           HisenseAdapter(transportClient: _SpyHisenseTransportClient()),
-        ],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.submitPairingCode(
         device: hisenseDevice,
@@ -192,8 +193,8 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [
         HisenseAdapter(transportClient: _ErrorOnPinHisenseTransportClient()),
-      ],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
+      ],variantRegistry: const DefaultVariantResolutionRegistry(),
+      localizedStrings: FakeLocalizedStrings(),
     );
     final result = await service.submitPairingCode(
       device: hisenseDevice,
@@ -216,8 +217,8 @@ void main() {
 
   test('Hisense lane: unpairDevice completes without error', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
+      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+      localizedStrings: FakeLocalizedStrings(),
     );
     await expectLater(service.unpairDevice(device: hisenseDevice), completes);
   });

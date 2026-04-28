@@ -1,9 +1,10 @@
+import 'package:intl/intl.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/utils/two_digit_format.dart';
 
 /// Read/derive data used by `PairingPage` presentation state.
 final class PairingPageData {
@@ -66,19 +67,17 @@ final class PairingPageData {
     required String deviceId,
     required Set<String> savedDeviceIds,
     required Map<String, DateTime> pairingHistoryByDeviceId,
+    required AppLocalizations l10n,
   }) {
     if (!savedDeviceIds.contains(deviceId)) {
       return null;
     }
     final pairedAt = pairingHistoryByDeviceId[deviceId];
     if (pairedAt == null) {
-      return 'Previously paired';
+      return l10n.pairingNotePreviouslyPaired;
     }
-    final local = pairedAt.toLocal();
-    final date =
-        '${local.year}-${formatTwoDigits(local.month)}-${formatTwoDigits(local.day)}';
-    final time = '${formatTwoDigits(local.hour)}:${formatTwoDigits(local.minute)}';
-    return 'Previously paired ($date $time)';
+    final formatted = DateFormat.yMd().add_Hm().format(pairedAt.toLocal());
+    return l10n.pairingNotePreviouslyPairedAt(formatted);
   }
 }
 

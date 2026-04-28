@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/application/text_compatibility_error.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/data/adapters/adapter_device_info_log_gate.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_exceptions.dart';
@@ -213,9 +214,7 @@ class LgWebSocketTransportClient
         (response?['payload'] as Map<String, dynamic>?)?['returnValue']
             as bool?;
     if (returnValue == false) {
-      throw TextInputCompatibilityException(
-        'LG IME text injection rejected — ensure a text field is focused on the TV.',
-      );
+      throw TextInputCompatibilityException(TextCompatibilityError.lgImeFocusRequired);
     }
   }
 

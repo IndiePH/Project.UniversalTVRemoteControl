@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:one_remote/app/app_localized_strings.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
@@ -23,17 +25,27 @@ class OneRemoteApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sl = GetIt.instance;
-    return MaterialApp(
-      title: 'OneRemote',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme(),
-      home: RemoteHomePage(
-        commandService: sl<RemoteCommandService>(),
-        deviceRepository: sl<DeviceRepository>(),
-        discoveryService: sl<DeviceDiscoveryService>(),
-        layoutRepository: sl<LayoutRepository>(),
-        transportLogReaderProvider: sl<TransportLogReaderProvider>(),
-        onRestartApp: restart,
+    return ValueListenableBuilder<Locale>(
+      valueListenable: sl<ValueNotifier<Locale>>(),
+      builder: (_, locale, _) => MaterialApp(
+        locale: locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+        builder: (context, child) {
+          AppLocalizedStrings.update(AppLocalizations.of(context)!);
+          return child!;
+        },
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.darkTheme(),
+        home: RemoteHomePage(
+          commandService: sl<RemoteCommandService>(),
+          deviceRepository: sl<DeviceRepository>(),
+          discoveryService: sl<DeviceDiscoveryService>(),
+          layoutRepository: sl<LayoutRepository>(),
+          transportLogReaderProvider: sl<TransportLogReaderProvider>(),
+          onRestartApp: restart,
+        ),
       ),
     );
   }

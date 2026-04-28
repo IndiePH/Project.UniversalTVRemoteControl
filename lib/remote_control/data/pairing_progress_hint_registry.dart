@@ -1,3 +1,4 @@
+import 'package:one_remote/app/localized_strings.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
@@ -6,18 +7,17 @@ abstract interface class PairingProgressHintRegistry {
 }
 
 class DefaultPairingProgressHintRegistry implements PairingProgressHintRegistry {
-  const DefaultPairingProgressHintRegistry();
+  DefaultPairingProgressHintRegistry({required LocalizedStrings localizedStrings})
+    : _localizedStrings = localizedStrings;
 
-  static const Map<(TvBrand, String), String> _hints = {
-    (TvBrand.lg, TvDevice.defaultProtocolVariant):
-        'Look at your TV screen and accept the pairing prompt.',
-    (TvBrand.samsung, TvDevice.defaultProtocolVariant):
-        'Accept any connection permission that appears on your TV.',
-    (TvBrand.hisense, TvDevice.defaultProtocolVariant):
-        'Connecting to TV\u2026',
-  };
+  final LocalizedStrings _localizedStrings;
 
   @override
   String? hintFor(TvBrand brand, String protocolVariant) =>
-      _hints[(brand, protocolVariant)];
+      switch ((brand, protocolVariant)) {
+        (TvBrand.lg, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingLgProgressHint,
+        (TvBrand.samsung, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingSamsungProgressHint,
+        (TvBrand.hisense, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingHisenseProgressHint,
+        _ => null,
+      };
 }

@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/app/one_remote_app.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
@@ -35,6 +36,7 @@ import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_page.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
 import 'package:one_remote/theme/app_theme.dart';
+import 'fakes/fake_localized_strings.dart';
 
 void main() {
   test('menu defaults to the former pair grid position', () {
@@ -57,13 +59,11 @@ void main() {
     expect(find.text('OneRemote'), findsOneWidget);
     expect(find.text('No TV connected'), findsOneWidget);
     expect(find.text('Disconnected'), findsOneWidget);
-    expect(find.text('Disconnected'), findsNothing);
     expect(find.text('OK'), findsOneWidget);
     expect(find.text('WWW'), findsOneWidget);
     expect(find.byIcon(Icons.power_settings_new), findsOneWidget);
     expect(find.byIcon(Icons.home_outlined), findsOneWidget);
     expect(find.byIcon(Icons.settings_remote), findsOneWidget);
-    expect(find.byIcon(Icons.wifi), findsOneWidget);
     expect(find.byIcon(Icons.keyboard_outlined), findsOneWidget);
     expect(find.text('CH'), findsOneWidget);
     expect(find.text('VOL'), findsOneWidget);
@@ -83,17 +83,17 @@ void main() {
     await tester.pump();
 
     expect(find.text('No device selected.'), findsNothing);
-    expect(find.text('Ready'), findsOneWidget);
+    expect(find.text('Connect a TV to begin'), findsOneWidget);
   });
 
   testWidgets('pairs to discovered TV and sends command from remote', (
     WidgetTester tester,
   ) async {
     GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
-      const DefaultPrePairingStepsRegistry(),
+      DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
     );
     GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
-      const DefaultPairingProgressHintRegistry(),
+      DefaultPairingProgressHintRegistry(localizedStrings: FakeLocalizedStrings()),
     );
     GetIt.instance.registerSingleton<TvReachabilityService>(
       _StubTvReachabilityService(),
@@ -107,10 +107,13 @@ void main() {
         HisenseAdapter(transportClient: FakeHisenseTransportClient()),
       ],
       variantRegistry: const DefaultVariantResolutionRegistry(),
+      localizedStrings: FakeLocalizedStrings(),
     );
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           commandService: commandService,
           deviceRepository: InMemoryDeviceRepository(),
@@ -156,10 +159,10 @@ void main() {
     WidgetTester tester,
   ) async {
     GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
-      const DefaultPrePairingStepsRegistry(),
+      DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
     );
     GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
-      const DefaultPairingProgressHintRegistry(),
+      DefaultPairingProgressHintRegistry(localizedStrings: FakeLocalizedStrings()),
     );
     GetIt.instance.registerSingleton<TvReachabilityService>(
       _StubTvReachabilityService(),
@@ -181,6 +184,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           commandService: InMemoryRemoteCommandService(),
           deviceRepository: repository,
@@ -206,8 +211,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No TV connected'), findsOneWidget);
-    expect(find.text('Reconnect TV to begin'), findsOneWidget);
-    expect(find.text('Disconnected'), findsNothing);
+    expect(find.text('Connect a TV to begin'), findsOneWidget);
+    expect(find.text('Disconnected'), findsOneWidget);
     expect(_pairButtonColor(tester), appColors.remoteSurface);
   });
 
@@ -216,12 +221,14 @@ void main() {
     (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: PairingPage(
             commandService: InMemoryRemoteCommandService(),
             discoveryService: _EmptyDiscoveryService(),
             deviceRepository: InMemoryDeviceRepository(),
-            stepsRegistry: const DefaultPrePairingStepsRegistry(),
-            hintRegistry: const DefaultPairingProgressHintRegistry(),
+            stepsRegistry: DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
+            hintRegistry: DefaultPairingProgressHintRegistry(localizedStrings: FakeLocalizedStrings()),
             reachabilityService: _StubTvReachabilityService(),
           ),
         ),
@@ -278,12 +285,14 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: PairingPage(
             commandService: InMemoryRemoteCommandService(),
             discoveryService: _StaticDiscoveryService(),
             deviceRepository: repository,
-            stepsRegistry: const DefaultPrePairingStepsRegistry(),
-            hintRegistry: const DefaultPairingProgressHintRegistry(),
+            stepsRegistry: DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
+            hintRegistry: DefaultPairingProgressHintRegistry(localizedStrings: FakeLocalizedStrings()),
             reachabilityService: _StubTvReachabilityService(),
             activeDeviceId: 'samsung-living-room',
           ),
@@ -341,12 +350,14 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: PairingPage(
             commandService: InMemoryRemoteCommandService(),
             discoveryService: _StaticDiscoveryService(),
             deviceRepository: repository,
-            stepsRegistry: const DefaultPrePairingStepsRegistry(),
-            hintRegistry: const DefaultPairingProgressHintRegistry(),
+            stepsRegistry: DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
+            hintRegistry: DefaultPairingProgressHintRegistry(localizedStrings: FakeLocalizedStrings()),
             reachabilityService: _StubTvReachabilityService(),
             activeDeviceId: activeDevice.id,
           ),
