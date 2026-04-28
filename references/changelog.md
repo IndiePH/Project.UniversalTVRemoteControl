@@ -3,6 +3,49 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-04-28
+
+### Added
+- Localization infrastructure: `flutter_localizations` + `intl` + ARB codegen; `l10n.yaml`,
+  `lib/l10n/app_en.arb` (all user-facing English strings), generated `AppLocalizations` wired
+  into `MaterialApp` with `localizationsDelegates` and `supportedLocales`
+- Flat `LocalizedStrings` abstract interface (`lib/app/localized_strings.dart`) with name-prefix
+  grouping (`pairing*`, `remote*`); `AppLocalizedStrings` concrete backed by generated class via
+  `static late AppLocalizations _l10n` updated in `MaterialApp.builder`; registered as
+  `sl.registerSingleton<LocalizedStrings>()`
+- `ValueNotifier<Locale>` registered in DI; `MaterialApp.locale` reacts to it — enables runtime
+  locale switching without restart (settings cog / language selector deferred to a future branch)
+- `FakeLocalizedStrings` test double (`test/fakes/fake_localized_strings.dart`) for unit-testing
+  services and registries without Flutter/`AppLocalizations` machinery
+- New unit tests: `pairing_progress_hint_registry_test.dart`,
+  `pre_pairing_steps_registry_test.dart`
+
+### Changed
+- All user-facing strings in `BrandRoutedRemoteCommandService`,
+  `DefaultPairingProgressHintRegistry`, and `DefaultPrePairingStepsRegistry` extracted to
+  `app_en.arb`; each class receives `required LocalizedStrings localizedStrings` via constructor
+  injection and delegates to it
+- `DefaultPrePairingStepsRegistry` step arrays use numbered ARB keys per brand
+  (`pairingLgPreStep0`, …) — ARB has no native array type
+- All presentation-layer string literals in `lib/remote_control/presentation/` and `lib/app/`
+  replaced with `AppLocalizations.of(context)!` lookups; `DateFormat.yMd().add_Hm()` replaces
+  manual `formatTwoDigits` for locale-aware date/time rendering
+- `TextInputCompatibilityException` now carries `TextCompatibilityError` enum instead of a
+  pre-formatted string; `BrandRoutedRemoteCommandService` resolves it to a localized string at
+  the catch site
+- Lane tests and `brand_routed_remote_command_service_test.dart` updated to inject
+  `FakeLocalizedStrings` via constructor
+
+### Removed
+- Dead code `PairingPageDialogs.confirmActiveRemoval` (never called)
+- `two_digit_format.dart` imports from `pairing_page_sections.dart` and
+  `pairing_page_dialogs.dart` (superseded by `DateFormat`)
+
+### Notes
+- English only in this branch; adding a second locale is a single `.arb` file — no code changes
+- `kRemoteLayoutItemDefinitions` const list excluded from localization (revisit if second locale added)
+- Debug/dev-only strings not extracted; visual smoke test (task 4.3) still pending
+
 ## 2026-04-27
 
 ### Changed
