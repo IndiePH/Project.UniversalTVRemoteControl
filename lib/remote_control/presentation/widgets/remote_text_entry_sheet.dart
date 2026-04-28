@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 
 /// Bottom-sheet content for sending text to the active TV session.
 class RemoteTextEntrySheet extends StatelessWidget {
@@ -15,6 +16,7 @@ class RemoteTextEntrySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.viewInsetsOf(context).bottom,
@@ -27,16 +29,16 @@ class RemoteTextEntrySheet extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Send text to TV',
+                l10n.remoteTextEntrySheetTitle,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: controller,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search or enter text',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: l10n.remoteTextEntryHint,
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.text,
                 textInputAction: TextInputAction.send,
@@ -45,7 +47,7 @@ class RemoteTextEntrySheet extends StatelessWidget {
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: () => unawaited(onSend()),
-                child: const Text('Send'),
+                child: Text(l10n.remoteTextEntrySendButton),
               ),
             ],
           ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_edit_grid_painter.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_drag_session.dart';
@@ -271,20 +272,20 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
           children: [
             Expanded(
               child: Text(
-                'Layout Editor',
+                AppLocalizations.of(context)!.layoutEditorTitle,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
             TextButton.icon(
               onPressed: () => unawaited(widget.onResetLayout()),
               icon: const Icon(Icons.restart_alt),
-              label: const Text('Reset Layout'),
+              label: Text(AppLocalizations.of(context)!.layoutEditorResetButton),
             ),
           ],
         ),
         const SizedBox(height: 6),
         Text(
-          'Drag buttons to new positions. Grid lines show cells; a green outline means the drop is allowed.',
+          AppLocalizations.of(context)!.layoutEditorInstruction,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),

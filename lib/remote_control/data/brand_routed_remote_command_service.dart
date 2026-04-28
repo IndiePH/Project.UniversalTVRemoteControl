@@ -1,4 +1,6 @@
+import 'package:one_remote/app/localized_strings.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
+import 'package:one_remote/remote_control/application/text_compatibility_error.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/transport_log_provider.dart';
@@ -21,11 +23,14 @@ class BrandRoutedRemoteCommandService
   BrandRoutedRemoteCommandService({
     required List<TvBrandAdapter> adapters,
     required VariantResolutionRegistry variantRegistry,
+    required LocalizedStrings localizedStrings,
   }) : _adapters = {for (final a in adapters) (a.brand, a.protocolVariant): a},
-       _variantRegistry = variantRegistry;
+       _variantRegistry = variantRegistry,
+       _localizedStrings = localizedStrings;
 
   final Map<(TvBrand, String), TvBrandAdapter> _adapters;
   final VariantResolutionRegistry _variantRegistry;
+  final LocalizedStrings _localizedStrings;
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {
@@ -42,7 +47,7 @@ class BrandRoutedRemoteCommandService
     final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
       return CommandDispatchResult.unsupported(
-        'No adapter configured for ${device.brand.name}.',
+        _localizedStrings.pairingNoAdapter(device.brand.name),
       );
     }
     try {
@@ -59,12 +64,12 @@ class BrandRoutedRemoteCommandService
         modelIdentifier: info?.modelIdentifier,
       );
       return CommandDispatchResult.success(
-        'Pairing approved for ${device.displayName}.',
+        _localizedStrings.pairingApproved(device.displayName),
         device: enriched,
       );
     } catch (error) {
       return CommandDispatchResult.failure(
-        'Pairing failed for ${device.displayName}.',
+        _localizedStrings.pairingFailed(device.displayName),
         exception: error,
       );
     }
@@ -78,7 +83,7 @@ class BrandRoutedRemoteCommandService
     final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
       return CommandDispatchResult.unsupported(
-        'No adapter configured for ${device.brand.name}.',
+        _localizedStrings.pairingNoAdapter(device.brand.name),
       );
     }
     try {
@@ -87,7 +92,7 @@ class BrandRoutedRemoteCommandService
         fourDigitPin: fourDigitPin,
       );
       return CommandDispatchResult.success(
-        'Pairing code accepted for ${device.displayName}.',
+        _localizedStrings.pairingCodeAccepted(device.displayName),
       );
     } on UnsupportedError catch (error) {
       return CommandDispatchResult.unsupported(
@@ -95,7 +100,7 @@ class BrandRoutedRemoteCommandService
       );
     } catch (error) {
       return CommandDispatchResult.failure(
-        'Failed to submit pairing code for ${device.displayName}.',
+        _localizedStrings.pairingCodeSubmitFailed(device.displayName),
         exception: error,
       );
     }
@@ -109,20 +114,22 @@ class BrandRoutedRemoteCommandService
     final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
       return CommandDispatchResult.unsupported(
-        'No adapter configured for ${device.brand.name}.',
+        _localizedStrings.pairingNoAdapter(device.brand.name),
       );
     }
     if (!adapter.supportedCommands.contains(command)) {
       return CommandDispatchResult.unsupported(
-        'Command ${command.name} is not supported for ${device.brand.name}.',
+        _localizedStrings.remoteCommandUnsupported(command.name, device.brand.name),
       );
     }
     try {
       await adapter.sendCommand(device: device, command: command);
-      return CommandDispatchResult.success('Sent: ${command.name}');
+      return CommandDispatchResult.success(
+        _localizedStrings.remoteCommandSent(command.name),
+      );
     } catch (error) {
       return CommandDispatchResult.failure(
-        'Failed to send command to ${device.displayName}.',
+        _localizedStrings.remoteCommandFailed(device.displayName),
         exception: error,
       );
     }
@@ -136,22 +143,30 @@ class BrandRoutedRemoteCommandService
     final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
       return CommandDispatchResult.unsupported(
-        'No adapter configured for ${device.brand.name}.',
+        _localizedStrings.pairingNoAdapter(device.brand.name),
       );
     }
     if (!adapter.supportsTextInput) {
       return CommandDispatchResult.unsupported(
-        'Text input is not supported for ${device.brand.name}.',
+        _localizedStrings.remoteTextInputUnsupported(device.brand.name),
       );
     }
     try {
       await adapter.sendText(device: device, text: text);
-      return CommandDispatchResult.success('Text sent: "$text"');
+      return CommandDispatchResult.success(
+        _localizedStrings.remoteTextSent(text),
+      );
     } on TextInputCompatibilityException catch (error) {
-      return CommandDispatchResult.compatibility(error.userMessage);
+      final message = switch (error.error) {
+        TextCompatibilityError.lgImeFocusRequired =>
+          _localizedStrings.remoteTextLgImeFocusRequired,
+        TextCompatibilityError.samsungScreenNotAcceptingInput =>
+          _localizedStrings.remoteTextSamsungCompatibilityError,
+      };
+      return CommandDispatchResult.compatibility(message);
     } catch (error) {
       return CommandDispatchResult.failure(
-        'Failed to send text to ${device.displayName}.',
+        _localizedStrings.remoteTextFailed(device.displayName),
         exception: error,
       );
     }

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
+import 'package:one_remote/remote_control/application/text_compatibility_error.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
@@ -13,6 +14,7 @@ import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
+import '../../../../fakes/fake_localized_strings.dart';
 
 void main() {
   const samsungDevice = TvDevice(
@@ -37,8 +39,8 @@ void main() {
 
   test('Samsung lane: unsupported command returns UI-safe result', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [const _SubsetSamsungAdapter()],
-      variantRegistry: const DefaultVariantResolutionRegistry(),
+      adapters: [const _SubsetSamsungAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+      localizedStrings: FakeLocalizedStrings(),
     );
 
     final result = await service.sendCommand(
@@ -57,8 +59,8 @@ void main() {
     'Samsung lane: compatibility text exception is surfaced safely',
     () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [const _CompatibilitySamsungAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [const _CompatibilitySamsungAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
 
       final result = await service.sendText(
@@ -68,7 +70,7 @@ void main() {
 
       expect(result.isSuccess, isFalse);
       expect(result.getOutcome(), CommandOutcome.compatibility);
-      expect(result.message, 'Samsung IME unavailable on this screen.');
+      expect(result.message, FakeLocalizedStrings().remoteTextSamsungCompatibilityError);
     },
   );
 
@@ -76,8 +78,8 @@ void main() {
     'Samsung lane: text send returns unsupported when flag is off',
     () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [const _SubsetSamsungAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [const _SubsetSamsungAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
 
       final result = await service.sendText(
@@ -131,8 +133,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           SamsungAdapter(transportClient: _SpySamsungTransportClient()),
-        ],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: samsungDevice);
       expect(result.isSuccess, isTrue);
@@ -145,8 +147,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           SamsungAdapter(transportClient: _SpySamsungTransportClient()),
-        ],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.submitPairingCode(
         device: samsungDevice,
@@ -174,8 +176,8 @@ void main() {
       // _CompatibilitySamsungAdapter has supportsTextInput=true so the service
       // proceeds past that gate and reaches the capability check.
       final service = BrandRoutedRemoteCommandService(
-        adapters: [const _CompatibilitySamsungAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [const _CompatibilitySamsungAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final values = await service
           .watchRemoteTextInputReady(device: samsungDeviceNoTextInput)
@@ -340,9 +342,7 @@ class _CompatibilitySamsungAdapter implements TvBrandAdapter {
     required TvDevice device,
     required String text,
   }) async {
-    throw TextInputCompatibilityException(
-      'Samsung IME unavailable on this screen.',
-    );
+    throw TextInputCompatibilityException(TextCompatibilityError.samsungScreenNotAcceptingInput);
   }
 
   @override

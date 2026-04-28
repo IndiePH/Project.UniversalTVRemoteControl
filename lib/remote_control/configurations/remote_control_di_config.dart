@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/i_di_config.dart';
+import 'package:one_remote/app/localized_strings.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
@@ -34,10 +35,10 @@ void _configureShared(GetIt sl) {
   sl.registerSingleton<DeviceRepository>(SharedPrefsDeviceRepository());
   sl.registerSingleton<LayoutRepository>(SharedPrefsLayoutRepository());
   sl.registerSingleton<PrePairingStepsRegistry>(
-    const DefaultPrePairingStepsRegistry(),
+    DefaultPrePairingStepsRegistry(localizedStrings: sl<LocalizedStrings>()),
   );
   sl.registerSingleton<PairingProgressHintRegistry>(
-    const DefaultPairingProgressHintRegistry(),
+    DefaultPairingProgressHintRegistry(localizedStrings: sl<LocalizedStrings>()),
   );
   sl.registerSingleton<VariantResolutionRegistry>(
     const DefaultVariantResolutionRegistry(),
@@ -74,6 +75,7 @@ final class RemoteControlDiConfig implements IDiConfig {
     final commandService = BrandRoutedRemoteCommandService(
       adapters: adapters,
       variantRegistry: sl<VariantResolutionRegistry>(),
+      localizedStrings: sl<LocalizedStrings>(),
     );
     sl.registerSingleton<RemoteCommandService>(commandService);
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
@@ -114,6 +116,7 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
     final commandService = BrandRoutedRemoteCommandService(
       adapters: adapters,
       variantRegistry: sl<VariantResolutionRegistry>(),
+      localizedStrings: sl<LocalizedStrings>(),
     );
     sl.registerSingleton<RemoteCommandService>(commandService);
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
