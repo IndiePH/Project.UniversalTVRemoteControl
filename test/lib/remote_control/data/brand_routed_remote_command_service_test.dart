@@ -12,6 +12,7 @@ import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
+import '../../../fakes/fake_localized_strings.dart';
 
 void main() {
   const device = TvDevice(
@@ -43,8 +44,8 @@ void main() {
       final samsung = _RecordingAdapter(brand: TvBrand.samsung);
       final lg = _RecordingAdapter(brand: TvBrand.lg);
       final service = BrandRoutedRemoteCommandService(
-        adapters: [samsung, lg],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [samsung, lg],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
 
       await service.preparePairing(device: device);
@@ -55,8 +56,8 @@ void main() {
 
     test('returns unsupported when no adapter configured for brand', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: device);
       expect(result.isSuccess, isFalse);
@@ -65,8 +66,8 @@ void main() {
 
     test('returns success when adapter succeeds', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: device);
       expect(result.isSuccess, isTrue);
@@ -79,8 +80,8 @@ void main() {
   group('preparePairing enrichment', () {
     test('result.device is non-null on success', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: device);
       expect(result.isSuccess, isTrue);
@@ -96,8 +97,8 @@ void main() {
             _InfoReturningAdapter(
               const TvDeviceInfo(modelIdentifier: 'ModelX'),
             ),
-          ],
-          variantRegistry: const _StubVariantRegistry(resolvedVariant),
+          ],variantRegistry: const _StubVariantRegistry(resolvedVariant),
+          localizedStrings: FakeLocalizedStrings(),
         );
         final result = await service.preparePairing(device: device);
         expect(
@@ -121,8 +122,8 @@ void main() {
             _InfoReturningAdapter(
               const TvDeviceInfo(modelIdentifier: 'ModelX'),
             ),
-          ],
-          variantRegistry: const _StubVariantRegistry(variant),
+          ],variantRegistry: const _StubVariantRegistry(variant),
+          localizedStrings: FakeLocalizedStrings(),
         );
         final result = await service.preparePairing(device: device);
         expect(result.device!.protocolVariant, equals(variant));
@@ -133,8 +134,8 @@ void main() {
       'result.device uses brand defaults when queryDeviceInfo returns null',
       () async {
         final service = BrandRoutedRemoteCommandService(
-          adapters: [_RecordingAdapter(brand: TvBrand.samsung)],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
+          adapters: [_RecordingAdapter(brand: TvBrand.samsung)],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
         );
         final result = await service.preparePairing(device: device);
         expect(
@@ -156,8 +157,8 @@ void main() {
             _InfoReturningAdapter(
               const TvDeviceInfo(modelIdentifier: 'OLED65C2PSA'),
             ),
-          ],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
+          ],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
         );
         final result = await service.preparePairing(device: device);
         expect(result.device!.modelIdentifier, equals('OLED65C2PSA'));
@@ -168,8 +169,8 @@ void main() {
       'result.device modelIdentifier is null when queryDeviceInfo returns no model',
       () async {
         final service = BrandRoutedRemoteCommandService(
-          adapters: [_InfoReturningAdapter(const TvDeviceInfo())],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
+          adapters: [_InfoReturningAdapter(const TvDeviceInfo())],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
         );
         final result = await service.preparePairing(device: device);
         expect(result.device!.modelIdentifier, isNull);
@@ -182,8 +183,8 @@ void main() {
       final samsung = _RecordingAdapter(brand: TvBrand.samsung);
       final lg = _RecordingAdapter(brand: TvBrand.lg);
       final service = BrandRoutedRemoteCommandService(
-        adapters: [samsung, lg],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [samsung, lg],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
 
       await service.submitPairingCode(device: device, fourDigitPin: '1234');
@@ -194,8 +195,8 @@ void main() {
 
     test('returns unsupported when no adapter configured for brand', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.submitPairingCode(
         device: device,
@@ -206,8 +207,8 @@ void main() {
 
     test('returns success when adapter succeeds', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.submitPairingCode(
         device: device,
@@ -222,8 +223,8 @@ void main() {
       final samsung = _RecordingAdapter(brand: TvBrand.samsung);
       final lg = _RecordingAdapter(brand: TvBrand.lg);
       final service = BrandRoutedRemoteCommandService(
-        adapters: [samsung, lg],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [samsung, lg],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
 
       await service.sendCommand(
@@ -237,8 +238,8 @@ void main() {
 
     test('returns unsupported when no adapter configured for brand', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendCommand(
         device: device,
@@ -255,8 +256,8 @@ void main() {
           supportedCommands: {},
         );
         final service = BrandRoutedRemoteCommandService(
-          adapters: [adapter],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
+          adapters: [adapter],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
         );
 
         final result = await service.sendCommand(
@@ -271,8 +272,8 @@ void main() {
 
     test('returns success when adapter succeeds', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendCommand(
         device: device,
@@ -287,8 +288,8 @@ void main() {
       final samsung = _RecordingAdapter(brand: TvBrand.samsung);
       final lg = _RecordingAdapter(brand: TvBrand.lg);
       final service = BrandRoutedRemoteCommandService(
-        adapters: [samsung, lg],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [samsung, lg],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
 
       await service.sendText(device: device, text: 'hello');
@@ -299,8 +300,8 @@ void main() {
 
     test('returns unsupported when no adapter configured for brand', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendText(device: device, text: 'hello');
       expect(result.isSuccess, isFalse);
@@ -314,8 +315,8 @@ void main() {
           supportsTextInput: false,
         );
         final service = BrandRoutedRemoteCommandService(
-          adapters: [adapter],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
+          adapters: [adapter],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
         );
 
         final result = await service.sendText(device: device, text: 'hello');
@@ -327,8 +328,8 @@ void main() {
 
     test('returns success when adapter succeeds', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendText(device: device, text: 'hello');
       expect(result.isSuccess, isTrue);
@@ -338,8 +339,8 @@ void main() {
   group('brand dispatch — watchRemoteTextInputReady', () {
     test('returns false stream when no adapter configured for brand', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service
           .watchRemoteTextInputReady(device: device)
@@ -355,8 +356,8 @@ void main() {
           supportsTextInput: false,
         );
         final service = BrandRoutedRemoteCommandService(
-          adapters: [adapter],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
+          adapters: [adapter],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
         );
         final result = await service
             .watchRemoteTextInputReady(device: device)
@@ -370,8 +371,8 @@ void main() {
       () async {
         final adapter = _RecordingAdapter(brand: TvBrand.samsung);
         final service = BrandRoutedRemoteCommandService(
-          adapters: [adapter],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
+          adapters: [adapter],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
         );
         final result = await service
             .watchRemoteTextInputReady(device: deviceNoTextInput)
@@ -386,8 +387,8 @@ void main() {
         textInputReadyStream: Stream.value(true),
       );
       final service = BrandRoutedRemoteCommandService(
-        adapters: [adapter],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [adapter],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service
           .watchRemoteTextInputReady(device: device)
@@ -405,8 +406,8 @@ void main() {
         textInputReadyStream: Stream.value(false),
       );
       final service = BrandRoutedRemoteCommandService(
-        adapters: [samsung, lg],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [samsung, lg],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service
           .watchRemoteTextInputReady(device: device)
@@ -424,8 +425,8 @@ void main() {
         textInputReadyStream: Stream.value(true),
       );
       final service = BrandRoutedRemoteCommandService(
-        adapters: [samsung, lg],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [samsung, lg],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service
           .watchRemoteTextInputReady(device: lgDevice)
@@ -440,8 +441,8 @@ void main() {
   group('preparePairing — unexpected failure', () {
     test('returns failure outcome', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: device);
       expect(result.isSuccess, isFalse);
@@ -450,8 +451,8 @@ void main() {
 
     test('message identifies the operation and device', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: device);
       expect(result.message, 'Pairing failed for ${device.displayName}.');
@@ -459,8 +460,8 @@ void main() {
 
     test('exception carries the raw error', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: device);
       expect(result.exception, isA<StateError>());
@@ -471,8 +472,8 @@ void main() {
   group('submitPairingCode — unexpected failure', () {
     test('returns failure outcome', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.submitPairingCode(
         device: device,
@@ -484,8 +485,8 @@ void main() {
 
     test('message identifies the operation and device', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.submitPairingCode(
         device: device,
@@ -499,8 +500,8 @@ void main() {
 
     test('exception carries the raw error', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.submitPairingCode(
         device: device,
@@ -514,8 +515,8 @@ void main() {
   group('sendCommand — unexpected failure', () {
     test('returns failure outcome', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendCommand(
         device: device,
@@ -527,8 +528,8 @@ void main() {
 
     test('message identifies the operation and device', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendCommand(
         device: device,
@@ -542,8 +543,8 @@ void main() {
 
     test('exception carries the raw error', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendCommand(
         device: device,
@@ -557,8 +558,8 @@ void main() {
   group('sendText — unexpected failure', () {
     test('returns failure outcome', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendText(device: device, text: 'hello');
       expect(result.isSuccess, isFalse);
@@ -567,8 +568,8 @@ void main() {
 
     test('message identifies the operation and device', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendText(device: device, text: 'hello');
       expect(result.message, 'Failed to send text to ${device.displayName}.');
@@ -576,8 +577,8 @@ void main() {
 
     test('exception carries the raw error', () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [_ThrowingAdapter()],
-        variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendText(device: device, text: 'hello');
       expect(result.exception, isA<StateError>());
@@ -594,8 +595,8 @@ void main() {
       () {
         final adapter = _LogProviderAdapter(brand: TvBrand.samsung);
         final service = BrandRoutedRemoteCommandService(
-          adapters: [adapter],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
+          adapters: [adapter],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
         );
 
         final reader = service.readerForDevice(device);
@@ -608,8 +609,8 @@ void main() {
       () {
         final lg = _RecordingAdapter(brand: TvBrand.lg);
         final service = BrandRoutedRemoteCommandService(
-          adapters: [lg],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
+          adapters: [lg],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
         );
 
         final reader = service.readerForDevice(lgDevice);
@@ -621,8 +622,8 @@ void main() {
       'returns NoopTransportLogReader when no adapter configured for brand',
       () {
         final service = BrandRoutedRemoteCommandService(
-          adapters: [],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
+          adapters: [],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
         );
 
         final reader = service.readerForDevice(device);

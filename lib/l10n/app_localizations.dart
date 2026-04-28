@@ -99,6 +99,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OneRemote'**
   String get appTitle;
+
+  /// No description provided for @pairingNoAdapter.
+  ///
+  /// In en, this message translates to:
+  /// **'No adapter configured for {brandName}.'**
+  String pairingNoAdapter(String brandName);
+
+  /// No description provided for @pairingApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing approved for {deviceName}.'**
+  String pairingApproved(String deviceName);
+
+  /// No description provided for @pairingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing failed for {deviceName}.'**
+  String pairingFailed(String deviceName);
+
+  /// No description provided for @pairingCodeAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing code accepted for {deviceName}.'**
+  String pairingCodeAccepted(String deviceName);
+
+  /// No description provided for @pairingCodeSubmitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to submit pairing code for {deviceName}.'**
+  String pairingCodeSubmitFailed(String deviceName);
+
+  /// No description provided for @pairingLgProgressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Look at your TV screen and accept the pairing prompt.'**
+  String get pairingLgProgressHint;
+
+  /// No description provided for @pairingSamsungProgressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept any connection permission that appears on your TV.'**
+  String get pairingSamsungProgressHint;
+
+  /// No description provided for @pairingHisenseProgressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to TV…'**
+  String get pairingHisenseProgressHint;
+
+  /// No description provided for @pairingLgPreStep0.
+  ///
+  /// In en, this message translates to:
+  /// **'Your LG TV is ON and connected to the same Wi-Fi.'**
+  String get pairingLgPreStep0;
+
+  /// No description provided for @pairingLgPreStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'When the pairing request appears on your TV screen, tap \'Allow\'.'**
+  String get pairingLgPreStep1;
+
+  /// No description provided for @pairingSamsungPreStep0.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Samsung TV is ON and connected to the same Wi-Fi.'**
+  String get pairingSamsungPreStep0;
+
+  /// No description provided for @pairingSamsungPreStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept any connection permission that appears on your TV.'**
+  String get pairingSamsungPreStep1;
+
+  /// No description provided for @remoteCommandUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Command {commandName} is not supported for {brandName}.'**
+  String remoteCommandUnsupported(String commandName, String brandName);
+
+  /// No description provided for @remoteCommandSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent: {commandName}'**
+  String remoteCommandSent(String commandName);
+
+  /// No description provided for @remoteCommandFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send command to {deviceName}.'**
+  String remoteCommandFailed(String deviceName);
+
+  /// No description provided for @remoteTextInputUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Text input is not supported for {brandName}.'**
+  String remoteTextInputUnsupported(String brandName);
+
+  /// No description provided for @remoteTextSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Text sent: \"{text}\"'**
+  String remoteTextSent(String text);
+
+  /// No description provided for @remoteTextFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send text to {deviceName}.'**
+  String remoteTextFailed(String deviceName);
+
+  /// No description provided for @remoteTextLgImeFocusRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'LG IME text injection rejected — ensure a text field is focused on the TV.'**
+  String get remoteTextLgImeFocusRequired;
+
+  /// No description provided for @remoteTextSamsungCompatibilityError.
+  ///
+  /// In en, this message translates to:
+  /// **'Typing from this phone is not available on this TV screen or app. Use the TV on-screen keyboard and direction buttons to enter text.'**
+  String get remoteTextSamsungCompatibilityError;
 }
 
 class _AppLocalizationsDelegate

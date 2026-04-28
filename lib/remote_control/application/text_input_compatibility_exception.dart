@@ -1,10 +1,7 @@
-/// Thrown when the TV session is fine but the current app or UI state does not
-/// accept remote IME text injection (common for some streaming or custom UIs).
+import 'package:one_remote/remote_control/application/text_compatibility_error.dart';
+
 class TextInputCompatibilityException implements Exception {
-  TextInputCompatibilityException(this.userMessage);
+  TextInputCompatibilityException(this.error);
 
-  final String userMessage;
-
-  @override
-  String toString() => userMessage;
+  final TextCompatibilityError error;
 }

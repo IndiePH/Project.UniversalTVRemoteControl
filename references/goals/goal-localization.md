@@ -30,10 +30,11 @@ makes adding further locales a single `.arb` file with no code changes.
 | D8 | `CommandDispatchResult.message` strings in `BrandRoutedRemoteCommandService` are in scope for localization — confirmed user-facing via `MessageHandler.sanitize` → `pairing_page_coordinator` and `remote_home_page` | These strings reach the user's screen; they must be translated |
 | D9 | English is the only locale delivered in this branch; the infrastructure makes adding further locales a single `.arb` file | Scope control — no second locale until the base infrastructure is stable |
 | D10 | Debug/dev-only strings (DragDrop debug labels, transport log labels, `lib/remote_control/debug/`) excluded from localization scope | Never shown to end users; translating them adds noise with no user value |
+| D11 | `TextInputCompatibilityException` carries a `TextCompatibilityError` enum instead of a pre-formatted string; `BrandRoutedRemoteCommandService.sendText` resolves the enum to a localized string at the catch site | Keeps localization resolution at the service boundary; adapter layer stays string-free; eliminates dynamic `appContext` diagnostic suffix from Samsung throw site (not user-meaningful) |
 
 ---
 
-## Sub-goal 1 — Architecture & Infrastructure Setup
+## Sub-goal 1 — Architecture & Infrastructure Setup ✓ DONE
 
 | ID | Task | Skills | Deps | Risk |
 |----|------|--------|------|------|
@@ -45,14 +46,14 @@ makes adding further locales a single `.arb` file with no code changes.
 
 ---
 
-## Sub-goal 2 — Service & Data Layer String Extraction
+## Sub-goal 2 — Service & Data Layer String Extraction ✓ DONE
 
-| ID | Task | Skills | Deps | Risk |
-|----|------|--------|------|------|
-| 2.1 | Audit all string literals in `lib/remote_control/data/` and `lib/remote_control/application/` that surface to users via `CommandDispatchResult.message` / `MessageHandler.sanitize`; list every string and its runtime parameters | `technical-debt-management`, `abstraction-domain-modeling` | — | LOW |
-| 2.2 | Add all `BrandRoutedRemoteCommandService` user-facing messages to `app_en.arb` and `LocalizedStrings`; add `required LocalizedStrings localizedStrings` constructor parameter; replace hardcoded literals with `_localizedStrings.pairingXxx(params)` / `_localizedStrings.remoteXxx(params)` calls; update DI config to inject `sl<LocalizedStrings>()` | `language-specific-implementation`, `framework-mastery` | 1.3, 1.4, 2.1 | MEDIUM |
-| 2.3 | Localize `DefaultPairingProgressHintRegistry` hints — add hint strings to ARB and `LocalizedStrings`; add `required LocalizedStrings localizedStrings` constructor parameter; replace static `_hints` map with a lookup against `_localizedStrings`; update DI config | `framework-mastery`, `abstraction-domain-modeling` | 1.3, 1.4, 2.1 | MEDIUM |
-| 2.4 | Localize `DefaultPrePairingStepsRegistry` steps — add numbered ARB keys per brand (`pairingLgPreStep0`, …) and corresponding `LocalizedStrings` methods; add `required LocalizedStrings localizedStrings` constructor parameter; replace static `_steps` map with a builder iterating step-count constants; update DI config | `framework-mastery`, `abstraction-domain-modeling` | 1.3, 1.4, 2.1 | MEDIUM |
+| ID | Task | Skills | Deps | Risk | Status |
+|----|------|--------|------|------|--------|
+| 2.1 | Audit all string literals in `lib/remote_control/data/` and `lib/remote_control/application/` that surface to users via `CommandDispatchResult.message` / `MessageHandler.sanitize`; list every string and its runtime parameters | `technical-debt-management`, `abstraction-domain-modeling` | — | LOW | ✓ done |
+| 2.2 | Add all `BrandRoutedRemoteCommandService` user-facing messages to `app_en.arb` and `LocalizedStrings`; add `required LocalizedStrings localizedStrings` constructor parameter; replace hardcoded literals with `_localizedStrings.pairingXxx(params)` / `_localizedStrings.remoteXxx(params)` calls; update DI config to inject `sl<LocalizedStrings>()` | `language-specific-implementation`, `framework-mastery` | 1.3, 1.4, 2.1 | MEDIUM | ✓ done |
+| 2.3 | Localize `DefaultPairingProgressHintRegistry` hints — add hint strings to ARB and `LocalizedStrings`; add `required LocalizedStrings localizedStrings` constructor parameter; replace static `_hints` map with a lookup against `_localizedStrings`; update DI config | `framework-mastery`, `abstraction-domain-modeling` | 1.3, 1.4, 2.1 | MEDIUM | ✓ done |
+| 2.4 | Localize `DefaultPrePairingStepsRegistry` steps — add numbered ARB keys per brand (`pairingLgPreStep0`, …) and corresponding `LocalizedStrings` methods; add `required LocalizedStrings localizedStrings` constructor parameter; replace static `_steps` map with a builder iterating step-count constants; update DI config | `framework-mastery`, `abstraction-domain-modeling` | 1.3, 1.4, 2.1 | MEDIUM | ✓ done |
 
 ---
 

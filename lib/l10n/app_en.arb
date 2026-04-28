@@ -1,4 +1,101 @@
 {
   "@@locale": "en",
-  "appTitle": "OneRemote"
+
+  "appTitle": "OneRemote",
+
+  "pairingNoAdapter": "No adapter configured for {brandName}.",
+  "@pairingNoAdapter": {
+    "placeholders": {
+      "brandName": {"type": "String"}
+    }
+  },
+
+  "pairingApproved": "Pairing approved for {deviceName}.",
+  "@pairingApproved": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingFailed": "Pairing failed for {deviceName}.",
+  "@pairingFailed": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingCodeAccepted": "Pairing code accepted for {deviceName}.",
+  "@pairingCodeAccepted": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingCodeSubmitFailed": "Failed to submit pairing code for {deviceName}.",
+  "@pairingCodeSubmitFailed": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingLgProgressHint": "Look at your TV screen and accept the pairing prompt.",
+
+  "pairingSamsungProgressHint": "Accept any connection permission that appears on your TV.",
+
+  "pairingHisenseProgressHint": "Connecting to TV…",
+
+  "pairingLgPreStep0": "Your LG TV is ON and connected to the same Wi-Fi.",
+
+  "pairingLgPreStep1": "When the pairing request appears on your TV screen, tap 'Allow'.",
+
+  "pairingSamsungPreStep0": "Your Samsung TV is ON and connected to the same Wi-Fi.",
+
+  "pairingSamsungPreStep1": "Accept any connection permission that appears on your TV.",
+
+  "remoteCommandUnsupported": "Command {commandName} is not supported for {brandName}.",
+  "@remoteCommandUnsupported": {
+    "placeholders": {
+      "commandName": {"type": "String"},
+      "brandName": {"type": "String"}
+    }
+  },
+
+  "remoteCommandSent": "Sent: {commandName}",
+  "@remoteCommandSent": {
+    "placeholders": {
+      "commandName": {"type": "String"}
+    }
+  },
+
+  "remoteCommandFailed": "Failed to send command to {deviceName}.",
+  "@remoteCommandFailed": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "remoteTextInputUnsupported": "Text input is not supported for {brandName}.",
+  "@remoteTextInputUnsupported": {
+    "placeholders": {
+      "brandName": {"type": "String"}
+    }
+  },
+
+  "remoteTextSent": "Text sent: \"{text}\"",
+  "@remoteTextSent": {
+    "placeholders": {
+      "text": {"type": "String"}
+    }
+  },
+
+  "remoteTextFailed": "Failed to send text to {deviceName}.",
+  "@remoteTextFailed": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "remoteTextLgImeFocusRequired": "LG IME text injection rejected — ensure a text field is focused on the TV.",
+
+  "remoteTextSamsungCompatibilityError": "Typing from this phone is not available on this TV screen or app. Use the TV on-screen keyboard and direction buttons to enter text."
 }
