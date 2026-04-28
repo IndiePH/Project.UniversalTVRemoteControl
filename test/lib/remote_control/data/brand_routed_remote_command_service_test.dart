@@ -450,12 +450,13 @@ void main() {
     });
 
     test('message identifies the operation and device', () async {
+      final fake = FakeLocalizedStrings();
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
-        localizedStrings: FakeLocalizedStrings(),
+        localizedStrings: fake,
       );
       final result = await service.preparePairing(device: device);
-      expect(result.message, 'Pairing failed for ${device.displayName}.');
+      expect(result.message, fake.pairingFailed(device.displayName));
     });
 
     test('exception carries the raw error', () async {
@@ -484,18 +485,16 @@ void main() {
     });
 
     test('message identifies the operation and device', () async {
+      final fake = FakeLocalizedStrings();
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
-        localizedStrings: FakeLocalizedStrings(),
+        localizedStrings: fake,
       );
       final result = await service.submitPairingCode(
         device: device,
         fourDigitPin: '1234',
       );
-      expect(
-        result.message,
-        'Failed to submit pairing code for ${device.displayName}.',
-      );
+      expect(result.message, fake.pairingCodeSubmitFailed(device.displayName));
     });
 
     test('exception carries the raw error', () async {
@@ -527,18 +526,16 @@ void main() {
     });
 
     test('message identifies the operation and device', () async {
+      final fake = FakeLocalizedStrings();
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
-        localizedStrings: FakeLocalizedStrings(),
+        localizedStrings: fake,
       );
       final result = await service.sendCommand(
         device: device,
         command: RemoteCommand.volumeUp,
       );
-      expect(
-        result.message,
-        'Failed to send command to ${device.displayName}.',
-      );
+      expect(result.message, fake.remoteCommandFailed(device.displayName));
     });
 
     test('exception carries the raw error', () async {
@@ -567,12 +564,13 @@ void main() {
     });
 
     test('message identifies the operation and device', () async {
+      final fake = FakeLocalizedStrings();
       final service = BrandRoutedRemoteCommandService(
         adapters: [_ThrowingAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
-        localizedStrings: FakeLocalizedStrings(),
+        localizedStrings: fake,
       );
       final result = await service.sendText(device: device, text: 'hello');
-      expect(result.message, 'Failed to send text to ${device.displayName}.');
+      expect(result.message, fake.remoteTextFailed(device.displayName));
     });
 
     test('exception carries the raw error', () async {

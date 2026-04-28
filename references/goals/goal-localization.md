@@ -67,13 +67,13 @@ makes adding further locales a single `.arb` file with no code changes.
 
 ---
 
-## Sub-goal 4 — Validation
+## Sub-goal 4 — Validation ✓ DONE
 
-| ID | Task | Skills | Deps | Risk |
-|----|------|--------|------|------|
-| 4.1 | Update unit tests for `BrandRoutedRemoteCommandService` and both registries: (a) add `FakeLocalizedStrings` (plain Dart class implementing `LocalizedStrings`) and pass it via constructor in `setUp` — no Flutter or `AppLocalizations` machinery needed; (b) update any string assertions that currently hardcode English literals to assert against the fake's known return values instead, so tests remain meaningful without coupling to real translation content | `test-creation-strategy`, `regression-prevention` | 2.2, 2.3, 2.4 | MEDIUM |
-| 4.2 | Run full test suite; fix any regressions introduced by string extraction | `regression-prevention` | 4.1, 3.2 | MEDIUM |
-| 4.3 | Visual smoke test across all screens: confirm all UI strings display correct English text; no ARB key names or `null` bleed-through visible | `framework-mastery`, `regression-prevention` | 3.2, 4.1 | LOW |
+| ID | Task | Skills | Deps | Risk | Status |
+|----|------|--------|------|------|--------|
+| 4.1 | Update unit tests for `BrandRoutedRemoteCommandService` and both registries: (a) add `FakeLocalizedStrings` (plain Dart class implementing `LocalizedStrings`) and pass it via constructor in `setUp` — no Flutter or `AppLocalizations` machinery needed; (b) update any string assertions that currently hardcode English literals to assert against the fake's known return values instead, so tests remain meaningful without coupling to real translation content | `test-creation-strategy`, `regression-prevention` | 2.2, 2.3, 2.4 | MEDIUM | ✓ done |
+| 4.2 | Run full test suite; fix any regressions introduced by string extraction | `regression-prevention` | 4.1, 3.2 | MEDIUM | ✓ done |
+| 4.3 | Visual smoke test across all screens: confirm all UI strings display correct English text; no ARB key names or `null` bleed-through visible | `framework-mastery`, `regression-prevention` | 3.2, 4.1 | LOW | pending |
 
 ---
 

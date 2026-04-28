@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/app/one_remote_app.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
@@ -111,6 +112,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           commandService: commandService,
           deviceRepository: InMemoryDeviceRepository(),
@@ -181,6 +184,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           commandService: InMemoryRemoteCommandService(),
           deviceRepository: repository,
@@ -216,6 +221,8 @@ void main() {
     (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: PairingPage(
             commandService: InMemoryRemoteCommandService(),
             discoveryService: _EmptyDiscoveryService(),
@@ -278,6 +285,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: PairingPage(
             commandService: InMemoryRemoteCommandService(),
             discoveryService: _StaticDiscoveryService(),
@@ -341,6 +350,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: PairingPage(
             commandService: InMemoryRemoteCommandService(),
             discoveryService: _StaticDiscoveryService(),

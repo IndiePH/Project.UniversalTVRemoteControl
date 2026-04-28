@@ -461,7 +461,7 @@ class _PairingPageState extends State<PairingPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 child: AvailableTvListItem(
                   device: device,
-                  pairingNote: _pairingNoteForDevice(device.id),
+                  pairingNote: _pairingNoteForDevice(device.id, AppLocalizations.of(context)!),
                   onTap: () => unawaited(_selectDevice(device)),
                 ),
               );
@@ -472,11 +472,12 @@ class _PairingPageState extends State<PairingPage> {
     );
   }
 
-  String? _pairingNoteForDevice(String deviceId) {
+  String? _pairingNoteForDevice(String deviceId, AppLocalizations l10n) {
     return PairingPageData.pairingNoteForDevice(
       deviceId: deviceId,
       savedDeviceIds: _viewState.savedDeviceIds,
       pairingHistoryByDeviceId: _viewState.pairingHistoryByDeviceId,
+      l10n: l10n,
     );
   }
 }
