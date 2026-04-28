@@ -10,9 +10,9 @@ import 'package:one_remote/remote_control/application/transport_log_reader_provi
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
-import 'package:one_remote/remote_control/data/adapters/hisense/fake_hisense_transport_client.dart';
+import 'package:one_remote/remote_control/debug/fake_hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
-import 'package:one_remote/remote_control/data/adapters/hisense/real_hisense_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/hisense/hisense_mqtt_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_pairing_key_store.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_transport_client.dart';
@@ -24,7 +24,6 @@ import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
 import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/data/adapter_tv_reachability_service.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
-import 'package:one_remote/remote_control/data/fake_device_discovery_service.dart';
 import 'package:one_remote/remote_control/data/shared_prefs_device_repository.dart';
 import 'package:one_remote/remote_control/data/shared_prefs_layout_repository.dart';
 import 'package:one_remote/remote_control/data/ssdp_device_discovery_service.dart';
@@ -65,7 +64,7 @@ final class RemoteControlDiConfig implements IDiConfig {
       ),
     );
     sl.registerSingleton<HisenseTransportClient>(
-      RealHisenseTransportClient(hostResolver: _resolveHost),
+      HisenseMqttTransportClient(hostResolver: _resolveHost),
     );
     final adapters = [
       SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
@@ -104,7 +103,9 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
   @override
   void configure(GetIt sl, AppEnvironment env) {
     _configureShared(sl);
-    sl.registerSingleton<DeviceDiscoveryService>(FakeDeviceDiscoveryService());
+    // Keep debug command transports fake-able, but discovery should remain real
+    // so nearby TVs can still be scanned and selected during development.
+    sl.registerSingleton<DeviceDiscoveryService>(SsdpDeviceDiscoveryService());
     sl.registerSingleton<SamsungTransportClient>(FakeSamsungTransportClient());
     sl.registerSingleton<LgTransportClient>(FakeLgTransportClient());
     sl.registerSingleton<HisenseTransportClient>(FakeHisenseTransportClient());
