@@ -36,6 +36,10 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [x] text input field + send action
     - [x] search/keyboard layout control stays interactable when unpaired or when remote text is unavailable: same `No device selected.` toast as other keys when there is no active device; unsupported text input or IME-not-ready uses shared `_keyboardUnavailableMessage` ("Remote keyboard can't be used on this screen or with this TV.") for toast and status row, with `debugPrint` lines tagged `keyboard press:` / `keyboard send:` plus reason and `device.id`
   - [x] Added responsive sizing fixes for control cluster
+  - [x] Unpaired interaction guidance pass:
+    - [x] remote grid controls are visually disabled/tinted when no active TV is selected
+    - [x] tapping disabled controls updates status with `Pair a TV first.` guidance
+    - [x] pair/connect button receives temporary blink/highlight cue to drive pairing-first flow
 - [x] Milestone 1 / Task 1.4 (partial):
   - [x] Implemented command pipeline with brand-specific routing
   - [x] Added adapter capability checks (`supportedCommands`, `supportsTextInput`)
@@ -96,6 +100,9 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] README "Current Runtime Modes": default **real** Samsung + Hisense transports for APK/physical-TV testing; fake transports opt-in via dart-define; host overrides documented; Samsung log tag `samsung_transport` (see README)
   - [x] Implementation plan: **Brand transport defaults** section (real-by-default policy; do not regress)
   - [x] Dart documentation convention: public types lead with `///` stating purpose/role; add brief `//` or `///` for non-obvious algorithms, protocol steps, platform behavior, and invariants (not line-by-line narration)
+  - [x] Debug fake/real transport toggle now applies at runtime for pairing discovery (no app restart required), and debug sheet copy-log flow keeps sheet context visible on empty-log feedback
+  - [x] Debug DI baseline uses real SSDP discovery; fake discovery is selected dynamically only when fake transport mode is enabled
+  - [x] Hisense transport naming normalized to `HisenseMqttTransportClient` and fake client moved under `lib/remote_control/debug/` to match cross-brand conventions
 - [x] Milestone 1 / Task 1.1 (discovery hardening):
   - [x] Android APK SSDP: acquire Wi‑Fi **multicast lock** for the scan window (`flutter_multicast_lock`); manifest already declared `CHANGE_WIFI_MULTICAST_STATE` / `ACCESS_WIFI_STATE` / `INTERNET` — runtime lock was the missing piece for reliable multicast receive
   - [x] Hisense-oriented SSDP tuning: extra M-SEARCH `urn:schemas-upnp-org:device:MediaServer:1`, include `NT` in fingerprint probe, match `hiview` where firmware omits `hisense`/`vidaa` in headers
@@ -110,6 +117,10 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [x] send command via remote control
   - [x] Added active-device remove confirmation regression coverage (`REMOVE` path)
   - [x] Added pairing flow regression updates for moved pairing persistence/flow control
+  - [x] Added debug/runtime regression coverage:
+    - [x] fake transport toggle keeps debug settings sheet open
+    - [x] fake transport mode shows fake discovery devices in pairing list
+    - [x] copy transport logs keeps debug sheet open when no log exists
   - [ ] Broader scenario tests and network edge-case validation pending
 - [ ] Milestone 1 / Task 1.1:
   - [ ] Broaden physical-device validation for Samsung approval/pairing variants:

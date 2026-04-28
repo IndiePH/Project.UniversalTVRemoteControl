@@ -3,6 +3,29 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-04-29
+
+### Added
+- Unpaired-user guidance on the remote screen: disabled grid interactions now set a focused status
+  prompt (`Pair a TV first.`), and the pair button receives a temporary blinking highlight to direct
+  users into the pairing flow before sending remote actions
+- New widget coverage for debug runtime behavior: fake-transport toggle keeps the debug sheet open,
+  fake-discovery devices appear in pairing after toggle, and copy-log action keeps sheet open when
+  no logs exist
+
+### Changed
+- Debug runtime toggle flow now aligns pairing discovery with the active fake/real transport
+  override, without forcing an app restart
+- Debug discovery defaults to real SSDP in debug DI wiring so LAN scans work during development;
+  fake discovery is now selected at runtime when fake transport mode is enabled
+- Hisense transport naming/file structure normalized:
+  `real_hisense_transport_client.dart` -> `hisense_mqtt_transport_client.dart`, and fake client moved
+  to `lib/remote_control/debug/fake_hisense_transport_client.dart` for consistency with other brands
+- Remote power control keeps neutral styling while no active TV is paired (red power emphasis now
+  appears only when controls are active)
+- Debug-sheet copy-log feedback switched to overlay toast behavior and improved fake/real transport
+  subtitle messaging
+
 ## 2026-04-28
 
 ### Added
