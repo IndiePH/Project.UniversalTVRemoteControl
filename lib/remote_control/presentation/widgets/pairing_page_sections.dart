@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_data.dart';
 import 'package:one_remote/theme/app_theme.dart';
-import 'package:one_remote/utils/two_digit_format.dart';
 
 /// Busy overlay shown while waiting for TV-side pairing confirmation.
 class PairingBusyOverlay extends StatelessWidget {
@@ -55,7 +56,7 @@ class PairingBusyOverlay extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Waiting for TV approval...',
+                      AppLocalizations.of(context)!.pairingWaitingForApproval,
                       style: TextStyle(
                         color: appColors.pairingBusyOnCard,
                         fontWeight: FontWeight.w600,
@@ -99,7 +100,7 @@ class RemoteSelectionSectionHeader extends StatelessWidget {
 ///
 /// [onConfirmDismiss] must always return false; visual removal is driven by
 /// the parent list rebuilding after the underlying state update.
-String _pairedTvSubtitle(TvDevice device, DateTime? pairedAt) {
+String _pairedTvSubtitle(TvDevice device, DateTime? pairedAt, AppLocalizations l10n) {
   final parts = [device.brand.displayName];
   if (device.modelIdentifier != null) parts.add(device.modelIdentifier!);
   if (device.protocolVariant != TvDevice.defaultProtocolVariant) {
@@ -107,12 +108,8 @@ String _pairedTvSubtitle(TvDevice device, DateTime? pairedAt) {
   }
   var label = parts.join(' · ');
   if (pairedAt != null) {
-    final local = pairedAt.toLocal();
-    final date =
-        '${local.year}-${formatTwoDigits(local.month)}-${formatTwoDigits(local.day)}';
-    final time =
-        '${formatTwoDigits(local.hour)}:${formatTwoDigits(local.minute)}';
-    label = '$label (paired on $date $time)';
+    final formatted = DateFormat.yMd().add_Hm().format(pairedAt.toLocal());
+    label = '$label ${l10n.pairingDevicePairedOn(formatted)}';
   }
   return label;
 }
@@ -177,7 +174,7 @@ class _PairedTvListItemState extends State<PairedTvListItem> {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          _pairedTvSubtitle(widget.device, widget.pairedAt),
+          _pairedTvSubtitle(widget.device, widget.pairedAt, AppLocalizations.of(context)!),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -206,14 +203,14 @@ class _PairedTvListItemState extends State<PairedTvListItem> {
             IconButton(
               icon: const Icon(Icons.edit_outlined),
               iconSize: 18,
-              tooltip: 'Rename',
+              tooltip: AppLocalizations.of(context)!.pairingRenameTooltip,
               visualDensity: VisualDensity.compact,
               onPressed: widget.onRename,
             ),
             IconButton(
               icon: const Icon(Icons.info_outline),
               iconSize: 18,
-              tooltip: 'Device info',
+              tooltip: AppLocalizations.of(context)!.pairingDeviceInfoTooltip,
               visualDensity: VisualDensity.compact,
               onPressed: widget.onInfo,
             ),
@@ -264,39 +261,32 @@ class PairingTroubleshootingGuidanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Need help finding your TV?',
+          l10n.pairingNeedHelpTitle,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
         Card(
           child: ExpansionTile(
-            title: const Text('Permission and network checklist'),
+            title: Text(l10n.pairingPermissionChecklistTitle),
             childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             expandedCrossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                '- Keep phone and TV on the same Wi-Fi network.\n'
-                '- Allow local network/Wi-Fi permissions when prompted.\n'
-                '- Disable client/AP isolation on your router if enabled.',
-              ),
+            children: [
+              Text(l10n.pairingPermissionChecklistBody),
             ],
           ),
         ),
         Card(
           child: ExpansionTile(
-            title: const Text('Cannot find TV? Try this'),
+            title: Text(l10n.pairingCannotFindTvTitle),
             childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             expandedCrossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                '- Run Scan for TVs again and wait a few seconds.\n'
-                '- Use Add Manually with the TV IP address.\n'
-                '- Restart TV network, then re-open the pairing screen.',
-              ),
+            children: [
+              Text(l10n.pairingCannotFindTvBody),
             ],
           ),
         ),
@@ -330,16 +320,17 @@ class PairingManualAddSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Manual Pairing', style: Theme.of(context).textTheme.titleMedium),
+        Text(l10n.pairingManualTitle, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         DropdownButtonFormField<TvBrand>(
           initialValue: manualBrand,
-          decoration: const InputDecoration(
-            labelText: 'TV brand',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.pairingManualBrandLabel,
+            border: const OutlineInputBorder(),
           ),
           items: TvBrand.values
               .map(
@@ -359,10 +350,10 @@ class PairingManualAddSection extends StatelessWidget {
         const SizedBox(height: 8),
         TextField(
           controller: manualIpController,
-          decoration: const InputDecoration(
-            labelText: 'TV IP address',
-            hintText: 'e.g. 192.168.1.20',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.pairingManualIpLabel,
+            hintText: l10n.pairingManualIpHint,
+            border: const OutlineInputBorder(),
           ),
           keyboardType: TextInputType.number,
           onChanged: (_) => onManualIpChanged(),
@@ -390,7 +381,7 @@ class PairingManualAddSection extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 8),
-        PairingActionButton(label: 'Add Manually', onPressed: onAddManualDevice),
+        PairingActionButton(label: l10n.pairingManualAddButton, onPressed: onAddManualDevice),
       ],
     );
   }
@@ -426,14 +417,14 @@ class _PairingManualAddSheetState extends State<PairingManualAddSheet> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     final ip = _ipController.text.trim();
     if (ip.isEmpty) {
-      setState(() => _errorMessage = 'Enter a TV IP address.');
+      setState(() => _errorMessage = l10n.pairingManualErrorEmptyIp);
       return;
     }
     if (!PairingPageData.isValidIpv4(ip)) {
-      setState(() =>
-          _errorMessage = 'Enter a valid IPv4 address (e.g. 192.168.1.20).');
+      setState(() => _errorMessage = l10n.pairingManualErrorInvalidIp);
       return;
     }
     setState(() => _errorMessage = null);

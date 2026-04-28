@@ -3,6 +3,36 @@
 
   "appTitle": "OneRemote",
 
+  "uiCancel": "Cancel",
+  "uiDone": "Done",
+  "uiDismiss": "Dismiss",
+  "uiConfirm": "Confirm",
+  "uiContinue": "Continue",
+  "uiRename": "Rename",
+  "uiRemove": "Remove",
+
+  "connectionStateConnected": "Connected",
+  "connectionStateConnecting": "Connecting…",
+  "connectionStateError": "Connection error",
+  "connectionStateDisconnected": "Disconnected",
+  "connectTvTooltip": "Connect TV",
+
+  "layoutEditTooltip": "Edit layout",
+  "layoutEditDoneTooltip": "Done editing layout",
+  "layoutEditorTitle": "Layout Editor",
+  "layoutEditorResetButton": "Reset Layout",
+  "layoutEditorInstruction": "Drag buttons to new positions. Grid lines show cells; a green outline means the drop is allowed.",
+
+  "remoteTextEntrySheetTitle": "Send text to TV",
+  "remoteTextEntryHint": "Search or enter text",
+  "remoteTextEntrySendButton": "Send",
+
+  "dpadUp": "Up",
+  "dpadDown": "Down",
+  "dpadLeft": "Left",
+  "dpadRight": "Right",
+  "dpadOk": "OK",
+
   "pairingNoAdapter": "No adapter configured for {brandName}.",
   "@pairingNoAdapter": {
     "placeholders": {
@@ -51,6 +81,99 @@
   "pairingSamsungPreStep0": "Your Samsung TV is ON and connected to the same Wi-Fi.",
 
   "pairingSamsungPreStep1": "Accept any connection permission that appears on your TV.",
+
+  "pairingWaitingForApproval": "Waiting for TV approval...",
+
+  "pairingNotePreviouslyPaired": "Previously paired",
+  "pairingNotePreviouslyPairedAt": "Previously paired ({pairedAt})",
+  "@pairingNotePreviouslyPairedAt": {
+    "placeholders": {
+      "pairedAt": {"type": "String"}
+    }
+  },
+
+  "pairingDevicePairedOn": "(paired on {pairedAt})",
+  "@pairingDevicePairedOn": {
+    "placeholders": {
+      "pairedAt": {"type": "String"}
+    }
+  },
+
+  "pairingDeviceRemoved": "Removed {deviceName}",
+  "@pairingDeviceRemoved": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingExceptionFailed": "Pairing failed. Please try again.",
+  "pairingDiscoveryFailed": "Discovery failed. Please try again.",
+  "pairingNoTvConnected": "No TV connected",
+  "pairingNoDevicesFound": "No TVs found yet. Run a scan to discover devices.",
+  "pairingAddManuallyTooltip": "Add manually",
+  "pairingScanTooltip": "Scan for TVs",
+  "pairingSelectRemoteTitle": "Select Remote",
+  "pairingHelpTooltip": "Pairing help",
+  "pairingRenameTooltip": "Rename",
+  "pairingDeviceInfoTooltip": "Device info",
+
+  "pairingNeedHelpTitle": "Need help finding your TV?",
+  "pairingPermissionChecklistTitle": "Permission and network checklist",
+  "pairingPermissionChecklistBody": "- Keep phone and TV on the same Wi-Fi network.\n- Allow local network/Wi-Fi permissions when prompted.\n- Disable client/AP isolation on your router if enabled.",
+  "pairingCannotFindTvTitle": "Cannot find TV? Try this",
+  "pairingCannotFindTvBody": "- Run Scan for TVs again and wait a few seconds.\n- Use Add Manually with the TV IP address.\n- Restart TV network, then re-open the pairing screen.",
+
+  "pairingManualTitle": "Manual Pairing",
+  "pairingManualBrandLabel": "TV brand",
+  "pairingManualIpLabel": "TV IP address",
+  "pairingManualIpHint": "e.g. 192.168.1.20",
+  "pairingManualAddButton": "Add Manually",
+  "pairingManualErrorEmptyIp": "Enter a TV IP address.",
+  "pairingManualErrorInvalidIp": "Enter a valid IPv4 address (e.g. 192.168.1.20).",
+
+  "pairingPreCheckTitle": "Before pairing with {brandName}",
+  "@pairingPreCheckTitle": {
+    "placeholders": {
+      "brandName": {"type": "String"}
+    }
+  },
+  "pairingPreCheckMakeSure": "Make sure:",
+
+  "pairingPinTitle": "Enter TV pairing code",
+  "pairingPinBody": "Your TV may require a 4-digit code shown on-screen to finish pairing.",
+  "pairingPinCodeLabel": "4-digit TV code",
+  "pairingPinSubmitButton": "Submit code",
+  "pairingPinErrorInvalid": "Enter exactly 4 digits.",
+
+  "pairingOutcomeSuccessTitle": "Paired successfully",
+  "pairingOutcomeFailureTitle": "Pairing failed",
+  "pairingOutcomeSuccessBody": "{deviceName} is ready to use.",
+  "@pairingOutcomeSuccessBody": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingRenameDialogTitle": "Rename TV",
+  "pairingRenameNameLabel": "TV name",
+  "pairingRenameErrorEmpty": "Enter a name.",
+
+  "pairingRemoveTitle": "Remove saved device?",
+  "pairingRemoveActiveBody": "This is the currently connected device. Removing it may disconnect your current control session.",
+  "pairingRemoveSavedBody": "This will remove \"{deviceName}\" from saved devices.",
+  "@pairingRemoveSavedBody": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingDeviceInfoTitle": "Device Info",
+  "pairingDeviceInfoLabelName": "Name",
+  "pairingDeviceInfoLabelBrand": "Brand",
+  "pairingDeviceInfoLabelModel": "Model",
+  "pairingDeviceInfoLabelVariant": "Variant",
+  "pairingDeviceInfoLabelPairedOn": "Paired on",
+  "pairingDeviceInfoLabelLastIp": "Last known IP",
 
   "remoteCommandUnsupported": "Command {commandName} is not supported for {brandName}.",
   "@remoteCommandUnsupported": {

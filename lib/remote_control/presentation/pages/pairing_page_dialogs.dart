@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/utils/two_digit_format.dart';
 
 /// Dialog helpers for `PairingPage` destructive/confirmation flows.
 final class PairingPageDialogs {
@@ -14,39 +15,42 @@ final class PairingPageDialogs {
   }) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Before pairing with $brandName'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Make sure:'),
-            const SizedBox(height: 8),
-            ...steps.map(
-              (step) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('• '),
-                    Expanded(child: Text(step)),
-                  ],
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(l10n.pairingPreCheckTitle(brandName)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.pairingPreCheckMakeSure),
+              const SizedBox(height: 8),
+              ...steps.map(
+                (step) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('• '),
+                      Expanded(child: Text(step)),
+                    ],
+                  ),
                 ),
               ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.uiCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.uiContinue),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
+        );
+      },
     );
     return result == true;
   }
@@ -62,16 +66,16 @@ final class PairingPageDialogs {
       builder: (context) {
         String? inputError;
 
-        String? validatePin() {
+        String? validatePin(AppLocalizations l10n) {
           final value = controller.text.trim();
           if (!RegExp(r'^\d{4}$').hasMatch(value)) {
-            return 'Enter exactly 4 digits.';
+            return l10n.pairingPinErrorInvalid;
           }
           return null;
         }
 
-        void submit(StateSetter setDialogState) {
-          final error = validatePin();
+        void submit(StateSetter setDialogState, AppLocalizations l10n) {
+          final error = validatePin(l10n);
           if (error != null) {
             setDialogState(() {
               inputError = error;
@@ -83,15 +87,14 @@ final class PairingPageDialogs {
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final l10n = AppLocalizations.of(context)!;
             return AlertDialog(
-              title: const Text('Enter TV pairing code'),
+              title: Text(l10n.pairingPinTitle),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Your TV may require a 4-digit code shown on-screen to finish pairing.',
-                  ),
+                  Text(l10n.pairingPinBody),
                   const SizedBox(height: 8),
                   Text(
                     pairingMessage,
@@ -104,7 +107,7 @@ final class PairingPageDialogs {
                     maxLength: 4,
                     autofocus: true,
                     decoration: InputDecoration(
-                      labelText: '4-digit TV code',
+                      labelText: l10n.pairingPinCodeLabel,
                       border: const OutlineInputBorder(),
                       counterText: '',
                       errorText: inputError,
@@ -117,18 +120,18 @@ final class PairingPageDialogs {
                         inputError = null;
                       });
                     },
-                    onSubmitted: (_) => submit(setDialogState),
+                    onSubmitted: (_) => submit(setDialogState, l10n),
                   ),
                 ],
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(null),
-                  child: const Text('Cancel'),
+                  child: Text(l10n.uiCancel),
                 ),
                 FilledButton(
-                  onPressed: () => submit(setDialogState),
-                  child: const Text('Submit code'),
+                  onPressed: () => submit(setDialogState, l10n),
+                  child: Text(l10n.pairingPinSubmitButton),
                 ),
               ],
             );
@@ -147,31 +150,34 @@ final class PairingPageDialogs {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        icon: isSuccess
-            ? Icon(
-                Icons.check_circle_outline,
-                size: 48,
-                color: Theme.of(context).colorScheme.primary,
-              )
-            : Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Theme.of(context).colorScheme.error,
-              ),
-        title: Text(isSuccess ? 'Paired successfully' : 'Pairing failed'),
-        content: Text(
-          isSuccess
-              ? '$deviceName is ready to use.'
-              : errorMessage ?? 'Pairing failed. Please try again.',
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(isSuccess ? 'Done' : 'Dismiss'),
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          icon: isSuccess
+              ? Icon(
+                  Icons.check_circle_outline,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.primary,
+                )
+              : Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+          title: Text(isSuccess ? l10n.pairingOutcomeSuccessTitle : l10n.pairingOutcomeFailureTitle),
+          content: Text(
+            isSuccess
+                ? l10n.pairingOutcomeSuccessBody(deviceName)
+                : errorMessage ?? l10n.pairingExceptionFailed,
           ),
-        ],
-      ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(isSuccess ? l10n.uiDone : l10n.uiDismiss),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -185,45 +191,48 @@ final class PairingPageDialogs {
       builder: (context) {
         String? inputError;
 
-        void submit(StateSetter setDialogState) {
+        void submit(StateSetter setDialogState, AppLocalizations l10n) {
           final name = controller.text.trim();
           if (name.isEmpty) {
-            setDialogState(() => inputError = 'Enter a name.');
+            setDialogState(() => inputError = l10n.pairingRenameErrorEmpty);
             return;
           }
           Navigator.of(context).pop(name);
         }
 
         return StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            title: const Text('Rename TV'),
-            content: TextField(
-              controller: controller,
-              autofocus: true,
-              maxLength: 40,
-              decoration: InputDecoration(
-                labelText: 'TV name',
-                border: const OutlineInputBorder(),
-                counterText: '',
-                errorText: inputError,
+          builder: (context, setDialogState) {
+            final l10n = AppLocalizations.of(context)!;
+            return AlertDialog(
+              title: Text(l10n.pairingRenameDialogTitle),
+              content: TextField(
+                controller: controller,
+                autofocus: true,
+                maxLength: 40,
+                decoration: InputDecoration(
+                  labelText: l10n.pairingRenameNameLabel,
+                  border: const OutlineInputBorder(),
+                  counterText: '',
+                  errorText: inputError,
+                ),
+                textInputAction: TextInputAction.done,
+                onChanged: (_) {
+                  if (inputError != null) setDialogState(() => inputError = null);
+                },
+                onSubmitted: (_) => submit(setDialogState, l10n),
               ),
-              textInputAction: TextInputAction.done,
-              onChanged: (_) {
-                if (inputError != null) setDialogState(() => inputError = null);
-              },
-              onSubmitted: (_) => submit(setDialogState),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(null),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => submit(setDialogState),
-                child: const Text('Rename'),
-              ),
-            ],
-          ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: Text(l10n.uiCancel),
+                ),
+                FilledButton(
+                  onPressed: () => submit(setDialogState, l10n),
+                  child: Text(l10n.uiRename),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -234,24 +243,24 @@ final class PairingPageDialogs {
     required TvDevice device,
     required bool isActiveDevice,
   }) async {
-    final removeMessage = isActiveDevice
-        ? 'This is the currently connected device. Removing it may disconnect your current control session.'
-        : 'This will remove "${device.displayName}" from saved devices.';
-
     final shouldRemove = await showDialog<bool>(
       context: context,
       builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        final removeMessage = isActiveDevice
+            ? l10n.pairingRemoveActiveBody
+            : l10n.pairingRemoveSavedBody(device.displayName);
         return AlertDialog(
-          title: const Text('Remove saved device?'),
+          title: Text(l10n.pairingRemoveTitle),
           content: Text(removeMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n.uiCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Remove'),
+              child: Text(l10n.uiRemove),
             ),
           ],
         );
@@ -271,118 +280,41 @@ final class PairingPageDialogs {
         ? device.id.substring(prefix.length)
         : null;
 
-    String? pairedAtLabel;
-    if (pairedAt != null) {
-      final local = pairedAt.toLocal();
-      pairedAtLabel =
-          '${local.year}-${formatTwoDigits(local.month)}-${formatTwoDigits(local.day)}'
-          ' ${formatTwoDigits(local.hour)}:${formatTwoDigits(local.minute)}';
-    }
+    final pairedAtLabel = pairedAt != null
+        ? DateFormat.yMd().add_Hm().format(pairedAt.toLocal())
+        : null;
 
     await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Device Info'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _InfoRow(label: 'Name', value: device.displayName),
-            _InfoRow(label: 'Brand', value: device.brand.displayName),
-            if (device.modelIdentifier != null)
-              _InfoRow(label: 'Model', value: device.modelIdentifier!),
-            if (device.protocolVariant != TvDevice.defaultProtocolVariant)
-              _InfoRow(label: 'Variant', value: device.protocolVariant),
-            if (pairedAtLabel != null)
-              _InfoRow(label: 'Paired on', value: pairedAtLabel),
-            if (lastKnownIp != null)
-              _InfoRow(label: 'Last known IP', value: lastKnownIp),
-          ],
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Done'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Future<bool> confirmActiveRemoval({
-    required BuildContext context,
-  }) async {
-    const expectedText = 'REMOVE';
-    final controller = TextEditingController();
-
-    final result = await showDialog<bool>(
-      context: context,
       builder: (context) {
-        String? inputError;
-
-        bool isValidInput() {
-          return controller.text.trim().toUpperCase() == expectedText;
-        }
-
-        void trySubmit(StateSetter setDialogState) {
-          if (isValidInput()) {
-            Navigator.of(context).pop(true);
-            return;
-          }
-          setDialogState(() {
-            inputError = 'Type REMOVE exactly to confirm.';
-          });
-        }
-
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Confirm active device removal'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'To continue, type REMOVE. This helps prevent accidental disconnects.',
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: 'Type REMOVE',
-                      border: const OutlineInputBorder(),
-                      errorText: inputError,
-                    ),
-                    textInputAction: TextInputAction.done,
-                    onChanged: (_) {
-                      if (inputError == null) {
-                        return;
-                      }
-                      setDialogState(() {
-                        inputError = null;
-                      });
-                    },
-                    onSubmitted: (_) => trySubmit(setDialogState),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => trySubmit(setDialogState),
-                  child: const Text('Confirm'),
-                ),
-              ],
-            );
-          },
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(l10n.pairingDeviceInfoTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _InfoRow(label: l10n.pairingDeviceInfoLabelName, value: device.displayName),
+              _InfoRow(label: l10n.pairingDeviceInfoLabelBrand, value: device.brand.displayName),
+              if (device.modelIdentifier != null)
+                _InfoRow(label: l10n.pairingDeviceInfoLabelModel, value: device.modelIdentifier!),
+              if (device.protocolVariant != TvDevice.defaultProtocolVariant)
+                _InfoRow(label: l10n.pairingDeviceInfoLabelVariant, value: device.protocolVariant),
+              if (pairedAtLabel != null)
+                _InfoRow(label: l10n.pairingDeviceInfoLabelPairedOn, value: pairedAtLabel),
+              if (lastKnownIp != null)
+                _InfoRow(label: l10n.pairingDeviceInfoLabelLastIp, value: lastKnownIp),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.uiDone),
+            ),
+          ],
         );
       },
     );
-    return result == true;
   }
 }
 

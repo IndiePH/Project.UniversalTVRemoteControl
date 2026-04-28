@@ -100,6 +100,156 @@ abstract class AppLocalizations {
   /// **'OneRemote'**
   String get appTitle;
 
+  /// No description provided for @uiCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get uiCancel;
+
+  /// No description provided for @uiDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get uiDone;
+
+  /// No description provided for @uiDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get uiDismiss;
+
+  /// No description provided for @uiConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get uiConfirm;
+
+  /// No description provided for @uiContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get uiContinue;
+
+  /// No description provided for @uiRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get uiRename;
+
+  /// No description provided for @uiRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get uiRemove;
+
+  /// No description provided for @connectionStateConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get connectionStateConnected;
+
+  /// No description provided for @connectionStateConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get connectionStateConnecting;
+
+  /// No description provided for @connectionStateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error'**
+  String get connectionStateError;
+
+  /// No description provided for @connectionStateDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnected'**
+  String get connectionStateDisconnected;
+
+  /// No description provided for @connectTvTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect TV'**
+  String get connectTvTooltip;
+
+  /// No description provided for @layoutEditTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit layout'**
+  String get layoutEditTooltip;
+
+  /// No description provided for @layoutEditDoneTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Done editing layout'**
+  String get layoutEditDoneTooltip;
+
+  /// No description provided for @layoutEditorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Layout Editor'**
+  String get layoutEditorTitle;
+
+  /// No description provided for @layoutEditorResetButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Layout'**
+  String get layoutEditorResetButton;
+
+  /// No description provided for @layoutEditorInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag buttons to new positions. Grid lines show cells; a green outline means the drop is allowed.'**
+  String get layoutEditorInstruction;
+
+  /// No description provided for @remoteTextEntrySheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send text to TV'**
+  String get remoteTextEntrySheetTitle;
+
+  /// No description provided for @remoteTextEntryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search or enter text'**
+  String get remoteTextEntryHint;
+
+  /// No description provided for @remoteTextEntrySendButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get remoteTextEntrySendButton;
+
+  /// No description provided for @dpadUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Up'**
+  String get dpadUp;
+
+  /// No description provided for @dpadDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Down'**
+  String get dpadDown;
+
+  /// No description provided for @dpadLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get dpadLeft;
+
+  /// No description provided for @dpadRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get dpadRight;
+
+  /// No description provided for @dpadOk.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get dpadOk;
+
   /// No description provided for @pairingNoAdapter.
   ///
   /// In en, this message translates to:
@@ -171,6 +321,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Accept any connection permission that appears on your TV.'**
   String get pairingSamsungPreStep1;
+
+  /// No description provided for @pairingWaitingForApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for TV approval...'**
+  String get pairingWaitingForApproval;
+
+  /// No description provided for @pairingNotePreviouslyPaired.
+  ///
+  /// In en, this message translates to:
+  /// **'Previously paired'**
+  String get pairingNotePreviouslyPaired;
+
+  /// No description provided for @pairingNotePreviouslyPairedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Previously paired ({pairedAt})'**
+  String pairingNotePreviouslyPairedAt(String pairedAt);
+
+  /// No description provided for @pairingDevicePairedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'(paired on {pairedAt})'**
+  String pairingDevicePairedOn(String pairedAt);
+
+  /// No description provided for @pairingDeviceRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed {deviceName}'**
+  String pairingDeviceRemoved(String deviceName);
+
+  /// No description provided for @pairingExceptionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing failed. Please try again.'**
+  String get pairingExceptionFailed;
+
+  /// No description provided for @pairingDiscoveryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovery failed. Please try again.'**
+  String get pairingDiscoveryFailed;
+
+  /// No description provided for @pairingNoTvConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'No TV connected'**
+  String get pairingNoTvConnected;
+
+  /// No description provided for @pairingNoDevicesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No TVs found yet. Run a scan to discover devices.'**
+  String get pairingNoDevicesFound;
+
+  /// No description provided for @pairingAddManuallyTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add manually'**
+  String get pairingAddManuallyTooltip;
+
+  /// No description provided for @pairingScanTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan for TVs'**
+  String get pairingScanTooltip;
+
+  /// No description provided for @pairingSelectRemoteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Remote'**
+  String get pairingSelectRemoteTitle;
+
+  /// No description provided for @pairingHelpTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing help'**
+  String get pairingHelpTooltip;
+
+  /// No description provided for @pairingRenameTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get pairingRenameTooltip;
+
+  /// No description provided for @pairingDeviceInfoTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Device info'**
+  String get pairingDeviceInfoTooltip;
+
+  /// No description provided for @pairingNeedHelpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Need help finding your TV?'**
+  String get pairingNeedHelpTitle;
+
+  /// No description provided for @pairingPermissionChecklistTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission and network checklist'**
+  String get pairingPermissionChecklistTitle;
+
+  /// No description provided for @pairingPermissionChecklistBody.
+  ///
+  /// In en, this message translates to:
+  /// **'- Keep phone and TV on the same Wi-Fi network.\n- Allow local network/Wi-Fi permissions when prompted.\n- Disable client/AP isolation on your router if enabled.'**
+  String get pairingPermissionChecklistBody;
+
+  /// No description provided for @pairingCannotFindTvTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot find TV? Try this'**
+  String get pairingCannotFindTvTitle;
+
+  /// No description provided for @pairingCannotFindTvBody.
+  ///
+  /// In en, this message translates to:
+  /// **'- Run Scan for TVs again and wait a few seconds.\n- Use Add Manually with the TV IP address.\n- Restart TV network, then re-open the pairing screen.'**
+  String get pairingCannotFindTvBody;
+
+  /// No description provided for @pairingManualTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Pairing'**
+  String get pairingManualTitle;
+
+  /// No description provided for @pairingManualBrandLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TV brand'**
+  String get pairingManualBrandLabel;
+
+  /// No description provided for @pairingManualIpLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TV IP address'**
+  String get pairingManualIpLabel;
+
+  /// No description provided for @pairingManualIpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 192.168.1.20'**
+  String get pairingManualIpHint;
+
+  /// No description provided for @pairingManualAddButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Manually'**
+  String get pairingManualAddButton;
+
+  /// No description provided for @pairingManualErrorEmptyIp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a TV IP address.'**
+  String get pairingManualErrorEmptyIp;
+
+  /// No description provided for @pairingManualErrorInvalidIp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid IPv4 address (e.g. 192.168.1.20).'**
+  String get pairingManualErrorInvalidIp;
+
+  /// No description provided for @pairingPreCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before pairing with {brandName}'**
+  String pairingPreCheckTitle(String brandName);
+
+  /// No description provided for @pairingPreCheckMakeSure.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure:'**
+  String get pairingPreCheckMakeSure;
+
+  /// No description provided for @pairingPinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter TV pairing code'**
+  String get pairingPinTitle;
+
+  /// No description provided for @pairingPinBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your TV may require a 4-digit code shown on-screen to finish pairing.'**
+  String get pairingPinBody;
+
+  /// No description provided for @pairingPinCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'4-digit TV code'**
+  String get pairingPinCodeLabel;
+
+  /// No description provided for @pairingPinSubmitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit code'**
+  String get pairingPinSubmitButton;
+
+  /// No description provided for @pairingPinErrorInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter exactly 4 digits.'**
+  String get pairingPinErrorInvalid;
+
+  /// No description provided for @pairingOutcomeSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired successfully'**
+  String get pairingOutcomeSuccessTitle;
+
+  /// No description provided for @pairingOutcomeFailureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing failed'**
+  String get pairingOutcomeFailureTitle;
+
+  /// No description provided for @pairingOutcomeSuccessBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{deviceName} is ready to use.'**
+  String pairingOutcomeSuccessBody(String deviceName);
+
+  /// No description provided for @pairingRenameDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename TV'**
+  String get pairingRenameDialogTitle;
+
+  /// No description provided for @pairingRenameNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TV name'**
+  String get pairingRenameNameLabel;
+
+  /// No description provided for @pairingRenameErrorEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name.'**
+  String get pairingRenameErrorEmpty;
+
+  /// No description provided for @pairingRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove saved device?'**
+  String get pairingRemoveTitle;
+
+  /// No description provided for @pairingRemoveActiveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the currently connected device. Removing it may disconnect your current control session.'**
+  String get pairingRemoveActiveBody;
+
+  /// No description provided for @pairingRemoveSavedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This will remove \"{deviceName}\" from saved devices.'**
+  String pairingRemoveSavedBody(String deviceName);
+
+  /// No description provided for @pairingDeviceInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Info'**
+  String get pairingDeviceInfoTitle;
+
+  /// No description provided for @pairingDeviceInfoLabelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get pairingDeviceInfoLabelName;
+
+  /// No description provided for @pairingDeviceInfoLabelBrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Brand'**
+  String get pairingDeviceInfoLabelBrand;
+
+  /// No description provided for @pairingDeviceInfoLabelModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get pairingDeviceInfoLabelModel;
+
+  /// No description provided for @pairingDeviceInfoLabelVariant.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant'**
+  String get pairingDeviceInfoLabelVariant;
+
+  /// No description provided for @pairingDeviceInfoLabelPairedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired on'**
+  String get pairingDeviceInfoLabelPairedOn;
+
+  /// No description provided for @pairingDeviceInfoLabelLastIp.
+  ///
+  /// In en, this message translates to:
+  /// **'Last known IP'**
+  String get pairingDeviceInfoLabelLastIp;
 
   /// No description provided for @remoteCommandUnsupported.
   ///

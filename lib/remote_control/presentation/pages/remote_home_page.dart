@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:one_remote/app/message_handler.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
@@ -552,14 +553,14 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final deviceName = _activeDevice?.displayName ?? 'No TV connected';
+    final deviceName = _activeDevice?.displayName ?? AppLocalizations.of(context)!.pairingNoTvConnected;
 
     return Scaffold(
       // Keep the remote grid fixed when the IME opens; the keyboard overlays
       // the lower portion of the screen instead of shrinking the body.
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text('OneRemote'),
+        title: Text(AppLocalizations.of(context)!.appTitle),
         actions: [
           RemoteHomeAppBarActions(
             isLayoutEditMode: _isLayoutEditMode,

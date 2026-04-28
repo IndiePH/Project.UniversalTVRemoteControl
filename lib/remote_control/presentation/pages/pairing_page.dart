@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
@@ -118,7 +119,7 @@ class _PairingPageState extends State<PairingPage> {
       }
       setState(() {
         _viewState = _viewState.copyWith(
-          errorMessage: 'Discovery failed. Please try again.',
+          errorMessage: AppLocalizations.of(context)!.pairingDiscoveryFailed,
         );
       });
     } finally {
@@ -155,6 +156,7 @@ class _PairingPageState extends State<PairingPage> {
     if (_viewState.isPairingInProgress) {
       return;
     }
+    final l10n = AppLocalizations.of(context)!;
 
     setState(() {
       _viewState = _viewState.copyWith(
@@ -201,7 +203,7 @@ class _PairingPageState extends State<PairingPage> {
         },
       );
     } catch (_) {
-      exceptionMessage = 'Pairing failed. Please try again.';
+      exceptionMessage = l10n.pairingExceptionFailed;
     } finally {
       if (mounted) {
         setState(() {
@@ -273,7 +275,7 @@ class _PairingPageState extends State<PairingPage> {
     }
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('Removed ${device.displayName}')));
+    ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.pairingDeviceRemoved(device.displayName))));
   }
 
   Future<void> _renameDevice(TvDevice device) async {
@@ -327,14 +329,14 @@ class _PairingPageState extends State<PairingPage> {
       children: [
         FloatingActionButton.small(
           heroTag: 'fab_manual',
-          tooltip: 'Add manually',
+          tooltip: AppLocalizations.of(context)!.pairingAddManuallyTooltip,
           onPressed: disabled ? null : _showManualAddSheet,
           child: const Icon(Icons.keyboard),
         ),
         const SizedBox(height: 12),
         FloatingActionButton(
           heroTag: 'fab_scan',
-          tooltip: 'Scan for TVs',
+          tooltip: AppLocalizations.of(context)!.pairingScanTooltip,
           onPressed: disabled ? null : _scanDevices,
           child: const Icon(Icons.search),
         ),
@@ -348,11 +350,11 @@ class _PairingPageState extends State<PairingPage> {
       canPop: !_viewState.isPairingInProgress,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Select Remote'),
+          title: Text(AppLocalizations.of(context)!.pairingSelectRemoteTitle),
           automaticallyImplyLeading: !_viewState.isPairingInProgress,
           actions: [
             IconButton(
-              tooltip: 'Pairing help',
+              tooltip: AppLocalizations.of(context)!.pairingHelpTooltip,
               icon: const Icon(Icons.help_outline),
               onPressed: _viewState.isPairingInProgress
                   ? null
@@ -442,11 +444,11 @@ class _PairingPageState extends State<PairingPage> {
             ),
           )
         else if (_viewState.discoveredDevices.isEmpty)
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Center(
-                child: Text('No TVs found yet. Run a scan to discover devices.'),
+                child: Text(AppLocalizations.of(context)!.pairingNoDevicesFound),
               ),
             ),
           )

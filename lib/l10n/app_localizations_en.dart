@@ -12,6 +12,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'OneRemote';
 
   @override
+  String get uiCancel => 'Cancel';
+
+  @override
+  String get uiDone => 'Done';
+
+  @override
+  String get uiDismiss => 'Dismiss';
+
+  @override
+  String get uiConfirm => 'Confirm';
+
+  @override
+  String get uiContinue => 'Continue';
+
+  @override
+  String get uiRename => 'Rename';
+
+  @override
+  String get uiRemove => 'Remove';
+
+  @override
+  String get connectionStateConnected => 'Connected';
+
+  @override
+  String get connectionStateConnecting => 'Connecting…';
+
+  @override
+  String get connectionStateError => 'Connection error';
+
+  @override
+  String get connectionStateDisconnected => 'Disconnected';
+
+  @override
+  String get connectTvTooltip => 'Connect TV';
+
+  @override
+  String get layoutEditTooltip => 'Edit layout';
+
+  @override
+  String get layoutEditDoneTooltip => 'Done editing layout';
+
+  @override
+  String get layoutEditorTitle => 'Layout Editor';
+
+  @override
+  String get layoutEditorResetButton => 'Reset Layout';
+
+  @override
+  String get layoutEditorInstruction =>
+      'Drag buttons to new positions. Grid lines show cells; a green outline means the drop is allowed.';
+
+  @override
+  String get remoteTextEntrySheetTitle => 'Send text to TV';
+
+  @override
+  String get remoteTextEntryHint => 'Search or enter text';
+
+  @override
+  String get remoteTextEntrySendButton => 'Send';
+
+  @override
+  String get dpadUp => 'Up';
+
+  @override
+  String get dpadDown => 'Down';
+
+  @override
+  String get dpadLeft => 'Left';
+
+  @override
+  String get dpadRight => 'Right';
+
+  @override
+  String get dpadOk => 'OK';
+
+  @override
   String pairingNoAdapter(String brandName) {
     return 'No adapter configured for $brandName.';
   }
@@ -62,6 +138,175 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pairingSamsungPreStep1 =>
       'Accept any connection permission that appears on your TV.';
+
+  @override
+  String get pairingWaitingForApproval => 'Waiting for TV approval...';
+
+  @override
+  String get pairingNotePreviouslyPaired => 'Previously paired';
+
+  @override
+  String pairingNotePreviouslyPairedAt(String pairedAt) {
+    return 'Previously paired ($pairedAt)';
+  }
+
+  @override
+  String pairingDevicePairedOn(String pairedAt) {
+    return '(paired on $pairedAt)';
+  }
+
+  @override
+  String pairingDeviceRemoved(String deviceName) {
+    return 'Removed $deviceName';
+  }
+
+  @override
+  String get pairingExceptionFailed => 'Pairing failed. Please try again.';
+
+  @override
+  String get pairingDiscoveryFailed => 'Discovery failed. Please try again.';
+
+  @override
+  String get pairingNoTvConnected => 'No TV connected';
+
+  @override
+  String get pairingNoDevicesFound =>
+      'No TVs found yet. Run a scan to discover devices.';
+
+  @override
+  String get pairingAddManuallyTooltip => 'Add manually';
+
+  @override
+  String get pairingScanTooltip => 'Scan for TVs';
+
+  @override
+  String get pairingSelectRemoteTitle => 'Select Remote';
+
+  @override
+  String get pairingHelpTooltip => 'Pairing help';
+
+  @override
+  String get pairingRenameTooltip => 'Rename';
+
+  @override
+  String get pairingDeviceInfoTooltip => 'Device info';
+
+  @override
+  String get pairingNeedHelpTitle => 'Need help finding your TV?';
+
+  @override
+  String get pairingPermissionChecklistTitle =>
+      'Permission and network checklist';
+
+  @override
+  String get pairingPermissionChecklistBody =>
+      '- Keep phone and TV on the same Wi-Fi network.\n- Allow local network/Wi-Fi permissions when prompted.\n- Disable client/AP isolation on your router if enabled.';
+
+  @override
+  String get pairingCannotFindTvTitle => 'Cannot find TV? Try this';
+
+  @override
+  String get pairingCannotFindTvBody =>
+      '- Run Scan for TVs again and wait a few seconds.\n- Use Add Manually with the TV IP address.\n- Restart TV network, then re-open the pairing screen.';
+
+  @override
+  String get pairingManualTitle => 'Manual Pairing';
+
+  @override
+  String get pairingManualBrandLabel => 'TV brand';
+
+  @override
+  String get pairingManualIpLabel => 'TV IP address';
+
+  @override
+  String get pairingManualIpHint => 'e.g. 192.168.1.20';
+
+  @override
+  String get pairingManualAddButton => 'Add Manually';
+
+  @override
+  String get pairingManualErrorEmptyIp => 'Enter a TV IP address.';
+
+  @override
+  String get pairingManualErrorInvalidIp =>
+      'Enter a valid IPv4 address (e.g. 192.168.1.20).';
+
+  @override
+  String pairingPreCheckTitle(String brandName) {
+    return 'Before pairing with $brandName';
+  }
+
+  @override
+  String get pairingPreCheckMakeSure => 'Make sure:';
+
+  @override
+  String get pairingPinTitle => 'Enter TV pairing code';
+
+  @override
+  String get pairingPinBody =>
+      'Your TV may require a 4-digit code shown on-screen to finish pairing.';
+
+  @override
+  String get pairingPinCodeLabel => '4-digit TV code';
+
+  @override
+  String get pairingPinSubmitButton => 'Submit code';
+
+  @override
+  String get pairingPinErrorInvalid => 'Enter exactly 4 digits.';
+
+  @override
+  String get pairingOutcomeSuccessTitle => 'Paired successfully';
+
+  @override
+  String get pairingOutcomeFailureTitle => 'Pairing failed';
+
+  @override
+  String pairingOutcomeSuccessBody(String deviceName) {
+    return '$deviceName is ready to use.';
+  }
+
+  @override
+  String get pairingRenameDialogTitle => 'Rename TV';
+
+  @override
+  String get pairingRenameNameLabel => 'TV name';
+
+  @override
+  String get pairingRenameErrorEmpty => 'Enter a name.';
+
+  @override
+  String get pairingRemoveTitle => 'Remove saved device?';
+
+  @override
+  String get pairingRemoveActiveBody =>
+      'This is the currently connected device. Removing it may disconnect your current control session.';
+
+  @override
+  String pairingRemoveSavedBody(String deviceName) {
+    return 'This will remove \"$deviceName\" from saved devices.';
+  }
+
+  @override
+  String get pairingDeviceInfoTitle => 'Device Info';
+
+  @override
+  String get pairingDeviceInfoLabelName => 'Name';
+
+  @override
+  String get pairingDeviceInfoLabelBrand => 'Brand';
+
+  @override
+  String get pairingDeviceInfoLabelModel => 'Model';
+
+  @override
+  String get pairingDeviceInfoLabelVariant => 'Variant';
+
+  @override
+  String get pairingDeviceInfoLabelPairedOn => 'Paired on';
+
+  @override
+  String get pairingDeviceInfoLabelLastIp => 'Last known IP';
 
   @override
   String remoteCommandUnsupported(String commandName, String brandName) {

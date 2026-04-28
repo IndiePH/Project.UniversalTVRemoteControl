@@ -57,13 +57,13 @@ makes adding further locales a single `.arb` file with no code changes.
 
 ---
 
-## Sub-goal 3 — Presentation Layer String Extraction
+## Sub-goal 3 — Presentation Layer String Extraction ✓ DONE
 
-| ID | Task | Skills | Deps | Risk |
-|----|------|--------|------|------|
-| 3.1 | Audit all hardcoded string literals in `lib/remote_control/presentation/` and `lib/app/`; catalogue every string, its widget context, and whether it contains runtime values | `technical-debt-management` | — | LOW |
-| 3.2 | Add all presentation strings to `app_en.arb`; replace every `Text('…')`, `tooltip:`, `title:`, `label:`, `hintText:` literal with `AppLocalizations.of(context)!.key` (use a local `final l10n = AppLocalizations.of(context)!` alias where multiple keys are used in one build method) | `framework-mastery`, `language-specific-implementation` | 1.2, 3.1 | MEDIUM |
-| 3.3 | Localize remaining `lib/app/` and `lib/main.dart` user-facing strings (app title, etc.) | `framework-mastery` | 1.2, 3.1 | LOW |
+| ID | Task | Skills | Deps | Risk | Status |
+|----|------|--------|------|------|--------|
+| 3.1 | Audit all hardcoded string literals in `lib/remote_control/presentation/` and `lib/app/`; catalogue every string, its widget context, and whether it contains runtime values | `technical-debt-management` | — | LOW | ✓ done |
+| 3.2 | Add all presentation strings to `app_en.arb`; replace every `Text('…')`, `tooltip:`, `title:`, `label:`, `hintText:` literal with `AppLocalizations.of(context)!.key` (use a local `final l10n = AppLocalizations.of(context)!` alias where multiple keys are used in one build method) | `framework-mastery`, `language-specific-implementation` | 1.2, 3.1 | MEDIUM | ✓ done |
+| 3.3 | Localize remaining `lib/app/` and `lib/main.dart` user-facing strings (app title, etc.) | `framework-mastery` | 1.2, 3.1 | LOW | ✓ done (appTitle already in ARB via onGenerateTitle; no other strings in lib/app/) |
 
 ---
 
@@ -76,6 +76,13 @@ makes adding further locales a single `.arb` file with no code changes.
 | 4.3 | Visual smoke test across all screens: confirm all UI strings display correct English text; no ARB key names or `null` bleed-through visible | `framework-mastery`, `regression-prevention` | 3.2, 4.1 | LOW |
 
 ---
+
+## Sub-goal 3 Notes
+
+- `PairingPageDialogs.confirmActiveRemoval` was dead code (never called) — removed during 3.2.
+- Layout item definition labels ('MENU', 'VOL', 'CH', 'WWW', 'DPAD', '|>||') excluded: `kRemoteLayoutItemDefinitions` is a `const` list; converting it to a factory requires architectural changes not warranted at current string volume. Revisit if a second locale is added.
+- `DateFormat.yMd().add_Hm()` used for date/time in both `_pairedTvSubtitle` and `showDeviceInfo` — replaces manual `formatTwoDigits` formatting; locale-aware automatically.
+- `two_digit_format.dart` import removed from both `pairing_page_sections.dart` and `pairing_page_dialogs.dart`.
 
 ## Scope Exclusions
 
