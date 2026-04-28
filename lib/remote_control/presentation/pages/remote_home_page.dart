@@ -71,6 +71,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   remote_connection.ConnectionState _connectionState =
       remote_connection.ConnectionState.disconnected;
   bool _hasAnyPairedDevice = false;
+  bool _showPairingHint = false;
+  bool _pairButtonBlinkOn = false;
+  Timer? _pairButtonBlinkTimer;
+  Timer? _pairButtonHintResetTimer;
 
   @override
   void initState() {
@@ -91,6 +95,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   void dispose() {
     _remoteTextReadySub?.cancel();
     _connectionStateSub?.cancel();
+    _pairButtonBlinkTimer?.cancel();
+    _pairButtonHintResetTimer?.cancel();
     _textController.dispose();
     super.dispose();
   }
@@ -279,6 +285,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   }
 
   Future<void> _openPairing() async {
+    _clearPairingHint();
     final selectedDevice = await RemoteHomeActions.openPairing(
       context: context,
       commandService: widget.commandService,
@@ -313,6 +320,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     setState(() {
       _activeDevice = device;
       _status = 'Ready';
+      _showPairingHint = false;
+      _pairButtonBlinkOn = false;
     });
 
     _subscribeRemoteTextReady(device);
@@ -496,6 +505,52 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     unawaited(_send(command));
   }
 
+  void _clearPairingHint() {
+    _pairButtonBlinkTimer?.cancel();
+    _pairButtonBlinkTimer = null;
+    _pairButtonHintResetTimer?.cancel();
+    _pairButtonHintResetTimer = null;
+    if (!mounted) {
+      _showPairingHint = false;
+      _pairButtonBlinkOn = false;
+      return;
+    }
+    setState(() {
+      _showPairingHint = false;
+      _pairButtonBlinkOn = false;
+    });
+  }
+
+  void _onDisabledGridInteraction() {
+    if (_activeDevice != null) {
+      return;
+    }
+    setState(() {
+      _status = 'Pair a TV first.';
+      _showPairingHint = true;
+      _pairButtonBlinkOn = true;
+    });
+    _pairButtonBlinkTimer?.cancel();
+    _pairButtonBlinkTimer = Timer.periodic(const Duration(milliseconds: 700), (
+      _,
+    ) {
+      if (!mounted || !_showPairingHint) {
+        _pairButtonBlinkTimer?.cancel();
+        return;
+      }
+      setState(() {
+        _pairButtonBlinkOn = !_pairButtonBlinkOn;
+      });
+    });
+    _pairButtonHintResetTimer?.cancel();
+    _pairButtonHintResetTimer = Timer(const Duration(seconds: 7), () {
+      if (!mounted || _activeDevice != null) {
+        return;
+      }
+      _clearPairingHint();
+    });
+  }
+
   void _onSearchInputKeyboardPressed() {
     final device = _activeDevice;
     if (device == null) {
@@ -508,7 +563,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     final availability = RemoteKeyboardAvailability.evaluate(
       device: device,
       remoteTextInputReady: _remoteTextInputReady,
-      requireImeReady: true,
+      requireImeReady: false,
     );
     if (!availability.isAvailable) {
       _reportKeyboardUnavailable(
@@ -532,7 +587,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   }
 
   void _openTextEntrySheet() {
-    if (_activeDevice == null || !_remoteTextInputReady) {
+    if (_activeDevice == null) {
       return;
     }
     showModalBottomSheet<void>(
@@ -591,14 +646,19 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                   onOpenPairing: _openPairing,
                   hasActiveDevice: _activeDevice != null,
                   hasAnyPairedDevice: _hasAnyPairedDevice,
+                  highlightPairButton: _showPairingHint,
+                  pairButtonBlinkOn: _pairButtonBlinkOn,
+                  overlayOnChild: false,
                   child: RemoteHomeRemoteGrid(
                     layoutItems: _layoutItems,
                     gridColumns: _gridColumns,
                     gridRows: _gridRows,
                     gridGap: _gridGap,
                     controlsEnabled: _activeDevice != null,
+                    pairingHintActive: _showPairingHint && _activeDevice == null,
                     onSendCommand: _sendCommandFromGrid,
                     onSearchInputPressed: _onSearchInputKeyboardPressed,
+                    onDisabledInteraction: _onDisabledGridInteraction,
                   ),
                 ),
         ),
