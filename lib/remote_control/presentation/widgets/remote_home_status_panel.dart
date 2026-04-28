@@ -14,6 +14,9 @@ class RemoteHomeStatusPanel extends StatelessWidget {
     required this.onOpenPairing,
     required this.hasActiveDevice,
     required this.hasAnyPairedDevice,
+    this.highlightPairButton = false,
+    this.pairButtonBlinkOn = false,
+    this.overlayOnChild = false,
     required this.child,
   });
 
@@ -23,6 +26,9 @@ class RemoteHomeStatusPanel extends StatelessWidget {
   final VoidCallback onOpenPairing;
   final bool hasActiveDevice;
   final bool hasAnyPairedDevice;
+  final bool highlightPairButton;
+  final bool pairButtonBlinkOn;
+  final bool overlayOnChild;
   final Widget child;
 
   @override
@@ -51,40 +57,84 @@ class RemoteHomeStatusPanel extends StatelessWidget {
         ? connectionLabel
         : l10n.connectionStateDisconnected;
 
+    Widget blurWhenPairFocus(Widget child) {
+      if (!highlightPairButton) {
+        return child;
+      }
+      return AnimatedOpacity(
+        opacity: 0.34,
+        duration: const Duration(milliseconds: 250),
+        child: child,
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
             Expanded(
-              child: Text(
-                deviceName,
-                style: Theme.of(context).textTheme.titleLarge,
+              child: blurWhenPairFocus(
+                Text(
+                  deviceName,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
               ),
             ),
-            _PairButton(isActive: hasActiveDevice, onPressed: onOpenPairing),
+            _PairButton(
+              isActive: hasActiveDevice,
+              onPressed: onOpenPairing,
+              highlighted: highlightPairButton,
+              blinkOn: pairButtonBlinkOn,
+            ),
           ],
         ),
-        Row(
-          children: [
-            Icon(Icons.circle, size: 10, color: connectionColor),
-            const SizedBox(width: 8),
-            Text(statusLabel),
-          ],
+        blurWhenPairFocus(
+          Row(
+            children: [
+              Icon(Icons.circle, size: 10, color: connectionColor),
+              const SizedBox(width: 8),
+              Text(statusLabel),
+            ],
+          ),
         ),
-        if (status.isNotEmpty) ...[const SizedBox(height: 8), Text(status)],
+        if (status.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          blurWhenPairFocus(Text(status)),
+        ],
         const SizedBox(height: 16),
-        Expanded(child: child),
+        Expanded(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              child,
+              if (overlayOnChild) ...[
+                IgnorePointer(
+                  child: Container(
+                    color: appColors.pairingModalBarrier.withValues(alpha: 0.45),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }
 }
 
 class _PairButton extends StatelessWidget {
-  const _PairButton({required this.isActive, required this.onPressed});
+  const _PairButton({
+    required this.isActive,
+    required this.onPressed,
+    required this.highlighted,
+    required this.blinkOn,
+  });
 
   final bool isActive;
   final VoidCallback onPressed;
+  final bool highlighted;
+  final bool blinkOn;
 
   @override
   Widget build(BuildContext context) {
@@ -99,18 +149,47 @@ class _PairButton extends StatelessWidget {
 
     return Tooltip(
       message: AppLocalizations.of(context)!.connectTvTooltip,
-      child: Material(
-        color: background,
-        shape: CircleBorder(
-          side: BorderSide(color: appColors.remoteOutline, width: 1.2),
-        ),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onPressed,
-          child: SizedBox(
-            width: 44,
-            height: 44,
-            child: Center(child: _RemoteConnectionGlyph(color: foreground)),
+      child: AnimatedScale(
+        scale: highlighted && blinkOn ? 1.08 : 1,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeInOut,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 420),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: highlighted && blinkOn
+                ? [
+                    BoxShadow(
+                      color: appColors.pairingHintGridTint.withValues(
+                        alpha: 0.62,
+                      ),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : const [],
+          ),
+          child: Material(
+            color: background,
+            shape: CircleBorder(
+              side: BorderSide(
+                color: highlighted && blinkOn
+                    ? appColors.pairingHintGridTint
+                    : appColors.remoteOutline,
+                width: highlighted ? 2 : 1.2,
+              ),
+            ),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onPressed,
+              child: SizedBox(
+                width: 44,
+                height: 44,
+                child: Center(child: _RemoteConnectionGlyph(color: foreground)),
+              ),
+            ),
           ),
         ),
       ),

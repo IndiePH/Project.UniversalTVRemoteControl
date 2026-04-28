@@ -15,6 +15,8 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.layoutEditorDropInvalid,
     required this.pairingModalBarrier,
     required this.pairingBusyOnCard,
+    required this.remoteDisabledControlTint,
+    required this.pairingHintGridTint,
   });
 
   final Color remoteSurface;
@@ -48,6 +50,12 @@ final class AppColors extends ThemeExtension<AppColors> {
   /// Text / progress on the pairing busy card ([remoteRaisedSurface] background).
   final Color pairingBusyOnCard;
 
+  /// Tint used to indicate remote controls are disabled.
+  final Color remoteDisabledControlTint;
+
+  /// Tint applied to remote grid while pairing hint is active.
+  final Color pairingHintGridTint;
+
   @override
   AppColors copyWith({
     Color? remoteSurface,
@@ -62,6 +70,8 @@ final class AppColors extends ThemeExtension<AppColors> {
     Color? layoutEditorDropInvalid,
     Color? pairingModalBarrier,
     Color? pairingBusyOnCard,
+    Color? remoteDisabledControlTint,
+    Color? pairingHintGridTint,
   }) {
     return AppColors(
       remoteSurface: remoteSurface ?? this.remoteSurface,
@@ -80,6 +90,9 @@ final class AppColors extends ThemeExtension<AppColors> {
           layoutEditorDropInvalid ?? this.layoutEditorDropInvalid,
       pairingModalBarrier: pairingModalBarrier ?? this.pairingModalBarrier,
       pairingBusyOnCard: pairingBusyOnCard ?? this.pairingBusyOnCard,
+      remoteDisabledControlTint:
+          remoteDisabledControlTint ?? this.remoteDisabledControlTint,
+      pairingHintGridTint: pairingHintGridTint ?? this.pairingHintGridTint,
     );
   }
 
@@ -141,6 +154,15 @@ final class AppColors extends ThemeExtension<AppColors> {
             t,
           ) ??
           pairingBusyOnCard,
+      remoteDisabledControlTint: Color.lerp(
+            remoteDisabledControlTint,
+            other.remoteDisabledControlTint,
+            t,
+          ) ??
+          remoteDisabledControlTint,
+      pairingHintGridTint:
+          Color.lerp(pairingHintGridTint, other.pairingHintGridTint, t) ??
+              pairingHintGridTint,
     );
   }
 }
@@ -166,6 +188,8 @@ final class AppTheme {
           layoutEditorDropInvalid: Color(0xFFFF9800),
           pairingModalBarrier: Color(0x8A000000),
           pairingBusyOnCard: Color(0xFF1A1D24),
+          remoteDisabledControlTint: Color(0xFF78909C),
+          pairingHintGridTint: Color(0xFF64B5F6),
         );
       case Brightness.dark:
         return const AppColors(
@@ -181,6 +205,8 @@ final class AppTheme {
           layoutEditorDropInvalid: Color(0xFFFF9800),
           pairingModalBarrier: Color(0x8A000000),
           pairingBusyOnCard: Color(0xFFFFFFFF),
+          remoteDisabledControlTint: Color(0xFF607D8B),
+          pairingHintGridTint: Color(0xFF4FC3F7),
         );
     }
   }

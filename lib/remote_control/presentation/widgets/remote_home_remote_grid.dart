@@ -19,8 +19,10 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     required this.gridRows,
     required this.gridGap,
     required this.controlsEnabled,
+    required this.pairingHintActive,
     required this.onSendCommand,
     required this.onSearchInputPressed,
+    required this.onDisabledInteraction,
   });
 
   final List<LayoutEditItem> layoutItems;
@@ -28,8 +30,10 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
   final int gridRows;
   final double gridGap;
   final bool controlsEnabled;
+  final bool pairingHintActive;
   final void Function(RemoteCommand command) onSendCommand;
   final VoidCallback onSearchInputPressed;
+  final VoidCallback onDisabledInteraction;
 
   @override
   Widget build(BuildContext context) {
@@ -54,14 +58,29 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
             height: gridHeight,
             child: Stack(
               children: [
-                for (final item in layoutItems)
-                  Positioned(
-                    left: item.col * (cellSize + gridGap),
-                    top: item.row * (cellSize + gridGap),
-                    child: _buildRemoteLayoutItem(
-                      context: context,
-                      item: item,
-                      cellSize: cellSize,
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: Stack(
+                    key: ValueKey<bool>(pairingHintActive),
+                    children: [
+                      for (final item in layoutItems)
+                        Positioned(
+                          left: item.col * (cellSize + gridGap),
+                          top: item.row * (cellSize + gridGap),
+                          child: _buildRemoteLayoutItem(
+                            context: context,
+                            item: item,
+                            cellSize: cellSize,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (pairingHintActive && !controlsEnabled)
+                  const Positioned.fill(
+                    child: AbsorbPointer(
+                      absorbing: true,
+                      child: SizedBox.expand(),
                     ),
                   ),
               ],
@@ -77,17 +96,23 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     required LayoutEditItem item,
     required double cellSize,
   }) {
+    final Widget itemWidget;
     switch (item.id) {
       case 'dpad':
-        return _buildDpadItem(item, cellSize);
+        itemWidget = _buildDpadItem(item, cellSize);
+        break;
       case 'searchInput':
-        return _buildSearchInputItem(item, cellSize);
+        itemWidget = _buildSearchInputItem(item, cellSize);
+        break;
       case 'playPause':
-        return _buildPlayPauseItem(context, item, cellSize);
+        itemWidget = _buildPlayPauseItem(context, item, cellSize);
+        break;
       case 'channel':
-        return _buildChannelItem(item, cellSize);
+        itemWidget = _buildChannelItem(item, cellSize);
+        break;
       case 'volume':
-        return _buildVolumeItem(item, cellSize);
+        itemWidget = _buildVolumeItem(item, cellSize);
+        break;
       default:
         final width = (item.width * cellSize) + ((item.width - 1) * gridGap);
         final height = (item.height * cellSize) + ((item.height - 1) * gridGap);
@@ -96,8 +121,10 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
             ? _noopAction
             : controlsEnabled
             ? () => onSendCommand(command)
-            : null;
-        return SizedBox(
+            : pairingHintActive
+            ? null
+            : onDisabledInteraction;
+        itemWidget = SizedBox(
           width: width,
           height: height,
           child: FittedBox(
@@ -110,7 +137,9 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
             ),
           ),
         );
+        break;
     }
+    return _applyDisabledStyle(context, itemWidget);
   }
 
   Widget _buildDpadItem(LayoutEditItem item, double cellSize) {
@@ -124,19 +153,29 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
         child: RemoteCircularDpad(
           onUp: controlsEnabled
               ? () => onSendCommand(RemoteCommand.dpadUp)
-              : _noopAction,
+              : pairingHintActive
+              ? _noopAction
+              : onDisabledInteraction,
           onDown: controlsEnabled
               ? () => onSendCommand(RemoteCommand.dpadDown)
-              : _noopAction,
+              : pairingHintActive
+              ? _noopAction
+              : onDisabledInteraction,
           onLeft: controlsEnabled
               ? () => onSendCommand(RemoteCommand.dpadLeft)
-              : _noopAction,
+              : pairingHintActive
+              ? _noopAction
+              : onDisabledInteraction,
           onRight: controlsEnabled
               ? () => onSendCommand(RemoteCommand.dpadRight)
-              : _noopAction,
+              : pairingHintActive
+              ? _noopAction
+              : onDisabledInteraction,
           onOk: controlsEnabled
               ? () => onSendCommand(RemoteCommand.dpadOk)
-              : _noopAction,
+              : pairingHintActive
+              ? _noopAction
+              : onDisabledInteraction,
         ),
       ),
     );
@@ -156,7 +195,11 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
           fit: BoxFit.contain,
           child: RemoteIconCircleButton(
             icon: keyboardIcon,
-            onPressed: controlsEnabled ? onSearchInputPressed : null,
+            onPressed: controlsEnabled
+                ? onSearchInputPressed
+                : pairingHintActive
+                ? null
+                : onDisabledInteraction,
           ),
         ),
       ),
@@ -182,7 +225,9 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
           borderRadius: BorderRadius.circular(height / 2),
           onTap: controlsEnabled
               ? () => onSendCommand(RemoteCommand.playPause)
-              : null,
+              : pairingHintActive
+              ? null
+              : onDisabledInteraction,
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(height / 2),
@@ -225,10 +270,14 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
           bottomText: '-',
           onTopTap: controlsEnabled
               ? () => onSendCommand(RemoteCommand.channelUp)
-              : _noopAction,
+              : pairingHintActive
+              ? _noopAction
+              : onDisabledInteraction,
           onBottomTap: controlsEnabled
               ? () => onSendCommand(RemoteCommand.channelDown)
-              : _noopAction,
+              : pairingHintActive
+              ? _noopAction
+              : onDisabledInteraction,
         ),
       ),
     );
@@ -248,12 +297,31 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
           bottomText: '-',
           onTopTap: controlsEnabled
               ? () => onSendCommand(RemoteCommand.volumeUp)
-              : _noopAction,
+              : pairingHintActive
+              ? _noopAction
+              : onDisabledInteraction,
           onBottomTap: controlsEnabled
               ? () => onSendCommand(RemoteCommand.volumeDown)
-              : _noopAction,
+              : pairingHintActive
+              ? _noopAction
+              : onDisabledInteraction,
         ),
       ),
+    );
+  }
+
+  Widget _applyDisabledStyle(BuildContext context, Widget child) {
+    if (controlsEnabled) {
+      return child;
+    }
+    return ColorFiltered(
+      colorFilter: ColorFilter.mode(
+        AppTheme.colorsOf(context).remoteDisabledControlTint.withValues(
+          alpha: 0.42,
+        ),
+        BlendMode.modulate,
+      ),
+      child: Opacity(opacity: 0.58, child: child),
     );
   }
 
