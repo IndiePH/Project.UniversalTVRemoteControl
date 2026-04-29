@@ -1,6 +1,6 @@
 # examples
 
-REF: `.cursor/rules/agent-surgical-coding.mdc` (always-on, dense). USE: when those axioms need narrative before/after.
+REF: `.cursor/rules/execution-governance.mdc` (always-on, dense). USE: when those axioms need narrative before/after.
 
 FORMAT: per-axiom wrong vs right (LLM anti-patterns).
 

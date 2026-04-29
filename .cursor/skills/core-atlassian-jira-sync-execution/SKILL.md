@@ -12,5 +12,6 @@ JIRA_SAFETY: no bulk-destructive edits
 JIRA_CONFIRM: ask before status/assignee/label changes when ambiguous
 JIRA_HISTORY: preserve existing issue history
 JIRA_REPORT: list created/updated/skipped + reason each
+OUTPUT: Jira keys grouped by created/updated/skipped, transition notes, verification evidence, and follow-up actions.
 
 PIPELINE: read source references + workflow intent -> detect create vs update set -> apply Jira operations through Atlassian MCP -> verify keys/status/links/fields -> summarize delta + follow-up actions

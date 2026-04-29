@@ -7,6 +7,7 @@ license: Complete terms in LICENSE.txt
 # skill-creator
 
 MODE: CREATE_OR_EDIT_SKILL_ONLY
+OUTPUT: updated skill path, references used, validation result, package path if created, and blocked reason if validation/package fails.
 
 REF_PATHS
 - references/stack-flutter.md

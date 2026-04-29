@@ -8,5 +8,6 @@ license: Complete terms in LICENSE.txt
 
 MODE: SCOPE_ONLY NO_EDITS NO_CMDS
 RULES: no repo-wide refactor for local ask; keep existing state architecture; no new deps unless required.
+OUTPUT: scoped target list, excluded areas, neighboring risks, platform deltas, and strict boundary.
 
 PIPELINE: infer layer(UI|state|data|platform) -> minimal targets -> neighboring risks -> platform deltas if material -> strict boundary

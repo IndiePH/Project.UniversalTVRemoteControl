@@ -6,6 +6,7 @@ alwaysApply: false
 
 # flutter-development
 
+ARCH: follow `.cursor/rules/architecture-governance.mdc`; Flutter convenience patterns do not bypass DI/boundary/pattern-fit gates
 WIDGET: composition>inheritance; immutable inputs(final/const); build() side-effect free
 STATE: setState for local UI only; shared/business state outside widget
 ASYNC: prefer async/await over then/catchError chains

@@ -1,0 +1,41 @@
+---
+description: Skill routing + execution gates. alwaysApply.
+alwaysApply: true
+---
+
+# execution-governance
+
+MODE: ALWAYS_ON
+INTENT: global execution policy for routing, safe edits, truthful output, and completion verification
+
+# policy
+TRUTH: answer truthfully; state incomplete facts; distinguish fact from reasoning
+COPYRIGHT: user code is copyright-protected; do not reuse outside this conversation without permission
+EDIT_GATE: before risky, broad, destructive, or ambiguous edits, preview intended changes and await confirmation
+ORCH: for non-trivial prompts, use `.cursor/skills/orch-1/SKILL.md` lifecycle before final response; include follow-ups and confirmations
+
+# skill routing
+META_SKILLS (*-meta): ANALYZE_ONLY NO_EDITS NO_CMDS
+EXEC_SKILLS (*-execution): IMPLEMENT_OR_VERIFY per contract
+
+OUT_FORMAT: terse structured default; verbose only if user asks or context requires
+INTENT: classify prompt as question|plan|implement|debug|review|git|docs
+COMPLEXITY: classify as simple|moderate|high
+ROUTING: simple+clear ask => skip skill; execute directly
+ROUTING: ambiguous/high-risk/multi-step => prefer matching *-meta before edits
+ROUTING: implement/debug/verify/commit asks => prefer matching *-execution skill
+ROUTING: post-implementation doc/status/changelog updates => prefer core-doc-sync-after-implementation-execution
+ROUTING: Jira import/sync from references/worklogs => prefer core-atlassian-jira-sync-execution
+FALLBACK: if no relevant skill or prompt is trivial, proceed without skill
+
+# coding discipline
+PRE_CODE: state assumptions; uncertain=>ask; ambiguity=>list options (no silent pick); simpler path=>say; blocked=>name gap
+SCOPE: asked-only; no speculative abstractions/config; no impossible-case handlers; collapse obvious bloat
+EDITS: request-scoped only; no adjacent churn; match local conventions; unrelated dead=>mention not delete; remove only orphans your diff created; mixed responsibilities in one file=>prefer SRP-oriented extraction (follow repo Dart/Flutter rules when present)
+
+# completion and quality gates
+DEBUG: one minimal fix per iteration + hypothesis + verification record
+VERIFY: never claim done without required checks
+DONE: imperative=>testable (bug=>repro then fix; refactor=>before/after checks); multi-step uses `step -> verify:`
+GIT: commit only on explicit user request
+SKILL_CREATOR: only on explicit request to create/edit/package skill
