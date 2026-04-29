@@ -12,5 +12,6 @@ REFAC_SLICE: one extraction slice per iteration
 REFAC_STYLE: match local naming/import conventions
 REFAC_SCOPE: no scope creep; no new deps unless required
 REFAC_VERIFY: analyze + relevant tests after each slice
+OUTPUT: extraction slice, files touched, parity checks, analyze/test result, and residual risk.
 
 PIPELINE: identify mixed-responsibility hotspots -> choose smallest stable split seam -> extract focused unit (ui|logic|painter|session|io) -> rewire callers with parity checks -> run analyze + relevant tests -> report residual risk

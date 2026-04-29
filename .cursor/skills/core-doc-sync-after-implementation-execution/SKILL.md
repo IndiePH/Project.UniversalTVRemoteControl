@@ -12,5 +12,6 @@ DOC_CONTENT: factual shipped behavior only
 DOC_STYLE: keep existing structure/tone
 DOC_DRIFT: no speculative roadmap expansion
 DOC_VERIFY: mention only checks actually run
+OUTPUT: changed docs, behavior source used, consistency checks run, residual doc gaps, and next action.
 
 PIPELINE: inspect change scope + verified behavior -> map impacted docs -> patch status/changelog/goal references with consistent terms -> run consistency pass (dates/task ids/names) -> report changed docs + residual doc gaps

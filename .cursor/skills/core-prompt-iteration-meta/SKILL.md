@@ -8,5 +8,6 @@ license: Complete terms in LICENSE.txt
 
 MODE: PROMPT_REWRITE NO_EDITS NO_CMDS
 RULES: preserve user intent; include measurable acceptance; one independent goal per revised prompt.
+OUTPUT: failure mode, rewritten prompt, acceptance checks, exclusions, and recommended next skill.
 
 PIPELINE: compare requested outcome vs last output -> identify failure mode -> rewrite with scope/files/exclusions/validation -> route next skill
