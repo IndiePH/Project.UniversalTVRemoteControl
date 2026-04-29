@@ -83,6 +83,7 @@ class RemoteHomeStatusPanel extends StatelessWidget {
             ),
             _PairButton(
               isActive: hasActiveDevice,
+              hasAnyPairedDevice: hasAnyPairedDevice,
               onPressed: onOpenPairing,
               highlighted: highlightPairButton,
               blinkOn: pairButtonBlinkOn,
@@ -126,12 +127,14 @@ class RemoteHomeStatusPanel extends StatelessWidget {
 class _PairButton extends StatelessWidget {
   const _PairButton({
     required this.isActive,
+    required this.hasAnyPairedDevice,
     required this.onPressed,
     required this.highlighted,
     required this.blinkOn,
   });
 
   final bool isActive;
+  final bool hasAnyPairedDevice;
   final VoidCallback onPressed;
   final bool highlighted;
   final bool blinkOn;
@@ -140,6 +143,8 @@ class _PairButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final appColors = AppTheme.colorsOf(context);
     final colorScheme = Theme.of(context).colorScheme;
+    final usePairingHintTone =
+        !isActive && (!hasAnyPairedDevice || (highlighted && blinkOn));
     final background = isActive
         ? appColors.remoteActionSuccessFill
         : appColors.remoteSurface;
@@ -175,7 +180,7 @@ class _PairButton extends StatelessWidget {
             color: background,
             shape: CircleBorder(
               side: BorderSide(
-                color: highlighted && blinkOn
+                color: usePairingHintTone
                     ? appColors.pairingHintGridTint
                     : appColors.remoteOutline,
                 width: highlighted ? 2 : 1.2,
