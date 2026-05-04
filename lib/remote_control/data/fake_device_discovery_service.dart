@@ -43,6 +43,7 @@ class FakeDeviceDiscoveryService implements DeviceDiscoveryService {
         DeviceCapability.keyCommands,
         DeviceCapability.powerControl,
         DeviceCapability.pinPairing,
+        DeviceCapability.textInput,
       },
     ),
   ];

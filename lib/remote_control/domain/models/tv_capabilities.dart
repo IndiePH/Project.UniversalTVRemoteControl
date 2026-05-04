@@ -30,6 +30,7 @@ class TvCapabilities {
       DeviceCapability.keyCommands,
       DeviceCapability.powerControl,
       DeviceCapability.pinPairing,
+      DeviceCapability.textInput,
     },
   };
 
