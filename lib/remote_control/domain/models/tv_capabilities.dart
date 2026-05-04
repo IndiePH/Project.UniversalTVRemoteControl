@@ -26,6 +26,11 @@ class TvCapabilities {
       DeviceCapability.powerControl,
       DeviceCapability.pinPairing,
     },
+    (TvBrand.androidTv, TvDevice.defaultProtocolVariant): {
+      DeviceCapability.keyCommands,
+      DeviceCapability.powerControl,
+      DeviceCapability.pinPairing,
+    },
   };
 
   Set<DeviceCapability> capabilitiesFor(TvBrand brand, [String? variant]) {

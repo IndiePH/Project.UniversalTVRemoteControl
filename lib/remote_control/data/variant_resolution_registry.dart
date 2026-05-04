@@ -37,6 +37,11 @@ class DefaultVariantResolutionRegistry implements VariantResolutionRegistry {
       matches: (_) => true,
       variant: TvDevice.defaultProtocolVariant,
     ),
+    _VariantResolutionEntry(
+      brand: TvBrand.androidTv,
+      matches: (_) => true,
+      variant: TvDevice.defaultProtocolVariant,
+    ),
   ];
 
   @override

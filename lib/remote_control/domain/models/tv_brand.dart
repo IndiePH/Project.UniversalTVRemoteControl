@@ -2,6 +2,7 @@ enum TvBrand {
   samsung,
   lg,
   hisense,
+  androidTv,
 }
 
 extension TvBrandDisplay on TvBrand {
@@ -9,5 +10,6 @@ extension TvBrandDisplay on TvBrand {
     TvBrand.samsung => 'Samsung',
     TvBrand.lg => 'LG',
     TvBrand.hisense => 'Hisense',
+    TvBrand.androidTv => 'Android TV',
   };
 }
