@@ -141,7 +141,7 @@ SHORT             = 3   ← normal tap/press  ← use this for standard button s
 ## Tasks
 
 ### Task 1 — Domain foundation
-**Status:** pending  
+**Status:** done  
 **Risk:** LOW  
 **Deps:** none
 
@@ -156,7 +156,7 @@ Files to change:
 ---
 
 ### Task 2 — Key mapper + protocol variants
-**Status:** pending  
+**Status:** done  
 **Risk:** LOW  
 **Deps:** Task 1
 
