@@ -10,7 +10,10 @@ import 'package:one_remote/remote_control/application/transport_log_reader_provi
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/debug/fake_android_tv_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_hisense_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/android_tv_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_mqtt_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense_adapter.dart';
@@ -66,10 +69,12 @@ final class RemoteControlDiConfig implements IDiConfig {
     sl.registerSingleton<HisenseTransportClient>(
       HisenseMqttTransportClient(hostResolver: _resolveHost),
     );
+    sl.registerSingleton<AndroidTvTransportClient>(FakeAndroidTvTransportClient());
     final adapters = [
       SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
       LgAdapter(transportClient: sl<LgTransportClient>()),
       HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
+      AndroidTvAdapter(transportClient: sl<AndroidTvTransportClient>()),
     ];
     final commandService = BrandRoutedRemoteCommandService(
       adapters: adapters,
@@ -109,10 +114,12 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
     sl.registerSingleton<SamsungTransportClient>(FakeSamsungTransportClient());
     sl.registerSingleton<LgTransportClient>(FakeLgTransportClient());
     sl.registerSingleton<HisenseTransportClient>(FakeHisenseTransportClient());
+    sl.registerSingleton<AndroidTvTransportClient>(FakeAndroidTvTransportClient());
     final adapters = [
       SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
       LgAdapter(transportClient: sl<LgTransportClient>()),
       HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
+      AndroidTvAdapter(transportClient: sl<AndroidTvTransportClient>()),
     ];
     final commandService = BrandRoutedRemoteCommandService(
       adapters: adapters,

@@ -322,6 +322,24 @@ abstract class AppLocalizations {
   /// **'Accept any connection permission that appears on your TV.'**
   String get pairingSamsungPreStep1;
 
+  /// No description provided for @pairingAndroidTvProgressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A PIN will appear on your TV screen — enter it when prompted.'**
+  String get pairingAndroidTvProgressHint;
+
+  /// No description provided for @pairingAndroidTvPreStep0.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Android TV or Google TV is ON and on the same Wi-Fi.'**
+  String get pairingAndroidTvPreStep0;
+
+  /// No description provided for @pairingAndroidTvPreStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'A PIN will appear on your TV screen — enter it when prompted.'**
+  String get pairingAndroidTvPreStep1;
+
   /// No description provided for @pairingWaitingForApproval.
   ///
   /// In en, this message translates to:

@@ -23,6 +23,10 @@ class DefaultPrePairingStepsRegistry implements PrePairingStepsRegistry {
           _localizedStrings.pairingSamsungPreStep0,
           _localizedStrings.pairingSamsungPreStep1,
         ],
+        (TvBrand.androidTv, TvDevice.defaultProtocolVariant) => [
+          _localizedStrings.pairingAndroidTvPreStep0,
+          _localizedStrings.pairingAndroidTvPreStep1,
+        ],
         _ => null,
       };
 }
