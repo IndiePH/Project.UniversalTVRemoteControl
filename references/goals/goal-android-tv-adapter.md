@@ -186,7 +186,7 @@ New files to create:
 ---
 
 ### Task 3 — Transport interface + fake
-**Status:** pending  
+**Status:** done  
 **Risk:** LOW  
 **Deps:** Task 1
 
@@ -208,7 +208,7 @@ New files to create:
 ---
 
 ### Task 4 — Adapter + registries + DI wiring
-**Status:** pending  
+**Status:** done  
 **Risk:** MEDIUM  
 **Deps:** Tasks 1, 2, 3
 
@@ -241,7 +241,7 @@ Files to update:
 ---
 
 ### Task 5 — mDNS discovery
-**Status:** pending  
+**Status:** done  
 **Risk:** MEDIUM  
 **Deps:** Task 1
 

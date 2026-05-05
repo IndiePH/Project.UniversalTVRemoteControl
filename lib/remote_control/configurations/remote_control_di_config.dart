@@ -29,6 +29,8 @@ import 'package:one_remote/remote_control/data/adapter_tv_reachability_service.d
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/data/shared_prefs_device_repository.dart';
 import 'package:one_remote/remote_control/data/shared_prefs_layout_repository.dart';
+import 'package:one_remote/remote_control/data/composite_device_discovery_service.dart';
+import 'package:one_remote/remote_control/data/mdns_device_discovery_service.dart';
 import 'package:one_remote/remote_control/data/ssdp_device_discovery_service.dart';
 import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
@@ -55,7 +57,12 @@ final class RemoteControlDiConfig implements IDiConfig {
   @override
   void configure(GetIt sl, AppEnvironment env) {
     _configureShared(sl);
-    sl.registerSingleton<DeviceDiscoveryService>(SsdpDeviceDiscoveryService());
+    sl.registerSingleton<DeviceDiscoveryService>(
+      CompositeDeviceDiscoveryService(services: [
+        SsdpDeviceDiscoveryService(),
+        MdnsDeviceDiscoveryService(),
+      ]),
+    );
     sl.registerSingleton<LgPairingKeyStore>(LgPairingKeyStore());
     sl.registerSingleton<SamsungTransportClient>(
       SamsungWebSocketTransportClient(hostResolver: _resolveHost),
@@ -110,7 +117,12 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
     _configureShared(sl);
     // Debug config keeps command transports fake-able via DI. Discovery mode can
     // still be switched at runtime from the debug settings flow (pairing path).
-    sl.registerSingleton<DeviceDiscoveryService>(SsdpDeviceDiscoveryService());
+    sl.registerSingleton<DeviceDiscoveryService>(
+      CompositeDeviceDiscoveryService(services: [
+        SsdpDeviceDiscoveryService(),
+        MdnsDeviceDiscoveryService(),
+      ]),
+    );
     sl.registerSingleton<SamsungTransportClient>(FakeSamsungTransportClient());
     sl.registerSingleton<LgTransportClient>(FakeLgTransportClient());
     sl.registerSingleton<HisenseTransportClient>(FakeHisenseTransportClient());
