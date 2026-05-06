@@ -3,6 +3,35 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-06 (continued)
+
+### Added
+- Android TV — Task 8 pairing transport: `AndroidTvTcpTransportClient` (pairing flow only;
+  Task 9 completes it with the remote-control flow)
+  - Connects to port 6467 with mutual TLS (`SecureSocket`, client cert from
+    `AndroidTvCertificateStore`); accepts any server cert and captures the peer cert DER
+    for the pairing secret formula
+  - Wire framing: protobuf varint length prefix (verified from protocol source — the goal
+    file had warned "likely 4-byte big-endian"; varint is the confirmed format)
+  - Pairing state machine: `pairing_request_ack` → send `options` (HEXADECIMAL/6) →
+    TV sends `options` → send `configuration` (HEXADECIMAL/6, INPUT role) →
+    TV sends `configuration_ack` → `connect()` returns (TV now shows PIN)
+  - Service name `"atvremote"` (verified from protocol source; goal file had
+    `"androidtvremote2"`)
+  - `submitPairingCode(code)`: SHA-256 secret formula over client + server RSA components
+    + last 4 hex chars of the 6-char PIN; includes local checksum verify (first byte of
+    digest == first two hex chars) to catch user input errors before the TV round-trip
+  - Server cert persisted to disk only after confirmed `secret_ack STATUS_OK`
+  - `probe(host)`: plain TCP connect to port 6466 with 3-second timeout
+  - `clearPairing`: deletes stored server cert via `AndroidTvCertificateStore.clearServerCert`
+  - `sendKey`/`sendText`: throw `UnimplementedError` (Task 9 stubs)
+  - Follows `hostResolver` injection pattern from `LgWebSocketTransportClient`
+- `AndroidTvCertificateStore`: added `extractRsaFromDer(Uint8List)` (public static, for
+  transport client to parse peer cert at connect time) and `clearServerCert(host)` (deletes
+  per-host `.cert.der` + `.rsa.json` files)
+- New `android_tv_exceptions.dart`: `AndroidTvPairingFailedException`,
+  `AndroidTvConnectionException`
+
 ## 2026-05-06
 
 ### Added

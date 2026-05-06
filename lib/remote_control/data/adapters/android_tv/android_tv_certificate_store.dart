@@ -112,6 +112,22 @@ class AndroidTvCertificateStore {
     }
   }
 
+  /// Extracts the RSA public key (modulus, exponent) from a DER-encoded X.509 cert.
+  /// Returns null if the cert is not RSA or parsing fails.
+  static (BigInt, BigInt)? extractRsaFromDer(Uint8List der) => _rsaFromCertDer(der);
+
+  /// Removes all stored server certificate files for [host].
+  Future<void> clearServerCert(String host) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final tag = _hostTag(host);
+    final certFile = File('${dir.path}/android_tv_server_$tag.cert.der');
+    final rsaFile = File('${dir.path}/android_tv_server_$tag.rsa.json');
+    await Future.wait([
+      if (certFile.existsSync()) certFile.delete(),
+      if (rsaFile.existsSync()) rsaFile.delete(),
+    ]);
+  }
+
   /// Returns the server's RSA (modulus, exponent) for [host], or null if not yet paired.
   Future<(BigInt, BigInt)?> serverRsaComponents(String host) async {
     final dir = await getApplicationDocumentsDirectory();

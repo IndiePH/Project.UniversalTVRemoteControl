@@ -326,7 +326,7 @@ consistent with the generated cert.
 ---
 
 ### Task 8 — Transport: pairing flow
-**Status:** pending  
+**Status:** done  
 **Risk:** MEDIUM  
 **Deps:** Tasks 3, 6, 7
 
