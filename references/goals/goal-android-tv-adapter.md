@@ -366,7 +366,7 @@ without re-triggering the PIN flow.
 ---
 
 ### Task 9 — Transport: command dispatch + lifecycle
-**Status:** pending  
+**Status:** done  
 **Risk:** MEDIUM  
 **Deps:** Task 8
 

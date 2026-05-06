@@ -6,6 +6,30 @@ Keep entries short and append new updates at the top.
 ## 2026-05-06 (continued)
 
 ### Added
+- Android TV — Task 9 remote-control transport: completes `AndroidTvTcpTransportClient`
+  - `connect()` is now dual-mode: checks for stored server cert via
+    `AndroidTvCertificateStore.serverRsaComponents`; routes to port 6467 (pairing) if no
+    cert, or port 6466 (remote control) if paired; idempotent on the remote path
+  - Remote control socket (port 6466): mutual TLS with client cert + `onBadCertificate`
+    accept; sends `RemoteSetActive(active:1)` immediately after connect
+  - Wire framing on port 6466: protobuf varint (same as port 6467 — goal file said
+    "4-byte big-endian" but base.py confirms varint for both channels)
+  - `sendKey(keyCode)`: sends `RemoteMessage { remoteKeyInject { keyCode, direction:SHORT } }`
+  - `sendText(text)`: sends `RemoteMessage { remoteImeBatchEdit { imeCounter, fieldCounter,
+    editInfo:[{insert:1, textFieldStatus:{start:len-1,end:len-1,value:text}}] } }`;
+    counters tracked from TV's inbound `RemoteImeBatchEdit` messages
+  - Keepalive: responds to `RemotePingRequest` with `RemotePingResponse { val1: echo }`;
+    TV pings every 5 s; connection closes after ~16 s without response (3 unanswered pings)
+  - Reconnect: on unexpected socket close, emits disconnected → connecting, waits 3 s,
+    then retries `_connectRemote`; guarded by `_remoteActive` set so `clearPairing()` 
+    (which removes the device from the set before destroying the socket) does not trigger
+    a reconnect loop
+  - `clearPairing()` updated: clears `_remoteActive` flag, tears down both pairing and
+    remote sockets, clears stored cert, emits disconnected
+  - `RemoteControlDiConfig` (prod): registers `AndroidTvCertificateStore` singleton and
+    wires `AndroidTvTcpTransportClient` (replacing `FakeAndroidTvTransportClient`);
+    `DebugRemoteControlDiConfig` retains the fake
+
 - Android TV — Task 8 pairing transport: `AndroidTvTcpTransportClient` (pairing flow only;
   Task 9 completes it with the remote-control flow)
   - Connects to port 6467 with mutual TLS (`SecureSocket`, client cert from

@@ -10,6 +10,8 @@ import 'package:one_remote/remote_control/application/transport_log_reader_provi
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_certificate_store.dart';
+import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_tcp_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_android_tv_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_transport_client.dart';
@@ -76,7 +78,13 @@ final class RemoteControlDiConfig implements IDiConfig {
     sl.registerSingleton<HisenseTransportClient>(
       HisenseMqttTransportClient(hostResolver: _resolveHost),
     );
-    sl.registerSingleton<AndroidTvTransportClient>(FakeAndroidTvTransportClient());
+    sl.registerSingleton<AndroidTvCertificateStore>(AndroidTvCertificateStore());
+    sl.registerSingleton<AndroidTvTransportClient>(
+      AndroidTvTcpTransportClient(
+        hostResolver: _resolveHost,
+        certStore: sl<AndroidTvCertificateStore>(),
+      ),
+    );
     final adapters = [
       SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
       LgAdapter(transportClient: sl<LgTransportClient>()),

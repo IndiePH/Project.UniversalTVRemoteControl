@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_certificate_store.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_exceptions.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_pairing_messages.dart';
+import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_remote_messages.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
@@ -15,8 +16,12 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 /// TCP+TLS transport for the Android TV v2 remote protocol.
 ///
-/// Task 8 covers the pairing flow (port 6467, mutual TLS, Polo protobuf).
-/// Task 9 will complete this class with the remote-control flow (port 6466).
+/// Task 8: pairing flow (port 6467, mutual TLS, Polo protobuf).
+/// Task 9: remote-control flow (port 6466, mutual TLS, RemoteMessage protobuf).
+///
+/// Wire framing on both ports: protobuf varint length prefix (verified from
+/// base.py in tronikos/androidtvremote2 — the goal file's "4-byte big-endian"
+/// note was incorrect).
 class AndroidTvTcpTransportClient
     with TransportEventEmitterMixin
     implements AndroidTvTransportClient {
@@ -47,6 +52,19 @@ class AndroidTvTcpTransportClient
   final Map<String, Completer<void>> _pairingStartedCompleters = {};
   final Map<String, Completer<void>> _secretAckCompleters = {};
 
+  // Remote control state, keyed by deviceId
+  final Map<String, SecureSocket> _remoteSockets = {};
+  final Map<String, StreamSubscription<List<int>>> _remoteSubs = {};
+  final Map<String, List<int>> _remoteBuffers = {};
+  final Map<String, int> _imeCounters = {};
+  final Map<String, int> _fieldCounters = {};
+
+  // _remoteActive tracks devices with intentional remote connections so
+  // _onRemoteSocketDone can distinguish unexpected closes (reconnect) from
+  // explicit clearPairing() calls (do not reconnect).
+  final Set<String> _remoteActive = {};
+  final Set<String> _remoteConnecting = {};
+
   // Connection state, keyed by deviceId
   final Map<String, StreamController<ConnectionState>> _connectionControllers =
       {};
@@ -60,11 +78,140 @@ class AndroidTvTcpTransportClient
   Stream<ConnectionState> watchConnectionState(String deviceId) =>
       _controllerFor(deviceId).stream;
 
-  /// Connects to the TV pairing port (6467) using mutual TLS, sends the
-  /// pairing request, and returns once the TV shows the PIN on screen
-  /// (i.e. after the configuration_ack exchange completes).
+  /// Routes to the pairing flow (port 6467) if no server cert is stored,
+  /// or to the remote-control flow (port 6466) if already paired.
+  /// Idempotent on the remote path: returns immediately if already connected.
   @override
   Future<void> connect({required String deviceId}) async {
+    final host = _hostResolver(deviceId);
+    final isPaired = await _certStore.serverRsaComponents(host) != null;
+    if (isPaired) {
+      await _connectRemote(deviceId);
+    } else {
+      await _connectPairing(deviceId);
+    }
+  }
+
+  /// Computes the SHA-256 pairing secret from [code] and the captured server
+  /// certificate RSA components, sends it to the TV, and awaits confirmation.
+  /// Persists the server certificate to disk only on success.
+  @override
+  Future<void> submitPairingCode({
+    required String deviceId,
+    required String code,
+  }) async {
+    final rsa = _serverRsa[deviceId];
+    if (rsa == null) {
+      throw const AndroidTvPairingFailedException(
+        'No server certificate — call connect() first',
+      );
+    }
+
+    final (serverMod, serverExp) = rsa;
+    final secretBytes = await _computeSecret(code, serverMod, serverExp);
+
+    _secretAckCompleters[deviceId] = Completer<void>();
+    _sendPairingMessage(
+      deviceId,
+      OuterMessage(
+        protocolVersion: 1,
+        status: PairingStatus.statusOk,
+        secret: Secret(secret: secretBytes),
+      ),
+    );
+
+    await _secretAckCompleters[deviceId]!.future;
+
+    // Only persist the cert after pairing is confirmed successful.
+    final der = _serverCertDers[deviceId];
+    if (der != null) {
+      await _certStore.storeServerCert(_hostResolver(deviceId), der);
+    }
+
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'android_tv',
+        deviceId: deviceId,
+        type: 'paired',
+      ),
+    );
+
+    _cleanupPairing(deviceId);
+  }
+
+  /// Sends a key event to the TV via the remote-control channel.
+  /// [keyCode] is the string-encoded integer from [AndroidTvKeyMapper].
+  @override
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {
+    _sendRemoteMessage(
+      deviceId,
+      RemoteMessage(
+        remoteKeyInject: RemoteKeyInject(
+          keyCode: int.parse(keyCode),
+          direction: RemoteDirection.short,
+        ),
+      ),
+    );
+  }
+
+  /// Sends text input via a RemoteImeBatchEdit message, using the IME counters
+  /// that were last received from the TV.
+  @override
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {
+    final len = text.length;
+    final imeObject = RemoteImeObject(
+      start: len - 1,
+      end: len - 1,
+      value: text,
+    );
+    final editInfo = RemoteEditInfo(insert: 1, textFieldStatus: imeObject);
+    final batchEdit = RemoteImeBatchEdit(
+      imeCounter: _imeCounters[deviceId] ?? 0,
+      fieldCounter: _fieldCounters[deviceId] ?? 0,
+      editInfo: [editInfo],
+    );
+    _sendRemoteMessage(deviceId, RemoteMessage(remoteImeBatchEdit: batchEdit));
+  }
+
+  /// TCP reachability check against the remote-control port (6466).
+  @override
+  Future<void> probe(String host) async {
+    final socket = await Socket.connect(
+      host,
+      _remotePort,
+      timeout: const Duration(seconds: 3),
+    );
+    socket.destroy();
+  }
+
+  /// Prevents reconnect, closes both sockets, and removes the stored server
+  /// certificate so the device can be re-paired from scratch.
+  @override
+  Future<void> clearPairing({required String deviceId}) async {
+    // Remove from _remoteActive before destroying the socket so that
+    // _onRemoteSocketDone does not schedule a reconnect.
+    _remoteActive.remove(deviceId);
+    _cleanupPairing(deviceId);
+    _cleanupRemote(deviceId);
+    await _certStore.clearServerCert(_hostResolver(deviceId));
+    _emitState(deviceId, ConnectionState.disconnected);
+  }
+
+  @override
+  Future<TvDeviceInfo> queryDeviceInfo({required String deviceId}) async =>
+      const TvDeviceInfo();
+
+  // ---------------------------------------------------------------------------
+  // Pairing flow (port 6467)
+  // ---------------------------------------------------------------------------
+
+  Future<void> _connectPairing(String deviceId) async {
     final host = _hostResolver(deviceId);
     _emitState(deviceId, ConnectionState.connecting);
 
@@ -95,13 +242,13 @@ class AndroidTvTcpTransportClient
       _pairingStartedCompleters[deviceId] = Completer<void>();
 
       _pairingSubs[deviceId] = socket.listen(
-        (data) => _onData(deviceId, data),
-        onError: (Object e) => _onSocketError(deviceId, e),
-        onDone: () => _onSocketDone(deviceId),
+        (data) => _onPairingData(deviceId, data),
+        onError: (Object e) => _onPairingSocketError(deviceId, e),
+        onDone: () => _onPairingSocketDone(deviceId),
         cancelOnError: true,
       );
 
-      _sendMessage(
+      _sendPairingMessage(
         deviceId,
         OuterMessage(
           protocolVersion: 1,
@@ -118,7 +265,7 @@ class AndroidTvTcpTransportClient
       _emitState(deviceId, ConnectionState.connected);
     } catch (e) {
       _emitState(deviceId, ConnectionState.error);
-      _cleanupDevice(deviceId);
+      _cleanupPairing(deviceId);
       if (e is AndroidTvPairingFailedException ||
           e is AndroidTvConnectionException) {
         rethrow;
@@ -127,119 +274,38 @@ class AndroidTvTcpTransportClient
     }
   }
 
-  /// Computes the SHA-256 pairing secret from [code] and the captured server
-  /// certificate RSA components, sends it to the TV, and awaits confirmation.
-  /// Persists the server certificate to disk only on success.
-  @override
-  Future<void> submitPairingCode({
-    required String deviceId,
-    required String code,
-  }) async {
-    final rsa = _serverRsa[deviceId];
-    if (rsa == null) {
-      throw const AndroidTvPairingFailedException(
-        'No server certificate — call connect() first',
-      );
-    }
-
-    final (serverMod, serverExp) = rsa;
-    final secretBytes = await _computeSecret(code, serverMod, serverExp);
-
-    _secretAckCompleters[deviceId] = Completer<void>();
-    _sendMessage(
-      deviceId,
-      OuterMessage(
-        protocolVersion: 1,
-        status: PairingStatus.statusOk,
-        secret: Secret(secret: secretBytes),
-      ),
-    );
-
-    await _secretAckCompleters[deviceId]!.future;
-
-    // Only persist the cert after pairing is confirmed successful.
-    final der = _serverCertDers[deviceId];
-    if (der != null) {
-      await _certStore.storeServerCert(_hostResolver(deviceId), der);
-    }
-
-    emitTransportEvent(
-      TransportEvent(
-        transport: 'android_tv',
-        deviceId: deviceId,
-        type: 'paired',
-      ),
-    );
-
-    _cleanupDevice(deviceId);
-  }
-
-  /// TCP reachability check against the remote-control port (6466).
-  @override
-  Future<void> probe(String host) async {
-    final socket = await Socket.connect(
-      host,
-      _remotePort,
-      timeout: const Duration(seconds: 3),
-    );
-    socket.destroy();
-  }
-
-  /// Closes the pairing socket (if open) and removes the stored server
-  /// certificate so the device can be re-paired from scratch.
-  @override
-  Future<void> clearPairing({required String deviceId}) async {
-    _cleanupDevice(deviceId);
-    await _certStore.clearServerCert(_hostResolver(deviceId));
-    _emitState(deviceId, ConnectionState.disconnected);
-  }
-
-  // Implemented in Task 9.
-  @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) =>
-      throw UnimplementedError('sendKey is implemented in Task 9');
-
-  // Implemented in Task 9.
-  @override
-  Future<void> sendText({required String deviceId, required String text}) =>
-      throw UnimplementedError('sendText is implemented in Task 9');
-
-  @override
-  Future<TvDeviceInfo> queryDeviceInfo({required String deviceId}) async =>
-      const TvDeviceInfo();
-
-  // ---------------------------------------------------------------------------
-  // Pairing message handling
-  // ---------------------------------------------------------------------------
-
-  void _onData(String deviceId, List<int> data) {
+  void _onPairingData(String deviceId, List<int> data) {
     _pairingBuffers[deviceId]?.addAll(data);
-    _drainBuffer(deviceId);
+    _drainPairingBuffer(deviceId);
   }
 
-  void _drainBuffer(String deviceId) {
+  void _drainPairingBuffer(String deviceId) {
     final buf = _pairingBuffers[deviceId];
     if (buf == null) return;
 
     while (true) {
       final varint = _tryDecodeVarint(buf);
-      if (varint == null) return; // need more bytes for the length prefix
+      if (varint == null) return;
 
       final (msgLen, consumed) = varint;
-      if (buf.length < consumed + msgLen) return; // need more bytes for payload
+      if (buf.length < consumed + msgLen) return;
 
-      final msgBytes = Uint8List.fromList(buf.sublist(consumed, consumed + msgLen));
+      final msgBytes =
+          Uint8List.fromList(buf.sublist(consumed, consumed + msgLen));
       buf.removeRange(0, consumed + msgLen);
 
       try {
-        _handleMessage(deviceId, OuterMessage.fromBuffer(msgBytes));
+        _handlePairingMessage(deviceId, OuterMessage.fromBuffer(msgBytes));
       } catch (e) {
-        log('Android TV: message decode error: $e', name: 'android_tv_transport');
+        log(
+          'Android TV: pairing message decode error: $e',
+          name: 'android_tv_transport',
+        );
       }
     }
   }
 
-  void _handleMessage(String deviceId, OuterMessage msg) {
+  void _handlePairingMessage(String deviceId, OuterMessage msg) {
     log(
       'Android TV pairing rx: ${msg.toDebugString()}',
       name: 'android_tv_transport',
@@ -247,7 +313,7 @@ class AndroidTvTcpTransportClient
 
     if (msg.hasPairingRequestAck()) {
       // Step 3: inform the TV of supported encoding options.
-      _sendMessage(
+      _sendPairingMessage(
         deviceId,
         OuterMessage(
           protocolVersion: 1,
@@ -262,7 +328,7 @@ class AndroidTvTcpTransportClient
       );
     } else if (msg.hasOptions()) {
       // Step 5: TV replied with its options — client confirms chosen encoding.
-      _sendMessage(
+      _sendPairingMessage(
         deviceId,
         OuterMessage(
           protocolVersion: 1,
@@ -293,23 +359,23 @@ class AndroidTvTcpTransportClient
     }
   }
 
-  void _onSocketError(String deviceId, Object error) {
-    log('Android TV socket error: $error', name: 'android_tv_transport');
-    _failPending(deviceId, AndroidTvConnectionException(error.toString()));
-    _cleanupDevice(deviceId);
+  void _onPairingSocketError(String deviceId, Object error) {
+    log('Android TV pairing socket error: $error', name: 'android_tv_transport');
+    _failPendingPairing(deviceId, AndroidTvConnectionException(error.toString()));
+    _cleanupPairing(deviceId);
     _emitState(deviceId, ConnectionState.error);
   }
 
-  void _onSocketDone(String deviceId) {
+  void _onPairingSocketDone(String deviceId) {
     log('Android TV pairing socket closed', name: 'android_tv_transport');
-    _failPending(
+    _failPendingPairing(
       deviceId,
       const AndroidTvConnectionException('Socket closed unexpectedly'),
     );
-    _cleanupDevice(deviceId);
+    _cleanupPairing(deviceId);
   }
 
-  void _failPending(String deviceId, Object error) {
+  void _failPendingPairing(String deviceId, Object error) {
     final c1 = _pairingStartedCompleters[deviceId];
     if (c1 != null && !c1.isCompleted) c1.completeError(error);
 
@@ -317,7 +383,7 @@ class AndroidTvTcpTransportClient
     if (c2 != null && !c2.isCompleted) c2.completeError(error);
   }
 
-  void _sendMessage(String deviceId, OuterMessage msg) {
+  void _sendPairingMessage(String deviceId, OuterMessage msg) {
     final socket = _pairingSockets[deviceId];
     if (socket == null) return;
     log(
@@ -329,7 +395,7 @@ class AndroidTvTcpTransportClient
     socket.add(payload);
   }
 
-  void _cleanupDevice(String deviceId) {
+  void _cleanupPairing(String deviceId) {
     _pairingSubs.remove(deviceId)?.cancel();
     _pairingSockets.remove(deviceId)?.destroy();
     _pairingBuffers.remove(deviceId);
@@ -340,7 +406,158 @@ class AndroidTvTcpTransportClient
   }
 
   // ---------------------------------------------------------------------------
-  // Secret computation
+  // Remote control flow (port 6466)
+  // ---------------------------------------------------------------------------
+
+  Future<void> _connectRemote(String deviceId) async {
+    if (_remoteSockets[deviceId] != null) return; // already connected
+    if (_remoteConnecting.contains(deviceId)) return; // connect in flight
+
+    _remoteConnecting.add(deviceId);
+    final host = _hostResolver(deviceId);
+    _emitState(deviceId, ConnectionState.connecting);
+
+    try {
+      final ctx = await _certStore.clientContext;
+      final socket = await SecureSocket.connect(
+        host,
+        _remotePort,
+        context: ctx,
+        onBadCertificate: (_) => true,
+        timeout: connectTimeout,
+      );
+
+      _remoteSockets[deviceId] = socket;
+      _remoteBuffers[deviceId] = [];
+      _remoteActive.add(deviceId);
+
+      _remoteSubs[deviceId] = socket.listen(
+        (data) => _onRemoteData(deviceId, data),
+        onError: (Object e) => _onRemoteSocketError(deviceId, e),
+        onDone: () => _onRemoteSocketDone(deviceId),
+        cancelOnError: true,
+      );
+
+      _sendRemoteMessage(
+        deviceId,
+        RemoteMessage(remoteSetActive: RemoteSetActive(active: 1)),
+      );
+
+      _emitState(deviceId, ConnectionState.connected);
+    } catch (e) {
+      _emitState(deviceId, ConnectionState.error);
+      _cleanupRemote(deviceId);
+      if (e is AndroidTvConnectionException) rethrow;
+      throw AndroidTvConnectionException(e.toString());
+    } finally {
+      _remoteConnecting.remove(deviceId);
+    }
+  }
+
+  void _onRemoteData(String deviceId, List<int> data) {
+    _remoteBuffers[deviceId]?.addAll(data);
+    _drainRemoteBuffer(deviceId);
+  }
+
+  void _drainRemoteBuffer(String deviceId) {
+    final buf = _remoteBuffers[deviceId];
+    if (buf == null) return;
+
+    while (true) {
+      final varint = _tryDecodeVarint(buf);
+      if (varint == null) return;
+
+      final (msgLen, consumed) = varint;
+      if (buf.length < consumed + msgLen) return;
+
+      final msgBytes =
+          Uint8List.fromList(buf.sublist(consumed, consumed + msgLen));
+      buf.removeRange(0, consumed + msgLen);
+
+      try {
+        _handleRemoteMessage(deviceId, RemoteMessage.fromBuffer(msgBytes));
+      } catch (e) {
+        log(
+          'Android TV: remote message decode error: $e',
+          name: 'android_tv_transport',
+        );
+      }
+    }
+  }
+
+  void _handleRemoteMessage(String deviceId, RemoteMessage msg) {
+    log(
+      'Android TV remote rx: ${msg.toDebugString()}',
+      name: 'android_tv_transport',
+    );
+
+    if (msg.hasRemotePingRequest()) {
+      _sendRemoteMessage(
+        deviceId,
+        RemoteMessage(
+          remotePingResponse: RemotePingResponse(
+            val1: msg.remotePingRequest.val1,
+          ),
+        ),
+      );
+    } else if (msg.hasRemoteImeBatchEdit()) {
+      // Sync IME counters from TV so subsequent sendText calls use correct values.
+      _imeCounters[deviceId] = msg.remoteImeBatchEdit.imeCounter;
+      _fieldCounters[deviceId] = msg.remoteImeBatchEdit.fieldCounter;
+    }
+  }
+
+  void _onRemoteSocketError(String deviceId, Object error) {
+    log('Android TV remote socket error: $error', name: 'android_tv_transport');
+    _cleanupRemote(deviceId);
+    _emitState(deviceId, ConnectionState.error);
+  }
+
+  void _onRemoteSocketDone(String deviceId) async {
+    log('Android TV remote socket closed', name: 'android_tv_transport');
+    _cleanupRemote(deviceId);
+    _emitState(deviceId, ConnectionState.disconnected);
+
+    // _remoteActive is cleared by clearPairing() before socket.destroy() is
+    // called, so its absence here means an intentional disconnect — skip reconnect.
+    if (!_remoteActive.contains(deviceId)) return;
+
+    await Future<void>.delayed(const Duration(seconds: 3));
+    _emitState(deviceId, ConnectionState.connecting);
+    try {
+      await _connectRemote(deviceId);
+    } catch (e) {
+      log(
+        'Android TV: reconnect failed: $e',
+        name: 'android_tv_transport',
+      );
+      _remoteActive.remove(deviceId);
+      _emitState(deviceId, ConnectionState.error);
+    }
+  }
+
+  void _sendRemoteMessage(String deviceId, RemoteMessage msg) {
+    final socket = _remoteSockets[deviceId];
+    if (socket == null) return;
+    log(
+      'Android TV remote tx: ${msg.toDebugString()}',
+      name: 'android_tv_transport',
+    );
+    final payload = msg.writeToBuffer();
+    socket.add(_encodeVarint(payload.length));
+    socket.add(payload);
+  }
+
+  void _cleanupRemote(String deviceId) {
+    _remoteSubs.remove(deviceId)?.cancel();
+    _remoteSockets.remove(deviceId)?.destroy();
+    _remoteBuffers.remove(deviceId);
+    _imeCounters.remove(deviceId);
+    _fieldCounters.remove(deviceId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Secret computation (pairing)
   // ---------------------------------------------------------------------------
 
   Future<List<int>> _computeSecret(
