@@ -9,7 +9,7 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 /// Discovers Android TV / Google TV devices via mDNS (_androidtvremote2._tcp).
 class MdnsDeviceDiscoveryService implements DeviceDiscoveryService {
-  MdnsDeviceDiscoveryService({this.timeout = const Duration(seconds: 3)});
+  MdnsDeviceDiscoveryService({this.timeout = const Duration(seconds: 5)});
 
   final Duration timeout;
 
@@ -35,15 +35,24 @@ class MdnsDeviceDiscoveryService implements DeviceDiscoveryService {
     try {
       await client.start();
 
-      final ptrs = await client
-          .lookup<PtrResourceRecord>(
-            ResourceRecordQuery.serverPointer(_serviceType),
-            timeout: timeout,
-          )
-          .toList();
+      // Two rounds of PTR discovery to handle dropped multicast packets.
+      // The second round only fires if the first returns no results.
+      final ptrMap = <String, PtrResourceRecord>{};
+      for (var round = 0; round < 2; round++) {
+        final ptrs = await client
+            .lookup<PtrResourceRecord>(
+              ResourceRecordQuery.serverPointer(_serviceType),
+              timeout: timeout,
+            )
+            .toList();
+        for (final ptr in ptrs) {
+          ptrMap.putIfAbsent(ptr.domainName, () => ptr);
+        }
+        if (ptrMap.isNotEmpty) break;
+      }
 
       final resolved = await Future.wait(
-        ptrs.map((ptr) => _resolveToDevice(client, ptr)),
+        ptrMap.values.map((ptr) => _resolveToDevice(client, ptr)),
       );
 
       final devicesByIp = <String, TvDevice>{};
