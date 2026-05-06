@@ -82,6 +82,12 @@
 
   "pairingSamsungPreStep1": "Accept any connection permission that appears on your TV.",
 
+  "pairingAndroidTvProgressHint": "A PIN will appear on your TV screen — enter it when prompted.",
+
+  "pairingAndroidTvPreStep0": "Your Android TV or Google TV is ON and on the same Wi-Fi.",
+
+  "pairingAndroidTvPreStep1": "A PIN will appear on your TV screen — enter it when prompted.",
+
   "pairingWaitingForApproval": "Waiting for TV approval...",
 
   "pairingNotePreviouslyPaired": "Previously paired",
