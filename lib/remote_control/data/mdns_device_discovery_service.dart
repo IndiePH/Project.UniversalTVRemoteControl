@@ -18,15 +18,18 @@ class MdnsDeviceDiscoveryService implements DeviceDiscoveryService {
   @override
   Future<List<TvDevice>> discoverDevices() async {
     final multicastLock = FlutterMulticastLock();
+    final bool acquired;
     if (Platform.isAndroid) {
-      await multicastLock.acquireMulticastLock();
+      final alreadyHeld = await multicastLock.isMulticastLockHeld();
+      acquired = !alreadyHeld;
+      if (acquired) await multicastLock.acquireMulticastLock();
+    } else {
+      acquired = false;
     }
     try {
       return await _discoverDevicesCore();
     } finally {
-      if (Platform.isAndroid) {
-        await multicastLock.releaseMulticastLock();
-      }
+      if (acquired) await multicastLock.releaseMulticastLock();
     }
   }
 
