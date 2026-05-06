@@ -261,7 +261,7 @@ on the local network appears in the discovery list without manual IP entry.
 ---
 
 ### Task 6 — Protobuf message types
-**Status:** pending  
+**Status:** done  
 **Risk:** LOW  
 **Deps:** none
 
@@ -299,7 +299,7 @@ serializes to a known byte sequence; a round-trip encode→decode produces the o
 ---
 
 ### Task 7 — Certificate management
-**Status:** pending  
+**Status:** done  
 **Risk:** MEDIUM  
 **Deps:** none
 

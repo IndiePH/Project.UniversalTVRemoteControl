@@ -3,6 +3,58 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-06
+
+### Added
+- Android TV — Task 7 certificate management: `AndroidTvCertificateStore` generates an RSA-2048
+  self-signed X.509 client cert + key pair on first launch (via `basic_utils`), persists PEM cert,
+  PEM private key, and pre-extracted RSA components (hex JSON) to the app documents directory.
+  Exposes `clientContext` (`SecurityContext` with client cert + key for mutual-TLS handshake),
+  `clientModulus`/`clientExponent` (BigInt), `storeServerCert` (DER → disk + RSA JSON), and
+  `serverRsaComponents` — all inputs to the SHA-256 pairing secret formula
+- New dependencies: `basic_utils: ^5.8.2` (RSA key gen, CSR, self-signed cert via `X509Utils`),
+  `pointycastle: ^4.0.0` (direct ASN.1 parsing for server cert RSA extraction)
+
+## 2026-05-05
+
+### Added
+- Android TV — Task 5 mDNS discovery: `MdnsDeviceDiscoveryService` scans for
+  `_androidtvremote2._tcp` services and emits `TvDevice` entries with `brand: TvBrand.androidTv`;
+  composed with the existing SSDP service via new `CompositeDeviceDiscoveryService` so both run
+  in parallel — no changes to the discovery UI layer
+- Android TV — Task 6 protobuf message types: hand-written `GeneratedMessage` subclasses for
+  the remote channel (`RemoteMessage`, `RemoteKeyInject`, `RemoteSetActive`,
+  `RemotePingRequest/Response`, `RemoteImeKeyInject`) and the pairing channel (`OuterMessage`,
+  `PairingRequest/Ack`, `Options`, `Configuration/Ack`, `Secret/SecretAck`, `Status` enum);
+  all messages wire-framed with a 4-byte big-endian length prefix
+- New dependencies: `multicast_dns: ^0.3.3` (Task 5), `protobuf: ^3.1.0` (Task 6)
+
+## 2026-05-04
+
+### Added
+- Android TV adapter foundation (Tasks 1–4): full `AndroidTvAdapter` peer to `LgAdapter`,
+  `SamsungAdapter`, and `HisenseAdapter`; v2 protocol only (`_androidtvremote2._tcp`,
+  ports 6466/6467, protobuf + mutual TLS); v1 is explicitly excluded:
+  - **Task 1** — domain foundation: `TvBrand.androidTv` enum value; `TvCapabilities` entry
+    (`keyCommands`, `powerControl`, `pinPairing`); catch-all variant-resolution registry entry;
+    fake discovery device; `textInput` capability flag
+  - **Task 2** — `AndroidTvKeyMapper` maps all `RemoteCommand` values to verified `RemoteKeyCode`
+    integers from `remotemessage.proto` (305-value enum); unsupported shortcuts return empty —
+    no invented codes
+  - **Task 3** — `AndroidTvTransportClient` abstract interface (connect, submitPairingCode,
+    sendKey, sendText, probe, clearPairing, queryDeviceInfo, watchConnectionState);
+    `FakeAndroidTvTransportClient` test double in `lib/remote_control/debug/`
+  - **Task 4** — `AndroidTvAdapter` wired into adapter registry and both DI configs (prod + debug);
+    pre-pairing steps and pairing progress hint registered; localized strings added
+    (`pairingAndroidTvPreStep0/1`, `pairingAndroidTvProgressHint`)
+
+## 2026-04-29 *(continued)*
+
+### Fixed
+- Removed compile-time transport default from the debug sheet to avoid conflicts with the
+  runtime toggle
+- Refined pair button hint styling in the status panel
+
 ## 2026-04-29
 
 ### Added
