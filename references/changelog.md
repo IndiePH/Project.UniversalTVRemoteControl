@@ -15,6 +15,18 @@ Keep entries short and append new updates at the top.
 - New dependencies: `basic_utils: ^5.8.2` (RSA key gen, CSR, self-signed cert via `X509Utils`),
   `pointycastle: ^4.0.0` (direct ASN.1 parsing for server cert RSA extraction)
 
+### Fixed
+- Android TV pairing strings (`pairingAndroidTvProgressHint`, `pairingAndroidTvPreStep0/1`)
+  restored to `app_en.arb`; Task 4 had added them directly to the generated files, causing
+  them to be wiped by the next `flutter gen-l10n` run; `FakeLocalizedStrings` updated with
+  the three missing getters
+
+### Conventions
+- **Localization:** all user-facing strings must be added to `lib/l10n/app_en.arb` first —
+  never edit the generated `app_localizations.dart` / `app_localizations_en.dart` directly.
+  Run `flutter gen-l10n` after updating the ARB. Also add the corresponding getter to
+  `test/fakes/fake_localized_strings.dart` so the test layer compiles.
+
 ## 2026-05-05
 
 ### Added
