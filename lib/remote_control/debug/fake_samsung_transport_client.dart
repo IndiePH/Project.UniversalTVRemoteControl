@@ -127,6 +127,9 @@ class FakeSamsungTransportClient
   @override
   Future<void> probe(String host) async {}
 
+  @override
+  void cancelPairing(String deviceId) {}
+
   Future<void> _ensureConnected(String deviceId) async {
     if (_connectedDeviceIds.contains(deviceId)) {
       return;

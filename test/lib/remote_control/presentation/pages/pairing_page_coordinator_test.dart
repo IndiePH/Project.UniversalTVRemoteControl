@@ -244,6 +244,9 @@ class _StubCommandService implements RemoteCommandService {
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
+
+  @override
   Future<CommandDispatchResult> sendCommand({
     required TvDevice device,
     required RemoteCommand command,

@@ -48,6 +48,7 @@ class PairingPage extends StatefulWidget {
 
 class _PairingPageState extends State<PairingPage> {
   PairingPageViewState _viewState = const PairingPageViewState();
+  TvDevice? _activePairingDevice;
   late final PairingPageCoordinator _pairingCoordinator = PairingPageCoordinator(
     commandService: widget.commandService,
     deviceRepository: widget.deviceRepository,
@@ -156,6 +157,7 @@ class _PairingPageState extends State<PairingPage> {
     if (_viewState.isPairingInProgress) {
       return;
     }
+    _activePairingDevice = device;
     final l10n = AppLocalizations.of(context)!;
 
     setState(() {
@@ -205,6 +207,7 @@ class _PairingPageState extends State<PairingPage> {
     } catch (_) {
       exceptionMessage = l10n.pairingExceptionFailed;
     } finally {
+      _activePairingDevice = null;
       if (mounted) {
         setState(() {
           _viewState = _viewState.copyWith(
@@ -347,11 +350,17 @@ class _PairingPageState extends State<PairingPage> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !_viewState.isPairingInProgress,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop && _viewState.isPairingInProgress) {
+          unawaited(
+            _pairingCoordinator.cancelPairing(device: _activePairingDevice!),
+          );
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           title: Text(AppLocalizations.of(context)!.pairingSelectRemoteTitle),
-          automaticallyImplyLeading: !_viewState.isPairingInProgress,
+          automaticallyImplyLeading: true,
           actions: [
             IconButton(
               tooltip: AppLocalizations.of(context)!.pairingHelpTooltip,

@@ -60,6 +60,10 @@ class AndroidTvAdapter implements TvBrandAdapter {
       _transportClient.clearPairing(deviceId: device.id);
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async =>
+      _transportClient.cancelPairing(device.id);
+
+  @override
   Future<void> sendCommand({
     required TvDevice device,
     required RemoteCommand command,

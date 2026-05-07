@@ -297,6 +297,9 @@ class _SubsetLgAdapter implements TvBrandAdapter {
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
+
+  @override
   Future<void> preparePairing({required TvDevice device}) async {}
 
   @override
@@ -377,6 +380,8 @@ class _TimeoutLgTransportClient
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
+  void cancelPairing(String deviceId) {}
+  @override
   Future<void> probe(String host) async {}
 
   @override
@@ -432,6 +437,8 @@ class _ErrorOnSendLgTransportClient
   @override
   Future<void> disconnect({required String deviceId}) async {}
 
+  @override
+  void cancelPairing(String deviceId) {}
   @override
   Future<void> probe(String host) async {}
 
@@ -491,6 +498,8 @@ class _ReconnectTrackingLgTransportClient
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
+  void cancelPairing(String deviceId) {}
+  @override
   Future<void> probe(String host) async {}
 
   @override
@@ -546,6 +555,8 @@ class _ImeRejectingLgTransportClient
   @override
   Future<void> disconnect({required String deviceId}) async {}
 
+  @override
+  void cancelPairing(String deviceId) {}
   @override
   Future<void> probe(String host) async {}
 
@@ -605,6 +616,8 @@ class _ClearPairingTrackingLgTransportClient
   Future<void> disconnect({required String deviceId}) async {}
 
   @override
+  void cancelPairing(String deviceId) {}
+  @override
   Future<void> probe(String host) async {}
 
   @override
@@ -658,6 +671,8 @@ class _TextInputReadyLgTransportClient
   @override
   Future<void> disconnect({required String deviceId}) async {}
 
+  @override
+  void cancelPairing(String deviceId) {}
   @override
   Future<void> probe(String host) async {}
 
@@ -716,6 +731,8 @@ class _StaleKeyLgTransportClient
   @override
   Future<void> disconnect({required String deviceId}) async {}
 
+  @override
+  void cancelPairing(String deviceId) {}
   @override
   Future<void> probe(String host) async {}
 

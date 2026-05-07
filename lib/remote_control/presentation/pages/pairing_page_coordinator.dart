@@ -16,6 +16,9 @@ class PairingPageCoordinator {
   final RemoteCommandService _commandService;
   final DeviceRepository _deviceRepository;
 
+  Future<void> cancelPairing({required TvDevice device}) =>
+      _commandService.cancelPairing(device: device);
+
   Future<PairingAttemptResult> pairSelectedDevice({
     required TvDevice device,
     String? manualIpToSave,

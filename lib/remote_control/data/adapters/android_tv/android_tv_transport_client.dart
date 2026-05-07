@@ -22,5 +22,9 @@ abstract class AndroidTvTransportClient
   /// Disconnects, clears stored server certificate, and resets pairing state.
   Future<void> clearPairing({required String deviceId});
 
+  /// Cancels an in-progress pairing handshake without clearing the stored
+  /// certificate. Safe to call when no pairing is active.
+  void cancelPairing(String deviceId);
+
   Future<TvDeviceInfo> queryDeviceInfo({required String deviceId});
 }

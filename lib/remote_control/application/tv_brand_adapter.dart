@@ -30,6 +30,10 @@ abstract class TvBrandAdapter {
   /// pairing credentials and resets transport state. No-op by default.
   Future<void> unpairDevice({required TvDevice device}) async {}
 
+  /// Cancels an in-progress pairing attempt. Safe to call when no pairing is
+  /// active. Overridden by adapters whose transport holds blocking state.
+  Future<void> cancelPairing({required TvDevice device}) async {}
+
   /// Brand-specific step for pairing flows that require entering a TV code.
   Future<void> submitPairingCode({
     required TvDevice device,

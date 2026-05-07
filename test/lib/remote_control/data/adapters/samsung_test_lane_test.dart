@@ -243,6 +243,9 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  void cancelPairing(String deviceId) {}
 }
 
 class _SubsetSamsungAdapter implements TvBrandAdapter {
@@ -266,6 +269,9 @@ class _SubsetSamsungAdapter implements TvBrandAdapter {
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {}
+
+  @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
 
   @override
   Future<void> preparePairing({required TvDevice device}) async {}
@@ -321,6 +327,9 @@ class _CompatibilitySamsungAdapter implements TvBrandAdapter {
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {}
+
+  @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
 
   @override
   Future<void> preparePairing({required TvDevice device}) async {}

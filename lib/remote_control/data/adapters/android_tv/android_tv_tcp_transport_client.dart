@@ -190,6 +190,18 @@ class AndroidTvTcpTransportClient
     socket.destroy();
   }
 
+  /// Unblocks any in-progress pairing handshake and tears down the pairing
+  /// socket. Must call [_failPendingPairing] before [_cleanupPairing] so the
+  /// awaited Completer resolves before its map entry is removed.
+  @override
+  void cancelPairing(String deviceId) {
+    _failPendingPairing(
+      deviceId,
+      const AndroidTvConnectionException('Pairing cancelled'),
+    );
+    _cleanupPairing(deviceId);
+  }
+
   /// Prevents reconnect, closes both sockets, and removes the stored server
   /// certificate so the device can be re-paired from scratch.
   @override

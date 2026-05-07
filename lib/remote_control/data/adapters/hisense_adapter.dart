@@ -51,6 +51,9 @@ class HisenseAdapter implements TvBrandAdapter {
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
+
+  @override
   Future<void> preparePairing({required TvDevice device}) async {
     await _transportClient.connect(deviceId: device.id);
   }

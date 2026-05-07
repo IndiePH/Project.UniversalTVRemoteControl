@@ -99,6 +99,9 @@ class FakeAndroidTvTransportClient
   }
 
   @override
+  void cancelPairing(String deviceId) {}
+
+  @override
   Future<TvDeviceInfo> queryDeviceInfo({required String deviceId}) async {
     await _ensureConnected(deviceId);
     return const TvDeviceInfo();

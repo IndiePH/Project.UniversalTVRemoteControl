@@ -60,6 +60,10 @@ class LgAdapter implements TvBrandAdapter {
   }
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async =>
+      _transportClient.cancelPairing(device.id);
+
+  @override
   Future<void> submitPairingCode({
     required TvDevice device,
     required String fourDigitPin,

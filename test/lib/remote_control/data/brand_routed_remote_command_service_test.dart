@@ -670,6 +670,9 @@ class _RecordingAdapter implements TvBrandAdapter {
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
+
+  @override
   Future<void> preparePairing({required TvDevice device}) async {
     preparePairingCallCount++;
   }
@@ -729,6 +732,9 @@ class _ThrowingAdapter implements TvBrandAdapter {
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {}
+
+  @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
 
   @override
   Future<void> preparePairing({required TvDevice device}) async {
