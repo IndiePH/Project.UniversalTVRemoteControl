@@ -178,7 +178,7 @@ class _PairingPageState extends State<PairingPage> {
       result = await _pairingCoordinator.pairSelectedDevice(
         device: device,
         manualIpToSave: manualIpToSave,
-        promptPin: (pairingMessage) async {
+        promptPin: (pairingMessage, pinFormat) async {
           if (mounted) {
             setState(() {
               _viewState = _viewState.copyWith(isPairingInProgress: false);
@@ -187,6 +187,7 @@ class _PairingPageState extends State<PairingPage> {
           final pin = await PairingPageDialogs.promptPairingPin(
             context: context,
             pairingMessage: pairingMessage,
+            pinFormat: pinFormat,
           );
           if (mounted) {
             setState(() {

@@ -74,7 +74,7 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     throw UnsupportedError(
       'Samsung pairing code submission is not required in this flow.',

@@ -1,5 +1,6 @@
 import 'package:one_remote/app/localized_strings.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
+import 'package:one_remote/remote_control/application/pin_required_exception.dart';
 import 'package:one_remote/remote_control/application/text_compatibility_error.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
@@ -69,9 +70,23 @@ class BrandRoutedRemoteCommandService
         protocolVariant: variant,
         modelIdentifier: info?.modelIdentifier,
       );
+      if (capabilities.contains(DeviceCapability.pinPairing)) {
+        // Handshake succeeded and the TV is now displaying a PIN.
+        return CommandDispatchResult.pinRequired(
+          _localizedStrings.pairingAndroidTvProgressHint,
+          device: enriched,
+          pinFormat: const TvCapabilities().pinFormatFor(device.brand, variant),
+        );
+      }
       return CommandDispatchResult.success(
         _localizedStrings.pairingApproved(device.displayName),
         device: enriched,
+      );
+    } on PinRequiredException catch (error) {
+      // Adapter explicitly signalled that a PIN is required (e.g. Hisense).
+      return CommandDispatchResult.pinRequired(
+        error.message,
+        pinFormat: const TvCapabilities().pinFormatFor(device.brand),
       );
     } catch (error) {
       return CommandDispatchResult.failure(
@@ -84,7 +99,7 @@ class BrandRoutedRemoteCommandService
   @override
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
@@ -95,7 +110,7 @@ class BrandRoutedRemoteCommandService
     try {
       await adapter.submitPairingCode(
         device: device,
-        fourDigitPin: fourDigitPin,
+        pinCode: pinCode,
       );
       return CommandDispatchResult.success(
         _localizedStrings.pairingCodeAccepted(device.displayName),

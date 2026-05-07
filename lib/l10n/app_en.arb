@@ -146,10 +146,12 @@
   "pairingPreCheckMakeSure": "Make sure:",
 
   "pairingPinTitle": "Enter TV pairing code",
-  "pairingPinBody": "Your TV may require a 4-digit code shown on-screen to finish pairing.",
+  "pairingPinBody": "A code will appear on your TV screen — enter it below to finish pairing.",
   "pairingPinCodeLabel": "4-digit TV code",
+  "pairingPinCodeLabelHex": "6-character code (e.g. A4B2C1)",
   "pairingPinSubmitButton": "Submit code",
   "pairingPinErrorInvalid": "Enter exactly 4 digits.",
+  "pairingPinErrorInvalidHex": "Enter exactly 6 characters (0–9, A–F).",
 
   "pairingOutcomeSuccessTitle": "Paired successfully",
   "pairingOutcomeFailureTitle": "Pairing failed",

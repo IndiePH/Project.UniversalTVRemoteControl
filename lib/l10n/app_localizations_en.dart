@@ -256,16 +256,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pairingPinBody =>
-      'Your TV may require a 4-digit code shown on-screen to finish pairing.';
+      'A code will appear on your TV screen — enter it below to finish pairing.';
 
   @override
   String get pairingPinCodeLabel => '4-digit TV code';
+
+  @override
+  String get pairingPinCodeLabelHex => '6-character code (e.g. A4B2C1)';
 
   @override
   String get pairingPinSubmitButton => 'Submit code';
 
   @override
   String get pairingPinErrorInvalid => 'Enter exactly 4 digits.';
+
+  @override
+  String get pairingPinErrorInvalidHex =>
+      'Enter exactly 6 characters (0–9, A–F).';
 
   @override
   String get pairingOutcomeSuccessTitle => 'Paired successfully';

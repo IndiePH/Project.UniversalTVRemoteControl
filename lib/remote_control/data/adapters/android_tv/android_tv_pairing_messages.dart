@@ -317,10 +317,8 @@ class Options extends $pb.GeneratedMessage {
   static Options getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Options>(create);
 
-  List<OptionsEncoding> get inputEncodings =>
-      $_getList(0) as $pb.PbList<OptionsEncoding>;
-  List<OptionsEncoding> get outputEncodings =>
-      $_getList(1) as $pb.PbList<OptionsEncoding>;
+  List<OptionsEncoding> get inputEncodings => $_getList(0);
+  List<OptionsEncoding> get outputEncodings => $_getList(1);
 
   RoleType get preferredRole => $_getN(2) as RoleType? ?? RoleType.unknown;
   set preferredRole(RoleType v) => setField(3, v);

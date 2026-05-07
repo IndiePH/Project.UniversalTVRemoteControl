@@ -37,7 +37,7 @@ abstract class TvBrandAdapter {
   /// Brand-specific step for pairing flows that require entering a TV code.
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     throw UnsupportedError(
       'Pairing code flow is not supported for ${device.brand.name}.',

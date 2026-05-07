@@ -66,7 +66,7 @@ class LgAdapter implements TvBrandAdapter {
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     throw UnsupportedError('LG uses a client-key flow, not a PIN code.');
   }

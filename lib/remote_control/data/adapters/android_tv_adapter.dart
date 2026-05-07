@@ -47,9 +47,9 @@ class AndroidTvAdapter implements TvBrandAdapter {
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) =>
-      _transportClient.submitPairingCode(deviceId: device.id, code: fourDigitPin);
+      _transportClient.submitPairingCode(deviceId: device.id, code: pinCode);
 
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) =>

@@ -61,11 +61,11 @@ class HisenseAdapter implements TvBrandAdapter {
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     await _transportClient.submitAuthenticationCode(
       deviceId: device.id,
-      fourDigitPin: fourDigitPin,
+      fourDigitPin: pinCode,
     );
   }
 

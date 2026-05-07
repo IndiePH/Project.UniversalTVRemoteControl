@@ -14,10 +14,10 @@ abstract class RemoteCommandService {
   /// active. No-op for brands with no blocking transport state.
   Future<void> cancelPairing({required TvDevice device});
 
-  /// Submit a brand-specific pairing code shown on the TV (e.g. Hisense PIN).
+  /// Submit a brand-specific pairing code shown on the TV (e.g. Hisense PIN or Android TV hex code).
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   });
 
   Future<CommandDispatchResult> sendCommand({

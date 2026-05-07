@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
+import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
@@ -58,6 +59,7 @@ final class PairingPageDialogs {
   static Future<String?> promptPairingPin({
     required BuildContext context,
     required String pairingMessage,
+    PinFormat pinFormat = PinFormat.fourDigitNumeric,
   }) {
     final controller = TextEditingController();
     return showDialog<String>(
@@ -68,26 +70,29 @@ final class PairingPageDialogs {
 
         String? validatePin(AppLocalizations l10n) {
           final value = controller.text.trim();
-          if (!RegExp(r'^\d{4}$').hasMatch(value)) {
-            return l10n.pairingPinErrorInvalid;
-          }
-          return null;
+          return switch (pinFormat) {
+            PinFormat.sixCharHex => RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)
+                ? null
+                : l10n.pairingPinErrorInvalidHex,
+            PinFormat.fourDigitNumeric => RegExp(r'^\d{4}$').hasMatch(value)
+                ? null
+                : l10n.pairingPinErrorInvalid,
+          };
         }
 
         void submit(StateSetter setDialogState, AppLocalizations l10n) {
           final error = validatePin(l10n);
           if (error != null) {
-            setDialogState(() {
-              inputError = error;
-            });
+            setDialogState(() => inputError = error);
             return;
           }
-          Navigator.of(context).pop(controller.text.trim());
+          Navigator.of(context).pop(controller.text.trim().toUpperCase());
         }
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final l10n = AppLocalizations.of(context)!;
+            final isHex = pinFormat == PinFormat.sixCharHex;
             return AlertDialog(
               title: Text(l10n.pairingPinTitle),
               content: Column(
@@ -103,22 +108,25 @@ final class PairingPageDialogs {
                   const SizedBox(height: 12),
                   TextField(
                     controller: controller,
-                    keyboardType: TextInputType.number,
-                    maxLength: 4,
+                    keyboardType: isHex
+                        ? TextInputType.visiblePassword
+                        : TextInputType.number,
+                    maxLength: isHex ? 6 : 4,
                     autofocus: true,
+                    textCapitalization: isHex
+                        ? TextCapitalization.characters
+                        : TextCapitalization.none,
                     decoration: InputDecoration(
-                      labelText: l10n.pairingPinCodeLabel,
+                      labelText: isHex
+                          ? l10n.pairingPinCodeLabelHex
+                          : l10n.pairingPinCodeLabel,
                       border: const OutlineInputBorder(),
                       counterText: '',
                       errorText: inputError,
                     ),
                     onChanged: (_) {
-                      if (inputError == null) {
-                        return;
-                      }
-                      setDialogState(() {
-                        inputError = null;
-                      });
+                      if (inputError == null) return;
+                      setDialogState(() => inputError = null);
                     },
                     onSubmitted: (_) => submit(setDialogState, l10n),
                   ),

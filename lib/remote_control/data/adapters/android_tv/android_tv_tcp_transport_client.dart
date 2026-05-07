@@ -51,6 +51,8 @@ class AndroidTvTcpTransportClient
   final Map<String, Uint8List> _serverCertDers = {};
   final Map<String, Completer<void>> _pairingStartedCompleters = {};
   final Map<String, Completer<void>> _secretAckCompleters = {};
+  // Diagnostic: captures first 64 raw bytes from the TV for surfacing in errors.
+  final Map<String, List<int>> _pairingRxDiag = {};
 
   // Remote control state, keyed by deviceId
   final Map<String, SecureSocket> _remoteSockets = {};
@@ -114,7 +116,7 @@ class AndroidTvTcpTransportClient
     _sendPairingMessage(
       deviceId,
       OuterMessage(
-        protocolVersion: 1,
+        protocolVersion: 2,
         status: PairingStatus.statusOk,
         secret: Secret(secret: secretBytes),
       ),
@@ -251,6 +253,7 @@ class AndroidTvTcpTransportClient
 
       _pairingSockets[deviceId] = socket;
       _pairingBuffers[deviceId] = [];
+      _pairingRxDiag[deviceId] = [];
       _pairingStartedCompleters[deviceId] = Completer<void>();
 
       _pairingSubs[deviceId] = socket.listen(
@@ -263,7 +266,7 @@ class AndroidTvTcpTransportClient
       _sendPairingMessage(
         deviceId,
         OuterMessage(
-          protocolVersion: 1,
+          protocolVersion: 2,
           status: PairingStatus.statusOk,
           pairingRequest: PairingRequest(
             serviceName: _serviceName,
@@ -273,7 +276,19 @@ class AndroidTvTcpTransportClient
       );
 
       // Blocks until configuration_ack — the TV now shows the PIN.
-      await _pairingStartedCompleters[deviceId]!.future;
+      // Timeout guards against TVs that accept TLS but don't speak POLO.
+      await _pairingStartedCompleters[deviceId]!.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          final rx = _pairingRxDiag[deviceId] ?? [];
+          final diagInfo = rx.isEmpty
+              ? 'TV sent no response'
+              : 'received ${rx.length}+ bytes: ${rx.take(32).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}';
+          throw AndroidTvConnectionException(
+            'Pairing handshake timed out ($diagInfo)',
+          );
+        },
+      );
       _emitState(deviceId, ConnectionState.connected);
     } catch (e) {
       _emitState(deviceId, ConnectionState.error);
@@ -287,6 +302,10 @@ class AndroidTvTcpTransportClient
   }
 
   void _onPairingData(String deviceId, List<int> data) {
+    final diag = _pairingRxDiag[deviceId];
+    if (diag != null && diag.length < 64) {
+      diag.addAll(data.take(64 - diag.length));
+    }
     _pairingBuffers[deviceId]?.addAll(data);
     _drainPairingBuffer(deviceId);
   }
@@ -309,9 +328,12 @@ class AndroidTvTcpTransportClient
       try {
         _handlePairingMessage(deviceId, OuterMessage.fromBuffer(msgBytes));
       } catch (e) {
-        log(
-          'Android TV: pairing message decode error: $e',
-          name: 'android_tv_transport',
+        final hex = msgBytes.take(32).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+        _failPendingPairing(
+          deviceId,
+          AndroidTvConnectionException(
+            'Pairing decode error — ${msgBytes.length} bytes: $hex ($e)',
+          ),
         );
       }
     }
@@ -328,7 +350,7 @@ class AndroidTvTcpTransportClient
       _sendPairingMessage(
         deviceId,
         OuterMessage(
-          protocolVersion: 1,
+          protocolVersion: 2,
           status: PairingStatus.statusOk,
           options: Options(
             preferredRole: RoleType.input,
@@ -343,7 +365,7 @@ class AndroidTvTcpTransportClient
       _sendPairingMessage(
         deviceId,
         OuterMessage(
-          protocolVersion: 1,
+          protocolVersion: 2,
           status: PairingStatus.statusOk,
           configuration: Configuration(
             clientRole: RoleType.input,
@@ -411,6 +433,7 @@ class AndroidTvTcpTransportClient
     _pairingSubs.remove(deviceId)?.cancel();
     _pairingSockets.remove(deviceId)?.destroy();
     _pairingBuffers.remove(deviceId);
+    _pairingRxDiag.remove(deviceId);
     _serverCertDers.remove(deviceId);
     _serverRsa.remove(deviceId);
     _pairingStartedCompleters.remove(deviceId);
