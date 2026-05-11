@@ -11,6 +11,7 @@ import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.da
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_certificate_store.dart';
+import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_handshake_tracer.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_tcp_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_android_tv_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_hisense_transport_client.dart';
@@ -83,6 +84,7 @@ final class RemoteControlDiConfig implements IDiConfig {
       AndroidTvTcpTransportClient(
         hostResolver: _resolveHost,
         certStore: sl<AndroidTvCertificateStore>(),
+        tracer: env == AppEnvironment.debug ? AndroidTvHandshakeTracer() : null,
       ),
     );
     final adapters = [

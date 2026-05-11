@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_certificate_store.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_exceptions.dart';
+import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_handshake_tracer.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_pairing_messages.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_remote_messages.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_transport_client.dart';
@@ -32,15 +33,22 @@ class AndroidTvTcpTransportClient
   static const String _serviceName = 'atvremote';
   static const String _clientName = 'OneRemote';
 
+  // Client feature bitmask for RemoteSetActive handshake response.
+  // PING=1, KEY=2, IME=4, VOICE=8, POWER=32, VOLUME=64, APP_LINK=512
+  static const int _remoteClientFeatures = 1 | 2 | 4 | 8 | 32 | 64 | 512;
+
   AndroidTvTcpTransportClient({
     required String Function(String deviceId) hostResolver,
     required AndroidTvCertificateStore certStore,
+    AndroidTvHandshakeTracer? tracer,
     this.connectTimeout = const Duration(seconds: 8),
   })  : _hostResolver = hostResolver,
-        _certStore = certStore;
+        _certStore = certStore,
+        _tracer = tracer;
 
   final String Function(String deviceId) _hostResolver;
   final AndroidTvCertificateStore _certStore;
+  final AndroidTvHandshakeTracer? _tracer;
   final Duration connectTimeout;
 
   // Pairing state, keyed by deviceId
@@ -51,8 +59,6 @@ class AndroidTvTcpTransportClient
   final Map<String, Uint8List> _serverCertDers = {};
   final Map<String, Completer<void>> _pairingStartedCompleters = {};
   final Map<String, Completer<void>> _secretAckCompleters = {};
-  // Diagnostic: captures first 64 raw bytes from the TV for surfacing in errors.
-  final Map<String, List<int>> _pairingRxDiag = {};
 
   // Remote control state, keyed by deviceId
   final Map<String, SecureSocket> _remoteSockets = {};
@@ -61,15 +67,8 @@ class AndroidTvTcpTransportClient
   final Map<String, int> _imeCounters = {};
   final Map<String, int> _fieldCounters = {};
   final Map<String, Completer<void>> _remoteStartedCompleters = {};
-  // Client feature bitmask for RemoteSetActive handshake response.
-  // PING=1, KEY=2, IME=4, VOICE=8, POWER=32, VOLUME=64, APP_LINK=512
-  static const int _remoteClientFeatures = 1 | 2 | 4 | 8 | 32 | 64 | 512;
-
   // Negotiated features = _remoteClientFeatures & TV's code1 from RemoteConfigure.
   final Map<String, int> _remoteNegotiatedFeatures = {};
-  // Captures first 64 raw bytes + handshake events for UI-visible diagnostics.
-  final Map<String, List<int>> _remoteHandshakeDiag = {};
-  final Map<String, List<String>> _remoteHandshakeEvents = {};
 
   // _remoteActive tracks devices with intentional remote connections so
   // _onRemoteSocketDone can distinguish unexpected closes (reconnect) from
@@ -263,7 +262,7 @@ class AndroidTvTcpTransportClient
 
       _pairingSockets[deviceId] = socket;
       _pairingBuffers[deviceId] = [];
-      _pairingRxDiag[deviceId] = [];
+      _tracer?.init(deviceId);
       _pairingStartedCompleters[deviceId] = Completer<void>();
 
       _pairingSubs[deviceId] = socket.listen(
@@ -290,12 +289,11 @@ class AndroidTvTcpTransportClient
       await _pairingStartedCompleters[deviceId]!.future.timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          final rx = _pairingRxDiag[deviceId] ?? [];
-          final diagInfo = rx.isEmpty
-              ? 'TV sent no response'
-              : 'received ${rx.length}+ bytes: ${rx.take(32).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}';
+          final detail = _tracer?.summary(deviceId) ?? '';
           throw AndroidTvConnectionException(
-            'Pairing handshake timed out ($diagInfo)',
+            detail.isEmpty
+                ? 'Pairing handshake timed out — check TV is on and reachable'
+                : 'Pairing handshake timed out ($detail)',
           );
         },
       );
@@ -312,10 +310,7 @@ class AndroidTvTcpTransportClient
   }
 
   void _onPairingData(String deviceId, List<int> data) {
-    final diag = _pairingRxDiag[deviceId];
-    if (diag != null && diag.length < 64) {
-      diag.addAll(data.take(64 - diag.length));
-    }
+    _tracer?.recordBytes(deviceId, data);
     _pairingBuffers[deviceId]?.addAll(data);
     _drainPairingBuffer(deviceId);
   }
@@ -443,7 +438,7 @@ class AndroidTvTcpTransportClient
     _pairingSubs.remove(deviceId)?.cancel();
     _pairingSockets.remove(deviceId)?.destroy();
     _pairingBuffers.remove(deviceId);
-    _pairingRxDiag.remove(deviceId);
+    _tracer?.dispose(deviceId);
     _serverCertDers.remove(deviceId);
     _serverRsa.remove(deviceId);
     _pairingStartedCompleters.remove(deviceId);
@@ -479,8 +474,7 @@ class AndroidTvTcpTransportClient
 
       _remoteSockets[deviceId] = socket;
       _remoteBuffers[deviceId] = [];
-      _remoteHandshakeDiag[deviceId] = [];
-      _remoteHandshakeEvents[deviceId] = [];
+      _tracer?.init(deviceId);
       _remoteStartedCompleters[deviceId] = Completer<void>();
 
       _remoteSubs[deviceId] = socket.listen(
@@ -496,14 +490,11 @@ class AndroidTvTcpTransportClient
       await _remoteStartedCompleters[deviceId]!.future.timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          final rx = _remoteHandshakeDiag[deviceId] ?? [];
-          final events = _remoteHandshakeEvents[deviceId] ?? [];
-          final rawHex = rx.isEmpty
-              ? 'TV sent 0 bytes'
-              : 'TV sent ${rx.length}B: ${rx.take(32).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}${rx.length > 32 ? '…' : ''}';
-          final evtStr = events.isEmpty ? 'no events' : events.join(' → ');
+          final detail = _tracer?.summary(deviceId) ?? '';
           throw AndroidTvConnectionException(
-            'Remote handshake timed out ($rawHex; events: $evtStr)',
+            detail.isEmpty
+                ? 'Remote handshake timed out — check TV is on and reachable'
+                : 'Remote handshake timed out ($detail)',
           );
         },
       );
@@ -527,10 +518,7 @@ class AndroidTvTcpTransportClient
       '${data.length > 32 ? '…' : ''}',
       name: 'android_tv_transport',
     );
-    final diag = _remoteHandshakeDiag[deviceId];
-    if (diag != null && diag.length < 64) {
-      diag.addAll(data.take(64 - diag.length));
-    }
+    _tracer?.recordBytes(deviceId, data);
     _remoteBuffers[deviceId]?.addAll(data);
     _drainRemoteBuffer(deviceId);
   }
@@ -554,7 +542,8 @@ class AndroidTvTcpTransportClient
         _handleRemoteMessage(deviceId, RemoteMessage.fromBuffer(msgBytes));
       } catch (e) {
         final errStr = e.toString();
-        _remoteHandshakeEvents[deviceId]?.add(
+        _tracer?.recordEvent(
+          deviceId,
           'decode_err:${errStr.length > 80 ? errStr.substring(0, 80) : errStr}',
         );
         log(
@@ -574,7 +563,7 @@ class AndroidTvTcpTransportClient
     if (msg.hasRemoteConfigure()) {
       final negotiated = _remoteClientFeatures & msg.remoteConfigure.code1;
       _remoteNegotiatedFeatures[deviceId] = negotiated;
-      _remoteHandshakeEvents[deviceId]?.add('rx:RemoteConfigure(code1=${msg.remoteConfigure.code1},negotiated=$negotiated)');
+      _tracer?.recordEvent(deviceId, 'rx:RemoteConfigure(code1=${msg.remoteConfigure.code1},negotiated=$negotiated)');
       // Server initiates handshake — echo code1, send our device info.
       _sendRemoteMessage(
         deviceId,
@@ -590,20 +579,20 @@ class AndroidTvTcpTransportClient
           ),
         ),
       );
-      _remoteHandshakeEvents[deviceId]?.add('tx:RemoteConfigure');
+      _tracer?.recordEvent(deviceId, 'tx:RemoteConfigure');
     } else if (msg.hasRemoteSetActive()) {
       // TV sends its own active bitmask; we respond with our negotiated features.
       final features = _remoteNegotiatedFeatures[deviceId] ?? _remoteClientFeatures;
-      _remoteHandshakeEvents[deviceId]?.add('rx:RemoteSetActive(active=${msg.remoteSetActive.active})');
+      _tracer?.recordEvent(deviceId, 'rx:RemoteSetActive(active=${msg.remoteSetActive.active})');
       _sendRemoteMessage(
         deviceId,
         RemoteMessage(
           remoteSetActive: RemoteSetActive(active: features),
         ),
       );
-      _remoteHandshakeEvents[deviceId]?.add('tx:RemoteSetActive(active=$features)');
+      _tracer?.recordEvent(deviceId, 'tx:RemoteSetActive(active=$features)');
     } else if (msg.hasRemoteStart()) {
-      _remoteHandshakeEvents[deviceId]?.add('rx:RemoteStart(started=${msg.remoteStart.started})');
+      _tracer?.recordEvent(deviceId, 'rx:RemoteStart(started=${msg.remoteStart.started})');
       // Handshake complete — unblock _connectRemote.
       final c = _remoteStartedCompleters[deviceId];
       if (c != null && !c.isCompleted) c.complete();
@@ -669,8 +658,7 @@ class AndroidTvTcpTransportClient
     _remoteSockets.remove(deviceId)?.destroy();
     _remoteBuffers.remove(deviceId);
     _remoteNegotiatedFeatures.remove(deviceId);
-    _remoteHandshakeDiag.remove(deviceId);
-    _remoteHandshakeEvents.remove(deviceId);
+    _tracer?.dispose(deviceId);
     _imeCounters.remove(deviceId);
     _fieldCounters.remove(deviceId);
     final c = _remoteStartedCompleters.remove(deviceId);
