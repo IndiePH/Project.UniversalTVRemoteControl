@@ -879,6 +879,57 @@ class RemoteStart extends $pb.GeneratedMessage {
 }
 
 // ---------------------------------------------------------------------------
+// RemoteAppLinkLaunchRequest  (field 90 in RemoteMessage)
+// Launches an app on the Android TV device by deep-link URI.
+// app_link is typically 'market://launch?id=<packageName>'.
+// ---------------------------------------------------------------------------
+
+class RemoteAppLinkLaunchRequest extends $pb.GeneratedMessage {
+  factory RemoteAppLinkLaunchRequest({String? appLink}) {
+    final r = create();
+    if (appLink != null) r.appLink = appLink;
+    return r;
+  }
+
+  RemoteAppLinkLaunchRequest._() : super();
+
+  factory RemoteAppLinkLaunchRequest.fromBuffer(
+    List<int> i, [
+    $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
+  ]) =>
+      create()..mergeFromBuffer(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+    'RemoteAppLinkLaunchRequest',
+    package: const $pb.PackageName('remote'),
+    createEmptyInstance: create,
+  )
+    ..aOS(1, 'appLink')
+    ..hasRequiredFields = false;
+
+  @override
+  $pb.BuilderInfo get info_ => _i;
+
+  @override
+  RemoteAppLinkLaunchRequest clone() =>
+      RemoteAppLinkLaunchRequest()..mergeFromMessage(this);
+
+  static RemoteAppLinkLaunchRequest create() => RemoteAppLinkLaunchRequest._();
+  @override
+  RemoteAppLinkLaunchRequest createEmptyInstance() => create();
+  static $pb.PbList<RemoteAppLinkLaunchRequest> createRepeated() =>
+      $pb.PbList<RemoteAppLinkLaunchRequest>();
+  static RemoteAppLinkLaunchRequest? _defaultInstance;
+  static RemoteAppLinkLaunchRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RemoteAppLinkLaunchRequest>(create);
+
+  String get appLink => $_getSZ(0);
+  set appLink(String v) => $_setString(0, v);
+  bool hasAppLink() => $_has(0);
+  void clearAppLink() => clearField(1);
+}
+
+// ---------------------------------------------------------------------------
 // RemoteMessage  — top-level wrapper (proto3)
 // Only the fields this adapter needs are declared; unknown fields pass through.
 //
@@ -900,6 +951,7 @@ class RemoteMessage extends $pb.GeneratedMessage {
     RemoteImeKeyInject? remoteImeKeyInject,
     RemoteImeBatchEdit? remoteImeBatchEdit,
     RemoteStart? remoteStart,
+    RemoteAppLinkLaunchRequest? remoteAppLinkLaunchRequest,
   }) {
     final r = create();
     if (remoteConfigure != null) r.remoteConfigure = remoteConfigure;
@@ -910,6 +962,7 @@ class RemoteMessage extends $pb.GeneratedMessage {
     if (remoteImeKeyInject != null) r.remoteImeKeyInject = remoteImeKeyInject;
     if (remoteImeBatchEdit != null) r.remoteImeBatchEdit = remoteImeBatchEdit;
     if (remoteStart != null) r.remoteStart = remoteStart;
+    if (remoteAppLinkLaunchRequest != null) r.remoteAppLinkLaunchRequest = remoteAppLinkLaunchRequest;
     return r;
   }
 
@@ -942,6 +995,8 @@ class RemoteMessage extends $pb.GeneratedMessage {
         subBuilder: RemoteImeBatchEdit.create)                        // index 6
     ..aOM<RemoteStart>(40, 'remoteStart',
         subBuilder: RemoteStart.create)                               // index 7
+    ..aOM<RemoteAppLinkLaunchRequest>(90, 'remoteAppLinkLaunchRequest',
+        subBuilder: RemoteAppLinkLaunchRequest.create)                // index 8
     ..hasRequiredFields = false;
 
   @override
@@ -998,4 +1053,10 @@ class RemoteMessage extends $pb.GeneratedMessage {
   set remoteStart(RemoteStart v) => setField(40, v);
   bool hasRemoteStart() => $_has(7);
   void clearRemoteStart() => clearField(40);
+
+  RemoteAppLinkLaunchRequest get remoteAppLinkLaunchRequest =>
+      $_getN(8) as RemoteAppLinkLaunchRequest;
+  set remoteAppLinkLaunchRequest(RemoteAppLinkLaunchRequest v) => setField(90, v);
+  bool hasRemoteAppLinkLaunchRequest() => $_has(8);
+  void clearRemoteAppLinkLaunchRequest() => clearField(90);
 }

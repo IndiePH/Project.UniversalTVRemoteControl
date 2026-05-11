@@ -16,6 +16,8 @@ abstract class AndroidTvTransportClient
 
   Future<void> sendText({required String deviceId, required String text});
 
+  Future<void> sendAppLink({required String deviceId, required String appLink});
+
   /// Lightweight TCP reachability check. Completes if reachable; throws otherwise.
   Future<void> probe(String host);
 

@@ -190,6 +190,19 @@ class AndroidTvTcpTransportClient
     _sendRemoteMessage(deviceId, RemoteMessage(remoteImeBatchEdit: batchEdit));
   }
 
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {
+    _sendRemoteMessage(
+      deviceId,
+      RemoteMessage(
+        remoteAppLinkLaunchRequest: RemoteAppLinkLaunchRequest(appLink: appLink),
+      ),
+    );
+  }
+
   /// TCP reachability check against the remote-control port (6466).
   @override
   Future<void> probe(String host) async {

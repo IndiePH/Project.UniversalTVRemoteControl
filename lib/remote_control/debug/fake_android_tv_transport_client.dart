@@ -86,6 +86,26 @@ class FakeAndroidTvTransportClient
   }
 
   @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {
+    await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'android_tv',
+        deviceId: deviceId,
+        type: 'app_link_sent',
+        message: appLink,
+      ),
+    );
+    log(
+      'Android TV fake transport sendAppLink: $deviceId -> $appLink',
+      name: 'android_tv_transport',
+    );
+  }
+
+  @override
   Future<void> probe(String host) async {}
 
   @override

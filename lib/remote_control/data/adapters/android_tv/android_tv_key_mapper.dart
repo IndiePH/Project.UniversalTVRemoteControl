@@ -30,7 +30,4 @@ const Map<RemoteCommand, String> _kAndroidTvCommandMap = {
   RemoteCommand.playPause:   '85',
   RemoteCommand.input:      '178',
   RemoteCommand.web:         '64',
-  // RemoteCommand.netflix:    — no KEYCODE_NETFLIX in RemoteKeyCode enum; unsupported
-  // RemoteCommand.primeVideo: — no matching constant in RemoteKeyCode enum; unsupported
-  // RemoteCommand.disneyPlus: — no matching constant in RemoteKeyCode enum; unsupported
 };

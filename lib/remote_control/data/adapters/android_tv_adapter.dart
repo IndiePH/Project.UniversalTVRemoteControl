@@ -63,16 +63,27 @@ class AndroidTvAdapter implements TvBrandAdapter {
   Future<void> cancelPairing({required TvDevice device}) async =>
       _transportClient.cancelPairing(device.id);
 
+  static const Map<RemoteCommand, String> _appLinks = {
+    RemoteCommand.netflix:    'market://launch?id=com.netflix.ninja',
+    RemoteCommand.primeVideo: 'market://launch?id=com.amazon.avod.thirdpartyclient',
+    RemoteCommand.disneyPlus: 'market://launch?id=com.disney.disneyplus',
+  };
+
   @override
   Future<void> sendCommand({
     required TvDevice device,
     required RemoteCommand command,
   }) async {
+    await _transportClient.connect(deviceId: device.id);
+    final appLink = _appLinks[command];
+    if (appLink != null) {
+      await _transportClient.sendAppLink(deviceId: device.id, appLink: appLink);
+      return;
+    }
     final keyCode = _keyMap.primaryKeyCodeFor(command);
     if (keyCode == null) {
       throw UnsupportedError('No Android TV key mapping for command: $command');
     }
-    await _transportClient.connect(deviceId: device.id);
     await _transportClient.sendKey(deviceId: device.id, keyCode: keyCode);
   }
 
