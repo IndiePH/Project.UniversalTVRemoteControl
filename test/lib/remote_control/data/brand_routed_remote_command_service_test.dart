@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
+import 'package:one_remote/remote_control/application/pin_required_exception.dart';
 import 'package:one_remote/remote_control/application/transport_log_provider.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
+import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
@@ -176,6 +178,44 @@ void main() {
         expect(result.device!.modelIdentifier, isNull);
       },
     );
+
+    test(
+      'result.pinFormat is fourDigitNumeric when adapter throws PinRequiredException (Hisense path)',
+      () async {
+        const hisenseDevice = TvDevice(
+          id: 'hisense-1',
+          displayName: 'Hisense TV',
+          brand: TvBrand.hisense,
+          capabilities: {DeviceCapability.keyCommands},
+        );
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [_PinRequiredHisenseAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
+        );
+        final result = await service.preparePairing(device: hisenseDevice);
+        expect(result.isPinRequired, isTrue);
+        expect(result.pinFormat, PinFormat.fourDigitNumeric);
+      },
+    );
+
+    test(
+      'result.pinFormat is sixCharHex for Android TV (pinPairing capability path)',
+      () async {
+        const androidTvDevice = TvDevice(
+          id: 'android-1',
+          displayName: 'Android TV',
+          brand: TvBrand.androidTv,
+          capabilities: {DeviceCapability.keyCommands, DeviceCapability.pinPairing},
+        );
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [_RecordingAdapter(brand: TvBrand.androidTv)],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
+        );
+        final result = await service.preparePairing(device: androidTvDevice);
+        expect(result.isPinRequired, isTrue);
+        expect(result.pinFormat, PinFormat.sixCharHex);
+      },
+    );
   });
 
   group('brand dispatch — submitPairingCode', () {
@@ -187,7 +227,7 @@ void main() {
         localizedStrings: FakeLocalizedStrings(),
       );
 
-      await service.submitPairingCode(device: device, fourDigitPin: '1234');
+      await service.submitPairingCode(device: device, pinCode: '1234');
 
       expect(samsung.submitPairingCodeCallCount, 1);
       expect(lg.submitPairingCodeCallCount, 0);
@@ -200,7 +240,7 @@ void main() {
       );
       final result = await service.submitPairingCode(
         device: device,
-        fourDigitPin: '0000',
+        pinCode: '0000',
       );
       expect(result.isSuccess, isFalse);
     });
@@ -212,7 +252,7 @@ void main() {
       );
       final result = await service.submitPairingCode(
         device: device,
-        fourDigitPin: '1234',
+        pinCode: '1234',
       );
       expect(result.isSuccess, isTrue);
     });
@@ -478,7 +518,7 @@ void main() {
       );
       final result = await service.submitPairingCode(
         device: device,
-        fourDigitPin: '1234',
+        pinCode: '1234',
       );
       expect(result.isSuccess, isFalse);
       expect(result.getOutcome(), CommandOutcome.failure);
@@ -492,7 +532,7 @@ void main() {
       );
       final result = await service.submitPairingCode(
         device: device,
-        fourDigitPin: '1234',
+        pinCode: '1234',
       );
       expect(result.message, fake.pairingCodeSubmitFailed(device.displayName));
     });
@@ -504,7 +544,7 @@ void main() {
       );
       final result = await service.submitPairingCode(
         device: device,
-        fourDigitPin: '1234',
+        pinCode: '1234',
       );
       expect(result.exception, isA<StateError>());
       expect((result.exception as StateError).message, 'submit error');
@@ -629,11 +669,59 @@ void main() {
       },
     );
   });
+
+  group('preparePairing — pinPairing capability + pinFormat', () {
+    test('TvBrand.androidTv yields PinFormat.sixCharHex', () async {
+      const androidTvDevice = TvDevice(
+        id: 'android-1',
+        displayName: 'Android TV',
+        brand: TvBrand.androidTv,
+        capabilities: {DeviceCapability.keyCommands, DeviceCapability.pinPairing},
+      );
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [_RecordingAdapter(brand: TvBrand.androidTv)],variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+      final result = await service.preparePairing(device: androidTvDevice);
+      expect(result.isPinRequired, isTrue);
+      expect(result.pinFormat, PinFormat.sixCharHex);
+    });
+
+    test(
+      'TvBrand.hisense yields PinFormat.fourDigitNumeric via PinRequiredException',
+      () async {
+        const hisenseDevice = TvDevice(
+          id: 'hisense-1',
+          displayName: 'Hisense TV',
+          brand: TvBrand.hisense,
+          capabilities: {DeviceCapability.keyCommands},
+        );
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [_PinRequiredHisenseAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
+        );
+        final result = await service.preparePairing(device: hisenseDevice);
+        expect(result.isPinRequired, isTrue);
+        expect(result.pinFormat, PinFormat.fourDigitNumeric);
+      },
+    );
+  });
 }
 
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
+
+class _PinRequiredHisenseAdapter extends _RecordingAdapter {
+  _PinRequiredHisenseAdapter() : super(brand: TvBrand.hisense);
+
+  @override
+  Future<void> preparePairing({required TvDevice device}) async {
+    throw const PinRequiredException(
+      'TV is showing a PIN. Enter it to continue.',
+    );
+  }
+}
 
 class _RecordingAdapter implements TvBrandAdapter {
   _RecordingAdapter({

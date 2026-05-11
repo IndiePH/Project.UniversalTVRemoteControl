@@ -153,12 +153,14 @@ void main() {
     await tester.pump();
 
     expect(find.text('No device selected.'), findsNothing);
-    expect(find.text('Connect a TV to begin'), findsOneWidget);
+    expect(find.text('Pair a TV first.'), findsOneWidget);
   });
 
   testWidgets('pairs to discovered TV and sends command from remote', (
     WidgetTester tester,
   ) async {
+    SharedPreferences.setMockInitialValues({});
+    GetIt.instance.registerSingleton<AppEnvironment>(AppEnvironment.debug);
     GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
       DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
     );
@@ -228,6 +230,8 @@ void main() {
   testWidgets('clears active device when current paired TV is removed', (
     WidgetTester tester,
   ) async {
+    SharedPreferences.setMockInitialValues({});
+    GetIt.instance.registerSingleton<AppEnvironment>(AppEnvironment.debug);
     GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
       DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
     );

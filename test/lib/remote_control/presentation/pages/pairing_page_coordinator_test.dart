@@ -6,6 +6,7 @@ import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_coordinator.dart';
 
@@ -33,13 +34,13 @@ void main() {
       'returns success when pin provided and submitPairingCode succeeds',
       () async {
         final coordinator = _makeCoordinator(
-          preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+          preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
           submitPairingResults: [CommandDispatchResult.success('OK')],
         );
 
         final result = await coordinator.pairSelectedDevice(
           device: pinPairingDevice,
-          promptPin: (_) async => '1234',
+          promptPin: (_, _) async => '1234',
           onPinRejected: (_) {},
         );
 
@@ -49,12 +50,12 @@ void main() {
 
     test('returns failure when user cancels pin prompt', () async {
       final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+        preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
       );
 
       final result = await coordinator.pairSelectedDevice(
         device: pinPairingDevice,
-        promptPin: (_) async => null,
+        promptPin: (_, _) async => null,
         onPinRejected: (_) {},
       );
 
@@ -66,7 +67,7 @@ void main() {
       () async {
         var promptCallCount = 0;
         final coordinator = _makeCoordinator(
-          preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+          preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
           submitPairingResults: [
             CommandDispatchResult.failure('Wrong PIN'),
             CommandDispatchResult.success('OK'),
@@ -75,7 +76,7 @@ void main() {
 
         final result = await coordinator.pairSelectedDevice(
           device: pinPairingDevice,
-          promptPin: (_) async {
+          promptPin: (_, _) async {
             promptCallCount++;
             return '1234';
           },
@@ -90,13 +91,13 @@ void main() {
     test('cancels after rejection when user returns null on retry', () async {
       var promptCallCount = 0;
       final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+        preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
         submitPairingResults: [CommandDispatchResult.failure('Wrong PIN')],
       );
 
       final result = await coordinator.pairSelectedDevice(
         device: pinPairingDevice,
-        promptPin: (_) async => ++promptCallCount == 1 ? '0000' : null,
+        promptPin: (_, _) async => ++promptCallCount == 1 ? '0000' : null,
         onPinRejected: (_) {},
       );
 
@@ -109,7 +110,7 @@ void main() {
         const rejectionMessage = 'Wrong PIN';
         var promptCallCount = 0;
         final coordinator = _makeCoordinator(
-          preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+          preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
           submitPairingResults: [
             CommandDispatchResult.failure(rejectionMessage),
             CommandDispatchResult.success('OK'),
@@ -119,7 +120,7 @@ void main() {
         final rejectedMessages = <String>[];
         await coordinator.pairSelectedDevice(
           device: pinPairingDevice,
-          promptPin: (_) async => ++promptCallCount <= 2 ? '0000' : null,
+          promptPin: (_, _) async => ++promptCallCount <= 2 ? '0000' : null,
           onPinRejected: rejectedMessages.add,
         );
 
@@ -137,7 +138,7 @@ void main() {
 
         final result = await coordinator.pairSelectedDevice(
           device: nonPinDevice,
-          promptPin: (_) async {
+          promptPin: (_, _) async {
             promptCalled = true;
             return '1234';
           },
@@ -148,6 +149,66 @@ void main() {
         expect(promptCalled, isFalse);
       },
     );
+
+    test('promptPin receives PinFormat from pinRequired result', () async {
+      PinFormat? capturedFormat;
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.pinRequired(
+          'Enter code',
+          pinFormat: PinFormat.sixCharHex,
+        ),
+        submitPairingResults: [CommandDispatchResult.success('OK')],
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: pinPairingDevice,
+        promptPin: (_, format) async {
+          capturedFormat = format;
+          return 'ABCDEF';
+        },
+        onPinRejected: (_) {},
+      );
+
+      expect(capturedFormat, PinFormat.sixCharHex);
+    });
+
+    test('PinFormat.sixCharHex is forwarded to promptPin when result carries it',
+        () async {
+      PinFormat? receivedFormat;
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.pinRequired(
+          'Enter hex code',
+          pinFormat: PinFormat.sixCharHex,
+        ),
+        submitPairingResults: [CommandDispatchResult.success('OK')],
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: pinPairingDevice,
+        promptPin: (_, format) async {
+          receivedFormat = format;
+          return 'A1B2C3';
+        },
+        onPinRejected: (_) {},
+      );
+
+      expect(receivedFormat, PinFormat.sixCharHex);
+    });
+
+    test('cancelling promptPin dialog results in PairingAttemptResult.failure',
+        () async {
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+      );
+
+      final result = await coordinator.pairSelectedDevice(
+        device: pinPairingDevice,
+        promptPin: (_, _) async => null,
+        onPinRejected: (_) {},
+      );
+
+      expect(result.isSuccess, isFalse);
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -158,14 +219,14 @@ void main() {
     test('saves device after successful pin pairing', () async {
       final repo = _StubDeviceRepository();
       final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+        preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
         submitPairingResults: [CommandDispatchResult.success('OK')],
         deviceRepository: repo,
       );
 
       await coordinator.pairSelectedDevice(
         device: pinPairingDevice,
-        promptPin: (_) async => '1234',
+        promptPin: (_, _) async => '1234',
         onPinRejected: (_) {},
       );
 
@@ -175,13 +236,13 @@ void main() {
     test('does not save device when pin pairing is cancelled', () async {
       final repo = _StubDeviceRepository();
       final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+        preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
         deviceRepository: repo,
       );
 
       await coordinator.pairSelectedDevice(
         device: pinPairingDevice,
-        promptPin: (_) async => null,
+        promptPin: (_, _) async => null,
         onPinRejected: (_) {},
       );
 
@@ -230,7 +291,7 @@ class _StubCommandService implements RemoteCommandService {
   @override
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     if (submitPairingResults.isEmpty) {
       return CommandDispatchResult.success('OK');

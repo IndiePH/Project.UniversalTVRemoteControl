@@ -195,7 +195,7 @@ void main() {
       );
       final result = await service.submitPairingCode(
         device: lgDevice,
-        fourDigitPin: '1234',
+        pinCode: '1234',
       );
       expect(result.isSuccess, isFalse);
       expect(result.getOutcome(), CommandOutcome.unsupported);
