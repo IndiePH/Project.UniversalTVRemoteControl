@@ -39,6 +39,7 @@ const Map<RemoteCommand, String> _kLgCommandMap = {
   RemoteCommand.netflix:     '${lgLaunchPrefix}netflix',
   RemoteCommand.primeVideo:  '${lgLaunchPrefix}amazon',
   RemoteCommand.disneyPlus:  '${lgLaunchPrefix}disneyplus',
+  RemoteCommand.youtube:     '${lgLaunchPrefix}youtube.leanback.v4',
   RemoteCommand.web:         '${lgLaunchPrefix}com.webos.app.browser',
   RemoteCommand.dpadUp:      '${lgPointerPrefix}UP',
   RemoteCommand.dpadDown:    '${lgPointerPrefix}DOWN',

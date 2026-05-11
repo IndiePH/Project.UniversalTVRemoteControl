@@ -31,6 +31,12 @@ final class AppLocalizedStrings implements LocalizedStrings {
   @override
   String get pairingSamsungPreStep1 => _l10n.pairingSamsungPreStep1;
   @override
+  String get pairingAndroidTvProgressHint => _l10n.pairingAndroidTvProgressHint;
+  @override
+  String get pairingAndroidTvPreStep0 => _l10n.pairingAndroidTvPreStep0;
+  @override
+  String get pairingAndroidTvPreStep1 => _l10n.pairingAndroidTvPreStep1;
+  @override
   String remoteCommandUnsupported(String commandName, String brandName) =>
       _l10n.remoteCommandUnsupported(commandName, brandName);
   @override

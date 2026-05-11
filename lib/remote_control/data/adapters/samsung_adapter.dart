@@ -58,6 +58,10 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async =>
+      _transportClient.cancelPairing(device.id);
+
+  @override
   Future<void> preparePairing({required TvDevice device}) async {
     final keyCodes = _keyMapper.keyCodesFor(RemoteCommand.back);
     final triggerKeyCode = keyCodes.isNotEmpty ? keyCodes.first : 'KEY_RETURN';
@@ -70,7 +74,7 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     throw UnsupportedError(
       'Samsung pairing code submission is not required in this flow.',

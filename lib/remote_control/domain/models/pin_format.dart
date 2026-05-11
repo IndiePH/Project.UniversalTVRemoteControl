@@ -1,0 +1,1 @@
+enum PinFormat { fourDigitNumeric, sixCharHex }

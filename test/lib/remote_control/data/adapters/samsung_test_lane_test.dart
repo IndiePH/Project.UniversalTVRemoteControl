@@ -152,7 +152,7 @@ void main() {
       );
       final result = await service.submitPairingCode(
         device: samsungDevice,
-        fourDigitPin: '1234',
+        pinCode: '1234',
       );
       expect(result.isSuccess, isFalse);
       expect(result.getOutcome(), CommandOutcome.unsupported);
@@ -243,6 +243,9 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  void cancelPairing(String deviceId) {}
 }
 
 class _SubsetSamsungAdapter implements TvBrandAdapter {
@@ -268,12 +271,15 @@ class _SubsetSamsungAdapter implements TvBrandAdapter {
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
+
+  @override
   Future<void> preparePairing({required TvDevice device}) async {}
 
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {}
 
   @override
@@ -323,12 +329,15 @@ class _CompatibilitySamsungAdapter implements TvBrandAdapter {
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
+
+  @override
   Future<void> preparePairing({required TvDevice device}) async {}
 
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {}
 
   @override

@@ -31,6 +31,7 @@ final class HisenseKeyMapper extends CommandKeyMap {
     RemoteCommand.netflix: [],
     RemoteCommand.primeVideo: [],
     RemoteCommand.disneyPlus: [],
+    RemoteCommand.youtube: [],
   };
 
   @override

@@ -114,6 +114,9 @@ class FakeLgTransportClient
   }
 
   @override
+  void cancelPairing(String deviceId) {}
+
+  @override
   Future<void> probe(String host) async {}
 
   Future<void> _ensureConnected(String deviceId) async {

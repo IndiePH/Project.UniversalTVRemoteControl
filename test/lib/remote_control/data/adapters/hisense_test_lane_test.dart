@@ -34,7 +34,7 @@ void main() {
   );
 
   test(
-    'Hisense lane: preparePairing success when transport connects cleanly',
+    'Hisense lane: preparePairing returns pinRequired when transport connects',
     () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
@@ -43,7 +43,7 @@ void main() {
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: hisenseDevice);
-      expect(result.isSuccess, isTrue);
+      expect(result.isPinRequired, isTrue);
     },
   );
 
@@ -166,7 +166,7 @@ void main() {
       final adapter = HisenseAdapter(transportClient: transport);
       await adapter.submitPairingCode(
         device: hisenseDevice,
-        fourDigitPin: '5678',
+        pinCode: '5678',
       );
       expect(transport.submittedPins, contains('5678'));
     },
@@ -183,7 +183,7 @@ void main() {
       );
       final result = await service.submitPairingCode(
         device: hisenseDevice,
-        fourDigitPin: '5678',
+        pinCode: '5678',
       );
       expect(result.isSuccess, isTrue);
     },
@@ -198,7 +198,7 @@ void main() {
     );
     final result = await service.submitPairingCode(
       device: hisenseDevice,
-      fourDigitPin: '0000',
+      pinCode: '0000',
     );
     expect(result.isSuccess, isFalse);
   });

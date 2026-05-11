@@ -126,9 +126,12 @@ class _ReachableAdapter implements TvBrandAdapter {
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
+
+  @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {}
 }
 

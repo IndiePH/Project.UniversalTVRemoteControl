@@ -12,6 +12,9 @@ class InMemoryRemoteCommandService implements RemoteCommandService {
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
+
+  @override
   Future<CommandDispatchResult> preparePairing({
     required TvDevice device,
   }) async {
@@ -27,10 +30,10 @@ class InMemoryRemoteCommandService implements RemoteCommandService {
   @override
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     log(
-      'Mock submitPairingCode -> ${device.displayName}: $fourDigitPin',
+      'Mock submitPairingCode -> ${device.displayName}: $pinCode',
       name: 'remote_command_service',
     );
     return CommandDispatchResult.success(

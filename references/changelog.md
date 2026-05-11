@@ -3,6 +3,181 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-11 (continued)
+
+### Added
+- Test coverage for `CommandDispatchResult.pinRequired`: `isPinRequired`, `isSuccess`, `pinFormat`
+  default and explicit, and message preservation; `PinFormat` forwarding verified through
+  `PairingPageCoordinator` (`promptPin` receives format from result) and both adapter lane tests
+  (hisense `fourDigitNumeric` via `PinRequiredException`, Android TV `sixCharHex` via capability path)
+- `PinFormat.sixCharHex` widget test: PIN dialog shows 6-char label, `maxLength 6`, and
+  `visiblePassword` keyboard type when `preparePairing` returns `sixCharHex` format
+
+### Fixed
+- 4 failing tests corrected after prior feature additions:
+  - `Hisense lane: preparePairing` — assertion updated to `isPinRequired` (hisense canonical
+    capabilities now include `pinPairing`, so `preparePairing` returns `pinRequired` not `success`)
+  - `disables remote actions when no active device` — expected status updated to `'Pair a TV first.'`
+    (commit `9418a8b` changed button tap with no device to call `_onDisabledGridInteraction`)
+  - `pairs to discovered TV` and `clears active device` widget tests — registered missing
+    `AppEnvironment` singleton so `RemoteHomeActions.openPairing` GetIt lookup succeeds
+- `fourDigitPin` → `pinCode` parameter rename propagated to all test stub `submitPairingCode`
+  implementations and call sites (compile fix; 7 files)
+
+## 2026-05-11
+
+### Added
+- Streaming app launch for Netflix, Prime Video, Disney+, and YouTube across all TV adapters;
+  Android TV uses `RemoteAppLinkLaunchRequest` (proto field 90, `market://launch?id=<packageName>`)
+  since these apps cannot be opened via key codes; adds `sendAppLink` to the transport interface
+  and TCP client; YouTube is also wired through all other adapters via key mapper
+- Android TV remote control handshake: implements the server-initiated 3-step sequence required
+  before commands can be sent on port 6466 (`RemoteConfigure → RemoteSetActive echo →
+  RemoteStart`); client sends feature bitmask `active=623` on the active step; adds
+  `RemoteDeviceInfo`, `RemoteConfigure` (field 1), and `RemoteStart` (field 40) to `RemoteMessage`
+- `AndroidTvHandshakeTracer` extracts diagnostic state from `AndroidTvTcpTransportClient` (SRP);
+  injected via constructor; instantiated only in debug builds for zero production overhead
+
+### Fixed
+- LG: fixed re-pairing failure when re-pairing after a cancelled attempt
+
+## 2026-05-07
+
+### Added
+- `PinFormat` enum (`fourDigitNumeric` / `sixCharHex`) as a domain value in `TvCapabilities`;
+  carried through `CommandDispatchResult.pinRequired` and coordinator `promptPin` callback so the
+  UI derives PIN format from the domain, not the brand; PIN dialog now accepts 6-char hex input
+  for Android TV POLO protocol
+- `cancelPairing()` added to `TvBrandAdapter` (default no-op), `RemoteCommandService`, and all
+  transport layers (Android TV, LG, Samsung); OS back-button press during pairing now
+  error-completes any blocked `Completer`s, cancels socket subscriptions, and clears state maps
+  before page pop — prevents cancel-then-re-pair race that would corrupt the new session
+
+## 2026-05-06 (continued)
+
+### Added
+- Android TV — Task 9 remote-control transport: completes `AndroidTvTcpTransportClient`
+  - `connect()` is now dual-mode: checks for stored server cert via
+    `AndroidTvCertificateStore.serverRsaComponents`; routes to port 6467 (pairing) if no
+    cert, or port 6466 (remote control) if paired; idempotent on the remote path
+  - Remote control socket (port 6466): mutual TLS with client cert + `onBadCertificate`
+    accept; sends `RemoteSetActive(active:1)` immediately after connect
+  - Wire framing on port 6466: protobuf varint (same as port 6467 — goal file said
+    "4-byte big-endian" but base.py confirms varint for both channels)
+  - `sendKey(keyCode)`: sends `RemoteMessage { remoteKeyInject { keyCode, direction:SHORT } }`
+  - `sendText(text)`: sends `RemoteMessage { remoteImeBatchEdit { imeCounter, fieldCounter,
+    editInfo:[{insert:1, textFieldStatus:{start:len-1,end:len-1,value:text}}] } }`;
+    counters tracked from TV's inbound `RemoteImeBatchEdit` messages
+  - Keepalive: responds to `RemotePingRequest` with `RemotePingResponse { val1: echo }`;
+    TV pings every 5 s; connection closes after ~16 s without response (3 unanswered pings)
+  - Reconnect: on unexpected socket close, emits disconnected → connecting, waits 3 s,
+    then retries `_connectRemote`; guarded by `_remoteActive` set so `clearPairing()` 
+    (which removes the device from the set before destroying the socket) does not trigger
+    a reconnect loop
+  - `clearPairing()` updated: clears `_remoteActive` flag, tears down both pairing and
+    remote sockets, clears stored cert, emits disconnected
+  - `RemoteControlDiConfig` (prod): registers `AndroidTvCertificateStore` singleton and
+    wires `AndroidTvTcpTransportClient` (replacing `FakeAndroidTvTransportClient`);
+    `DebugRemoteControlDiConfig` retains the fake
+
+- Android TV — Task 8 pairing transport: `AndroidTvTcpTransportClient` (pairing flow only;
+  Task 9 completes it with the remote-control flow)
+  - Connects to port 6467 with mutual TLS (`SecureSocket`, client cert from
+    `AndroidTvCertificateStore`); accepts any server cert and captures the peer cert DER
+    for the pairing secret formula
+  - Wire framing: protobuf varint length prefix (verified from protocol source — the goal
+    file had warned "likely 4-byte big-endian"; varint is the confirmed format)
+  - Pairing state machine: `pairing_request_ack` → send `options` (HEXADECIMAL/6) →
+    TV sends `options` → send `configuration` (HEXADECIMAL/6, INPUT role) →
+    TV sends `configuration_ack` → `connect()` returns (TV now shows PIN)
+  - Service name `"atvremote"` (verified from protocol source; goal file had
+    `"androidtvremote2"`)
+  - `submitPairingCode(code)`: SHA-256 secret formula over client + server RSA components
+    + last 4 hex chars of the 6-char PIN; includes local checksum verify (first byte of
+    digest == first two hex chars) to catch user input errors before the TV round-trip
+  - Server cert persisted to disk only after confirmed `secret_ack STATUS_OK`
+  - `probe(host)`: plain TCP connect to port 6466 with 3-second timeout
+  - `clearPairing`: deletes stored server cert via `AndroidTvCertificateStore.clearServerCert`
+  - `sendKey`/`sendText`: throw `UnimplementedError` (Task 9 stubs)
+  - Follows `hostResolver` injection pattern from `LgWebSocketTransportClient`
+- `AndroidTvCertificateStore`: added `extractRsaFromDer(Uint8List)` (public static, for
+  transport client to parse peer cert at connect time) and `clearServerCert(host)` (deletes
+  per-host `.cert.der` + `.rsa.json` files)
+- New `android_tv_exceptions.dart`: `AndroidTvPairingFailedException`,
+  `AndroidTvConnectionException`
+
+### Changed
+- Android TV mDNS discovery: raised default timeout from 3 s to 5 s; added a second PTR query
+  round that fires only when the first returns empty, handling dropped multicast packets without
+  increasing discovery time in the common case
+- `CompositeDeviceDiscoveryService`: multicast lock now held for the full scan window (released
+  only after all services complete) so SSDP finishing first no longer silences mDNS; per-service
+  failures are isolated so one service throwing cannot discard results already collected by siblings
+
+## 2026-05-06
+
+### Added
+- Android TV — Task 7 certificate management: `AndroidTvCertificateStore` generates an RSA-2048
+  self-signed X.509 client cert + key pair on first launch (via `basic_utils`), persists PEM cert,
+  PEM private key, and pre-extracted RSA components (hex JSON) to the app documents directory.
+  Exposes `clientContext` (`SecurityContext` with client cert + key for mutual-TLS handshake),
+  `clientModulus`/`clientExponent` (BigInt), `storeServerCert` (DER → disk + RSA JSON), and
+  `serverRsaComponents` — all inputs to the SHA-256 pairing secret formula
+- New dependencies: `basic_utils: ^5.8.2` (RSA key gen, CSR, self-signed cert via `X509Utils`),
+  `pointycastle: ^4.0.0` (direct ASN.1 parsing for server cert RSA extraction)
+
+### Fixed
+- Android TV pairing strings (`pairingAndroidTvProgressHint`, `pairingAndroidTvPreStep0/1`)
+  restored to `app_en.arb`; Task 4 had added them directly to the generated files, causing
+  them to be wiped by the next `flutter gen-l10n` run; `FakeLocalizedStrings` updated with
+  the three missing getters
+
+### Conventions
+- **Localization:** all user-facing strings must be added to `lib/l10n/app_en.arb` first —
+  never edit the generated `app_localizations.dart` / `app_localizations_en.dart` directly.
+  Run `flutter gen-l10n` after updating the ARB. Also add the corresponding getter to
+  `test/fakes/fake_localized_strings.dart` so the test layer compiles.
+
+## 2026-05-05
+
+### Added
+- Android TV — Task 5 mDNS discovery: `MdnsDeviceDiscoveryService` scans for
+  `_androidtvremote2._tcp` services and emits `TvDevice` entries with `brand: TvBrand.androidTv`;
+  composed with the existing SSDP service via new `CompositeDeviceDiscoveryService` so both run
+  in parallel — no changes to the discovery UI layer
+- Android TV — Task 6 protobuf message types: hand-written `GeneratedMessage` subclasses for
+  the remote channel (`RemoteMessage`, `RemoteKeyInject`, `RemoteSetActive`,
+  `RemotePingRequest/Response`, `RemoteImeKeyInject`) and the pairing channel (`OuterMessage`,
+  `PairingRequest/Ack`, `Options`, `Configuration/Ack`, `Secret/SecretAck`, `Status` enum);
+  all messages wire-framed with a 4-byte big-endian length prefix
+- New dependencies: `multicast_dns: ^0.3.3` (Task 5), `protobuf: ^3.1.0` (Task 6)
+
+## 2026-05-04
+
+### Added
+- Android TV adapter foundation (Tasks 1–4): full `AndroidTvAdapter` peer to `LgAdapter`,
+  `SamsungAdapter`, and `HisenseAdapter`; v2 protocol only (`_androidtvremote2._tcp`,
+  ports 6466/6467, protobuf + mutual TLS); v1 is explicitly excluded:
+  - **Task 1** — domain foundation: `TvBrand.androidTv` enum value; `TvCapabilities` entry
+    (`keyCommands`, `powerControl`, `pinPairing`); catch-all variant-resolution registry entry;
+    fake discovery device; `textInput` capability flag
+  - **Task 2** — `AndroidTvKeyMapper` maps all `RemoteCommand` values to verified `RemoteKeyCode`
+    integers from `remotemessage.proto` (305-value enum); unsupported shortcuts return empty —
+    no invented codes
+  - **Task 3** — `AndroidTvTransportClient` abstract interface (connect, submitPairingCode,
+    sendKey, sendText, probe, clearPairing, queryDeviceInfo, watchConnectionState);
+    `FakeAndroidTvTransportClient` test double in `lib/remote_control/debug/`
+  - **Task 4** — `AndroidTvAdapter` wired into adapter registry and both DI configs (prod + debug);
+    pre-pairing steps and pairing progress hint registered; localized strings added
+    (`pairingAndroidTvPreStep0/1`, `pairingAndroidTvProgressHint`)
+
+## 2026-04-29 *(continued)*
+
+### Fixed
+- Removed compile-time transport default from the debug sheet to avoid conflicts with the
+  runtime toggle
+- Refined pair button hint styling in the status panel
+
 ## 2026-04-29
 
 ### Added

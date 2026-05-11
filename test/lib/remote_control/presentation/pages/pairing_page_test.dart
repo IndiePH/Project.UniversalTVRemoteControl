@@ -15,6 +15,7 @@ import 'package:one_remote/remote_control/domain/models/connection_state.dart'
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
 
@@ -510,7 +511,7 @@ void main() {
       await tester.pumpWidget(
         buildPage(
           commandService: _StubCommandService(
-            preparePairingResult: CommandDispatchResult.failure('Needs PIN'),
+            preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
             submitPairingResults: [CommandDispatchResult.success('OK')],
           ),
           stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
@@ -535,6 +536,39 @@ void main() {
 
       expect(find.text('Paired successfully'), findsOneWidget);
     });
+
+    testWidgets(
+      'PIN dialog shows 6-char label, maxLength 6, visiblePassword keyboard for sixCharHex format',
+      (tester) async {
+        await tester.pumpWidget(
+          buildPage(
+            commandService: _StubCommandService(
+              preparePairingResult: CommandDispatchResult.pinRequired(
+                'Enter 6-character code',
+                pinFormat: PinFormat.sixCharHex,
+              ),
+              submitPairingResults: [CommandDispatchResult.success('OK')],
+            ),
+            stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.text('Hisense TV'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('6-character code (e.g. A4B2C1)'), findsOneWidget);
+
+        final tf = tester.widget<TextField>(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(TextField),
+          ),
+        );
+        expect(tf.maxLength, 6);
+        expect(tf.keyboardType, TextInputType.visiblePassword);
+      },
+    );
   });
 }
 
@@ -560,7 +594,7 @@ class _StubCommandService implements RemoteCommandService {
   @override
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     if (submitPairingResults.isEmpty) {
       return CommandDispatchResult.success('OK');
@@ -572,6 +606,9 @@ class _StubCommandService implements RemoteCommandService {
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {}
+
+  @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
 
   @override
   Future<CommandDispatchResult> sendCommand({
@@ -607,11 +644,14 @@ class _SlowCommandService implements RemoteCommandService {
   @override
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async => CommandDispatchResult.unsupported('unused');
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {}
+
+  @override
+  Future<void> cancelPairing({required TvDevice device}) async {}
 
   @override
   Future<CommandDispatchResult> sendCommand({

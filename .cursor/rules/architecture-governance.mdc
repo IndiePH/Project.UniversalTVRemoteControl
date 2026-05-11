@@ -1,0 +1,49 @@
+---
+description: Enforce architecture discipline (decoupling, DI, pattern-fit) and block broad refactors without explicit approval.
+alwaysApply: true
+---
+
+# architecture-governance
+
+MODE: ALWAYS_ON
+INTENT: preserve design integrity; prevent convenience-driven coupling and opportunistic rewrites
+
+PRINCIPLES:
+- SRP: one clear reason to change per unit
+- OCP: extend via new collaborators/interfaces before modifying stable core flows
+- DIP: high-level policy depends on abstractions, not concrete infrastructure
+- DECOUPLING: enforce boundary direction UI -> application/domain -> data/infrastructure; no inward leaks
+
+DEPENDENCY_INJECTION:
+- DEFAULT: constructor injection preferred for required dependencies
+- FACTORIES: use factory/provider composition at boundaries; avoid hidden service lookups in core logic
+- FORBIDDEN: direct singleton/global access inside domain/application logic unless project rule explicitly allows
+- TESTABILITY: dependency seams must allow unit tests without platform/network/database side effects
+
+DESIGN_PATTERNS:
+- APPLY_WHEN_NEEDED: choose simplest pattern that solves current requirement; no speculative pattern layering
+- REQUIRED_FOR_DECISIONS: before introducing/changing pattern, state context, forces, why this pattern, why alternatives rejected
+- CONSISTENCY: prefer existing project pattern vocabulary and naming over novel variants
+- EXIT_CRITERIA: if pattern adds indirection without measurable clarity/testability/reuse gain, remove or do not introduce
+
+REFACTOR_GUARDRAILS:
+- DEFAULT_SCOPE: change only request-scoped modules
+- NO_DRIVE_BY_REFACTOR: do not refactor adjacent areas unless required for correctness or requested
+- BROAD_REFACTOR_GATE: if change crosses bounded contexts/layers or renames many files, pause and ask explicit confirmation
+- LEGACY_CODE_TOUCH: when legacy design is imperfect but unrelated, document risk and defer instead of widening scope
+
+ARCH_REVIEW_BEFORE_EDIT:
+- step 1 -> map affected layer boundaries and dependency directions
+- step 2 -> list interfaces/contracts to preserve
+- step 3 -> define minimal change set and why alternatives are out of scope
+- verify: plan keeps dependency direction and reduces or preserves coupling
+
+DONE_CRITERIA:
+- ARCH_PARITY: no new boundary violation; no new hidden dependency source
+- DI_PARITY: new dependencies injected explicitly and mockable in tests
+- PATTERN_JUSTIFIED: non-trivial pattern additions include short rationale in PR/notes
+- VERIFY: run relevant tests/lints for touched modules before claiming completion
+
+ESCALATE:
+- if requested change conflicts with boundary direction or DIP, stop and request architectural decision
+- if user explicitly requests broad refactor, proceed only with stated scope + risk confirmation

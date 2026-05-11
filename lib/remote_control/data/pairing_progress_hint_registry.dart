@@ -18,6 +18,7 @@ class DefaultPairingProgressHintRegistry implements PairingProgressHintRegistry 
         (TvBrand.lg, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingLgProgressHint,
         (TvBrand.samsung, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingSamsungProgressHint,
         (TvBrand.hisense, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingHisenseProgressHint,
+        (TvBrand.androidTv, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingAndroidTvProgressHint,
         _ => null,
       };
 }

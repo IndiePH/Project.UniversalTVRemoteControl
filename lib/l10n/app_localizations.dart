@@ -322,6 +322,24 @@ abstract class AppLocalizations {
   /// **'Accept any connection permission that appears on your TV.'**
   String get pairingSamsungPreStep1;
 
+  /// No description provided for @pairingAndroidTvProgressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A PIN will appear on your TV screen — enter it when prompted.'**
+  String get pairingAndroidTvProgressHint;
+
+  /// No description provided for @pairingAndroidTvPreStep0.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Android TV or Google TV is ON and on the same Wi-Fi.'**
+  String get pairingAndroidTvPreStep0;
+
+  /// No description provided for @pairingAndroidTvPreStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'A PIN will appear on your TV screen — enter it when prompted.'**
+  String get pairingAndroidTvPreStep1;
+
   /// No description provided for @pairingWaitingForApproval.
   ///
   /// In en, this message translates to:
@@ -505,7 +523,7 @@ abstract class AppLocalizations {
   /// No description provided for @pairingPinBody.
   ///
   /// In en, this message translates to:
-  /// **'Your TV may require a 4-digit code shown on-screen to finish pairing.'**
+  /// **'A code will appear on your TV screen — enter it below to finish pairing.'**
   String get pairingPinBody;
 
   /// No description provided for @pairingPinCodeLabel.
@@ -513,6 +531,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'4-digit TV code'**
   String get pairingPinCodeLabel;
+
+  /// No description provided for @pairingPinCodeLabelHex.
+  ///
+  /// In en, this message translates to:
+  /// **'6-character code (e.g. A4B2C1)'**
+  String get pairingPinCodeLabelHex;
 
   /// No description provided for @pairingPinSubmitButton.
   ///
@@ -525,6 +549,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter exactly 4 digits.'**
   String get pairingPinErrorInvalid;
+
+  /// No description provided for @pairingPinErrorInvalidHex.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter exactly 6 characters (0–9, A–F).'**
+  String get pairingPinErrorInvalidHex;
 
   /// No description provided for @pairingOutcomeSuccessTitle.
   ///

@@ -21,4 +21,8 @@ abstract class SamsungTransportClient
   /// Lightweight TCP reachability check. Tries Samsung ports in order.
   /// Completes if the TV is reachable; throws otherwise.
   Future<void> probe(String host);
+
+  /// Cancels an in-progress pairing approval wait. Safe to call when no
+  /// pairing is active.
+  void cancelPairing(String deviceId);
 }

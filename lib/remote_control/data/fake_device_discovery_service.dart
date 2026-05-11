@@ -35,6 +35,17 @@ class FakeDeviceDiscoveryService implements DeviceDiscoveryService {
         DeviceCapability.powerControl,
       },
     ),
+    TvDevice(
+      id: 'android-tv-living-room',
+      displayName: 'Android TV - Living Room',
+      brand: TvBrand.androidTv,
+      capabilities: {
+        DeviceCapability.keyCommands,
+        DeviceCapability.powerControl,
+        DeviceCapability.pinPairing,
+        DeviceCapability.textInput,
+      },
+    ),
   ];
 
   @override

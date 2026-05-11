@@ -1,4 +1,5 @@
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
@@ -26,6 +27,12 @@ class TvCapabilities {
       DeviceCapability.powerControl,
       DeviceCapability.pinPairing,
     },
+    (TvBrand.androidTv, TvDevice.defaultProtocolVariant): {
+      DeviceCapability.keyCommands,
+      DeviceCapability.powerControl,
+      DeviceCapability.pinPairing,
+      DeviceCapability.textInput,
+    },
   };
 
   Set<DeviceCapability> capabilitiesFor(TvBrand brand, [String? variant]) {
@@ -34,4 +41,13 @@ class TvCapabilities {
         _map[(brand, TvDevice.defaultProtocolVariant)] ??
         {};
   }
+
+  PinFormat pinFormatFor(TvBrand brand, [String? variant]) => switch (brand) {
+    TvBrand.androidTv => PinFormat.sixCharHex,
+    TvBrand.hisense => PinFormat.fourDigitNumeric,
+    _ => throw StateError(
+      'PIN format not configured for ${brand.name} — '
+      'add an entry in TvCapabilities.pinFormatFor',
+    ),
+  };
 }

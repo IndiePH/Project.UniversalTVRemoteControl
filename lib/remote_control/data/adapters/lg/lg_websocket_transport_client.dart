@@ -267,6 +267,16 @@ class LgWebSocketTransportClient
     _emitConnectionState(deviceId, ConnectionState.disconnected);
   }
 
+  /// Unblocks any in-progress pairing or registration Completer and resets
+  /// the connection. Does not clear the stored client-key.
+  @override
+  void cancelPairing(String deviceId) {
+    final error = StateError('Pairing cancelled');
+    _pairingCompleters.remove(deviceId)?.completeError(error);
+    _registrationCompleters.remove(deviceId)?.completeError(error);
+    unawaited(_resetConnection(deviceId));
+  }
+
   @override
   Future<void> clearPairing({required String deviceId}) async {
     final host = _hostResolver(deviceId).trim();
@@ -518,6 +528,7 @@ class LgWebSocketTransportClient
           );
           _registrationCompleters.remove(deviceId)?.completeError(error);
           _pairingCompleters[deviceId]?.completeError(error);
+          unawaited(_resetConnection(deviceId));
         }
       }
     } else if (type == 'error') {
@@ -543,6 +554,7 @@ class LgWebSocketTransportClient
           );
           _registrationCompleters.remove(deviceId)?.completeError(error);
           _pairingCompleters[deviceId]?.completeError(error);
+          unawaited(_resetConnection(deviceId));
         }
       }
     }

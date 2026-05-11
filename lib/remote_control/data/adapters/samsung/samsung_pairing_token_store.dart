@@ -45,6 +45,13 @@ class SamsungPairingTokenStore {
         );
   }
 
+  void cancelPendingApprovals(String host) {
+    _failPendingPairingApprovals(
+      host: host,
+      error: StateError('Pairing cancelled'),
+    );
+  }
+
   void unregisterPendingApproval(String host, Completer<void> completer) {
     final current = _pendingPairingByHost[host];
     current?.remove(completer);

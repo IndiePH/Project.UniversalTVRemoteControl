@@ -45,6 +45,10 @@ final class RuntimeFlagsTemplateDebug {
         '--dart-define=USE_FAKE_TRANSPORTS=$useFakeTransports',
         '--dart-define=TV_HOST_OVERRIDE=<tv-ip>',
       ],
+      TvBrand.androidTv => <String>[
+        '--dart-define=USE_FAKE_TRANSPORTS=$useFakeTransports',
+        '--dart-define=TV_HOST_OVERRIDE=<tv-ip>',
+      ],
       null => <String>[
         '--dart-define=USE_FAKE_TRANSPORTS=$useFakeTransports',
         '--dart-define=TV_HOST_OVERRIDE=<tv-ip>',

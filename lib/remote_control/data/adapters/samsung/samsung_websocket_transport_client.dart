@@ -544,6 +544,14 @@ class SamsungWebSocketTransportClient
     await Future<void>.delayed(keyDelay - elapsed);
   }
 
+  /// Fails any pending TV-approval waiter and resets the connection.
+  @override
+  void cancelPairing(String deviceId) {
+    final host = _hostResolver(deviceId).trim();
+    _pairing.cancelPendingApprovals(host);
+    unawaited(_resetConnection(deviceId));
+  }
+
   @override
   Future<void> probe(String host) async {
     for (final port in const [_tlsPort, _plainPort]) {

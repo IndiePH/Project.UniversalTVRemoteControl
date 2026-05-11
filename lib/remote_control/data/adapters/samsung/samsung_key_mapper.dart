@@ -19,6 +19,7 @@ final class SamsungKeyMapper extends CommandKeyMap {
     RemoteCommand.netflix: ['KEY_NETFLIX'],
     RemoteCommand.primeVideo: ['KEY_AMAZON', 'KEY_PRIME_VIDEO'],
     RemoteCommand.disneyPlus: ['KEY_DISNEYPLUS', 'KEY_DISNEY'],
+    RemoteCommand.youtube: ['KEY_YOUTUBE'],
     RemoteCommand.dpadUp: ['KEY_UP'],
     RemoteCommand.dpadDown: ['KEY_DOWN'],
     RemoteCommand.dpadLeft: ['KEY_LEFT'],

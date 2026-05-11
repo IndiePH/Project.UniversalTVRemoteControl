@@ -26,6 +26,15 @@ class FakeLocalizedStrings implements LocalizedStrings {
   @override
   String get pairingSamsungPreStep1 => 'Accept any connection permission that appears on your TV.';
   @override
+  String get pairingAndroidTvProgressHint =>
+      'A PIN will appear on your TV screen — enter it when prompted.';
+  @override
+  String get pairingAndroidTvPreStep0 =>
+      'Your Android TV or Google TV is ON and on the same Wi-Fi.';
+  @override
+  String get pairingAndroidTvPreStep1 =>
+      'A PIN will appear on your TV screen — enter it when prompted.';
+  @override
   String remoteCommandUnsupported(String commandName, String brandName) =>
       'Command $commandName is not supported for $brandName.';
   @override

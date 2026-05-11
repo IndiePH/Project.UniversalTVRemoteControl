@@ -140,6 +140,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Accept any connection permission that appears on your TV.';
 
   @override
+  String get pairingAndroidTvProgressHint =>
+      'A PIN will appear on your TV screen — enter it when prompted.';
+
+  @override
+  String get pairingAndroidTvPreStep0 =>
+      'Your Android TV or Google TV is ON and on the same Wi-Fi.';
+
+  @override
+  String get pairingAndroidTvPreStep1 =>
+      'A PIN will appear on your TV screen — enter it when prompted.';
+
+  @override
   String get pairingWaitingForApproval => 'Waiting for TV approval...';
 
   @override
@@ -244,16 +256,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pairingPinBody =>
-      'Your TV may require a 4-digit code shown on-screen to finish pairing.';
+      'A code will appear on your TV screen — enter it below to finish pairing.';
 
   @override
   String get pairingPinCodeLabel => '4-digit TV code';
+
+  @override
+  String get pairingPinCodeLabelHex => '6-character code (e.g. A4B2C1)';
 
   @override
   String get pairingPinSubmitButton => 'Submit code';
 
   @override
   String get pairingPinErrorInvalid => 'Enter exactly 4 digits.';
+
+  @override
+  String get pairingPinErrorInvalidHex =>
+      'Enter exactly 6 characters (0–9, A–F).';
 
   @override
   String get pairingOutcomeSuccessTitle => 'Paired successfully';

@@ -2,7 +2,7 @@ import 'package:one_remote/app/message_handler.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/result.dart';
-import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 /// Coordinates pairing and persistence steps for `PairingPage`.
@@ -16,27 +16,30 @@ class PairingPageCoordinator {
   final RemoteCommandService _commandService;
   final DeviceRepository _deviceRepository;
 
+  Future<void> cancelPairing({required TvDevice device}) =>
+      _commandService.cancelPairing(device: device);
+
   Future<PairingAttemptResult> pairSelectedDevice({
     required TvDevice device,
     String? manualIpToSave,
-    required Future<String?> Function(String pairingMessage) promptPin,
+    required Future<String?> Function(String pairingMessage, PinFormat pinFormat) promptPin,
     required void Function(String retryMessage) onPinRejected,
   }) async {
     final pairingResult = await _commandService.preparePairing(device: device);
-    if (!pairingResult.isSuccess) {
-      if (!device.capabilities.contains(DeviceCapability.pinPairing)) {
-        return PairingAttemptResult.failure(MessageHandler.sanitize(pairingResult));
-      }
-      final pairingMessage = MessageHandler.sanitize(pairingResult);
+    if (pairingResult.isPinRequired) {
+      final pairingMessage = pairingResult.message;
       final paired = await _attemptPinPairing(
         device: device,
         pairingMessage: pairingMessage,
+        pinFormat: pairingResult.pinFormat,
         promptPin: promptPin,
         onPinRejected: onPinRejected,
       );
       if (!paired) {
         return PairingAttemptResult.failure(pairingMessage);
       }
+    } else if (!pairingResult.isSuccess) {
+      return PairingAttemptResult.failure(MessageHandler.sanitize(pairingResult));
     }
 
     if (manualIpToSave != null && manualIpToSave.isNotEmpty) {
@@ -56,15 +59,16 @@ class PairingPageCoordinator {
   Future<bool> _attemptPinPairing({
     required TvDevice device,
     required String pairingMessage,
-    required Future<String?> Function(String) promptPin,
+    required PinFormat pinFormat,
+    required Future<String?> Function(String, PinFormat) promptPin,
     required void Function(String) onPinRejected,
   }) async {
     while (true) {
-      final pin = await promptPin(pairingMessage);
+      final pin = await promptPin(pairingMessage, pinFormat);
       if (pin == null) return false;
       final submitResult = await _commandService.submitPairingCode(
         device: device,
-        fourDigitPin: pin,
+        pinCode: pin,
       );
       if (submitResult.isSuccess) return true;
       onPinRejected(MessageHandler.sanitize(submitResult));
