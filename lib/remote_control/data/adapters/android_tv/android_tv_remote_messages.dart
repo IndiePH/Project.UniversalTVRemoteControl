@@ -79,8 +79,7 @@ class RemoteSetActive extends $pb.GeneratedMessage {
 }
 
 // ---------------------------------------------------------------------------
-// RemoteKeyInject  (field 10 in RemoteMessage)
-// key_code is stored as int32; use RemoteKeyCode constants for values.
+// RemoteKeyCode  — Android KeyEvent integer constants used in RemoteKeyInject.
 // ---------------------------------------------------------------------------
 
 abstract final class RemoteKeyCode {
@@ -680,29 +679,237 @@ class RemoteImeKeyInject extends $pb.GeneratedMessage {
 }
 
 // ---------------------------------------------------------------------------
+// RemoteDeviceInfo  — sub-message of RemoteConfigure
+// Sent by both sides during the connection handshake on port 6466.
+// ---------------------------------------------------------------------------
+
+class RemoteDeviceInfo extends $pb.GeneratedMessage {
+  factory RemoteDeviceInfo({
+    String? model,
+    String? vendor,
+    int? unknown1,
+    String? unknown2,
+    String? packageName,
+    String? appVersion,
+  }) {
+    final r = create();
+    if (model != null) r.model = model;
+    if (vendor != null) r.vendor = vendor;
+    if (unknown1 != null) r.unknown1 = unknown1;
+    if (unknown2 != null) r.unknown2 = unknown2;
+    if (packageName != null) r.packageName = packageName;
+    if (appVersion != null) r.appVersion = appVersion;
+    return r;
+  }
+
+  RemoteDeviceInfo._() : super();
+
+  factory RemoteDeviceInfo.fromBuffer(
+    List<int> i, [
+    $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
+  ]) =>
+      create()..mergeFromBuffer(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+    'RemoteDeviceInfo',
+    package: const $pb.PackageName('remote'),
+    createEmptyInstance: create,
+  )
+    ..aOS(1, 'model')                              // index 0
+    ..aOS(2, 'vendor')                             // index 1
+    ..a<int>(3, 'unknown1', $pb.PbFieldType.O3)   // index 2
+    ..aOS(4, 'unknown2')                           // index 3
+    ..aOS(5, 'packageName')                        // index 4
+    ..aOS(6, 'appVersion')                         // index 5
+    ..hasRequiredFields = false;
+
+  @override
+  $pb.BuilderInfo get info_ => _i;
+
+  @override
+  RemoteDeviceInfo clone() => RemoteDeviceInfo()..mergeFromMessage(this);
+
+  static RemoteDeviceInfo create() => RemoteDeviceInfo._();
+  @override
+  RemoteDeviceInfo createEmptyInstance() => create();
+  static $pb.PbList<RemoteDeviceInfo> createRepeated() =>
+      $pb.PbList<RemoteDeviceInfo>();
+  static RemoteDeviceInfo? _defaultInstance;
+  static RemoteDeviceInfo getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RemoteDeviceInfo>(create);
+
+  String get model => $_getSZ(0);
+  set model(String v) => $_setString(0, v);
+  bool hasModel() => $_has(0);
+  void clearModel() => clearField(1);
+
+  String get vendor => $_getSZ(1);
+  set vendor(String v) => $_setString(1, v);
+  bool hasVendor() => $_has(1);
+  void clearVendor() => clearField(2);
+
+  int get unknown1 => $_getIZ(2);
+  set unknown1(int v) => $_setSignedInt32(2, v);
+  bool hasUnknown1() => $_has(2);
+  void clearUnknown1() => clearField(3);
+
+  String get unknown2 => $_getSZ(3);
+  set unknown2(String v) => $_setString(3, v);
+  bool hasUnknown2() => $_has(3);
+  void clearUnknown2() => clearField(4);
+
+  String get packageName => $_getSZ(4);
+  set packageName(String v) => $_setString(4, v);
+  bool hasPackageName() => $_has(4);
+  void clearPackageName() => clearField(5);
+
+  String get appVersion => $_getSZ(5);
+  set appVersion(String v) => $_setString(5, v);
+  bool hasAppVersion() => $_has(5);
+  void clearAppVersion() => clearField(6);
+}
+
+// ---------------------------------------------------------------------------
+// RemoteConfigure  (field 1 in RemoteMessage)
+// Server sends this first after TLS connects on port 6466. Client must respond
+// with its own RemoteConfigure before the handshake can proceed.
+// ---------------------------------------------------------------------------
+
+class RemoteConfigure extends $pb.GeneratedMessage {
+  factory RemoteConfigure({int? code1, RemoteDeviceInfo? deviceInfo}) {
+    final r = create();
+    if (code1 != null) r.code1 = code1;
+    if (deviceInfo != null) r.deviceInfo = deviceInfo;
+    return r;
+  }
+
+  RemoteConfigure._() : super();
+
+  factory RemoteConfigure.fromBuffer(
+    List<int> i, [
+    $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
+  ]) =>
+      create()..mergeFromBuffer(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+    'RemoteConfigure',
+    package: const $pb.PackageName('remote'),
+    createEmptyInstance: create,
+  )
+    ..a<int>(1, 'code1', $pb.PbFieldType.O3)                         // index 0
+    ..aOM<RemoteDeviceInfo>(2, 'deviceInfo',
+        subBuilder: RemoteDeviceInfo.create)                          // index 1
+    ..hasRequiredFields = false;
+
+  @override
+  $pb.BuilderInfo get info_ => _i;
+
+  @override
+  RemoteConfigure clone() => RemoteConfigure()..mergeFromMessage(this);
+
+  static RemoteConfigure create() => RemoteConfigure._();
+  @override
+  RemoteConfigure createEmptyInstance() => create();
+  static $pb.PbList<RemoteConfigure> createRepeated() =>
+      $pb.PbList<RemoteConfigure>();
+  static RemoteConfigure? _defaultInstance;
+  static RemoteConfigure getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RemoteConfigure>(create);
+
+  int get code1 => $_getIZ(0);
+  set code1(int v) => $_setSignedInt32(0, v);
+  bool hasCode1() => $_has(0);
+  void clearCode1() => clearField(1);
+
+  RemoteDeviceInfo get deviceInfo => $_getN(1) as RemoteDeviceInfo;
+  set deviceInfo(RemoteDeviceInfo v) => setField(2, v);
+  bool hasDeviceInfo() => $_has(1);
+  void clearDeviceInfo() => clearField(2);
+}
+
+// ---------------------------------------------------------------------------
+// RemoteStart  (field 40 in RemoteMessage)
+// Server sends this after the RemoteConfigure + RemoteSetActive exchange.
+// `started` reflects TV power state (true = on, false = standby).
+// Receiving this signals the handshake is complete and commands may be sent.
+// ---------------------------------------------------------------------------
+
+class RemoteStart extends $pb.GeneratedMessage {
+  factory RemoteStart({bool? started}) {
+    final r = create();
+    if (started != null) r.started = started;
+    return r;
+  }
+
+  RemoteStart._() : super();
+
+  factory RemoteStart.fromBuffer(
+    List<int> i, [
+    $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
+  ]) =>
+      create()..mergeFromBuffer(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+    'RemoteStart',
+    package: const $pb.PackageName('remote'),
+    createEmptyInstance: create,
+  )
+    ..aOB(1, 'started')
+    ..hasRequiredFields = false;
+
+  @override
+  $pb.BuilderInfo get info_ => _i;
+
+  @override
+  RemoteStart clone() => RemoteStart()..mergeFromMessage(this);
+
+  static RemoteStart create() => RemoteStart._();
+  @override
+  RemoteStart createEmptyInstance() => create();
+  static $pb.PbList<RemoteStart> createRepeated() =>
+      $pb.PbList<RemoteStart>();
+  static RemoteStart? _defaultInstance;
+  static RemoteStart getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RemoteStart>(create);
+
+  bool get started => $_getBF(0);
+  set started(bool v) => $_setBool(0, v);
+  bool hasStarted() => $_has(0);
+  void clearStarted() => clearField(1);
+}
+
+// ---------------------------------------------------------------------------
 // RemoteMessage  — top-level wrapper (proto3)
 // Only the fields this adapter needs are declared; unknown fields pass through.
-// Field 21 (remote_ime_batch_edit) is added beyond the goal-file list because
-// it is required for sendText in Task 9 (text is sent via batch_edit, not
-// key_inject — verified against Python send_text implementation).
+//
+// Handshake on port 6466 (server speaks first):
+//   TV → RemoteConfigure(code1, device_info)
+//   App → RemoteConfigure(code1 echo, our device_info)
+//   TV → RemoteSetActive(active)
+//   App → RemoteSetActive(active echo)
+//   TV → RemoteStart(started)   ← connection ready
 // ---------------------------------------------------------------------------
 
 class RemoteMessage extends $pb.GeneratedMessage {
   factory RemoteMessage({
+    RemoteConfigure? remoteConfigure,
     RemoteSetActive? remoteSetActive,
     RemotePingRequest? remotePingRequest,
     RemotePingResponse? remotePingResponse,
     RemoteKeyInject? remoteKeyInject,
     RemoteImeKeyInject? remoteImeKeyInject,
     RemoteImeBatchEdit? remoteImeBatchEdit,
+    RemoteStart? remoteStart,
   }) {
     final r = create();
+    if (remoteConfigure != null) r.remoteConfigure = remoteConfigure;
     if (remoteSetActive != null) r.remoteSetActive = remoteSetActive;
     if (remotePingRequest != null) r.remotePingRequest = remotePingRequest;
     if (remotePingResponse != null) r.remotePingResponse = remotePingResponse;
     if (remoteKeyInject != null) r.remoteKeyInject = remoteKeyInject;
     if (remoteImeKeyInject != null) r.remoteImeKeyInject = remoteImeKeyInject;
     if (remoteImeBatchEdit != null) r.remoteImeBatchEdit = remoteImeBatchEdit;
+    if (remoteStart != null) r.remoteStart = remoteStart;
     return r;
   }
 
@@ -719,18 +926,22 @@ class RemoteMessage extends $pb.GeneratedMessage {
     package: const $pb.PackageName('remote'),
     createEmptyInstance: create,
   )
+    ..aOM<RemoteConfigure>(1, 'remoteConfigure',
+        subBuilder: RemoteConfigure.create)                           // index 0
     ..aOM<RemoteSetActive>(2, 'remoteSetActive',
-        subBuilder: RemoteSetActive.create)                           // index 0
+        subBuilder: RemoteSetActive.create)                           // index 1
     ..aOM<RemotePingRequest>(8, 'remotePingRequest',
-        subBuilder: RemotePingRequest.create)                         // index 1
+        subBuilder: RemotePingRequest.create)                         // index 2
     ..aOM<RemotePingResponse>(9, 'remotePingResponse',
-        subBuilder: RemotePingResponse.create)                        // index 2
+        subBuilder: RemotePingResponse.create)                        // index 3
     ..aOM<RemoteKeyInject>(10, 'remoteKeyInject',
-        subBuilder: RemoteKeyInject.create)                           // index 3
+        subBuilder: RemoteKeyInject.create)                           // index 4
     ..aOM<RemoteImeKeyInject>(20, 'remoteImeKeyInject',
-        subBuilder: RemoteImeKeyInject.create)                        // index 4
+        subBuilder: RemoteImeKeyInject.create)                        // index 5
     ..aOM<RemoteImeBatchEdit>(21, 'remoteImeBatchEdit',
-        subBuilder: RemoteImeBatchEdit.create)                        // index 5
+        subBuilder: RemoteImeBatchEdit.create)                        // index 6
+    ..aOM<RemoteStart>(40, 'remoteStart',
+        subBuilder: RemoteStart.create)                               // index 7
     ..hasRequiredFields = false;
 
   @override
@@ -748,33 +959,43 @@ class RemoteMessage extends $pb.GeneratedMessage {
   static RemoteMessage getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteMessage>(create);
 
-  RemoteSetActive get remoteSetActive => $_getN(0) as RemoteSetActive;
+  RemoteConfigure get remoteConfigure => $_getN(0) as RemoteConfigure;
+  set remoteConfigure(RemoteConfigure v) => setField(1, v);
+  bool hasRemoteConfigure() => $_has(0);
+  void clearRemoteConfigure() => clearField(1);
+
+  RemoteSetActive get remoteSetActive => $_getN(1) as RemoteSetActive;
   set remoteSetActive(RemoteSetActive v) => setField(2, v);
-  bool hasRemoteSetActive() => $_has(0);
+  bool hasRemoteSetActive() => $_has(1);
   void clearRemoteSetActive() => clearField(2);
 
-  RemotePingRequest get remotePingRequest => $_getN(1) as RemotePingRequest;
+  RemotePingRequest get remotePingRequest => $_getN(2) as RemotePingRequest;
   set remotePingRequest(RemotePingRequest v) => setField(8, v);
-  bool hasRemotePingRequest() => $_has(1);
+  bool hasRemotePingRequest() => $_has(2);
   void clearRemotePingRequest() => clearField(8);
 
-  RemotePingResponse get remotePingResponse => $_getN(2) as RemotePingResponse;
+  RemotePingResponse get remotePingResponse => $_getN(3) as RemotePingResponse;
   set remotePingResponse(RemotePingResponse v) => setField(9, v);
-  bool hasRemotePingResponse() => $_has(2);
+  bool hasRemotePingResponse() => $_has(3);
   void clearRemotePingResponse() => clearField(9);
 
-  RemoteKeyInject get remoteKeyInject => $_getN(3) as RemoteKeyInject;
+  RemoteKeyInject get remoteKeyInject => $_getN(4) as RemoteKeyInject;
   set remoteKeyInject(RemoteKeyInject v) => setField(10, v);
-  bool hasRemoteKeyInject() => $_has(3);
+  bool hasRemoteKeyInject() => $_has(4);
   void clearRemoteKeyInject() => clearField(10);
 
-  RemoteImeKeyInject get remoteImeKeyInject => $_getN(4) as RemoteImeKeyInject;
+  RemoteImeKeyInject get remoteImeKeyInject => $_getN(5) as RemoteImeKeyInject;
   set remoteImeKeyInject(RemoteImeKeyInject v) => setField(20, v);
-  bool hasRemoteImeKeyInject() => $_has(4);
+  bool hasRemoteImeKeyInject() => $_has(5);
   void clearRemoteImeKeyInject() => clearField(20);
 
-  RemoteImeBatchEdit get remoteImeBatchEdit => $_getN(5) as RemoteImeBatchEdit;
+  RemoteImeBatchEdit get remoteImeBatchEdit => $_getN(6) as RemoteImeBatchEdit;
   set remoteImeBatchEdit(RemoteImeBatchEdit v) => setField(21, v);
-  bool hasRemoteImeBatchEdit() => $_has(5);
+  bool hasRemoteImeBatchEdit() => $_has(6);
   void clearRemoteImeBatchEdit() => clearField(21);
+
+  RemoteStart get remoteStart => $_getN(7) as RemoteStart;
+  set remoteStart(RemoteStart v) => setField(40, v);
+  bool hasRemoteStart() => $_has(7);
+  void clearRemoteStart() => clearField(40);
 }

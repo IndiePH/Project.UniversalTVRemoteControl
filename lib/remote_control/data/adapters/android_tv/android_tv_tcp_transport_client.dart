@@ -60,6 +60,7 @@ class AndroidTvTcpTransportClient
   final Map<String, List<int>> _remoteBuffers = {};
   final Map<String, int> _imeCounters = {};
   final Map<String, int> _fieldCounters = {};
+  final Map<String, Completer<void>> _remoteStartedCompleters = {};
 
   // _remoteActive tracks devices with intentional remote connections so
   // _onRemoteSocketDone can distinguish unexpected closes (reconnect) from
@@ -462,9 +463,14 @@ class AndroidTvTcpTransportClient
         timeout: connectTimeout,
       );
 
+      log(
+        'Android TV remote TLS connected to $host:$_remotePort — awaiting RemoteConfigure',
+        name: 'android_tv_transport',
+      );
+
       _remoteSockets[deviceId] = socket;
       _remoteBuffers[deviceId] = [];
-      _remoteActive.add(deviceId);
+      _remoteStartedCompleters[deviceId] = Completer<void>();
 
       _remoteSubs[deviceId] = socket.listen(
         (data) => _onRemoteData(deviceId, data),
@@ -473,11 +479,17 @@ class AndroidTvTcpTransportClient
         cancelOnError: true,
       );
 
-      _sendRemoteMessage(
-        deviceId,
-        RemoteMessage(remoteSetActive: RemoteSetActive(active: 1)),
+      // Server speaks first: RemoteConfigure → RemoteSetActive → RemoteStart.
+      // _handleRemoteMessage drives the handshake responses; we wait here for
+      // RemoteStart before advertising the connection as ready.
+      await _remoteStartedCompleters[deviceId]!.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw AndroidTvConnectionException(
+          'Remote handshake timed out — TV did not send RemoteStart',
+        ),
       );
 
+      _remoteActive.add(deviceId);
       _emitState(deviceId, ConnectionState.connected);
     } catch (e) {
       _emitState(deviceId, ConnectionState.error);
@@ -490,6 +502,12 @@ class AndroidTvTcpTransportClient
   }
 
   void _onRemoteData(String deviceId, List<int> data) {
+    log(
+      'Android TV remote raw rx (${data.length}B): '
+      '${data.take(32).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}'
+      '${data.length > 32 ? '…' : ''}',
+      name: 'android_tv_transport',
+    );
     _remoteBuffers[deviceId]?.addAll(data);
     _drainRemoteBuffer(deviceId);
   }
@@ -526,7 +544,35 @@ class AndroidTvTcpTransportClient
       name: 'android_tv_transport',
     );
 
-    if (msg.hasRemotePingRequest()) {
+    if (msg.hasRemoteConfigure()) {
+      // Server initiates handshake — respond with our device info, echoing code1.
+      _sendRemoteMessage(
+        deviceId,
+        RemoteMessage(
+          remoteConfigure: RemoteConfigure(
+            code1: msg.remoteConfigure.code1,
+            deviceInfo: RemoteDeviceInfo(
+              unknown1: 1,
+              unknown2: '1',
+              packageName: 'atvremote',
+              appVersion: '1.0.0',
+            ),
+          ),
+        ),
+      );
+    } else if (msg.hasRemoteSetActive()) {
+      // Server sends RemoteSetActive during handshake — echo the active value.
+      _sendRemoteMessage(
+        deviceId,
+        RemoteMessage(
+          remoteSetActive: RemoteSetActive(active: msg.remoteSetActive.active),
+        ),
+      );
+    } else if (msg.hasRemoteStart()) {
+      // Handshake complete — unblock _connectRemote.
+      final c = _remoteStartedCompleters[deviceId];
+      if (c != null && !c.isCompleted) c.complete();
+    } else if (msg.hasRemotePingRequest()) {
       _sendRemoteMessage(
         deviceId,
         RemoteMessage(
@@ -589,6 +635,10 @@ class AndroidTvTcpTransportClient
     _remoteBuffers.remove(deviceId);
     _imeCounters.remove(deviceId);
     _fieldCounters.remove(deviceId);
+    final c = _remoteStartedCompleters.remove(deviceId);
+    if (c != null && !c.isCompleted) {
+      c.completeError(const AndroidTvConnectionException('Remote connection closed'));
+    }
   }
 
   // ---------------------------------------------------------------------------
