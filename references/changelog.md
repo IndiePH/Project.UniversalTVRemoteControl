@@ -3,6 +3,27 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-11 (continued)
+
+### Added
+- Test coverage for `CommandDispatchResult.pinRequired`: `isPinRequired`, `isSuccess`, `pinFormat`
+  default and explicit, and message preservation; `PinFormat` forwarding verified through
+  `PairingPageCoordinator` (`promptPin` receives format from result) and both adapter lane tests
+  (hisense `fourDigitNumeric` via `PinRequiredException`, Android TV `sixCharHex` via capability path)
+- `PinFormat.sixCharHex` widget test: PIN dialog shows 6-char label, `maxLength 6`, and
+  `visiblePassword` keyboard type when `preparePairing` returns `sixCharHex` format
+
+### Fixed
+- 4 failing tests corrected after prior feature additions:
+  - `Hisense lane: preparePairing` — assertion updated to `isPinRequired` (hisense canonical
+    capabilities now include `pinPairing`, so `preparePairing` returns `pinRequired` not `success`)
+  - `disables remote actions when no active device` — expected status updated to `'Pair a TV first.'`
+    (commit `9418a8b` changed button tap with no device to call `_onDisabledGridInteraction`)
+  - `pairs to discovered TV` and `clears active device` widget tests — registered missing
+    `AppEnvironment` singleton so `RemoteHomeActions.openPairing` GetIt lookup succeeds
+- `fourDigitPin` → `pinCode` parameter rename propagated to all test stub `submitPairingCode`
+  implementations and call sites (compile fix; 7 files)
+
 ## 2026-05-11
 
 ### Added
