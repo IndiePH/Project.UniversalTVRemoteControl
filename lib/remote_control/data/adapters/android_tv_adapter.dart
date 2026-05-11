@@ -67,6 +67,7 @@ class AndroidTvAdapter implements TvBrandAdapter {
     RemoteCommand.netflix:    'market://launch?id=com.netflix.ninja',
     RemoteCommand.primeVideo: 'market://launch?id=com.amazon.avod.thirdpartyclient',
     RemoteCommand.disneyPlus: 'market://launch?id=com.disney.disneyplus',
+    RemoteCommand.youtube:    'market://launch?id=com.google.android.youtube.tv',
   };
 
   @override

@@ -14,6 +14,7 @@ const Set<RemoteCommand> kCommonSupportedRemoteCommands = {
   RemoteCommand.netflix,
   RemoteCommand.primeVideo,
   RemoteCommand.disneyPlus,
+  RemoteCommand.youtube,
   RemoteCommand.dpadUp,
   RemoteCommand.dpadDown,
   RemoteCommand.dpadLeft,

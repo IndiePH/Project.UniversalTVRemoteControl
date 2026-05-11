@@ -132,6 +132,7 @@ class HisenseAdapter implements TvBrandAdapter {
       RemoteCommand.netflix => ('Netflix', 'netflix'),
       RemoteCommand.primeVideo => ('Amazon', 'amazon'),
       RemoteCommand.disneyPlus => ('Disney+', 'disneyplus'),
+      RemoteCommand.youtube => ('YouTube', 'youtube'),
       RemoteCommand.web => ('YouTube', 'youtube'),
       _ => null,
     };

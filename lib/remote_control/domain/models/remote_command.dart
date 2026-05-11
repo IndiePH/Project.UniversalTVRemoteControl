@@ -11,6 +11,7 @@ enum RemoteCommand {
   netflix,
   primeVideo,
   disneyPlus,
+  youtube,
   dpadUp,
   dpadDown,
   dpadLeft,
