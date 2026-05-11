@@ -3,6 +3,35 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-11
+
+### Added
+- Streaming app launch for Netflix, Prime Video, Disney+, and YouTube across all TV adapters;
+  Android TV uses `RemoteAppLinkLaunchRequest` (proto field 90, `market://launch?id=<packageName>`)
+  since these apps cannot be opened via key codes; adds `sendAppLink` to the transport interface
+  and TCP client; YouTube is also wired through all other adapters via key mapper
+- Android TV remote control handshake: implements the server-initiated 3-step sequence required
+  before commands can be sent on port 6466 (`RemoteConfigure → RemoteSetActive echo →
+  RemoteStart`); client sends feature bitmask `active=623` on the active step; adds
+  `RemoteDeviceInfo`, `RemoteConfigure` (field 1), and `RemoteStart` (field 40) to `RemoteMessage`
+- `AndroidTvHandshakeTracer` extracts diagnostic state from `AndroidTvTcpTransportClient` (SRP);
+  injected via constructor; instantiated only in debug builds for zero production overhead
+
+### Fixed
+- LG: fixed re-pairing failure when re-pairing after a cancelled attempt
+
+## 2026-05-07
+
+### Added
+- `PinFormat` enum (`fourDigitNumeric` / `sixCharHex`) as a domain value in `TvCapabilities`;
+  carried through `CommandDispatchResult.pinRequired` and coordinator `promptPin` callback so the
+  UI derives PIN format from the domain, not the brand; PIN dialog now accepts 6-char hex input
+  for Android TV POLO protocol
+- `cancelPairing()` added to `TvBrandAdapter` (default no-op), `RemoteCommandService`, and all
+  transport layers (Android TV, LG, Samsung); OS back-button press during pairing now
+  error-completes any blocked `Completer`s, cancels socket subscriptions, and clears state maps
+  before page pop — prevents cancel-then-re-pair race that would corrupt the new session
+
 ## 2026-05-06 (continued)
 
 ### Added
@@ -55,6 +84,14 @@ Keep entries short and append new updates at the top.
   per-host `.cert.der` + `.rsa.json` files)
 - New `android_tv_exceptions.dart`: `AndroidTvPairingFailedException`,
   `AndroidTvConnectionException`
+
+### Changed
+- Android TV mDNS discovery: raised default timeout from 3 s to 5 s; added a second PTR query
+  round that fires only when the first returns empty, handling dropped multicast packets without
+  increasing discovery time in the common case
+- `CompositeDeviceDiscoveryService`: multicast lock now held for the full scan window (released
+  only after all services complete) so SSDP finishing first no longer silences mDNS; per-service
+  failures are isolated so one service throwing cannot discard results already collected by siblings
 
 ## 2026-05-06
 
