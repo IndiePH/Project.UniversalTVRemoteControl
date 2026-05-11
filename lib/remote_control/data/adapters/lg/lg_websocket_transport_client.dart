@@ -528,6 +528,7 @@ class LgWebSocketTransportClient
           );
           _registrationCompleters.remove(deviceId)?.completeError(error);
           _pairingCompleters[deviceId]?.completeError(error);
+          unawaited(_resetConnection(deviceId));
         }
       }
     } else if (type == 'error') {
@@ -553,6 +554,7 @@ class LgWebSocketTransportClient
           );
           _registrationCompleters.remove(deviceId)?.completeError(error);
           _pairingCompleters[deviceId]?.completeError(error);
+          unawaited(_resetConnection(deviceId));
         }
       }
     }
