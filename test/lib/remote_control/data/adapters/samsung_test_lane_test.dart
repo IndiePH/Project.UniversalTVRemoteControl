@@ -279,7 +279,7 @@ class _SubsetSamsungAdapter implements TvBrandAdapter {
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {}
 
   @override
@@ -337,7 +337,7 @@ class _CompatibilitySamsungAdapter implements TvBrandAdapter {
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {}
 
   @override

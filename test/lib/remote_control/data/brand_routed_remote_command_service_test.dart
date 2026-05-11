@@ -680,7 +680,7 @@ class _RecordingAdapter implements TvBrandAdapter {
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     submitPairingCodeCallCount++;
   }
@@ -744,7 +744,7 @@ class _ThrowingAdapter implements TvBrandAdapter {
   @override
   Future<void> submitPairingCode({
     required TvDevice device,
-    required String fourDigitPin,
+    required String pinCode,
   }) async {
     throw StateError('submit error');
   }
