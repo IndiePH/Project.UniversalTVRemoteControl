@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:one_remote/remote_control/application/pin_required_exception.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
@@ -31,7 +32,7 @@ class FakeHisenseTransportClient
     );
     log('Hisense MQTT connect: $deviceId', name: 'hisense_transport');
     if (!_authorized.contains(deviceId)) {
-      throw StateError(
+      throw const PinRequiredException(
         'Hisense pairing requires a 4-digit code shown on TV. Enter it to continue.',
       );
     }

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
 import 'package:one_remote/app/one_remote_app.dart';
@@ -16,6 +17,17 @@ StreamUnhandledErrorSource? _errorSource() {
       : null;
 }
 
+bool _supportsMobileAds() {
+  if (kIsWeb) {
+    return false;
+  }
+
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.android || TargetPlatform.iOS => true,
+    _ => false,
+  };
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([
@@ -24,6 +36,9 @@ Future<void> main() async {
 
   final env = kDebugMode ? AppEnvironment.debug : AppEnvironment.production;
   await DiBootstrap.initialize(env);
+  if (_supportsMobileAds()) {
+    await MobileAds.instance.initialize();
+  }
 
   FlutterError.onError = (FlutterErrorDetails details) {
     final errorSource = _errorSource();

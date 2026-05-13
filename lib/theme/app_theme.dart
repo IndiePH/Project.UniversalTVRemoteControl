@@ -177,7 +177,7 @@ final class AppTheme {
         return const AppColors(
           remoteSurface: Color(0xFFF2F4F8),
           remoteRaisedSurface: Colors.white,
-          remoteOutline: Color(0xFFD8DDE6),
+          remoteOutline: Color.fromARGB(15, 216, 221, 230),
           // Matches pre-theme-audit remote tiles (white glyphs on light-gray surfaces).
           remoteGlyphOnRemote: Color(0xFFFFFFFF),
           remotePowerFill: Color(0xFFE53935),

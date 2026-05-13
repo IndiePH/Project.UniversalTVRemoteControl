@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/app/ads/bottom_banner_ad_placement.dart';
+import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/message_handler.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
@@ -26,6 +28,7 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_home_statu
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_text_entry_sheet.dart';
+import 'package:one_remote/theme/app_theme.dart';
 
 /// Main remote screen.
 ///
@@ -34,6 +37,7 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_text_entry
 class RemoteHomePage extends StatefulWidget {
   const RemoteHomePage({
     super.key,
+    required this.appEnvironment,
     required this.commandService,
     required this.deviceRepository,
     required this.discoveryService,
@@ -41,6 +45,7 @@ class RemoteHomePage extends StatefulWidget {
     this.transportLogReaderProvider = const NoopTransportLogReaderProvider(),
   });
 
+  final AppEnvironment appEnvironment;
   final RemoteCommandService commandService;
   final DeviceRepository deviceRepository;
   final DeviceDiscoveryService discoveryService;
@@ -53,7 +58,7 @@ class RemoteHomePage extends StatefulWidget {
 
 class _RemoteHomePageState extends State<RemoteHomePage> {
   static const int _gridColumns = 5;
-  static const int _gridRows = 9;
+  static const int _gridRows = 8;
   static const double _gridGap = 6;
   static const String _keyboardUnavailableMessage =
       RemoteKeyboardAvailability.unavailableMessage;
@@ -651,6 +656,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       // the lower portion of the screen instead of shrinking the body.
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
+        toolbarHeight: 50,
         title: Text(AppLocalizations.of(context)!.appTitle),
         actions: [
           RemoteHomeAppBarActions(
@@ -661,44 +667,77 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
             onShowDebugSettings: _showTransportDebugSheet,
           ),
         ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: _isLayoutEditMode
-              ? RemoteLayoutEditor(
-                  layoutItems: _layoutItems,
-                  itemDefinitionsById: kRemoteLayoutItemDefinitionById,
-                  gridColumns: _gridColumns,
-                  gridRows: _gridRows,
-                  gridGap: _gridGap,
-                  onResetLayout: _resetLayoutForActiveDevice,
-                  onPersistLayout: _persistLayoutForActiveDevice,
-                )
-              : RemoteHomeStatusPanel(
-                  deviceName: deviceName,
-                  status: _status,
-                  connectionState: _connectionState,
-                  onOpenPairing: _openPairing,
-                  hasActiveDevice: _activeDevice != null,
-                  hasAnyPairedDevice: _hasAnyPairedDevice,
-                  highlightPairButton: _showPairingHint,
-                  pairButtonBlinkOn: _pairButtonBlinkOn,
-                  overlayOnChild: false,
-                  child: RemoteHomeRemoteGrid(
-                    layoutItems: _layoutItems,
-                    gridColumns: _gridColumns,
-                    gridRows: _gridRows,
-                    gridGap: _gridGap,
-                    controlsEnabled: _activeDevice != null,
-                    pairingHintActive: _showPairingHint && _activeDevice == null,
-                    onSendCommand: _sendCommandFromGrid,
-                    onSearchInputPressed: _onSearchInputKeyboardPressed,
-                    onDisabledInteraction: _onDisabledGridInteraction,
-                  ),
-                ),
+        flexibleSpace: SafeArea(
+          bottom: false,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              height: 1,
+              color: AppTheme.colorsOf(
+                context,
+              ).remoteOutline.withValues(alpha: 0.25),
+            ),
+          ),
         ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: AppTheme.colorsOf(
+              context,
+            ).remoteOutline.withValues(alpha: 0.25),
+          ),
+        ),
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _isLayoutEditMode
+                  ? RemoteLayoutEditor(
+                      layoutItems: _layoutItems,
+                      itemDefinitionsById: kRemoteLayoutItemDefinitionById,
+                      gridColumns: _gridColumns,
+                      gridRows: _gridRows,
+                      gridGap: _gridGap,
+                      onResetLayout: _resetLayoutForActiveDevice,
+                      onPersistLayout: _persistLayoutForActiveDevice,
+                    )
+                  : RemoteHomeStatusPanel(
+                      deviceName: deviceName,
+                      status: _status,
+                      connectionState: _connectionState,
+                      onOpenPairing: _openPairing,
+                      hasActiveDevice: _activeDevice != null,
+                      hasAnyPairedDevice: _hasAnyPairedDevice,
+                      highlightPairButton: _showPairingHint,
+                      pairButtonBlinkOn: _pairButtonBlinkOn,
+                      overlayOnChild: false,
+                      child: RemoteHomeRemoteGrid(
+                        layoutItems: _layoutItems,
+                        gridColumns: _gridColumns,
+                        gridRows: _gridRows,
+                        gridGap: _gridGap,
+                        controlsEnabled: _activeDevice != null,
+                        pairingHintActive:
+                            _showPairingHint && _activeDevice == null,
+                        onSendCommand: _sendCommandFromGrid,
+                        onSearchInputPressed: _onSearchInputKeyboardPressed,
+                        onDisabledInteraction: _onDisabledGridInteraction,
+                      ),
+                    ),
+            ),
+          ),
+          if (BottomBannerAdPlacement.buildOverlay(
+                appEnvironment: widget.appEnvironment,
+              )
+              case final overlay?)
+            overlay,
+        ],
       ),
     );
   }
+
 }

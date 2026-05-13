@@ -26,13 +26,19 @@ class RemoteLayoutEditGridPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    for (var i = 0; i <= columns; i++) {
-      final x = i == columns ? w : i * (cellSize + gap);
-      canvas.drawLine(Offset(x, 0), Offset(x, h), paint);
+    // Draw both edges of each cell so the painted cells match the actual
+    // slot positions (each slot box is cellSize wide with gap between).
+    for (var col = 0; col < columns; col++) {
+      final leftX = col * (cellSize + gap);
+      final rightX = leftX + cellSize;
+      canvas.drawLine(Offset(leftX, 0), Offset(leftX, h), paint);
+      canvas.drawLine(Offset(rightX, 0), Offset(rightX, h), paint);
     }
-    for (var j = 0; j <= rows; j++) {
-      final y = j == rows ? h : j * (cellSize + gap);
-      canvas.drawLine(Offset(0, y), Offset(w, y), paint);
+    for (var row = 0; row < rows; row++) {
+      final topY = row * (cellSize + gap);
+      final bottomY = topY + cellSize;
+      canvas.drawLine(Offset(0, topY), Offset(w, topY), paint);
+      canvas.drawLine(Offset(0, bottomY), Offset(w, bottomY), paint);
     }
   }
 

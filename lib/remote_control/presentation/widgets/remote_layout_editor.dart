@@ -5,8 +5,10 @@ import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_edit_grid_painter.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_drag_session.dart';
+import 'package:one_remote/remote_control/presentation/widgets/remote_header_icon_button.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_grid_geometry.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_item_preview.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_layout_header_metrics.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
@@ -69,10 +71,11 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
         };
 
         final appColors = AppTheme.colorsOf(context);
-        final gridLineColor = appColors.remoteOutline.withValues(alpha: 0.35);
+        final gridLineColor = appColors.remoteOutline.withValues(alpha: 0);
         final slotFillColor = appColors.remoteSurface.withValues(alpha: 0.82);
         final slotBorderColor = appColors.remoteOutline;
-        return Center(
+        return Align(
+          alignment: Alignment.topCenter,
           child: SizedBox(
             width: gridWidth,
             height: gridHeight,
@@ -170,17 +173,21 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
                                   ? appColors.layoutEditorDropValid
                                   : appColors.layoutEditorDropInvalid);
                           final borderWidth = highlightDrop ? 2.0 : 1.0;
-                          return Container(
+                          return SizedBox(
                             width: cellSize,
                             height: cellSize,
-                            decoration: BoxDecoration(
-                              color: highlightDrop
-                                  ? slotFillColor.withValues(
-                                      alpha: hoverCanDrop ? 0.9 : 0.72,
-                                    )
-                                  : slotFillColor,
-                              borderRadius: BorderRadius.circular(cellSize * 0.2),
-                              border: Border.all(color: borderColor, width: borderWidth),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: highlightDrop
+                                    ? slotFillColor.withValues(
+                                        alpha: hoverCanDrop ? 0.9 : 0.72,
+                                      )
+                                    : slotFillColor,
+                                border: Border.all(
+                                  color: borderColor,
+                                  width: borderWidth,
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -268,27 +275,36 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                AppLocalizations.of(context)!.layoutEditorTitle,
-                style: Theme.of(context).textTheme.titleLarge,
+        SizedBox(
+          height: kRemoteLayoutHeaderHeight,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context)!.layoutEditorTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  RemoteHeaderIconButton(
+                    icon: Icons.restart_alt,
+                    tooltip: AppLocalizations.of(
+                      context,
+                    )!.layoutEditorResetButton,
+                    onPressed: () => unawaited(widget.onResetLayout()),
+                  ),
+                ],
               ),
-            ),
-            TextButton.icon(
-              onPressed: () => unawaited(widget.onResetLayout()),
-              icon: const Icon(Icons.restart_alt),
-              label: Text(AppLocalizations.of(context)!.layoutEditorResetButton),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                AppLocalizations.of(context)!.layoutEditorInstruction,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          AppLocalizations.of(context)!.layoutEditorInstruction,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 12),
         Expanded(child: _buildLayoutGridCanvas()),
       ],
     );

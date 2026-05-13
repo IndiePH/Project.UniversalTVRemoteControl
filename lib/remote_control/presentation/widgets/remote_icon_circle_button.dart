@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_layout_button_metrics.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
+/// Circular icon-or-label button used inside the remote grid.
+///
+/// Sizing comes from `remote_layout_button_metrics.dart` so the live remote
+/// and the layout editor preview render the button identically.
 class RemoteIconCircleButton extends StatelessWidget {
   const RemoteIconCircleButton({
     super.key,
@@ -34,7 +39,7 @@ class RemoteIconCircleButton extends StatelessWidget {
     final iconColor = foregroundColor ??
         (isPower ? appColors.remoteGlyphOnPower : colorScheme.onSurface);
     final child = icon != null
-        ? Icon(icon, color: iconColor, size: 34)
+        ? Icon(icon, color: iconColor, size: kRemoteIconCircleButtonIconSize)
         : Text(
             label!,
             style: TextStyle(
@@ -45,12 +50,15 @@ class RemoteIconCircleButton extends StatelessWidget {
           );
 
     return Container(
-      width: 72,
-      height: 72,
+      width: kRemoteIconCircleButtonSize,
+      height: kRemoteIconCircleButtonSize,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: background,
-        border: Border.all(color: appColors.remoteOutline, width: 1.2),
+        border: Border.all(
+          color: appColors.remoteOutline,
+          width: kRemoteIconCircleButtonBorderWidth,
+        ),
       ),
       child: IconButton(
         onPressed: onPressed,

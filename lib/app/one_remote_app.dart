@@ -39,6 +39,7 @@ class OneRemoteApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme(),
         home: RemoteHomePage(
+          appEnvironment: sl<AppEnvironment>(),
           commandService: sl<RemoteCommandService>(),
           deviceRepository: sl<DeviceRepository>(),
           discoveryService: sl<DeviceDiscoveryService>(),

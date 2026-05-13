@@ -187,6 +187,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
+          appEnvironment: AppEnvironment.debug,
           commandService: commandService,
           deviceRepository: InMemoryDeviceRepository(),
           discoveryService: _StaticDiscoveryService(),
@@ -261,6 +262,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
+          appEnvironment: AppEnvironment.debug,
           commandService: InMemoryRemoteCommandService(),
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),

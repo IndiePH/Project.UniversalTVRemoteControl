@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
     as remote_connection;
+import 'package:one_remote/remote_control/presentation/metrics/remote_layout_button_metrics.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_layout_header_metrics.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_pairing_hint_metrics.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
 /// Header/status section shown above the remote layout canvas.
@@ -63,7 +66,7 @@ class RemoteHomeStatusPanel extends StatelessWidget {
       }
       return AnimatedOpacity(
         opacity: 0.34,
-        duration: const Duration(milliseconds: 250),
+        duration: kRemotePairingHintFadeDuration,
         child: child,
       );
     }
@@ -71,39 +74,46 @@ class RemoteHomeStatusPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: blurWhenPairFocus(
-                Text(
-                  deviceName,
-                  style: Theme.of(context).textTheme.titleLarge,
+        SizedBox(
+          height: kRemoteLayoutHeaderHeight,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: blurWhenPairFocus(
+                      Text(
+                        deviceName,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                  ),
+                  _PairButton(
+                    isActive: hasActiveDevice,
+                    hasAnyPairedDevice: hasAnyPairedDevice,
+                    onPressed: onOpenPairing,
+                    highlighted: highlightPairButton,
+                    blinkOn: pairButtonBlinkOn,
+                  ),
+                ],
+              ),
+              blurWhenPairFocus(
+                Row(
+                  children: [
+                    Icon(Icons.circle, size: 10, color: connectionColor),
+                    const SizedBox(width: 8),
+                    Text(statusLabel),
+                  ],
                 ),
               ),
-            ),
-            _PairButton(
-              isActive: hasActiveDevice,
-              hasAnyPairedDevice: hasAnyPairedDevice,
-              onPressed: onOpenPairing,
-              highlighted: highlightPairButton,
-              blinkOn: pairButtonBlinkOn,
-            ),
-          ],
-        ),
-        blurWhenPairFocus(
-          Row(
-            children: [
-              Icon(Icons.circle, size: 10, color: connectionColor),
-              const SizedBox(width: 8),
-              Text(statusLabel),
+              if (status.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                blurWhenPairFocus(Text(status)),
+              ],
             ],
           ),
         ),
-        if (status.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          blurWhenPairFocus(Text(status)),
-        ],
-        const SizedBox(height: 16),
         Expanded(
           child: Stack(
             fit: StackFit.expand,
@@ -161,7 +171,11 @@ class _PairButton extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 420),
           curve: Curves.easeInOut,
-          padding: const EdgeInsets.all(2),
+          // No padding here: BoxShadow extends outside the box without
+          // affecting layout, so the glow ring renders without inflating the
+          // bounding box past [kRemoteHeaderButtonSize]. Keeping the box at
+          // the same size as [RemoteHeaderIconButton] is what makes the home
+          // and editor headers line up.
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: highlighted && blinkOn
@@ -183,15 +197,15 @@ class _PairButton extends StatelessWidget {
                 color: usePairingHintTone
                     ? appColors.pairingHintGridTint
                     : appColors.remoteOutline,
-                width: highlighted ? 2 : 1.2,
+                width: highlighted ? 2 : kRemoteHeaderButtonBorderWidth,
               ),
             ),
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: onPressed,
               child: SizedBox(
-                width: 44,
-                height: 44,
+                width: kRemoteHeaderButtonSize,
+                height: kRemoteHeaderButtonSize,
                 child: Center(child: _RemoteConnectionGlyph(color: foreground)),
               ),
             ),
@@ -209,17 +223,10 @@ class _RemoteConnectionGlyph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Icon(Icons.settings_remote, size: 24, color: color),
-        Positioned(
-          right: -2,
-          top: -2,
-          child: const SizedBox.shrink(),
-          // child: Icon(Icons.wifi, size: 13, color: color),
-        ),
-      ],
+    return Icon(
+      Icons.settings_remote,
+      size: kRemoteHeaderButtonIconSize,
+      color: color,
     );
   }
 }
