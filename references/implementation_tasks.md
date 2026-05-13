@@ -86,6 +86,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Restored channel/volume rocker controls and aligned play/pause visual as compact `1x1` control (left play icon + right pause icon)
   - [x] Added directional visual padding tuning for d-pad arrows (up/down/left/right)
   - [x] Increased editable/control grid from `5x8` to `5x9`
+  - [x] Lowered editable/control grid from `5x9` to `5x8` to reserve stable bottom-of-screen real estate for the banner ad overlay (no body resize on IME open)
   - [x] Updated default control coordinates for the latest baseline layout
   - [x] Layout editor: toggling edit mode no longer overwrites `_status` (status row is not shown while editing); layout reset uses a snackbar for visible confirmation
   - [x] Layout editor drag/drop resolution extracted to `RemoteLayoutDropResolver` (`remote_layout_drop_resolver.dart`) so the editor widget stays UI-focused
@@ -96,6 +97,12 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] SRP decomposition (layout editor): `RemoteLayoutEditor` delegates grid geometry to `RemoteLayoutEditorGridGeometry`, background lines to `RemoteLayoutEditGridPainter`, cell previews to `RemoteLayoutEditorItemPreview`, and drag/drop session state to `RemoteLayoutEditorDragSession` (see SRP checklist)
   - [x] Presentation theming: remote/pairing/layout-editor widgets under `presentation/` no longer use ad-hoc `Colors.*` / hex for remote chrome; values live on `AppColors` (`remoteGlyphOnRemote`, `remotePowerFill`, `remoteActionSuccess*`, `layoutEditorDrop*`, `pairingModalBarrier`, `pairingBusyOnCard`, etc.) with dark-theme literals aligned to prior behavior
   - [x] **SRP Refactor Checklist (Tracked)** is fully complete (all items checked)
+  - [x] Presentation metrics consolidation: `lib/remote_control/presentation/metrics/` now owns header height (`remote_layout_header_metrics.dart`), header/in-grid button geometry + play/pause pill ratios (`remote_layout_button_metrics.dart`), and the cross-fade duration shared by the pairing-hint switcher and status-panel blur overlay (`remote_pairing_hint_metrics.dart`); shared `RemoteHeaderIconButton` widget keeps the home-view pair button and editor reset button visually identical
+  - [x] Remote home bottom banner ad integrated (free-tier monetization scaffold; production AdMob unit IDs still pending — see `references/marketing_strategy.md`):
+    - [x] new `lib/app/ads/` module (`AdConfig`, `BottomBannerAd`, `BottomBannerAdPlacement`) using `google_mobile_ads ^8.0.0`; env-aware unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` with Google's test IDs as fallback
+    - [x] `MobileAds.initialize()` runs only on Android/iOS; non-mobile/`kIsWeb` paths skip the overlay entirely so layout/tests are unaffected
+    - [x] `AndroidManifest.xml` + `Info.plist` carry **test** `GADApplicationIdentifier` / AdMob `APPLICATION_ID` plus a placeholder `SKAdNetworkItems` entry — these **must be swapped for the production AdMob app id and the full network-supplied SKAdNetwork list before release**
+    - [x] Remote `AppBar` tightened (`toolbarHeight: 50`) with thin outline dividers; `RemoteHomePage.body` switched to `Stack(fit: StackFit.expand)` so `BottomBannerAdPlacement` overlays bottom-aligned without resizing the grid
 - [x] Developer ergonomics:
   - [x] README "Current Runtime Modes": default **real** Samsung + Hisense transports for APK/physical-TV testing; fake transports opt-in via dart-define; host overrides documented; Samsung log tag `samsung_transport` (see README)
   - [x] Implementation plan: **Brand transport defaults** section (real-by-default policy; do not regress)
@@ -156,7 +163,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] Add focused widget tests for:
   - [ ] drag/drop swap behavior (including multi-cell items and resolver rejection vs accept paths)
   - [ ] layout persistence and default reset behavior
-  - [ ] `5x9` default layout occupancy constraints (no overlaps)
+  - [ ] `5x8` default layout occupancy constraints (no overlaps)
 
 ## Planning Notes
 
@@ -359,6 +366,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [ ] EU/California: consent (for example UMP via `google_mobile_ads`) before ads where required.
   - [ ] Pro / remove-ads: **non-consumable** IAP via Apple IAP + Google Play Billing only (`in_app_purchase`).
   - [ ] Developer accounts and signing: Apple Developer Program, Google Play developer account, AdMob as needed before ads go live.
+  - [ ] Swap **placeholder AdMob ids** for production: replace test `APPLICATION_ID` in `android/app/src/main/AndroidManifest.xml`, test `GADApplicationIdentifier` in `ios/Runner/Info.plist`, and the placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list; provide production unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` for release builds.
 - [ ] **Physical-device validation:** Do not claim store support for a brand until pairing and core commands are verified on at least one real TV of that brand (complements the brand readiness matrix in `references/product_specs.md`).
 - [ ] **Deferred code-quality/security follow-ups** from the April 2026 lib review (no code until individually confirmed): `references/goal-oneremote-lib-review.md`.
 

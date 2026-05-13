@@ -28,6 +28,11 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 
 > Required for all users in EU and California. Both Apple and Google enforce this at review.
 
+> Note: `google_mobile_ads` is already wired and the remote home renders an
+> anchored banner via `lib/app/ads/` (see `references/changelog.md` 2026-05-13),
+> but the UMP consent flow and ATT prompt are **not yet integrated** — both must
+> ship before ads are enabled in a release build.
+
 ---
 
 ### 1.3 Privacy Policy
@@ -120,6 +125,7 @@ Code-level tests (widget/integration) are necessary but not sufficient. Each bra
 | Apple Developer Program account | iOS | Cannot submit | ☐ |
 | Google Play Developer account | Android | Cannot submit | ☐ |
 | AdMob account | Both | Ads cannot go live | ☐ |
+| Swap test AdMob ids for production (`AndroidManifest.xml`, `Info.plist` `GADApplicationIdentifier` + full `SKAdNetworkItems`, `--dart-define` banner unit IDs) | Both | Ads cannot go live | ☐ |
 | Physical device validation (Samsung) | Android | Quality gate | ☐ |
 | Physical device validation (LG) | Android | Quality gate | ☐ |
 | Physical device validation (Hisense) | Android | Quality gate | ☐ |

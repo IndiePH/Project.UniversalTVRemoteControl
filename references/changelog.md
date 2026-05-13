@@ -3,6 +3,51 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-13
+
+### Added
+- Remote home bottom banner ad via new `lib/app/ads/` module:
+  - `AdConfig` exposes `supportsMobileAds` + env-aware `bannerAdUnitId(AppEnvironment)`;
+    production reads `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` and falls
+    back to Google's test ad unit IDs; non-mobile/`kIsWeb` paths return `null` so no
+    overlay is built
+  - `BottomBannerAd` (anchored adaptive banner; renders `SizedBox.shrink()` until
+    `onAdLoaded`, dispose-safe across width changes) + `BottomBannerAdPlacement.buildOverlay`
+    (`Positioned.fill` + bottom-aligned `SafeArea`); `RemoteHomePage` stacks the overlay
+    above the body and skips it when the placement returns `null`
+- `google_mobile_ads: ^8.0.0` added to `pubspec.yaml`; `main.dart` calls
+  `MobileAds.instance.initialize()` only on Android/iOS (skipped on web/desktop)
+- Platform AdMob plumbing (test ids only — swap before release):
+  - Android manifest declares
+    `com.google.android.gms.ads.APPLICATION_ID = ca-app-pub-3940256099942544~3347511713`
+  - iOS `Info.plist` declares `GADApplicationIdentifier` (test) and a placeholder
+    `SKAdNetworkItems` entry (`cstr6suwn9.skadnetwork`)
+- Shared `RemoteHeaderIconButton` widget so the live remote pair button and the
+  layout-editor reset button share an identical bounding box / outline / Material
+  shell (prevents the two header surfaces from drifting visually)
+- New presentation metrics module under `lib/remote_control/presentation/metrics/`
+  consolidates sizing/timing constants that were previously duplicated across
+  `RemoteHomePage`, `RemoteHomeStatusPanel`, `RemoteHomeRemoteGrid`,
+  `RemoteIconCircleButton`, and `RemoteLayoutEditor`:
+  - `remote_layout_button_metrics.dart` — header button + in-grid icon button
+    sizing, border widths, cell inset ratio, play/pause pill glyph ratios/boosts
+  - `remote_layout_header_metrics.dart` — fixed `kRemoteLayoutHeaderHeight = 106`
+    shared by remote home and layout-editor headers (sized to the taller of the
+    two so the grid starts at the same vertical position in both modes)
+  - `remote_pairing_hint_metrics.dart` — `kRemotePairingHintFadeDuration` cross-fade
+    duration shared by the grid pairing-hint `AnimatedSwitcher` and status panel
+    blur-when-pair-focus overlay so they stop drifting out of sync
+
+### Changed
+- Remote grid lowered from `5x9` to `5x8` so the bottom banner ad has stable real
+  estate without shrinking controls or resizing the body when the IME opens;
+  `product_specs.md` §3 customization spec, `implementation_tasks.md` SRP tracker,
+  and pending widget-test target updated to `5x8`
+- Remote `AppBar` tightened to a compact toolbar (`toolbarHeight: 50`) with a thin
+  outline divider above and below; `RemoteHomePage.body` now uses a `Stack`
+  (`fit: StackFit.expand`) so the banner overlay can render bottom-aligned without
+  affecting the editable area's bounds
+
 ## 2026-05-11 (continued)
 
 ### Added
