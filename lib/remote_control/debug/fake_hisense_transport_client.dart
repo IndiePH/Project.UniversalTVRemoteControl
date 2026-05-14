@@ -110,7 +110,34 @@ class FakeHisenseTransportClient
   }
 
   @override
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {
+    await _ensure(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'hisense',
+        deviceId: deviceId,
+        type: 'text_sent',
+      ),
+    );
+    log(
+      'Hisense MQTT text: $deviceId chars=${text.length}',
+      name: 'hisense_transport',
+    );
+  }
+
+  @override
   Future<void> probe(String host) async {}
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {
+    _authorized.remove(deviceId);
+    _connected.remove(deviceId);
+    _emitConnectionState(deviceId, ConnectionState.disconnected);
+    log('Hisense MQTT clearPairing: $deviceId', name: 'hisense_transport');
+  }
 
   @override
   Stream<ConnectionState> watchConnectionState(String deviceId) =>

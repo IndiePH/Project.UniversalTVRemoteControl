@@ -39,7 +39,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           HisenseAdapter(transportClient: _SpyHisenseTransportClient()),
-        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: hisenseDevice);
@@ -64,7 +65,8 @@ void main() {
 
   test('Hisense lane: sendCommand key route completes successfully', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
       localizedStrings: FakeLocalizedStrings(),
     );
     final result = await service.sendCommand(
@@ -144,7 +146,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           HisenseAdapter(transportClient: _SpyHisenseTransportClient()),
-        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendText(
@@ -164,10 +167,7 @@ void main() {
     () async {
       final transport = _SpyHisenseTransportClient();
       final adapter = HisenseAdapter(transportClient: transport);
-      await adapter.submitPairingCode(
-        device: hisenseDevice,
-        pinCode: '5678',
-      );
+      await adapter.submitPairingCode(device: hisenseDevice, pinCode: '5678');
       expect(transport.submittedPins, contains('5678'));
     },
   );
@@ -178,7 +178,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           HisenseAdapter(transportClient: _SpyHisenseTransportClient()),
-        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.submitPairingCode(
@@ -193,7 +194,8 @@ void main() {
     final service = BrandRoutedRemoteCommandService(
       adapters: [
         HisenseAdapter(transportClient: _ErrorOnPinHisenseTransportClient()),
-      ],variantRegistry: const DefaultVariantResolutionRegistry(),
+      ],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
       localizedStrings: FakeLocalizedStrings(),
     );
     final result = await service.submitPairingCode(
@@ -206,21 +208,38 @@ void main() {
   // --- unpairDevice ---
 
   test(
-    'Hisense adapter: unpairDevice is a no-op and completes without error',
+    'Hisense adapter: unpairDevice clears transport pairing for the device',
     () async {
-      final adapter = HisenseAdapter(
-        transportClient: _SpyHisenseTransportClient(),
-      );
-      await expectLater(adapter.unpairDevice(device: hisenseDevice), completes);
+      final transport = _SpyHisenseTransportClient();
+      final adapter = HisenseAdapter(transportClient: transport);
+      await adapter.unpairDevice(device: hisenseDevice);
+      expect(transport.clearedPairings, [hisenseDevice.id]);
     },
   );
 
   test('Hisense lane: unpairDevice completes without error', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+      adapters: [HisenseAdapter(transportClient: _SpyHisenseTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
       localizedStrings: FakeLocalizedStrings(),
     );
     await expectLater(service.unpairDevice(device: hisenseDevice), completes);
+  });
+
+  // --- sendCommand: key-alternate fan-out ---
+
+  test('Hisense adapter: sendCommand publishes every key alias for a command '
+      'with multiple VIDAA aliases (firmware-variant tolerance)', () async {
+    final transport = _SpyHisenseTransportClient();
+    final adapter = HisenseAdapter(transportClient: transport);
+    await adapter.sendCommand(
+      device: hisenseDevice,
+      command: RemoteCommand.back,
+    );
+    expect(
+      transport.sentKeys,
+      containsAllInOrder(['KEY_RETURNS', 'KEY_RETURN', 'KEY_BACK']),
+    );
   });
 }
 
@@ -235,6 +254,7 @@ class _SpyHisenseTransportClient
   final List<String> sentKeys = [];
   final List<String> launchedApps = [];
   final List<String> submittedPins = [];
+  final List<String> clearedPairings = [];
 
   @override
   Future<void> connect({required String deviceId}) async {
@@ -269,7 +289,18 @@ class _SpyHisenseTransportClient
   }
 
   @override
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
+
+  @override
   Future<void> probe(String host) async {}
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {
+    clearedPairings.add(deviceId);
+  }
 
   @override
   Stream<ConnectionState> watchConnectionState(String deviceId) =>
@@ -309,7 +340,16 @@ class _ErrorOnPinHisenseTransportClient
   }) async {}
 
   @override
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
+
+  @override
   Future<void> probe(String host) async {}
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {}
 
   @override
   Stream<ConnectionState> watchConnectionState(String deviceId) =>

@@ -28,13 +28,17 @@ class HisenseAdapter implements TvBrandAdapter {
       const TvDeviceInfo();
 
   @override
-  bool get supportsTextInput => false;
+  bool get supportsTextInput => _isTextInputEnabled;
 
   @override
   Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
 
   final HisenseTransportClient _transportClient;
   final CommandKeyMap _keyMap;
+  static const bool _isTextInputEnabled = bool.fromEnvironment(
+    'HISENSE_ENABLE_TEXT_INPUT',
+    defaultValue: false,
+  );
 
   static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
 
@@ -45,10 +49,13 @@ class HisenseAdapter implements TvBrandAdapter {
   }
 
   @override
-  // TODO(unpair): Hisense has no persistent pairing state yet, so nothing to clear.
-  // When Hisense auth-code persistence is added, follow the SharedPreferences
-  // pattern in LgPairingKeyStore + LgWebSocketTransportClient.clearPairing.
-  Future<void> unpairDevice({required TvDevice device}) async {}
+  Future<void> unpairDevice({required TvDevice device}) async {
+    // Hisense MQTT has no persistent client credential to wipe (PIN auth is
+    // per-session in-memory). clearPairing resets the in-session authorized
+    // flag so the next pair attempt re-enters the PIN gate instead of
+    // resuming a cached auth.
+    await _transportClient.clearPairing(deviceId: device.id);
+  }
 
   @override
   Future<void> cancelPairing({required TvDevice device}) async {}
@@ -91,10 +98,14 @@ class HisenseAdapter implements TvBrandAdapter {
     }
 
     await _transportClient.connect(deviceId: device.id);
-    await _transportClient.sendKey(
-      deviceId: device.id,
-      keyName: keyCodes.first,
-    );
+    // VIDAA firmwares vary in which key alias they recognize for a given
+    // logical command (e.g. KEY_RETURNS vs KEY_RETURN vs KEY_BACK). MQTT
+    // sendkey is fire-and-forget atMostOnce with no per-key ack channel, so
+    // we publish each known alias in order; the TV silently ignores aliases
+    // it does not recognize and acts on the one it does.
+    for (final keyName in keyCodes) {
+      await _transportClient.sendKey(deviceId: device.id, keyName: keyName);
+    }
   }
 
   @override
@@ -112,17 +123,20 @@ class HisenseAdapter implements TvBrandAdapter {
     yield* _transportClient.watchConnectionState(device.id);
   }
 
-  /// Hisense uses VIDAA/MQTT keying and app launch; a separate “type text from phone”
-  /// path may land later and will not mirror LG’s webOS approach. Until then,
-  /// [supportsTextInput] stays false and we throw so callers never treat sends as no-ops.
+  /// Text input remains validation-gated for Hisense; keep disabled by default
+  /// until physical hardware confirms the selected transport contract.
   @override
   Future<void> sendText({
     required TvDevice device,
     required String text,
   }) async {
-    throw UnsupportedError(
-      'Hisense VIDAA text input from the phone is not implemented yet.',
-    );
+    if (!_isTextInputEnabled) {
+      throw UnsupportedError(
+        'Hisense text input is validation-gated. Enable '
+        'HISENSE_ENABLE_TEXT_INPUT only after physical-device validation.',
+      );
+    }
+    await _transportClient.sendText(deviceId: device.id, text: text);
   }
 
   /// Returns `(displayName, url)` for MQTT `launchapp` when [command] is an

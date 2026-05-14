@@ -3,6 +3,55 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-14
+
+### Changed
+- Hisense protocol adapter refinement (`TVREMOTE-40`):
+  - **Real-PIN forwarding:** `HisenseMqttTransportClient.submitAuthenticationCode`
+    no longer hard-rejects PINs other than the dev value `1234`. The TV-shown
+    4-digit PIN is now published verbatim on the VIDAA auth topic and the
+    session is marked optimistically authorized (VIDAA MQTT does not expose a
+    synchronous reply, so an incorrect PIN surfaces later as silent key drops
+    and is recovered through the existing PIN-retry pairing UI). The `1234`
+    shortcut remains only in `FakeHisenseTransportClient` for lab/dev runs.
+  - **Active reconnect:** `_pollConnectivity` now attempts a single
+    non-overlapping `_ensureConnected` for devices that already cleared the
+    PIN gate in this session when the MQTT/TCP probe reports the link is
+    down (`_reconnectInFlight` guards against piling up concurrent reconnects).
+    Devices that were never authorized still rely on the lazy reconnect on
+    the next user action.
+  - **`unpairDevice` clears MQTT state:** `HisenseTransportClient` gains
+    `clearPairing(deviceId:)`; the MQTT implementation disconnects the
+    broker session, drops the in-memory `_authorizedDeviceIds` flag, cancels
+    the connectivity poll timer, and resets the device-info log gate; the
+    fake transport mirrors the cleanup. `HisenseAdapter.unpairDevice` now
+    delegates to this, so removing a saved Hisense TV re-enters the PIN
+    gate on the next pair attempt instead of resuming a cached auth.
+  - **VIDAA key-alias fan-out:** `HisenseAdapter.sendCommand` now publishes
+    every key alias returned by `HisenseKeyMapper.keyCodesFor(command)`
+    (e.g. `KEY_RETURNS` / `KEY_RETURN` / `KEY_BACK` for `back`,
+    `KEY_CHANNELUP` / `KEY_CHSUP` for `channelUp`) instead of only the first
+    entry. MQTT `sendkey` is fire-and-forget atMostOnce with no per-key ack
+    channel, so this is a firmware-variant tolerance measure: the TV
+    silently ignores aliases it does not recognize.
+- `test/lib/remote_control/data/adapters/hisense_test_lane_test.dart`: spy
+  transports gain `clearPairing` stubs; new coverage for adapter
+  `unpairDevice` → transport `clearPairing` delegation and the `back`
+  command publishing all three VIDAA aliases in order.
+
+### Added
+- `references/hisense_validation_matrix.md` — Hisense Android SSDP runbook
+  (TVREMOTE-7): scope, environment template, known-good matrix, and a
+  recorded fallback-path decision (manual IP via pairing UI +
+  `TV_HOST_OVERRIDE` as primary fallback; active port-`36669` LAN sweep
+  deferred until ≥2 validated routers still produce empty Hisense scans on
+  real hardware). Mirrors the Samsung validation matrix structure.
+
+### Changed
+- `references/implementation_tasks.md` Task 1.1 Hisense re-validation
+  bullet now references the new runbook and the fallback decision (still
+  unchecked — pending physical-device runs to fill the known-good matrix).
+
 ## 2026-05-13
 
 ### Added

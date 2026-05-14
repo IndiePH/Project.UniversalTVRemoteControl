@@ -28,6 +28,10 @@ class HisenseMqttTransportClient
       'HISENSE_MQTT_PLAINTEXT',
       defaultValue: false,
     ),
+    String textTopic = const String.fromEnvironment(
+      'HISENSE_MQTT_TEXT_TOPIC',
+      defaultValue: '',
+    ),
     int brokerPort = 36669,
     this.connectTimeoutSeconds = 12,
   }) : _hostResolver = hostResolver,
@@ -35,6 +39,7 @@ class HisenseMqttTransportClient
            ? 'OneRemote'
            : mqttClientId.trim(),
        _usePlaintextMqtt = usePlaintextMqtt,
+       _textTopic = textTopic.trim(),
        _brokerPort = brokerPort > 0 ? brokerPort : 36669;
 
   static const String _username = 'hisenseservice';
@@ -43,6 +48,7 @@ class HisenseMqttTransportClient
   final String Function(String deviceId) _hostResolver;
   final String _mqttTopicClientSegment;
   final bool _usePlaintextMqtt;
+  final String _textTopic;
   final int _brokerPort;
   final int connectTimeoutSeconds;
 
@@ -54,6 +60,9 @@ class HisenseMqttTransportClient
       <String, ConnectionState>{};
   final Map<String, Timer> _connectivityPollTimers = <String, Timer>{};
   final Set<String> _authorizedDeviceIds = <String>{};
+  // Guards _pollConnectivity from launching a second reconnect while the first
+  // is still in flight (an MQTT connect can take several seconds on a busy LAN).
+  final Set<String> _reconnectInFlight = <String>{};
   final AdapterDeviceInfoLogGate _deviceInfoLogGate =
       AdapterDeviceInfoLogGate();
 
@@ -65,6 +74,10 @@ class HisenseMqttTransportClient
 
   String _launchTopic() =>
       '/remoteapp/tv/ui_service/$_mqttTopicClientSegment/actions/launchapp';
+
+  String _resolvedTextTopic() => _textTopic.isEmpty
+      ? '/remoteapp/tv/ui_service/$_mqttTopicClientSegment/actions/textinput'
+      : _textTopic;
 
   @override
   Future<void> connect({required String deviceId}) async {
@@ -104,9 +117,11 @@ class HisenseMqttTransportClient
         'Expected exactly 4 digits',
       );
     }
-    if (cleaned != '1234') {
-      throw StateError('Incorrect pairing code. Please try again.');
-    }
+    // The TV-displayed PIN is forwarded verbatim. VIDAA MQTT does not expose
+    // a synchronous reply on the auth topic, so we mark the device authorized
+    // optimistically once the publish completes; an incorrect PIN surfaces
+    // later as silent key drops, which the pairing UI handles via its
+    // retry-PIN flow rather than a transport-level error here.
     final payload = jsonEncode({'authNum': int.parse(cleaned)});
     _publishString(client, _authTopic(), payload);
     _authorizedDeviceIds.add(deviceId);
@@ -158,6 +173,27 @@ class HisenseMqttTransportClient
         deviceId: deviceId,
         type: 'app_launched',
         message: displayName,
+      ),
+    );
+  }
+
+  @override
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {
+    final cleaned = text.trim();
+    if (cleaned.isEmpty) {
+      throw ArgumentError.value(text, 'text', 'Expected non-empty text');
+    }
+    final client = await _clientFor(deviceId);
+    final payload = jsonEncode(<String, String>{'text': cleaned});
+    _publishString(client, _resolvedTextTopic(), payload);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'hisense',
+        deviceId: deviceId,
+        type: 'text_sent',
       ),
     );
   }
@@ -284,12 +320,11 @@ class HisenseMqttTransportClient
 
   Future<void> _pollConnectivity(String deviceId) async {
     final client = _mqttByDeviceId[deviceId];
-    if (client == null) {
+    final mqttConnected =
+        client?.connectionStatus?.state == MqttConnectionState.connected;
+    if (!mqttConnected) {
       _emitConnectionState(deviceId, ConnectionState.disconnected);
-      return;
-    }
-    if (client.connectionStatus?.state != MqttConnectionState.connected) {
-      _emitConnectionState(deviceId, ConnectionState.disconnected);
+      await _maybeReconnect(deviceId);
       return;
     }
     final host = _hostResolver(deviceId).trim();
@@ -307,6 +342,43 @@ class HisenseMqttTransportClient
       _emitConnectionState(deviceId, ConnectionState.connected);
     } catch (_) {
       _emitConnectionState(deviceId, ConnectionState.disconnected);
+      await _maybeReconnect(deviceId);
     }
+  }
+
+  /// Attempts a single, non-overlapping reconnect for devices that have
+  /// already cleared the PIN gate in this session. Skipped when the device
+  /// is not yet authorized, when a reconnect is already in flight, or when
+  /// the host cannot be resolved — the lazy reconnect path on the next user
+  /// action still covers those cases.
+  Future<void> _maybeReconnect(String deviceId) async {
+    if (!_authorizedDeviceIds.contains(deviceId)) return;
+    if (_reconnectInFlight.contains(deviceId)) return;
+    final host = _hostResolver(deviceId).trim();
+    if (host.isEmpty) return;
+    _reconnectInFlight.add(deviceId);
+    _emitConnectionState(deviceId, ConnectionState.connecting);
+    try {
+      await _ensureConnected(deviceId);
+    } catch (_) {
+      _emitConnectionState(deviceId, ConnectionState.disconnected);
+    } finally {
+      _reconnectInFlight.remove(deviceId);
+    }
+  }
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {
+    _connectivityPollTimers.remove(deviceId)?.cancel();
+    _authorizedDeviceIds.remove(deviceId);
+    _reconnectInFlight.remove(deviceId);
+    final client = _mqttByDeviceId.remove(deviceId);
+    try {
+      client?.disconnect();
+    } catch (_) {
+      // Ignore disconnect errors; the device is being removed regardless.
+    }
+    _deviceInfoLogGate.reset(deviceId);
+    _emitConnectionState(deviceId, ConnectionState.disconnected);
   }
 }

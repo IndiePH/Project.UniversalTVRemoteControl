@@ -11,6 +11,11 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 class TvCapabilities {
   const TvCapabilities();
 
+  static const bool _hisenseTextInputEnabled = bool.fromEnvironment(
+    'HISENSE_ENABLE_TEXT_INPUT',
+    defaultValue: false,
+  );
+
   static const Map<(TvBrand, String), Set<DeviceCapability>> _map = {
     (TvBrand.samsung, TvDevice.defaultProtocolVariant): {
       DeviceCapability.keyCommands,
@@ -37,9 +42,14 @@ class TvCapabilities {
 
   Set<DeviceCapability> capabilitiesFor(TvBrand brand, [String? variant]) {
     final v = variant ?? TvDevice.defaultProtocolVariant;
-    return _map[(brand, v)] ??
+    final base =
+        _map[(brand, v)] ??
         _map[(brand, TvDevice.defaultProtocolVariant)] ??
         {};
+    if (brand == TvBrand.hisense && _hisenseTextInputEnabled) {
+      return <DeviceCapability>{...base, DeviceCapability.textInput};
+    }
+    return base;
   }
 
   PinFormat pinFormatFor(TvBrand brand, [String? variant]) => switch (brand) {
