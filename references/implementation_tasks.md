@@ -110,6 +110,12 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Debug fake/real transport toggle now applies at runtime for pairing discovery (no app restart required), and debug sheet copy-log flow keeps sheet context visible on empty-log feedback
   - [x] Debug DI baseline uses real SSDP discovery; fake discovery is selected dynamically only when fake transport mode is enabled
   - [x] Hisense transport naming normalized to `HisenseMqttTransportClient` and fake client moved under `lib/remote_control/debug/` to match cross-brand conventions
+- [x] Milestone 2 / Task 2.1 — Hisense adapter refinement (`TVREMOTE-40`):
+  - [x] Real MQTT transport forwards the TV-shown 4-digit PIN verbatim (no more hard-coded `1234`); fake transport keeps the dev shortcut so offline/lab runs still pair without a real TV. PIN-rejected recovery still flows through the existing PIN-retry pairing UI.
+  - [x] `_pollConnectivity` attempts one non-overlapping `_ensureConnected` for previously authorized devices when the broker is detected down, instead of waiting for the next user action. Unauthorized devices keep the lazy-reconnect path.
+  - [x] New `HisenseTransportClient.clearPairing(deviceId:)`; MQTT implementation disconnects, drops in-memory auth, cancels the poll timer, resets the device-info log gate; fake transport mirrors. `HisenseAdapter.unpairDevice` delegates, so unpairing re-enters the PIN gate on the next pair attempt.
+  - [x] `HisenseAdapter.sendCommand` publishes every alias from `HisenseKeyMapper.keyCodesFor(command)` (e.g. `KEY_RETURNS` / `KEY_RETURN` / `KEY_BACK`) — firmware-variant tolerance for fire-and-forget VIDAA `sendkey`.
+  - [x] Test coverage: spy transports gain `clearPairing` stubs; new assertions for adapter `unpairDevice` → transport `clearPairing` and the `back` command publishing all three aliases in order.
 - [x] Milestone 1 / Task 1.1 (discovery hardening):
   - [x] Android APK SSDP: acquire Wi‑Fi **multicast lock** for the scan window (`flutter_multicast_lock`); manifest already declared `CHANGE_WIFI_MULTICAST_STATE` / `ACCESS_WIFI_STATE` / `INTERNET` — runtime lock was the missing piece for reliable multicast receive
   - [x] Hisense-oriented SSDP tuning: extra M-SEARCH `urn:schemas-upnp-org:device:MediaServer:1`, include `NT` in fingerprint probe, match `hiview` where firmware omits `hisense`/`vidaa` in headers
@@ -128,6 +134,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [x] fake transport toggle keeps debug settings sheet open
     - [x] fake transport mode shows fake discovery devices in pairing list
     - [x] copy transport logs keeps debug sheet open when no log exists
+  - [x] Added pairing success/failure/retry coordinator coverage (`TVREMOTE-12`) in `test/lib/remote_control/presentation/pages/pairing_page_coordinator_test.dart`: non-PIN success persistence + manual-IP save + enriched-device fallback, non-PIN failure no-save invariants + sanitized-message + unsupported→failure, PIN retry depth (3-rejection eventual success, 5-rejection cancel, verbatim PIN forwarding, per-attempt `onPinRejected`), and `cancelPairing` delegation to `RemoteCommandService`
   - [ ] Broader scenario tests and network edge-case validation pending
 - [ ] Milestone 1 / Task 1.1:
   - [ ] Broaden physical-device validation for Samsung approval/pairing variants:
@@ -135,7 +142,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [ ] previously approved token reuse
     - [ ] rejection/timeout recovery UX
     - [x] Added Samsung physical validation matrix scaffold (`references/samsung_validation_matrix.md`) for model/firmware test runs (`TVREMOTE-49`)
-  - [ ] Re-validate **Hisense discovery on Android APK** after multicast-lock change (empty scan vs AP isolation vs SSDP headers); consider optional fallback discovery (e.g. guided manual IP / `TV_HOST_OVERRIDE`, future port `36669` sweep) if SSDP still misses hardware
+  - [ ] Re-validate **Hisense discovery on Android APK** after multicast-lock change (empty scan vs AP isolation vs SSDP headers); runbook + fallback-path decision live in `references/hisense_validation_matrix.md` (`TVREMOTE-7`). Decision recorded: manual IP via pairing UI + `TV_HOST_OVERRIDE` is the primary fallback; active port-`36669` sweep deferred until ≥2 validated routers still empty-scan on real Hisense hardware. Outstanding: fill known-good matrix from physical-device runs.
 - [ ] Milestone 3 / Task 3.1:
   - [ ] Continue usability polish for edit mode visual affordances and small-screen readability
 
@@ -155,7 +162,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [ ] confirm SSDP scan finds expected TVs on common home routers (multicast + client isolation)
 - [ ] Connect pairing output to real protocol handshake/verification per non-Samsung brands
 - [ ] Expand tests:
-  - [ ] pairing success/failure paths
+  - [x] pairing success/failure paths (`TVREMOTE-12`): coordinator unit coverage in `test/lib/remote_control/presentation/pages/pairing_page_coordinator_test.dart` for non-PIN success (persistence, manual-IP save, enriched-device fallback), non-PIN failure (no-save invariants, sanitized message, unsupported→failure), PIN retry depth (3-rejection success, 5-rejection cancel, verbatim PIN forwarding, per-attempt `onPinRejected`), and `cancelPairing` delegation
   - [ ] Samsung approval timeout/rejection handling paths
   - [ ] adapter capability unsupported flows
   - [x] saved-device remove/last-used fallback paths

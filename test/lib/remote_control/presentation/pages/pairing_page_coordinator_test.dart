@@ -248,6 +248,531 @@ void main() {
 
       expect(repo.saveDeviceCallCount, 0);
     });
+
+    test(
+      'does not setLastUsedDevice or setLastSuccessfulPairingAt when pin pairing cancelled',
+      () async {
+        final repo = _StubDeviceRepository();
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+          deviceRepository: repo,
+        );
+
+        await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_, _) async => null,
+          onPinRejected: (_) {},
+        );
+
+        expect(repo.setLastUsedDeviceCallCount, 0);
+        expect(repo.setLastSuccessfulPairingAtCallCount, 0);
+      },
+    );
+
+    test('records full persistence side effects on PIN success', () async {
+      final repo = _StubDeviceRepository();
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+        submitPairingResults: [CommandDispatchResult.success('OK')],
+        deviceRepository: repo,
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: pinPairingDevice,
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(repo.saveDeviceCallCount, 1);
+      expect(repo.setLastUsedDeviceCallCount, 1);
+      expect(repo.lastUsedDeviceId, pinPairingDevice.id);
+      expect(repo.setLastSuccessfulPairingAtCallCount, 1);
+      expect(repo.lastSuccessfulPairingDeviceId, pinPairingDevice.id);
+      expect(repo.lastSuccessfulPairingTimestamp, isA<DateTime>());
+    });
+
+    test('persists manualIpToSave on PIN success when provided', () async {
+      final repo = _StubDeviceRepository();
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+        submitPairingResults: [CommandDispatchResult.success('OK')],
+        deviceRepository: repo,
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: pinPairingDevice,
+        manualIpToSave: '192.168.1.42',
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(repo.saveRecentManualIpCallCount, 1);
+      expect(repo.lastSavedManualIp, '192.168.1.42');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Non-PIN success paths
+  // ---------------------------------------------------------------------------
+
+  group('pairSelectedDevice — non-PIN success', () {
+    test('returns success result when preparePairing succeeds', () async {
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.success('Approved'),
+      );
+
+      final result = await coordinator.pairSelectedDevice(
+        device: nonPinDevice,
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(result.isSuccess, isTrue);
+    });
+
+    test('does not invoke promptPin for non-PIN devices', () async {
+      var promptCalled = false;
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.success('Approved'),
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: nonPinDevice,
+        promptPin: (_, _) async {
+          promptCalled = true;
+          return '1234';
+        },
+        onPinRejected: (_) {},
+      );
+
+      expect(promptCalled, isFalse);
+    });
+
+    test('does not invoke submitPairingCode for non-PIN devices', () async {
+      final commandService = _StubCommandService(
+        preparePairingResult: CommandDispatchResult.success('Approved'),
+      );
+      final coordinator = PairingPageCoordinator(
+        commandService: commandService,
+        deviceRepository: _StubDeviceRepository(),
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: nonPinDevice,
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(commandService.submitCallCount, 0);
+    });
+
+    test(
+      'records full persistence side effects when preparePairing succeeds',
+      () async {
+        final repo = _StubDeviceRepository();
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.success('Approved'),
+          deviceRepository: repo,
+        );
+
+        await coordinator.pairSelectedDevice(
+          device: nonPinDevice,
+          promptPin: (_, _) async => '1234',
+          onPinRejected: (_) {},
+        );
+
+        expect(repo.saveDeviceCallCount, 1);
+        expect(repo.setLastUsedDeviceCallCount, 1);
+        expect(repo.lastUsedDeviceId, nonPinDevice.id);
+        expect(repo.setLastSuccessfulPairingAtCallCount, 1);
+        expect(repo.lastSuccessfulPairingDeviceId, nonPinDevice.id);
+      },
+    );
+
+    test('persists manualIpToSave when provided on success', () async {
+      final repo = _StubDeviceRepository();
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.success('Approved'),
+        deviceRepository: repo,
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: nonPinDevice,
+        manualIpToSave: '192.168.1.50',
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(repo.saveRecentManualIpCallCount, 1);
+      expect(repo.lastSavedManualIp, '192.168.1.50');
+    });
+
+    test('skips saveRecentManualIp when manualIpToSave is null', () async {
+      final repo = _StubDeviceRepository();
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.success('Approved'),
+        deviceRepository: repo,
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: nonPinDevice,
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(repo.saveRecentManualIpCallCount, 0);
+    });
+
+    test('skips saveRecentManualIp when manualIpToSave is empty', () async {
+      final repo = _StubDeviceRepository();
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.success('Approved'),
+        deviceRepository: repo,
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: nonPinDevice,
+        manualIpToSave: '',
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(repo.saveRecentManualIpCallCount, 0);
+    });
+
+    test(
+      'saves enriched device from preparePairing result when present',
+      () async {
+        final repo = _StubDeviceRepository();
+        const enriched = TvDevice(
+          id: 'samsung-1',
+          displayName: 'Samsung TV (Enriched)',
+          brand: TvBrand.samsung,
+          capabilities: {DeviceCapability.keyCommands, DeviceCapability.textInput},
+          modelIdentifier: 'UN65',
+        );
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.success(
+            'Approved',
+            device: enriched,
+          ),
+          deviceRepository: repo,
+        );
+
+        await coordinator.pairSelectedDevice(
+          device: nonPinDevice,
+          promptPin: (_, _) async => '1234',
+          onPinRejected: (_) {},
+        );
+
+        expect(repo.lastSavedDevice, same(enriched));
+        expect(repo.lastSavedDevice?.modelIdentifier, 'UN65');
+      },
+    );
+
+    test(
+      'falls back to input device when preparePairing result has no device',
+      () async {
+        final repo = _StubDeviceRepository();
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.success('Approved'),
+          deviceRepository: repo,
+        );
+
+        await coordinator.pairSelectedDevice(
+          device: nonPinDevice,
+          promptPin: (_, _) async => '1234',
+          onPinRejected: (_) {},
+        );
+
+        expect(repo.lastSavedDevice, same(nonPinDevice));
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Non-PIN failure paths
+  // ---------------------------------------------------------------------------
+
+  group('pairSelectedDevice — non-PIN failure', () {
+    test('returns failure result when preparePairing fails', () async {
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.failure('Connection refused'),
+      );
+
+      final result = await coordinator.pairSelectedDevice(
+        device: nonPinDevice,
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(result.isSuccess, isFalse);
+    });
+
+    test(
+      'failure result message reflects sanitized prepare result message',
+      () async {
+        const failureMessage = 'Pairing handshake refused by TV';
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.failure(failureMessage),
+        );
+
+        final result = await coordinator.pairSelectedDevice(
+          device: nonPinDevice,
+          promptPin: (_, _) async => '1234',
+          onPinRejected: (_) {},
+        );
+
+        expect(result.message, failureMessage);
+      },
+    );
+
+    test('does not save device on failure', () async {
+      final repo = _StubDeviceRepository();
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.failure('Connection refused'),
+        deviceRepository: repo,
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: nonPinDevice,
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(repo.saveDeviceCallCount, 0);
+    });
+
+    test('does not record last-used or last-successful-at on failure', () async {
+      final repo = _StubDeviceRepository();
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.failure('Connection refused'),
+        deviceRepository: repo,
+      );
+
+      await coordinator.pairSelectedDevice(
+        device: nonPinDevice,
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(repo.setLastUsedDeviceCallCount, 0);
+      expect(repo.setLastSuccessfulPairingAtCallCount, 0);
+    });
+
+    test(
+      'does not persist manualIpToSave on failure even when provided',
+      () async {
+        final repo = _StubDeviceRepository();
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.failure(
+            'Connection refused',
+          ),
+          deviceRepository: repo,
+        );
+
+        await coordinator.pairSelectedDevice(
+          device: nonPinDevice,
+          manualIpToSave: '192.168.1.50',
+          promptPin: (_, _) async => '1234',
+          onPinRejected: (_) {},
+        );
+
+        expect(repo.saveRecentManualIpCallCount, 0);
+      },
+    );
+
+    test(
+      'does not invoke submitPairingCode when preparePairing fails outright',
+      () async {
+        final commandService = _StubCommandService(
+          preparePairingResult: CommandDispatchResult.failure('Refused'),
+        );
+        final coordinator = PairingPageCoordinator(
+          commandService: commandService,
+          deviceRepository: _StubDeviceRepository(),
+        );
+
+        await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_, _) async => '1234',
+          onPinRejected: (_) {},
+        );
+
+        expect(commandService.submitCallCount, 0);
+      },
+    );
+
+    test('unsupported preparePairing result is treated as failure', () async {
+      final repo = _StubDeviceRepository();
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.unsupported(
+          'No adapter for samsung',
+        ),
+        deviceRepository: repo,
+      );
+
+      final result = await coordinator.pairSelectedDevice(
+        device: nonPinDevice,
+        promptPin: (_, _) async => '1234',
+        onPinRejected: (_) {},
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(repo.saveDeviceCallCount, 0);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // PIN retry depth
+  // ---------------------------------------------------------------------------
+
+  group('pairSelectedDevice — PIN retry depth', () {
+    test(
+      'loops through 3 rejections before final success on 4th attempt',
+      () async {
+        var promptCallCount = 0;
+        final commandService = _StubCommandService(
+          preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+          submitPairingResults: [
+            CommandDispatchResult.failure('Wrong PIN'),
+            CommandDispatchResult.failure('Wrong PIN'),
+            CommandDispatchResult.failure('Wrong PIN'),
+            CommandDispatchResult.success('OK'),
+          ],
+        );
+        final coordinator = PairingPageCoordinator(
+          commandService: commandService,
+          deviceRepository: _StubDeviceRepository(),
+        );
+
+        final rejections = <String>[];
+        final result = await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_, _) async {
+            promptCallCount++;
+            return '1234';
+          },
+          onPinRejected: rejections.add,
+        );
+
+        expect(result.isSuccess, isTrue);
+        expect(promptCallCount, 4);
+        expect(commandService.submitCallCount, 4);
+        expect(rejections, hasLength(3));
+      },
+    );
+
+    test(
+      'cancels with failure after long rejection chain when user gives up',
+      () async {
+        var promptCallCount = 0;
+        final commandService = _StubCommandService(
+          preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+          submitPairingResults: [
+            CommandDispatchResult.failure('Wrong PIN'),
+            CommandDispatchResult.failure('Wrong PIN'),
+            CommandDispatchResult.failure('Wrong PIN'),
+            CommandDispatchResult.failure('Wrong PIN'),
+            CommandDispatchResult.failure('Wrong PIN'),
+          ],
+        );
+        final repo = _StubDeviceRepository();
+        final coordinator = PairingPageCoordinator(
+          commandService: commandService,
+          deviceRepository: repo,
+        );
+
+        final result = await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_, _) async {
+            promptCallCount++;
+            return promptCallCount <= 5 ? '0000' : null;
+          },
+          onPinRejected: (_) {},
+        );
+
+        expect(result.isSuccess, isFalse);
+        expect(promptCallCount, 6);
+        expect(commandService.submitCallCount, 5);
+        expect(repo.saveDeviceCallCount, 0);
+      },
+    );
+
+    test(
+      'forwards entered PIN verbatim across retries (no mutation)',
+      () async {
+        var promptCallCount = 0;
+        final commandService = _StubCommandService(
+          preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+          submitPairingResults: [
+            CommandDispatchResult.failure('Wrong PIN'),
+            CommandDispatchResult.success('OK'),
+          ],
+        );
+        final coordinator = PairingPageCoordinator(
+          commandService: commandService,
+          deviceRepository: _StubDeviceRepository(),
+        );
+
+        await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_, _) async {
+            promptCallCount++;
+            return promptCallCount == 1 ? '0000' : 'A1B2C3';
+          },
+          onPinRejected: (_) {},
+        );
+
+        expect(commandService.submittedPins, ['0000', 'A1B2C3']);
+      },
+    );
+
+    test(
+      'invokes onPinRejected once per rejected submit attempt',
+      () async {
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+          submitPairingResults: [
+            CommandDispatchResult.failure('Wrong 1'),
+            CommandDispatchResult.failure('Wrong 2'),
+            CommandDispatchResult.failure('Wrong 3'),
+            CommandDispatchResult.success('OK'),
+          ],
+        );
+
+        final rejections = <String>[];
+        await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_, _) async => '1234',
+          onPinRejected: rejections.add,
+        );
+
+        expect(rejections, ['Wrong 1', 'Wrong 2', 'Wrong 3']);
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // cancelPairing delegation
+  // ---------------------------------------------------------------------------
+
+  group('cancelPairing', () {
+    test('delegates to commandService.cancelPairing with the same device',
+        () async {
+      final commandService = _StubCommandService(
+        preparePairingResult: CommandDispatchResult.success('OK'),
+      );
+      final coordinator = PairingPageCoordinator(
+        commandService: commandService,
+        deviceRepository: _StubDeviceRepository(),
+      );
+
+      await coordinator.cancelPairing(device: pinPairingDevice);
+
+      expect(commandService.cancelPairingCallCount, 1);
+      expect(commandService.lastCancelledDevice, same(pinPairingDevice));
+    });
   });
 }
 
@@ -283,6 +808,11 @@ class _StubCommandService implements RemoteCommandService {
   final List<CommandDispatchResult> submitPairingResults;
   int _submitCallIndex = 0;
 
+  int submitCallCount = 0;
+  int cancelPairingCallCount = 0;
+  TvDevice? lastCancelledDevice;
+  final List<String> submittedPins = [];
+
   @override
   Future<CommandDispatchResult> preparePairing({
     required TvDevice device,
@@ -293,6 +823,8 @@ class _StubCommandService implements RemoteCommandService {
     required TvDevice device,
     required String pinCode,
   }) async {
+    submitCallCount++;
+    submittedPins.add(pinCode);
     if (submitPairingResults.isEmpty) {
       return CommandDispatchResult.success('OK');
     }
@@ -305,7 +837,10 @@ class _StubCommandService implements RemoteCommandService {
   Future<void> unpairDevice({required TvDevice device}) async {}
 
   @override
-  Future<void> cancelPairing({required TvDevice device}) async {}
+  Future<void> cancelPairing({required TvDevice device}) async {
+    cancelPairingCallCount++;
+    lastCancelledDevice = device;
+  }
 
   @override
   Future<CommandDispatchResult> sendCommand({
@@ -334,9 +869,21 @@ class _StubCommandService implements RemoteCommandService {
 
 class _StubDeviceRepository implements DeviceRepository {
   int saveDeviceCallCount = 0;
+  int setLastUsedDeviceCallCount = 0;
+  int setLastSuccessfulPairingAtCallCount = 0;
+  int saveRecentManualIpCallCount = 0;
+
+  TvDevice? lastSavedDevice;
+  String? lastUsedDeviceId;
+  String? lastSuccessfulPairingDeviceId;
+  DateTime? lastSuccessfulPairingTimestamp;
+  String? lastSavedManualIp;
 
   @override
-  Future<void> saveDevice(TvDevice device) async => saveDeviceCallCount++;
+  Future<void> saveDevice(TvDevice device) async {
+    saveDeviceCallCount++;
+    lastSavedDevice = device;
+  }
 
   @override
   Future<List<TvDevice>> getSavedDevices() async => [];
@@ -354,16 +901,26 @@ class _StubDeviceRepository implements DeviceRepository {
   Future<void> removeSavedDevice(String deviceId) async {}
 
   @override
-  Future<void> saveRecentManualIp(String ipAddress) async {}
+  Future<void> saveRecentManualIp(String ipAddress) async {
+    saveRecentManualIpCallCount++;
+    lastSavedManualIp = ipAddress;
+  }
 
   @override
   Future<void> setLastSuccessfulPairingAt({
     required String deviceId,
     required DateTime timestamp,
-  }) async {}
+  }) async {
+    setLastSuccessfulPairingAtCallCount++;
+    lastSuccessfulPairingDeviceId = deviceId;
+    lastSuccessfulPairingTimestamp = timestamp;
+  }
 
   @override
-  Future<void> setLastUsedDevice(String deviceId) async {}
+  Future<void> setLastUsedDevice(String deviceId) async {
+    setLastUsedDeviceCallCount++;
+    lastUsedDeviceId = deviceId;
+  }
 
   @override
   Future<void> saveDeviceSystemInfo(
