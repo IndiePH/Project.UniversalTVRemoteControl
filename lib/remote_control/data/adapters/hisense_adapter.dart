@@ -74,6 +74,9 @@ class HisenseAdapter implements TvBrandAdapter {
       deviceId: device.id,
       fourDigitPin: pinCode,
     );
+    // Reconnect immediately so the transport publishes a fresh connected state
+    // after PIN acceptance instead of waiting for the next user command.
+    await _transportClient.connect(deviceId: device.id);
   }
 
   @override

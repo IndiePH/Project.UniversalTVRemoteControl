@@ -163,12 +163,13 @@ void main() {
   // --- submitPairingCode ---
 
   test(
-    'Hisense adapter: submitPairingCode forwards pin to transport',
+    'Hisense adapter: submitPairingCode forwards pin and reconnects transport',
     () async {
       final transport = _SpyHisenseTransportClient();
       final adapter = HisenseAdapter(transportClient: transport);
       await adapter.submitPairingCode(device: hisenseDevice, pinCode: '5678');
       expect(transport.submittedPins, contains('5678'));
+      expect(transport.connectCalls, 1);
     },
   );
 
