@@ -475,6 +475,45 @@ void main() {
     });
   });
 
+  group('brand dispatch — checkRemoteTextInputReady', () {
+    test('returns false when no adapter configured for brand', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+      final ready = await service.checkRemoteTextInputReady(device: device);
+      expect(ready, isFalse);
+    });
+
+    test('returns false when device lacks text input capability', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [_RecordingAdapter(brand: TvBrand.samsung)],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+      final ready = await service.checkRemoteTextInputReady(
+        device: deviceNoTextInput,
+      );
+      expect(ready, isFalse);
+    });
+
+    test('falls back to adapter readiness stream for generic adapters', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          _RecordingAdapter(
+            brand: TvBrand.samsung,
+            textInputReadyStream: Stream<bool>.value(true),
+          ),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+      final ready = await service.checkRemoteTextInputReady(device: device);
+      expect(ready, isTrue);
+    });
+  });
+
   // 2.17: catch blocks return an operation-specific message and carry the raw
   // exception so env-aware consumers can surface detail in non-production builds.
 

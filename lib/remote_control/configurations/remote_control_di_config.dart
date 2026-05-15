@@ -2,14 +2,8 @@ import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/i_di_config.dart';
 import 'package:one_remote/app/localized_strings.dart';
-import 'package:one_remote/remote_control/application/device_discovery_service.dart';
-import 'package:one_remote/remote_control/application/device_repository.dart';
-import 'package:one_remote/remote_control/application/layout_repository.dart';
-import 'package:one_remote/remote_control/application/remote_command_service.dart';
-import 'package:one_remote/remote_control/application/transport_log_reader_provider.dart';
-import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
-import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
-import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/application/application.dart';
+import 'package:one_remote/remote_control/data/data.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_certificate_store.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_handshake_tracer.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_tcp_transport_client.dart';
@@ -27,14 +21,6 @@ import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_websocket_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
-import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
-import 'package:one_remote/remote_control/data/adapter_tv_reachability_service.dart';
-import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
-import 'package:one_remote/remote_control/data/shared_prefs_device_repository.dart';
-import 'package:one_remote/remote_control/data/shared_prefs_layout_repository.dart';
-import 'package:one_remote/remote_control/data/composite_device_discovery_service.dart';
-import 'package:one_remote/remote_control/data/mdns_device_discovery_service.dart';
-import 'package:one_remote/remote_control/data/ssdp_device_discovery_service.dart';
 import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
 
@@ -45,7 +31,9 @@ void _configureShared(GetIt sl) {
     DefaultPrePairingStepsRegistry(localizedStrings: sl<LocalizedStrings>()),
   );
   sl.registerSingleton<PairingProgressHintRegistry>(
-    DefaultPairingProgressHintRegistry(localizedStrings: sl<LocalizedStrings>()),
+    DefaultPairingProgressHintRegistry(
+      localizedStrings: sl<LocalizedStrings>(),
+    ),
   );
   sl.registerSingleton<VariantResolutionRegistry>(
     const DefaultVariantResolutionRegistry(),
@@ -55,16 +43,17 @@ void _configureShared(GetIt sl) {
 final class RemoteControlDiConfig implements IDiConfig {
   const RemoteControlDiConfig();
 
-  static const String _tvHostOverride = String.fromEnvironment('TV_HOST_OVERRIDE');
+  static const String _tvHostOverride = String.fromEnvironment(
+    'TV_HOST_OVERRIDE',
+  );
 
   @override
   void configure(GetIt sl, AppEnvironment env) {
     _configureShared(sl);
     sl.registerSingleton<DeviceDiscoveryService>(
-      CompositeDeviceDiscoveryService(services: [
-        SsdpDeviceDiscoveryService(),
-        MdnsDeviceDiscoveryService(),
-      ]),
+      CompositeDeviceDiscoveryService(
+        services: [SsdpDeviceDiscoveryService(), MdnsDeviceDiscoveryService()],
+      ),
     );
     sl.registerSingleton<LgPairingKeyStore>(LgPairingKeyStore());
     sl.registerSingleton<SamsungTransportClient>(
@@ -79,7 +68,9 @@ final class RemoteControlDiConfig implements IDiConfig {
     sl.registerSingleton<HisenseTransportClient>(
       HisenseMqttTransportClient(hostResolver: _resolveHost),
     );
-    sl.registerSingleton<AndroidTvCertificateStore>(AndroidTvCertificateStore());
+    sl.registerSingleton<AndroidTvCertificateStore>(
+      AndroidTvCertificateStore(),
+    );
     sl.registerSingleton<AndroidTvTransportClient>(
       AndroidTvTcpTransportClient(
         hostResolver: _resolveHost,
@@ -128,15 +119,16 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
     // Debug config keeps command transports fake-able via DI. Discovery mode can
     // still be switched at runtime from the debug settings flow (pairing path).
     sl.registerSingleton<DeviceDiscoveryService>(
-      CompositeDeviceDiscoveryService(services: [
-        SsdpDeviceDiscoveryService(),
-        MdnsDeviceDiscoveryService(),
-      ]),
+      CompositeDeviceDiscoveryService(
+        services: [SsdpDeviceDiscoveryService(), MdnsDeviceDiscoveryService()],
+      ),
     );
     sl.registerSingleton<SamsungTransportClient>(FakeSamsungTransportClient());
     sl.registerSingleton<LgTransportClient>(FakeLgTransportClient());
     sl.registerSingleton<HisenseTransportClient>(FakeHisenseTransportClient());
-    sl.registerSingleton<AndroidTvTransportClient>(FakeAndroidTvTransportClient());
+    sl.registerSingleton<AndroidTvTransportClient>(
+      FakeAndroidTvTransportClient(),
+    );
     final adapters = [
       SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
       LgAdapter(transportClient: sl<LgTransportClient>()),

@@ -5,20 +5,12 @@ import 'package:one_remote/app/ads/bottom_banner_ad_placement.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/message_handler.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
-import 'package:one_remote/remote_control/application/device_discovery_service.dart';
-import 'package:one_remote/remote_control/application/device_repository.dart';
-import 'package:one_remote/remote_control/application/layout_repository.dart';
-import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
-import 'package:one_remote/remote_control/application/remote_command_service.dart';
-import 'package:one_remote/remote_control/application/transport_log_reader.dart';
-import 'package:one_remote/remote_control/application/transport_log_reader_provider.dart';
+import 'package:one_remote/remote_control/application/application.dart';
 import 'package:one_remote/remote_control/debug/runtime_flags_template_debug.dart';
-import 'package:one_remote/remote_control/domain/models/device_capability.dart';
-import 'package:one_remote/remote_control/domain/models/layout_position.dart';
+import 'package:one_remote/remote_control/domain/domain.dart'
+    hide ConnectionState;
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
     as remote_connection;
-import 'package:one_remote/remote_control/domain/models/remote_command.dart';
-import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_actions.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_keyboard_availability.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
@@ -223,7 +215,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     final availability = RemoteKeyboardAvailability.evaluate(
       device: device,
       remoteTextInputReady: _remoteTextInputReady,
-      requireImeReady: false,
+      requireImeReady: true,
     );
     if (!availability.isAvailable) {
       _reportKeyboardUnavailable(
@@ -295,7 +287,9 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
               color: Colors.transparent,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: isError ? colorScheme.error : colorScheme.inverseSurface,
+                  color: isError
+                      ? colorScheme.error
+                      : colorScheme.inverseSurface,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Padding(
@@ -592,7 +586,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     });
   }
 
-  void _onSearchInputKeyboardPressed() {
+  Future<void> _onSearchInputKeyboardPressed() async {
     final device = _activeDevice;
     if (device == null) {
       setState(() {
@@ -601,10 +595,18 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       _showToast('No device selected.', isError: true);
       return;
     }
+    final remoteTextInputReady = await widget.commandService
+        .checkRemoteTextInputReady(device: device);
+    if (!mounted) {
+      return;
+    }
+    if (_remoteTextInputReady != remoteTextInputReady) {
+      setState(() => _remoteTextInputReady = remoteTextInputReady);
+    }
     final availability = RemoteKeyboardAvailability.evaluate(
       device: device,
-      remoteTextInputReady: _remoteTextInputReady,
-      requireImeReady: false,
+      remoteTextInputReady: remoteTextInputReady,
+      requireImeReady: true,
     );
     if (!availability.isAvailable) {
       _reportKeyboardUnavailable(
@@ -649,7 +651,9 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final deviceName = _activeDevice?.displayName ?? AppLocalizations.of(context)!.pairingNoTvConnected;
+    final deviceName =
+        _activeDevice?.displayName ??
+        AppLocalizations.of(context)!.pairingNoTvConnected;
 
     return Scaffold(
       // Keep the remote grid fixed when the IME opens; the keyboard overlays
@@ -724,7 +728,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                         pairingHintActive:
                             _showPairingHint && _activeDevice == null,
                         onSendCommand: _sendCommandFromGrid,
-                        onSearchInputPressed: _onSearchInputKeyboardPressed,
+                        onSearchInputPressed: () =>
+                            unawaited(_onSearchInputKeyboardPressed()),
                         onDisabledInteraction: _onDisabledGridInteraction,
                       ),
                     ),
@@ -739,5 +744,4 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       ),
     );
   }
-
 }

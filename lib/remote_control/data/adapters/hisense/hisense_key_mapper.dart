@@ -25,7 +25,8 @@ final class HisenseKeyMapper extends CommandKeyMap {
     // README uses KEY_RETURNS for back on some firmwares.
     RemoteCommand.back: ['KEY_RETURNS', 'KEY_RETURN', 'KEY_BACK'],
     RemoteCommand.home: ['KEY_HOME'],
-    RemoteCommand.menu: ['KEY_MENU'],
+    // VIDAA firmwares vary: menu may be exposed via settings/option aliases.
+    RemoteCommand.menu: ['KEY_MENU', 'KEY_SETTINGS', 'KEY_SETTING', 'KEY_OPTION'],
     // Handled via [HisenseAdapter] launch-app MQTT, not sendkey.
     RemoteCommand.web: [],
     RemoteCommand.netflix: [],

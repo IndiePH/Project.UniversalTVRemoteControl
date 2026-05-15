@@ -120,6 +120,15 @@ class FakeSamsungTransportClient
   }
 
   @override
+  Future<bool> probeRemoteTextInputReady({
+    required String deviceId,
+    Duration timeout = const Duration(milliseconds: 750),
+  }) async {
+    await _ensureConnected(deviceId);
+    return _connectedDeviceIds.contains(deviceId);
+  }
+
+  @override
   Stream<ConnectionState> watchConnectionState(String deviceId) {
     return _connectionControllerFor(deviceId).stream;
   }

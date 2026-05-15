@@ -81,11 +81,13 @@ class AndroidTvAdapter implements TvBrandAdapter {
       await _transportClient.sendAppLink(deviceId: device.id, appLink: appLink);
       return;
     }
-    final keyCode = _keyMap.primaryKeyCodeFor(command);
-    if (keyCode == null) {
+    final keyCodes = _keyMap.keyCodesFor(command);
+    if (keyCodes.isEmpty) {
       throw UnsupportedError('No Android TV key mapping for command: $command');
     }
-    await _transportClient.sendKey(deviceId: device.id, keyCode: keyCode);
+    for (final keyCode in keyCodes) {
+      await _transportClient.sendKey(deviceId: device.id, keyCode: keyCode);
+    }
   }
 
   @override
@@ -97,6 +99,11 @@ class AndroidTvAdapter implements TvBrandAdapter {
   @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>
       Stream<bool>.value(false);
+
+  Future<bool> probeRemoteTextInputReady({required TvDevice device}) async {
+    await _transportClient.connect(deviceId: device.id);
+    return true;
+  }
 
   @override
   Stream<ConnectionState> watchConnectionState(TvDevice device) =>

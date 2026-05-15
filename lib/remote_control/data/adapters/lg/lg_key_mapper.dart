@@ -21,6 +21,10 @@ class LgKeyMapper extends CommandKeyMap {
 
   @override
   List<String> keyCodesFor(RemoteCommand command) {
+    final fallbacks = _kLgFallbackCommandMap[command];
+    if (fallbacks != null) {
+      return List<String>.unmodifiable(fallbacks);
+    }
     final code = _kLgCommandMap[command];
     return code == null ? const [] : [code];
   }
@@ -47,5 +51,12 @@ const Map<RemoteCommand, String> _kLgCommandMap = {
   RemoteCommand.dpadRight:   '${lgPointerPrefix}RIGHT',
   RemoteCommand.dpadOk:      '${lgPointerPrefix}ENTER',
   RemoteCommand.back:        '${lgPointerPrefix}BACK',
-  // RemoteCommand.menu intentionally absent — no standard LG SSAP equivalent
+};
+
+const Map<RemoteCommand, List<String>> _kLgFallbackCommandMap = {
+  // menu behavior varies by webOS build; try settings entry points in order.
+  RemoteCommand.menu: [
+    'ssap://com.webos.service.settings/launchSettings',
+    '${lgLaunchPrefix}com.webos.app.settings',
+  ],
 };

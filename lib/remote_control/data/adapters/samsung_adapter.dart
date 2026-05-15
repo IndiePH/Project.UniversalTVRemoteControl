@@ -116,6 +116,15 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
     yield* _transportClient.watchRemoteTextInputReady(device.id);
   }
 
+  Future<bool> probeRemoteTextInputReady({required TvDevice device}) async {
+    try {
+      await _transportClient.connect(deviceId: device.id);
+      return _transportClient.probeRemoteTextInputReady(deviceId: device.id);
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Stream<ConnectionState> watchConnectionState(TvDevice device) async* {
     try {

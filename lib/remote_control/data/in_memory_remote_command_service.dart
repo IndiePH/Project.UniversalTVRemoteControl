@@ -70,6 +70,10 @@ class InMemoryRemoteCommandService implements RemoteCommandService {
       Stream<bool>.value(true);
 
   @override
+  Future<bool> checkRemoteTextInputReady({required TvDevice device}) async =>
+      true;
+
+  @override
   Set<RemoteCommand> supportedCommandsFor({required TvDevice device}) =>
       RemoteCommand.values.toSet();
 

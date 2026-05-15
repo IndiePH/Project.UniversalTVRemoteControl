@@ -8,6 +8,12 @@ abstract class SamsungTransportClient
   /// Whether the TV has signaled an IME / text session (remote typing may work).
   Stream<bool> watchRemoteTextInputReady(String deviceId);
 
+  /// Sends a lightweight IME probe command and returns whether input is ready.
+  Future<bool> probeRemoteTextInputReady({
+    required String deviceId,
+    Duration timeout = const Duration(milliseconds: 750),
+  });
+
   Future<void> requestPairingApproval({
     required String deviceId,
     required String triggerKeyCode,

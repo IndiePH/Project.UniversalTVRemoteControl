@@ -77,6 +77,21 @@ class SamsungWebSocketTransportClient
   }
 
   @override
+  Future<bool> probeRemoteTextInputReady({
+    required String deviceId,
+    Duration timeout = const Duration(milliseconds: 750),
+  }) async {
+    await connect(deviceId: deviceId);
+    if (_text.isImeActive(deviceId)) {
+      return true;
+    }
+    final socket = await _socketFor(deviceId);
+    await _primeImeSession(deviceId: deviceId, socket: socket);
+    await _waitForImeState(deviceId, timeout: timeout);
+    return _text.isImeActive(deviceId);
+  }
+
+  @override
   Stream<ConnectionState> watchConnectionState(String deviceId) =>
       _connectionControllerFor(deviceId).stream;
 

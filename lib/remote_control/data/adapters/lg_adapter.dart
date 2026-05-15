@@ -76,12 +76,14 @@ class LgAdapter implements TvBrandAdapter {
     required TvDevice device,
     required RemoteCommand command,
   }) async {
-    final keyCode = _keyMap.primaryKeyCodeFor(command);
-    if (keyCode == null) {
+    final keyCodes = _keyMap.keyCodesFor(command);
+    if (keyCodes.isEmpty) {
       throw UnsupportedError('No LG key mapping for command: $command');
     }
     await _transportClient.connect(deviceId: device.id);
-    await _transportClient.sendKey(deviceId: device.id, keyCode: keyCode);
+    for (final keyCode in keyCodes) {
+      await _transportClient.sendKey(deviceId: device.id, keyCode: keyCode);
+    }
   }
 
   @override
@@ -102,6 +104,18 @@ class LgAdapter implements TvBrandAdapter {
       return;
     }
     yield* _transportClient.watchRemoteTextInputReady(device.id);
+  }
+
+  Future<bool> probeRemoteTextInputReady({required TvDevice device}) async {
+    try {
+      await _transportClient.connect(deviceId: device.id);
+      return await _transportClient
+          .watchRemoteTextInputReady(device.id)
+          .first
+          .timeout(const Duration(milliseconds: 750), onTimeout: () => false);
+    } catch (_) {
+      return false;
+    }
   }
 
   @override

@@ -185,6 +185,34 @@ void main() {
       expect(values, [false]);
     },
   );
+
+  test('Samsung adapter: menu publishes fallback aliases in order', () async {
+    final transport = _SpySamsungTransportClient();
+    final adapter = SamsungAdapter(transportClient: transport);
+    await adapter.sendCommand(device: samsungDevice, command: RemoteCommand.menu);
+    expect(
+      transport.sentKeyCodes,
+      containsAllInOrder([
+        'KEY_MENU',
+        'KEY_SETTINGS',
+        'KEY_SETTING',
+        'KEY_OPTION',
+      ]),
+    );
+  });
+
+  test(
+    'Samsung adapter: probeRemoteTextInputReady triggers transport probe command',
+    () async {
+      final transport = _SpySamsungTransportClient();
+      final adapter = SamsungAdapter(transportClient: transport);
+      final ready = await adapter.probeRemoteTextInputReady(
+        device: samsungDevice,
+      );
+      expect(ready, isTrue);
+      expect(transport.probeRemoteTextInputReadyCalls, 1);
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -198,6 +226,8 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
   int connectCalls = 0;
   int sendKeyCalls = 0;
   int sendTextCalls = 0;
+  int probeRemoteTextInputReadyCalls = 0;
+  final List<String> sentKeyCodes = [];
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -223,6 +253,7 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
     required String keyCode,
   }) async {
     sendKeyCalls += 1;
+    sentKeyCodes.add(keyCode);
   }
 
   @override
@@ -236,6 +267,15 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
   @override
   Stream<bool> watchRemoteTextInputReady(String deviceId) =>
       Stream<bool>.value(true);
+
+  @override
+  Future<bool> probeRemoteTextInputReady({
+    required String deviceId,
+    Duration timeout = const Duration(milliseconds: 750),
+  }) async {
+    probeRemoteTextInputReadyCalls += 1;
+    return true;
+  }
 
   @override
   Stream<ConnectionState> watchConnectionState(String deviceId) =>

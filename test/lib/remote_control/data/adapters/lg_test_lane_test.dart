@@ -184,6 +184,19 @@ void main() {
     },
   );
 
+  test('LG adapter: menu publishes fallback aliases in order', () async {
+    final transport = _ReconnectTrackingLgTransportClient();
+    final adapter = LgAdapter(transportClient: transport);
+    await adapter.sendCommand(device: lgDevice, command: RemoteCommand.menu);
+    expect(
+      transport.sentKeyCodes,
+      containsAllInOrder([
+        'ssap://com.webos.service.settings/launchSettings',
+        'LAUNCH:com.webos.app.settings',
+      ]),
+    );
+  });
+
   // --- T-06: submitPairingCode ---
 
   test(
@@ -454,6 +467,7 @@ class _ReconnectTrackingLgTransportClient
     with TransportEventEmitterMixin
     implements LgTransportClient {
   int connectCallCount = 0;
+  final List<String> sentKeyCodes = [];
 
   @override
   Future<void> connect({required String deviceId}) async {
@@ -470,7 +484,9 @@ class _ReconnectTrackingLgTransportClient
   Future<void> sendKey({
     required String deviceId,
     required String keyCode,
-  }) async {}
+  }) async {
+    sentKeyCodes.add(keyCode);
+  }
 
   @override
   Future<void> sendText({

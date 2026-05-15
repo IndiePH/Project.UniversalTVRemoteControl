@@ -242,6 +242,24 @@ void main() {
       containsAllInOrder(['KEY_RETURNS', 'KEY_RETURN', 'KEY_BACK']),
     );
   });
+
+  test('Hisense adapter: menu publishes firmware-variant aliases in order', () async {
+    final transport = _SpyHisenseTransportClient();
+    final adapter = HisenseAdapter(transportClient: transport);
+    await adapter.sendCommand(
+      device: hisenseDevice,
+      command: RemoteCommand.menu,
+    );
+    expect(
+      transport.sentKeys,
+      containsAllInOrder([
+        'KEY_MENU',
+        'KEY_SETTINGS',
+        'KEY_SETTING',
+        'KEY_OPTION',
+      ]),
+    );
+  });
 }
 
 // ---------------------------------------------------------------------------

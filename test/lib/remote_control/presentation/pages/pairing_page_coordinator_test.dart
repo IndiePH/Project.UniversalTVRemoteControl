@@ -859,6 +859,10 @@ class _StubCommandService implements RemoteCommandService {
       const Stream.empty();
 
   @override
+  Future<bool> checkRemoteTextInputReady({required TvDevice device}) async =>
+      false;
+
+  @override
   Set<RemoteCommand> supportedCommandsFor({required TvDevice device}) =>
       RemoteCommand.values.toSet();
 

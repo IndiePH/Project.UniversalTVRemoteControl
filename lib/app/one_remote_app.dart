@@ -4,12 +4,8 @@ import 'package:one_remote/app/app_localized_strings.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
-import 'package:one_remote/remote_control/application/device_discovery_service.dart';
-import 'package:one_remote/remote_control/application/device_repository.dart';
-import 'package:one_remote/remote_control/application/layout_repository.dart';
-import 'package:one_remote/remote_control/application/remote_command_service.dart';
-import 'package:one_remote/remote_control/application/transport_log_reader_provider.dart';
-import 'package:one_remote/remote_control/presentation/pages/remote_home_page.dart';
+import 'package:one_remote/remote_control/application/application.dart';
+import 'package:one_remote/remote_control/presentation/presentation.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
 class OneRemoteApp extends StatelessWidget {

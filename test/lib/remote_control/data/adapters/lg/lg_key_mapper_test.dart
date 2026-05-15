@@ -36,14 +36,22 @@ void main() {
     expect(mapper.primaryKeyCodeFor(RemoteCommand.web), '${lgLaunchPrefix}com.webos.app.browser');
   });
 
-  test('LgKeyMapper: menu is unsupported (not mapped)', () {
-    expect(mapper.primaryKeyCodeFor(RemoteCommand.menu), isNull);
-    expect(mapper.keyCodesFor(RemoteCommand.menu), isEmpty);
+  test('LgKeyMapper: menu returns fallback settings entry points', () {
+    expect(
+      mapper.keyCodesFor(RemoteCommand.menu),
+      [
+        'ssap://com.webos.service.settings/launchSettings',
+        '${lgLaunchPrefix}com.webos.app.settings',
+      ],
+    );
+    expect(
+      mapper.primaryKeyCodeFor(RemoteCommand.menu),
+      'ssap://com.webos.service.settings/launchSettings',
+    );
   });
 
-  test('LgKeyMapper: all kCommonSupportedRemoteCommands except menu are mapped', () {
+  test('LgKeyMapper: all kCommonSupportedRemoteCommands are mapped', () {
     final unmapped = kCommonSupportedRemoteCommands
-        .where((cmd) => cmd != RemoteCommand.menu)
         .where((cmd) => mapper.primaryKeyCodeFor(cmd) == null)
         .toList();
     expect(unmapped, isEmpty, reason: 'Unmapped commands: $unmapped');

@@ -91,8 +91,11 @@ void main() {
       expect(mapper.keyCodesFor(RemoteCommand.home), ['KEY_HOME']);
     });
 
-    test('returns KEY_MENU for menu', () {
-      expect(mapper.keyCodesFor(RemoteCommand.menu), ['KEY_MENU']);
+    test('returns multiple fallbacks for menu', () {
+      expect(
+        mapper.keyCodesFor(RemoteCommand.menu),
+        ['KEY_MENU', 'KEY_SETTINGS', 'KEY_SETTING', 'KEY_OPTION'],
+      );
     });
 
     test('every RemoteCommand value has a mapping', () {
