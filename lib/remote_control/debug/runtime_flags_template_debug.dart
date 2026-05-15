@@ -49,6 +49,15 @@ final class RuntimeFlagsTemplateDebug {
         '--dart-define=USE_FAKE_TRANSPORTS=$useFakeTransports',
         '--dart-define=TV_HOST_OVERRIDE=<tv-ip>',
       ],
+      TvBrand.roku => <String>[
+        '--dart-define=USE_FAKE_TRANSPORTS=$useFakeTransports',
+        '--dart-define=TV_HOST_OVERRIDE=<tv-ip>',
+      ],
+      TvBrand.tcl => <String>[
+        '--dart-define=USE_FAKE_TRANSPORTS=$useFakeTransports',
+        '--dart-define=TV_HOST_OVERRIDE=<tv-ip>',
+        '--dart-define=TCL_LEGACY_WIFI_ENABLED=false',
+      ],
       null => <String>[
         '--dart-define=USE_FAKE_TRANSPORTS=$useFakeTransports',
         '--dart-define=TV_HOST_OVERRIDE=<tv-ip>',
@@ -56,6 +65,7 @@ final class RuntimeFlagsTemplateDebug {
         '--dart-define=SAMSUNG_SEND_INPUT_END_PER_TEXT=false',
         '--dart-define=HISENSE_MQTT_CLIENT_ID=OneRemote',
         '--dart-define=HISENSE_MQTT_PLAINTEXT=false',
+        '--dart-define=TCL_LEGACY_WIFI_ENABLED=false',
       ],
     };
     return lines.join('\n');

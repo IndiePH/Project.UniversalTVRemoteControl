@@ -46,6 +46,15 @@ class FakeDeviceDiscoveryService implements DeviceDiscoveryService {
         DeviceCapability.textInput,
       },
     ),
+    TvDevice(
+      id: 'roku-living-room',
+      displayName: 'Roku TV - Living Room',
+      brand: TvBrand.roku,
+      capabilities: {
+        DeviceCapability.keyCommands,
+        DeviceCapability.powerControl,
+      },
+    ),
   ];
 
   @override

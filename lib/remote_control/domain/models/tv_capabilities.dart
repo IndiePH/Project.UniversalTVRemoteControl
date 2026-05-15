@@ -1,5 +1,6 @@
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/pin_format.dart';
+import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variants.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
@@ -37,6 +38,14 @@ class TvCapabilities {
       DeviceCapability.powerControl,
       DeviceCapability.pinPairing,
       DeviceCapability.textInput,
+    },
+    (TvBrand.roku, TvDevice.defaultProtocolVariant): {
+      DeviceCapability.keyCommands,
+      DeviceCapability.powerControl,
+    },
+    (TvBrand.tcl, TclProtocolVariants.legacyWifi): {
+      DeviceCapability.keyCommands,
+      DeviceCapability.powerControl,
     },
   };
 

@@ -88,6 +88,18 @@
 
   "pairingAndroidTvPreStep1": "A PIN will appear on your TV screen — enter it when prompted.",
 
+  "pairingRokuProgressHint": "Make sure mobile control is enabled in Roku settings.",
+
+  "pairingRokuPreStep0": "On TV, open Settings > System > Advanced system settings.",
+
+  "pairingRokuPreStep1": "Set Control by mobile apps to Enabled.",
+
+  "pairingTclLegacyProgressHint": "Connecting using legacy TCL Wi-Fi transport.",
+
+  "pairingTclLegacyPreStep0": "Legacy TCL Wi-Fi requires the TV IP address on port 4123.",
+
+  "pairingTclLegacyPreStep1": "Power-on may still require the original remote, CEC, or WOL.",
+
   "pairingWaitingForApproval": "Waiting for TV approval...",
 
   "pairingNotePreviouslyPaired": "Previously paired",

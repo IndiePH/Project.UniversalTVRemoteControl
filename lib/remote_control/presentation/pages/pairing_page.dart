@@ -296,7 +296,14 @@ class _PairingPageState extends State<PairingPage> {
     required TvBrand brand,
     required String ip,
   }) async {
-    final device = PairingPageData.buildManualDevice(brand: brand, ip: ip);
+    final variant = brand == TvBrand.tcl
+        ? 'tcl_legacy_wifi'
+        : TvDevice.defaultProtocolVariant;
+    final device = PairingPageData.buildManualDevice(
+      brand: brand,
+      ip: ip,
+      protocolVariant: variant,
+    );
     await _pairSelectedDevice(device: device, manualIpToSave: ip);
   }
 

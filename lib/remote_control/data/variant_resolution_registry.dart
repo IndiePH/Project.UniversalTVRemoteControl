@@ -1,3 +1,4 @@
+import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variants.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
@@ -41,6 +42,17 @@ class DefaultVariantResolutionRegistry implements VariantResolutionRegistry {
       brand: TvBrand.androidTv,
       matches: (_) => true,
       variant: TvDevice.defaultProtocolVariant,
+    ),
+    _VariantResolutionEntry(
+      brand: TvBrand.roku,
+      matches: (_) => true,
+      variant: TvDevice.defaultProtocolVariant,
+    ),
+    _VariantResolutionEntry(
+      brand: TvBrand.tcl,
+      matches: (info) =>
+          (info.modelIdentifier ?? '').toLowerCase().contains('legacy_wifi'),
+      variant: TclProtocolVariants.legacyWifi,
     ),
   ];
 

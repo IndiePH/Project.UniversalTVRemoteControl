@@ -35,6 +35,24 @@ class FakeLocalizedStrings implements LocalizedStrings {
   String get pairingAndroidTvPreStep1 =>
       'A PIN will appear on your TV screen — enter it when prompted.';
   @override
+  String get pairingRokuProgressHint =>
+      'Make sure mobile control is enabled in Roku settings.';
+  @override
+  String get pairingRokuPreStep0 =>
+      'On TV, open Settings > System > Advanced system settings.';
+  @override
+  String get pairingRokuPreStep1 =>
+      'Set Control by mobile apps to Enabled.';
+  @override
+  String get pairingTclLegacyProgressHint =>
+      'Connecting using legacy TCL Wi-Fi transport.';
+  @override
+  String get pairingTclLegacyPreStep0 =>
+      'Legacy TCL Wi-Fi requires the TV IP address on port 4123.';
+  @override
+  String get pairingTclLegacyPreStep1 =>
+      'Power-on may still require the original remote, CEC, or WOL.';
+  @override
   String remoteCommandUnsupported(String commandName, String brandName) =>
       'Command $commandName is not supported for $brandName.';
   @override

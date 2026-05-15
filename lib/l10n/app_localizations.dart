@@ -340,6 +340,42 @@ abstract class AppLocalizations {
   /// **'A PIN will appear on your TV screen — enter it when prompted.'**
   String get pairingAndroidTvPreStep1;
 
+  /// No description provided for @pairingRokuProgressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure mobile control is enabled in Roku settings.'**
+  String get pairingRokuProgressHint;
+
+  /// No description provided for @pairingRokuPreStep0.
+  ///
+  /// In en, this message translates to:
+  /// **'On TV, open Settings > System > Advanced system settings.'**
+  String get pairingRokuPreStep0;
+
+  /// No description provided for @pairingRokuPreStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Control by mobile apps to Enabled.'**
+  String get pairingRokuPreStep1;
+
+  /// No description provided for @pairingTclLegacyProgressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting using legacy TCL Wi-Fi transport.'**
+  String get pairingTclLegacyProgressHint;
+
+  /// No description provided for @pairingTclLegacyPreStep0.
+  ///
+  /// In en, this message translates to:
+  /// **'Legacy TCL Wi-Fi requires the TV IP address on port 4123.'**
+  String get pairingTclLegacyPreStep0;
+
+  /// No description provided for @pairingTclLegacyPreStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-on may still require the original remote, CEC, or WOL.'**
+  String get pairingTclLegacyPreStep1;
+
   /// No description provided for @pairingWaitingForApproval.
   ///
   /// In en, this message translates to:

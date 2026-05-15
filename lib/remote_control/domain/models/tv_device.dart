@@ -1,4 +1,5 @@
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variants.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 
@@ -52,6 +53,17 @@ class TvDevice {
       final brand = TvBrand.values.firstWhere((b) => b.name == json['brand']);
       final protocolVariant =
           json['protocolVariant'] as String? ?? defaultProtocolVariant;
+      final (effectiveBrand, effectiveVariant) = switch ((brand, protocolVariant)) {
+        (TvBrand.tcl, TclProtocolVariants.roku) => (
+            TvBrand.roku,
+            defaultProtocolVariant,
+          ),
+        (TvBrand.tcl, TclProtocolVariants.googleTv) => (
+            TvBrand.androidTv,
+            defaultProtocolVariant,
+          ),
+        _ => (brand, protocolVariant),
+      };
       final modelIdentifier = json['modelIdentifier'] as String?;
       final capabilityNames =
           (json['capabilities'] as List<dynamic>?)?.cast<String>() ?? [];
@@ -66,13 +78,15 @@ class TvDevice {
           .nonNulls
           .toSet();
       final capabilities =
-          parsed.isEmpty ? const TvCapabilities().capabilitiesFor(brand, protocolVariant) : parsed;
+          parsed.isEmpty
+          ? const TvCapabilities().capabilitiesFor(effectiveBrand, effectiveVariant)
+          : parsed;
       return TvDevice(
         id: id,
         displayName: displayName,
-        brand: brand,
+        brand: effectiveBrand,
         capabilities: capabilities,
-        protocolVariant: protocolVariant,
+        protocolVariant: effectiveVariant,
         modelIdentifier: modelIdentifier,
       );
     } catch (_) {

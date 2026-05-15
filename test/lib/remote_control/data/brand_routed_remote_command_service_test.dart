@@ -744,6 +744,29 @@ void main() {
         expect(result.pinFormat, PinFormat.fourDigitNumeric);
       },
     );
+
+    test('TvBrand.roku default variant does not require pairing PIN', () async {
+      const rokuDevice = TvDevice(
+        id: 'roku-1',
+        displayName: 'Roku TV',
+        brand: TvBrand.roku,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          _VariantRecordingAdapter(
+            brand: TvBrand.roku,
+            variant: TvDevice.defaultProtocolVariant,
+            info: const TvDeviceInfo(modelIdentifier: 'roku'),
+          ),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+      final result = await service.preparePairing(device: rokuDevice);
+      expect(result.isSuccess, isTrue);
+      expect(result.isPinRequired, isFalse);
+    });
   });
 }
 
@@ -932,6 +955,25 @@ class _InfoReturningAdapter extends _RecordingAdapter {
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
       _info;
+}
+
+class _VariantRecordingAdapter extends _RecordingAdapter {
+  _VariantRecordingAdapter({
+    required super.brand,
+    required String variant,
+    required TvDeviceInfo info,
+  }) : _variant = variant,
+       _info = info,
+       super();
+
+  final String _variant;
+  final TvDeviceInfo _info;
+
+  @override
+  String get protocolVariant => _variant;
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async => _info;
 }
 
 class _StubVariantRegistry implements VariantResolutionRegistry {

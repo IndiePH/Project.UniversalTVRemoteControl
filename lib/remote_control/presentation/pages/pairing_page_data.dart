@@ -47,12 +47,14 @@ final class PairingPageData {
   static TvDevice buildManualDevice({
     required TvBrand brand,
     required String ip,
+    String protocolVariant = TvDevice.defaultProtocolVariant,
   }) {
     return TvDevice(
-      id: '${brand.name}-$ip',
+      id: '${brand.name}-$protocolVariant-$ip',
       displayName: '${brand.displayName} TV ($ip)',
       brand: brand,
-      capabilities: const TvCapabilities().capabilitiesFor(brand),
+      protocolVariant: protocolVariant,
+      capabilities: const TvCapabilities().capabilitiesFor(brand, protocolVariant),
     );
   }
 

@@ -90,9 +90,10 @@ class MdnsDeviceDiscoveryService implements DeviceDiscoveryService {
       ResourceRecordQuery.addressIPv4(srv.target),
       timeout: timeout,
     )) {
+      final instanceName = _instanceName(ptr.domainName);
       return TvDevice(
         id: 'androidtv-${ip.address.address}',
-        displayName: _instanceName(ptr.domainName),
+        displayName: instanceName,
         brand: TvBrand.androidTv,
         capabilities: const TvCapabilities().capabilitiesFor(TvBrand.androidTv),
       );

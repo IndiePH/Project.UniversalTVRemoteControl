@@ -9,6 +9,8 @@ import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_ha
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_tcp_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_android_tv_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_hisense_transport_client.dart';
+import 'package:one_remote/remote_control/debug/fake_roku_transport_client.dart';
+import 'package:one_remote/remote_control/debug/fake_tcl_legacy_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
@@ -21,8 +23,14 @@ import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_websocket_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/tcl/roku_http_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/tcl/roku_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/tcl/tcl_legacy_tcp_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/tcl/tcl_legacy_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/tcl_legacy_wifi_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/tcl_roku_adapter.dart';
 
 void _configureShared(GetIt sl) {
   sl.registerSingleton<DeviceRepository>(SharedPrefsDeviceRepository());
@@ -46,13 +54,21 @@ final class RemoteControlDiConfig implements IDiConfig {
   static const String _tvHostOverride = String.fromEnvironment(
     'TV_HOST_OVERRIDE',
   );
+  static const bool _legacyTclEnabled = bool.fromEnvironment(
+    'TCL_LEGACY_WIFI_ENABLED',
+    defaultValue: false,
+  );
 
   @override
   void configure(GetIt sl, AppEnvironment env) {
     _configureShared(sl);
     sl.registerSingleton<DeviceDiscoveryService>(
       CompositeDeviceDiscoveryService(
-        services: [SsdpDeviceDiscoveryService(), MdnsDeviceDiscoveryService()],
+        services: [
+          SsdpDeviceDiscoveryService(),
+          MdnsDeviceDiscoveryService(),
+          RokuSsdpDiscoveryService(),
+        ],
       ),
     );
     sl.registerSingleton<LgPairingKeyStore>(LgPairingKeyStore());
@@ -78,11 +94,25 @@ final class RemoteControlDiConfig implements IDiConfig {
         tracer: env == AppEnvironment.debug ? AndroidTvHandshakeTracer() : null,
       ),
     );
+    sl.registerSingleton<RokuTransportClient>(
+      RokuHttpTransportClient(hostResolver: _resolveHost),
+    );
+    if (_legacyTclEnabled) {
+      sl.registerSingleton<TclLegacyTransportClient>(
+        TclLegacyTcpTransportClient(hostResolver: _resolveHost),
+      );
+    } else {
+      sl.registerSingleton<TclLegacyTransportClient>(
+        FakeTclLegacyTransportClient(),
+      );
+    }
     final adapters = [
       SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
       LgAdapter(transportClient: sl<LgTransportClient>()),
       HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
       AndroidTvAdapter(transportClient: sl<AndroidTvTransportClient>()),
+      TclRokuAdapter(transportClient: sl<RokuTransportClient>()),
+      TclLegacyWifiAdapter(transportClient: sl<TclLegacyTransportClient>()),
     ];
     final commandService = BrandRoutedRemoteCommandService(
       adapters: adapters,
@@ -120,7 +150,11 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
     // still be switched at runtime from the debug settings flow (pairing path).
     sl.registerSingleton<DeviceDiscoveryService>(
       CompositeDeviceDiscoveryService(
-        services: [SsdpDeviceDiscoveryService(), MdnsDeviceDiscoveryService()],
+        services: [
+          SsdpDeviceDiscoveryService(),
+          MdnsDeviceDiscoveryService(),
+          RokuSsdpDiscoveryService(),
+        ],
       ),
     );
     sl.registerSingleton<SamsungTransportClient>(FakeSamsungTransportClient());
@@ -129,11 +163,17 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
     sl.registerSingleton<AndroidTvTransportClient>(
       FakeAndroidTvTransportClient(),
     );
+    sl.registerSingleton<RokuTransportClient>(FakeRokuTransportClient());
+    sl.registerSingleton<TclLegacyTransportClient>(
+      FakeTclLegacyTransportClient(),
+    );
     final adapters = [
       SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
       LgAdapter(transportClient: sl<LgTransportClient>()),
       HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
       AndroidTvAdapter(transportClient: sl<AndroidTvTransportClient>()),
+      TclRokuAdapter(transportClient: sl<RokuTransportClient>()),
+      TclLegacyWifiAdapter(transportClient: sl<TclLegacyTransportClient>()),
     ];
     final commandService = BrandRoutedRemoteCommandService(
       adapters: adapters,

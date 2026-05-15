@@ -131,6 +131,49 @@ void main() {
       expect(TvDevice.fromJson(json), isNull);
     });
 
+    test('fromJson migrates tcl_roku to brand roku default variant', () {
+      final json = <String, dynamic>{
+        'id': 'tv-1',
+        'displayName': 'TCL Roku TV',
+        'brand': 'tcl',
+        'protocolVariant': 'tcl_roku',
+        'capabilities': <String>[],
+      };
+
+      final device = TvDevice.fromJson(json);
+
+      expect(device, isNotNull);
+      expect(device!.brand, TvBrand.roku);
+      expect(device.protocolVariant, TvDevice.defaultProtocolVariant);
+      expect(
+        device.capabilities,
+        equals(const TvCapabilities().capabilitiesFor(TvBrand.roku)),
+      );
+    });
+
+    test(
+      'fromJson migrates tcl_google_tv to brand androidTv default variant',
+      () {
+        final json = <String, dynamic>{
+          'id': 'tv-1',
+          'displayName': 'TCL Google TV',
+          'brand': 'tcl',
+          'protocolVariant': 'tcl_google_tv',
+          'capabilities': <String>[],
+        };
+
+        final device = TvDevice.fromJson(json);
+
+        expect(device, isNotNull);
+        expect(device!.brand, TvBrand.androidTv);
+        expect(device.protocolVariant, TvDevice.defaultProtocolVariant);
+        expect(
+          device.capabilities,
+          equals(const TvCapabilities().capabilitiesFor(TvBrand.androidTv)),
+        );
+      },
+    );
+
     test('protocolVariant is included in toJson output', () {
       const device = TvDevice(
         id: 'tv-1',

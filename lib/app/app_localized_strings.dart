@@ -37,6 +37,18 @@ final class AppLocalizedStrings implements LocalizedStrings {
   @override
   String get pairingAndroidTvPreStep1 => _l10n.pairingAndroidTvPreStep1;
   @override
+  String get pairingRokuProgressHint => _l10n.pairingRokuProgressHint;
+  @override
+  String get pairingRokuPreStep0 => _l10n.pairingRokuPreStep0;
+  @override
+  String get pairingRokuPreStep1 => _l10n.pairingRokuPreStep1;
+  @override
+  String get pairingTclLegacyProgressHint => _l10n.pairingTclLegacyProgressHint;
+  @override
+  String get pairingTclLegacyPreStep0 => _l10n.pairingTclLegacyPreStep0;
+  @override
+  String get pairingTclLegacyPreStep1 => _l10n.pairingTclLegacyPreStep1;
+  @override
   String remoteCommandUnsupported(String commandName, String brandName) =>
       _l10n.remoteCommandUnsupported(commandName, brandName);
   @override

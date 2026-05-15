@@ -14,6 +14,12 @@ abstract interface class LocalizedStrings {
   String get pairingAndroidTvProgressHint;
   String get pairingAndroidTvPreStep0;
   String get pairingAndroidTvPreStep1;
+  String get pairingRokuProgressHint;
+  String get pairingRokuPreStep0;
+  String get pairingRokuPreStep1;
+  String get pairingTclLegacyProgressHint;
+  String get pairingTclLegacyPreStep0;
+  String get pairingTclLegacyPreStep1;
   String remoteCommandUnsupported(String commandName, String brandName);
   String remoteCommandSent(String commandName);
   String remoteCommandFailed(String deviceName);
