@@ -53,6 +53,8 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 - [ ] Set up the "remove ads" product as a **non-consumable** IAP in App Store Connect
 - [ ] Set up the "remove ads" product as a **non-consumable** in Google Play Console
 - [ ] Integrate via the `in_app_purchase` Flutter plugin (official)
+- [ ] Use one non-consumable product ID on both stores (`one_remote_pro` by default; override with `--dart-define=PRO_PRODUCT_ID=...` per environment)
+- [ ] On app launch, call `restorePurchases()` in background and gate ads/Pro features by verified entitlement for the current store account
 
 > Violation of this rule results in app rejection or removal from both stores. This is non-negotiable.
 

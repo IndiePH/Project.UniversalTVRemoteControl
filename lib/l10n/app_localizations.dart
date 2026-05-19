@@ -184,6 +184,18 @@ abstract class AppLocalizations {
   /// **'Done editing layout'**
   String get layoutEditDoneTooltip;
 
+  /// No description provided for @proLayoutLockedTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro required to edit layout'**
+  String get proLayoutLockedTooltip;
+
+  /// No description provided for @settingsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTooltip;
+
   /// No description provided for @layoutEditorTitle.
   ///
   /// In en, this message translates to:
@@ -735,6 +747,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Typing from this phone is not available on this TV screen or app. Use the TV on-screen keyboard and direction buttons to enter text.'**
   String get remoteTextSamsungCompatibilityError;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsDebugSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug'**
+  String get settingsDebugSectionTitle;
+
+  /// No description provided for @settingsUseFakeTransportsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use fake transports'**
+  String get settingsUseFakeTransportsTitle;
+
+  /// No description provided for @settingsUseFakeTransportsEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Using fake discovery and fake transport clients.'**
+  String get settingsUseFakeTransportsEnabled;
+
+  /// No description provided for @settingsUseFakeTransportsDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Using real discovery and real transport clients.'**
+  String get settingsUseFakeTransportsDisabled;
+
+  /// No description provided for @settingsCopyTransportLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy transport logs'**
+  String get settingsCopyTransportLogs;
+
+  /// No description provided for @settingsCopyRuntimeFlagsTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy runtime flags template'**
+  String get settingsCopyRuntimeFlagsTemplate;
+
+  /// No description provided for @settingsCopyRuntimeFlagsTemplateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste and fill dart-define values.'**
+  String get settingsCopyRuntimeFlagsTemplateSubtitle;
+
+  /// No description provided for @proSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get proSectionTitle;
+
+  /// No description provided for @proStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro is active.'**
+  String get proStatusActive;
+
+  /// No description provided for @proStatusNotActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro is not active.'**
+  String get proStatusNotActive;
+
+  /// No description provided for @proStatusChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking purchase status...'**
+  String get proStatusChecking;
+
+  /// No description provided for @proStoreAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your purchase is tied to your current Google Play or App Store account. Use Restore on a new phone with the same account.'**
+  String get proStoreAccountHint;
+
+  /// No description provided for @proUpgradeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Pro'**
+  String get proUpgradeButton;
+
+  /// No description provided for @proRestoreButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get proRestoreButton;
+
+  /// No description provided for @proStoreUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Store purchases are unavailable on this device.'**
+  String get proStoreUnavailable;
+
+  /// No description provided for @proPurchaseStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase flow started.'**
+  String get proPurchaseStarted;
+
+  /// No description provided for @proRestoreStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring purchases...'**
+  String get proRestoreStarted;
 }
 
 class _AppLocalizationsDelegate

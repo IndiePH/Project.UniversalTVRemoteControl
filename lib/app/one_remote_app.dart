@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/app_localized_strings.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/application.dart';
 import 'package:one_remote/remote_control/presentation/presentation.dart';
@@ -40,6 +41,7 @@ class OneRemoteApp extends StatelessWidget {
           deviceRepository: sl<DeviceRepository>(),
           discoveryService: sl<DeviceDiscoveryService>(),
           layoutRepository: sl<LayoutRepository>(),
+          proEntitlementService: sl<ProEntitlementService>(),
           transportLogReaderProvider: sl<TransportLogReaderProvider>(),
         ),
       ),

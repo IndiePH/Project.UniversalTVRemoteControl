@@ -7,12 +7,14 @@ class RemoteHomeAppBarActions extends StatelessWidget {
     super.key,
     required this.isLayoutEditMode,
     required this.onToggleLayoutEditMode,
-    required this.onShowDebugSettings,
+    required this.onShowSettings,
+    required this.isPro,
   });
 
   final bool isLayoutEditMode;
   final VoidCallback? onToggleLayoutEditMode;
-  final VoidCallback onShowDebugSettings;
+  final VoidCallback onShowSettings;
+  final bool isPro;
 
   @override
   Widget build(BuildContext context) {
@@ -22,13 +24,21 @@ class RemoteHomeAppBarActions extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onToggleLayoutEditMode,
-          icon: Icon(isLayoutEditMode ? Icons.check : Icons.edit_outlined),
-          tooltip: isLayoutEditMode ? l10n.layoutEditDoneTooltip : l10n.layoutEditTooltip,
+          icon: Icon(
+            isLayoutEditMode
+                ? Icons.check
+                : (isPro
+                      ? Icons.edit_outlined
+                      : Icons.workspace_premium_outlined),
+          ),
+          tooltip: isLayoutEditMode
+              ? l10n.layoutEditDoneTooltip
+              : (isPro ? l10n.layoutEditTooltip : l10n.proLayoutLockedTooltip),
         ),
         IconButton(
-          onPressed: onShowDebugSettings,
+          onPressed: onShowSettings,
           icon: const Icon(Icons.settings_outlined),
-          tooltip: 'Debug settings',
+          tooltip: l10n.settingsTooltip,
         ),
       ],
     );

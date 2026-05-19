@@ -54,6 +54,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get layoutEditDoneTooltip => 'Done editing layout';
 
   @override
+  String get proLayoutLockedTooltip => 'Pro required to edit layout';
+
+  @override
+  String get settingsTooltip => 'Settings';
+
+  @override
   String get layoutEditorTitle => 'Layout Editor';
 
   @override
@@ -387,4 +393,63 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get remoteTextSamsungCompatibilityError =>
       'Typing from this phone is not available on this TV screen or app. Use the TV on-screen keyboard and direction buttons to enter text.';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsDebugSectionTitle => 'Debug';
+
+  @override
+  String get settingsUseFakeTransportsTitle => 'Use fake transports';
+
+  @override
+  String get settingsUseFakeTransportsEnabled =>
+      'Using fake discovery and fake transport clients.';
+
+  @override
+  String get settingsUseFakeTransportsDisabled =>
+      'Using real discovery and real transport clients.';
+
+  @override
+  String get settingsCopyTransportLogs => 'Copy transport logs';
+
+  @override
+  String get settingsCopyRuntimeFlagsTemplate => 'Copy runtime flags template';
+
+  @override
+  String get settingsCopyRuntimeFlagsTemplateSubtitle =>
+      'Paste and fill dart-define values.';
+
+  @override
+  String get proSectionTitle => 'Pro';
+
+  @override
+  String get proStatusActive => 'Pro is active.';
+
+  @override
+  String get proStatusNotActive => 'Pro is not active.';
+
+  @override
+  String get proStatusChecking => 'Checking purchase status...';
+
+  @override
+  String get proStoreAccountHint =>
+      'Your purchase is tied to your current Google Play or App Store account. Use Restore on a new phone with the same account.';
+
+  @override
+  String get proUpgradeButton => 'Upgrade to Pro';
+
+  @override
+  String get proRestoreButton => 'Restore purchases';
+
+  @override
+  String get proStoreUnavailable =>
+      'Store purchases are unavailable on this device.';
+
+  @override
+  String get proPurchaseStarted => 'Purchase flow started.';
+
+  @override
+  String get proRestoreStarted => 'Restoring purchases...';
 }

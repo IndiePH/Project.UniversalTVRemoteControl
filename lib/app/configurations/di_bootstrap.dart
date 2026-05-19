@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/app_localized_strings.dart';
 import 'package:one_remote/app/configurations/app_di_config.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
+import 'package:one_remote/app/configurations/app_monetization_di_config.dart';
 import 'package:one_remote/app/configurations/i_di_config.dart';
 import 'package:one_remote/app/localized_strings.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
@@ -20,12 +21,16 @@ final class DiBootstrap {
     final stored = await TransportDebugSettings.readUseFakeTransportsOverride();
     final useFake = stored ?? _compileUseFakeTransports;
     return switch (env) {
-      AppEnvironment.production => [const RemoteControlDiConfig()],
+      AppEnvironment.production => [
+        const RemoteControlDiConfig(),
+        const AppMonetizationDiConfig(),
+      ],
       AppEnvironment.development || AppEnvironment.debug => [
         useFake
             ? const DebugRemoteControlDiConfig()
             : const RemoteControlDiConfig(),
         const DevAppDiConfig(),
+        const AppMonetizationDiConfig(),
       ],
     };
   }

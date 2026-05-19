@@ -19,6 +19,8 @@
 
   "layoutEditTooltip": "Edit layout",
   "layoutEditDoneTooltip": "Done editing layout",
+  "proLayoutLockedTooltip": "Pro required to edit layout",
+  "settingsTooltip": "Settings",
   "layoutEditorTitle": "Layout Editor",
   "layoutEditorResetButton": "Reset Layout",
   "layoutEditorInstruction": "Drag buttons to new positions. Grid lines show cells; a green outline means the drop is allowed.",
@@ -240,5 +242,25 @@
 
   "remoteTextLgImeFocusRequired": "LG IME text injection rejected — ensure a text field is focused on the TV.",
 
-  "remoteTextSamsungCompatibilityError": "Typing from this phone is not available on this TV screen or app. Use the TV on-screen keyboard and direction buttons to enter text."
+  "remoteTextSamsungCompatibilityError": "Typing from this phone is not available on this TV screen or app. Use the TV on-screen keyboard and direction buttons to enter text.",
+
+  "settingsTitle": "Settings",
+  "settingsDebugSectionTitle": "Debug",
+  "settingsUseFakeTransportsTitle": "Use fake transports",
+  "settingsUseFakeTransportsEnabled": "Using fake discovery and fake transport clients.",
+  "settingsUseFakeTransportsDisabled": "Using real discovery and real transport clients.",
+  "settingsCopyTransportLogs": "Copy transport logs",
+  "settingsCopyRuntimeFlagsTemplate": "Copy runtime flags template",
+  "settingsCopyRuntimeFlagsTemplateSubtitle": "Paste and fill dart-define values.",
+
+  "proSectionTitle": "Pro",
+  "proStatusActive": "Pro is active.",
+  "proStatusNotActive": "Pro is not active.",
+  "proStatusChecking": "Checking purchase status...",
+  "proStoreAccountHint": "Your purchase is tied to your current Google Play or App Store account. Use Restore on a new phone with the same account.",
+  "proUpgradeButton": "Upgrade to Pro",
+  "proRestoreButton": "Restore purchases",
+  "proStoreUnavailable": "Store purchases are unavailable on this device.",
+  "proPurchaseStarted": "Purchase flow started.",
+  "proRestoreStarted": "Restoring purchases..."
 }

@@ -48,6 +48,7 @@ dependencies:
   basic_utils: ^5.8.2
   pointycastle: ^4.0.0
   google_mobile_ads: ^8.0.0
+  in_app_purchase: ^3.2.3
 
 dev_dependencies:
   flutter_test:

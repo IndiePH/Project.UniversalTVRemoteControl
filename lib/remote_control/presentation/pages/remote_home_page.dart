@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:one_remote/app/ads/bottom_banner_ad_placement.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/message_handler.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
+import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/application.dart';
 import 'package:one_remote/remote_control/debug/runtime_flags_template_debug.dart';
@@ -16,6 +19,7 @@ import 'package:one_remote/remote_control/presentation/pages/remote_keyboard_ava
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_home_app_bar_actions.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_home_remote_grid.dart';
+import 'package:one_remote/remote_control/presentation/widgets/remote_home_settings_sheet.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_home_status_panel.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor.dart';
@@ -34,6 +38,7 @@ class RemoteHomePage extends StatefulWidget {
     required this.deviceRepository,
     required this.discoveryService,
     required this.layoutRepository,
+    required this.proEntitlementService,
     this.transportLogReaderProvider = const NoopTransportLogReaderProvider(),
   });
 
@@ -42,6 +47,7 @@ class RemoteHomePage extends StatefulWidget {
   final DeviceRepository deviceRepository;
   final DeviceDiscoveryService discoveryService;
   final LayoutRepository layoutRepository;
+  final ProEntitlementService proEntitlementService;
   final TransportLogReaderProvider transportLogReaderProvider;
 
   @override
@@ -49,6 +55,10 @@ class RemoteHomePage extends StatefulWidget {
 }
 
 class _RemoteHomePageState extends State<RemoteHomePage> {
+  static const bool _compileUseFakeTransports = bool.fromEnvironment(
+    'USE_FAKE_TRANSPORTS',
+    defaultValue: false,
+  );
   static const int _gridColumns = 5;
   static const int _gridRows = 8;
   static const double _gridGap = 6;
@@ -76,12 +86,23 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   @override
   void initState() {
     super.initState();
+    widget.proEntitlementService.statusNotifier.addListener(
+      _handleProEntitlementChanged,
+    );
     _loadInitialDevice();
   }
 
   @override
   void didUpdateWidget(RemoteHomePage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.proEntitlementService != widget.proEntitlementService) {
+      oldWidget.proEntitlementService.statusNotifier.removeListener(
+        _handleProEntitlementChanged,
+      );
+      widget.proEntitlementService.statusNotifier.addListener(
+        _handleProEntitlementChanged,
+      );
+    }
     if (oldWidget.commandService != widget.commandService) {
       _subscribeRemoteTextReady(_activeDevice);
       _subscribeConnectionState(_activeDevice);
@@ -90,6 +111,9 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
 
   @override
   void dispose() {
+    widget.proEntitlementService.statusNotifier.removeListener(
+      _handleProEntitlementChanged,
+    );
     _remoteTextReadySub?.cancel();
     _connectionStateSub?.cancel();
     _pairButtonBlinkTimer?.cancel();
@@ -98,6 +122,15 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     _toastOverlayEntry?.remove();
     _textController.dispose();
     super.dispose();
+  }
+
+  void _handleProEntitlementChanged() {
+    if (widget.proEntitlementService.isPro || !_isLayoutEditMode || !mounted) {
+      return;
+    }
+    setState(() {
+      _isLayoutEditMode = false;
+    });
   }
 
   void _subscribeRemoteTextReady(TvDevice? device) {
@@ -405,13 +438,91 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     _showToast('Copied runtime flags template to clipboard.');
   }
 
-  void _showTransportDebugSheet() {
-    unawaited(
-      RemoteHomeActions.showTransportDebugSheet(
-        context: context,
-        onCopyTransportLogs: _copyLatestTransportLog,
-        onCopyRuntimeFlagsTemplate: _copyRuntimeFlagsTemplate,
-      ),
+  Future<void> _purchasePro() async {
+    final l10n = AppLocalizations.of(context)!;
+    final started = await widget.proEntitlementService.purchasePro();
+    if (!mounted) {
+      return;
+    }
+    if (started) {
+      _showToast(l10n.proPurchaseStarted);
+    } else {
+      _showToast(l10n.proStoreUnavailable, isError: true);
+    }
+  }
+
+  Future<void> _restorePro() async {
+    final l10n = AppLocalizations.of(context)!;
+    final started = await widget.proEntitlementService.restorePurchases();
+    if (!mounted) {
+      return;
+    }
+    if (started) {
+      _showToast(l10n.proRestoreStarted);
+    } else {
+      _showToast(l10n.proStoreUnavailable, isError: true);
+    }
+  }
+
+  Future<void> _showSettingsSheet() async {
+    final env = widget.appEnvironment;
+    final showDebugSection = env == AppEnvironment.debug;
+    final stored = await TransportDebugSettings.readUseFakeTransportsOverride();
+    var pendingFake = stored ?? _compileUseFakeTransports;
+    if (!mounted) {
+      return;
+    }
+    final isDebug = env == AppEnvironment.debug;
+    final proService = widget.proEntitlementService;
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (_, setModalState) {
+            return ValueListenableBuilder<ProEntitlementStatus>(
+              valueListenable: proService.statusNotifier,
+              builder: (context, status, child) {
+                return ValueListenableBuilder<bool>(
+                  valueListenable: proService.storeAvailableNotifier,
+                  builder: (context, storeAvailable, child) {
+                    return RemoteHomeSettingsSheet(
+                      entitlementStatus: status,
+                      storeAvailable: storeAvailable,
+                      onUpgradeToPro: () => unawaited(_purchasePro()),
+                      onRestorePurchases: () => unawaited(_restorePro()),
+                      showDebugSection: showDebugSection,
+                      showTransportToggle: isDebug,
+                      useFakeTransports: pendingFake,
+                      onUseFakeTransportsChanged: (value) async {
+                        await TransportDebugSettings.writeUseFakeTransports(
+                          value,
+                        );
+                        setModalState(() {
+                          pendingFake = value;
+                        });
+                      },
+                      onCopyTransportLogs: () {
+                        unawaited(() async {
+                          final didCopy = await _copyLatestTransportLog();
+                          if (didCopy && sheetContext.mounted) {
+                            Navigator.pop(sheetContext);
+                          }
+                        }());
+                      },
+                      onCopyRuntimeFlagsTemplate: () {
+                        Navigator.pop(sheetContext);
+                        unawaited(_copyRuntimeFlagsTemplate());
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -654,94 +765,104 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     final deviceName =
         _activeDevice?.displayName ??
         AppLocalizations.of(context)!.pairingNoTvConnected;
+    return ValueListenableBuilder<ProEntitlementStatus>(
+      valueListenable: widget.proEntitlementService.statusNotifier,
+      builder: (context, proStatus, child) {
+        final isPro = proStatus == ProEntitlementStatus.entitled;
+        final canToggleLayout =
+            _isLayoutEditMode || (_activeDevice != null && isPro);
+        final showAds = proStatus == ProEntitlementStatus.notEntitled;
+        final adOverlay = BottomBannerAdPlacement.buildOverlay(
+          appEnvironment: widget.appEnvironment,
+          showAds: showAds,
+        );
 
-    return Scaffold(
-      // Keep the remote grid fixed when the IME opens; the keyboard overlays
-      // the lower portion of the screen instead of shrinking the body.
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        toolbarHeight: 50,
-        title: Text(AppLocalizations.of(context)!.appTitle),
-        actions: [
-          RemoteHomeAppBarActions(
-            isLayoutEditMode: _isLayoutEditMode,
-            onToggleLayoutEditMode: _activeDevice == null && !_isLayoutEditMode
-                ? null
-                : _toggleLayoutEditMode,
-            onShowDebugSettings: _showTransportDebugSheet,
-          ),
-        ],
-        flexibleSpace: SafeArea(
-          bottom: false,
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: Container(
-              height: 1,
-              color: AppTheme.colorsOf(
-                context,
-              ).remoteOutline.withValues(alpha: 0.25),
+        return Scaffold(
+          // Keep the remote grid fixed when the IME opens; the keyboard overlays
+          // the lower portion of the screen instead of shrinking the body.
+          resizeToAvoidBottomInset: false,
+          appBar: AppBar(
+            toolbarHeight: 50,
+            title: Text(AppLocalizations.of(context)!.appTitle),
+            actions: [
+              RemoteHomeAppBarActions(
+                isLayoutEditMode: _isLayoutEditMode,
+                onToggleLayoutEditMode: canToggleLayout
+                    ? _toggleLayoutEditMode
+                    : null,
+                onShowSettings: () => unawaited(_showSettingsSheet()),
+                isPro: isPro,
+              ),
+            ],
+            flexibleSpace: SafeArea(
+              bottom: false,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Container(
+                  height: 1,
+                  color: AppTheme.colorsOf(
+                    context,
+                  ).remoteOutline.withValues(alpha: 0.25),
+                ),
+              ),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(
+                height: 1,
+                color: AppTheme.colorsOf(
+                  context,
+                ).remoteOutline.withValues(alpha: 0.25),
+              ),
             ),
           ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: AppTheme.colorsOf(
-              context,
-            ).remoteOutline.withValues(alpha: 0.25),
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _isLayoutEditMode
+                      ? RemoteLayoutEditor(
+                          layoutItems: _layoutItems,
+                          itemDefinitionsById: kRemoteLayoutItemDefinitionById,
+                          gridColumns: _gridColumns,
+                          gridRows: _gridRows,
+                          gridGap: _gridGap,
+                          onResetLayout: _resetLayoutForActiveDevice,
+                          onPersistLayout: _persistLayoutForActiveDevice,
+                        )
+                      : RemoteHomeStatusPanel(
+                          deviceName: deviceName,
+                          status: _status,
+                          connectionState: _connectionState,
+                          onOpenPairing: _openPairing,
+                          hasActiveDevice: _activeDevice != null,
+                          hasAnyPairedDevice: _hasAnyPairedDevice,
+                          highlightPairButton: _showPairingHint,
+                          pairButtonBlinkOn: _pairButtonBlinkOn,
+                          overlayOnChild: false,
+                          child: RemoteHomeRemoteGrid(
+                            layoutItems: _layoutItems,
+                            gridColumns: _gridColumns,
+                            gridRows: _gridRows,
+                            gridGap: _gridGap,
+                            controlsEnabled: _activeDevice != null,
+                            pairingHintActive:
+                                _showPairingHint && _activeDevice == null,
+                            onSendCommand: _sendCommandFromGrid,
+                            onSearchInputPressed: () =>
+                                unawaited(_onSearchInputKeyboardPressed()),
+                            onDisabledInteraction: _onDisabledGridInteraction,
+                          ),
+                        ),
+                ),
+              ),
+              ...[adOverlay].whereType<Widget>(),
+            ],
           ),
-        ),
-      ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: _isLayoutEditMode
-                  ? RemoteLayoutEditor(
-                      layoutItems: _layoutItems,
-                      itemDefinitionsById: kRemoteLayoutItemDefinitionById,
-                      gridColumns: _gridColumns,
-                      gridRows: _gridRows,
-                      gridGap: _gridGap,
-                      onResetLayout: _resetLayoutForActiveDevice,
-                      onPersistLayout: _persistLayoutForActiveDevice,
-                    )
-                  : RemoteHomeStatusPanel(
-                      deviceName: deviceName,
-                      status: _status,
-                      connectionState: _connectionState,
-                      onOpenPairing: _openPairing,
-                      hasActiveDevice: _activeDevice != null,
-                      hasAnyPairedDevice: _hasAnyPairedDevice,
-                      highlightPairButton: _showPairingHint,
-                      pairButtonBlinkOn: _pairButtonBlinkOn,
-                      overlayOnChild: false,
-                      child: RemoteHomeRemoteGrid(
-                        layoutItems: _layoutItems,
-                        gridColumns: _gridColumns,
-                        gridRows: _gridRows,
-                        gridGap: _gridGap,
-                        controlsEnabled: _activeDevice != null,
-                        pairingHintActive:
-                            _showPairingHint && _activeDevice == null,
-                        onSendCommand: _sendCommandFromGrid,
-                        onSearchInputPressed: () =>
-                            unawaited(_onSearchInputKeyboardPressed()),
-                        onDisabledInteraction: _onDisabledGridInteraction,
-                      ),
-                    ),
-            ),
-          ),
-          if (BottomBannerAdPlacement.buildOverlay(
-                appEnvironment: widget.appEnvironment,
-              )
-              case final overlay?)
-            overlay,
-        ],
-      ),
+        );
+      },
     );
   }
 }

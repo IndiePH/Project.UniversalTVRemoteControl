@@ -10,6 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
+import 'package:one_remote/app/monetization/fake_pro_entitlement_repository.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
+import 'package:one_remote/app/monetization/shared_prefs_pro_entitlement_cache.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/app/one_remote_app.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
@@ -69,52 +73,60 @@ void main() {
     expect(find.text('VOL'), findsOneWidget);
   });
 
-  testWidgets(
-    'toggling fake transport keeps debug settings sheet open',
-    (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues({});
-      DiBootstrap.initialize(AppEnvironment.debug);
-      addTearDown(GetIt.instance.reset);
+  testWidgets('toggling fake transport keeps debug settings sheet open', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    DiBootstrap.initialize(AppEnvironment.debug);
+    addTearDown(GetIt.instance.reset);
 
-      await tester.pumpWidget(const OneRemoteApp());
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(const OneRemoteApp());
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.settings_outlined));
-      await tester.pumpAndSettle();
-      expect(find.text('Use fake transports'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('Use fake transports'), findsOneWidget);
 
-      await tester.tap(find.byType(Switch));
-      await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byType(Switch),
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
 
-      expect(find.text('Use fake transports'), findsOneWidget);
-      expect(find.text('Debug'), findsOneWidget);
-    },
-  );
+    expect(find.text('Use fake transports'), findsOneWidget);
+    expect(find.text('Debug'), findsOneWidget);
+  });
 
-  testWidgets(
-    'toggling fake transport shows fake brands in pairing list',
-    (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues({});
-      DiBootstrap.initialize(AppEnvironment.debug);
-      addTearDown(GetIt.instance.reset);
+  testWidgets('toggling fake transport shows fake brands in pairing list', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    DiBootstrap.initialize(AppEnvironment.debug);
+    addTearDown(GetIt.instance.reset);
 
-      await tester.pumpWidget(const OneRemoteApp());
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(const OneRemoteApp());
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.settings_outlined));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byType(Switch));
-      await tester.pumpAndSettle();
-      await tester.tapAt(const Offset(20, 20));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Connect TV'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byType(Switch),
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Connect TV'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('Samsung QLED - Living Room'), findsOneWidget);
-      expect(find.text('LG OLED - Bedroom'), findsOneWidget);
-      expect(find.text('Hisense U7 - Office'), findsOneWidget);
-    },
-  );
+    expect(find.text('Samsung QLED - Living Room'), findsOneWidget);
+    expect(find.text('LG OLED - Bedroom'), findsOneWidget);
+    expect(find.text('Hisense U7 - Office'), findsOneWidget);
+  });
 
   testWidgets(
     'copy transport logs keeps debug settings sheet open when no logs exist',
@@ -130,6 +142,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Copy transport logs'), findsOneWidget);
 
+      await tester.scrollUntilVisible(
+        find.text('Copy transport logs'),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('Copy transport logs'));
       await tester.pumpAndSettle();
 
@@ -165,7 +182,9 @@ void main() {
       DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
     );
     GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
-      DefaultPairingProgressHintRegistry(localizedStrings: FakeLocalizedStrings()),
+      DefaultPairingProgressHintRegistry(
+        localizedStrings: FakeLocalizedStrings(),
+      ),
     );
     GetIt.instance.registerSingleton<TvReachabilityService>(
       _StubTvReachabilityService(),
@@ -192,6 +211,7 @@ void main() {
           deviceRepository: InMemoryDeviceRepository(),
           discoveryService: _StaticDiscoveryService(),
           layoutRepository: _InMemoryLayoutRepository(),
+          proEntitlementService: _buildEntitledProService(),
         ),
       ),
     );
@@ -237,7 +257,9 @@ void main() {
       DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
     );
     GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
-      DefaultPairingProgressHintRegistry(localizedStrings: FakeLocalizedStrings()),
+      DefaultPairingProgressHintRegistry(
+        localizedStrings: FakeLocalizedStrings(),
+      ),
     );
     GetIt.instance.registerSingleton<TvReachabilityService>(
       _StubTvReachabilityService(),
@@ -267,6 +289,7 @@ void main() {
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
           layoutRepository: _InMemoryLayoutRepository(),
+          proEntitlementService: _buildEntitledProService(),
         ),
       ),
     );
@@ -303,8 +326,12 @@ void main() {
             commandService: InMemoryRemoteCommandService(),
             discoveryService: _EmptyDiscoveryService(),
             deviceRepository: InMemoryDeviceRepository(),
-            stepsRegistry: DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
-            hintRegistry: DefaultPairingProgressHintRegistry(localizedStrings: FakeLocalizedStrings()),
+            stepsRegistry: DefaultPrePairingStepsRegistry(
+              localizedStrings: FakeLocalizedStrings(),
+            ),
+            hintRegistry: DefaultPairingProgressHintRegistry(
+              localizedStrings: FakeLocalizedStrings(),
+            ),
             reachabilityService: _StubTvReachabilityService(),
           ),
         ),
@@ -367,8 +394,12 @@ void main() {
             commandService: InMemoryRemoteCommandService(),
             discoveryService: _StaticDiscoveryService(),
             deviceRepository: repository,
-            stepsRegistry: DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
-            hintRegistry: DefaultPairingProgressHintRegistry(localizedStrings: FakeLocalizedStrings()),
+            stepsRegistry: DefaultPrePairingStepsRegistry(
+              localizedStrings: FakeLocalizedStrings(),
+            ),
+            hintRegistry: DefaultPairingProgressHintRegistry(
+              localizedStrings: FakeLocalizedStrings(),
+            ),
             reachabilityService: _StubTvReachabilityService(),
             activeDeviceId: 'samsung-living-room',
           ),
@@ -432,8 +463,12 @@ void main() {
             commandService: InMemoryRemoteCommandService(),
             discoveryService: _StaticDiscoveryService(),
             deviceRepository: repository,
-            stepsRegistry: DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
-            hintRegistry: DefaultPairingProgressHintRegistry(localizedStrings: FakeLocalizedStrings()),
+            stepsRegistry: DefaultPrePairingStepsRegistry(
+              localizedStrings: FakeLocalizedStrings(),
+            ),
+            hintRegistry: DefaultPairingProgressHintRegistry(
+              localizedStrings: FakeLocalizedStrings(),
+            ),
             reachabilityService: _StubTvReachabilityService(),
             activeDeviceId: activeDevice.id,
           ),
@@ -515,4 +550,14 @@ Color? _pairButtonColor(WidgetTester tester) {
     ),
   );
   return material.color;
+}
+
+ProEntitlementService _buildEntitledProService() {
+  final repository = FakeProEntitlementRepository(
+    initialStatus: ProEntitlementStatus.entitled,
+  );
+  return ProEntitlementService(
+    repository: repository,
+    cache: SharedPrefsProEntitlementCache(),
+  );
 }
