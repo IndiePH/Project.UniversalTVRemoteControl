@@ -1,0 +1,312 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "OneRemote",
+
+  "uiCancel": "Cancel",
+  "uiDone": "Done",
+  "uiDismiss": "Dismiss",
+  "uiConfirm": "Confirm",
+  "uiContinue": "Continue",
+  "uiRename": "Rename",
+  "uiRemove": "Remove",
+
+  "connectionStateConnected": "Connected",
+  "connectionStateConnecting": "Connecting…",
+  "connectionStateError": "Connection error",
+  "connectionStateDisconnected": "Disconnected",
+  "connectTvTooltip": "Connect TV",
+  "remoteSwitchDeviceTooltip": "Switch TV",
+  "remoteDeviceSwitcherTitle": "Your TVs",
+  "remoteDeviceSwitcherManageButton": "Add or manage TVs",
+
+  "layoutEditTooltip": "Edit layout",
+  "layoutEditDoneTooltip": "Done editing layout",
+  "proLayoutLockedTooltip": "Pro required to edit layout",
+  "settingsTooltip": "Settings",
+  "layoutEditorTitle": "Layout Editor",
+  "layoutEditorResetButton": "Reset Layout",
+  "layoutEditorInstruction": "Drag buttons to new positions. Grid lines show cells; a green outline means the drop is allowed.",
+
+  "remoteTextEntrySheetTitle": "Send text to TV",
+  "remoteTextEntryHint": "Search or enter text",
+  "remoteTextEntrySendButton": "Send",
+
+  "dpadUp": "Up",
+  "dpadDown": "Down",
+  "dpadLeft": "Left",
+  "dpadRight": "Right",
+  "dpadOk": "OK",
+
+  "pairingNoAdapter": "No adapter configured for {brandName}.",
+  "@pairingNoAdapter": {
+    "placeholders": {
+      "brandName": {"type": "String"}
+    }
+  },
+
+  "pairingApproved": "Pairing approved for {deviceName}.",
+  "@pairingApproved": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingFailed": "Pairing failed for {deviceName}.",
+  "@pairingFailed": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingCodeAccepted": "Pairing code accepted for {deviceName}.",
+  "@pairingCodeAccepted": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingCodeSubmitFailed": "Failed to submit pairing code for {deviceName}.",
+  "@pairingCodeSubmitFailed": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingLgProgressHint": "Look at your TV screen and accept the pairing prompt.",
+
+  "pairingSamsungProgressHint": "Accept any connection permission that appears on your TV.",
+
+  "pairingHisenseProgressHint": "Connecting to TV…",
+
+  "pairingLgPreStep0": "Your LG TV is ON and connected to the same Wi-Fi.",
+
+  "pairingLgPreStep1": "When the pairing request appears on your TV screen, tap 'Allow'.",
+
+  "pairingSamsungPreStep0": "Your Samsung TV is ON and connected to the same Wi-Fi.",
+
+  "pairingSamsungPreStep1": "Accept any connection permission that appears on your TV.",
+
+  "pairingAndroidTvProgressHint": "A PIN will appear on your TV screen — enter it when prompted.",
+
+  "pairingAndroidTvPreStep0": "Your Android TV or Google TV is ON and on the same Wi-Fi.",
+
+  "pairingAndroidTvPreStep1": "A PIN will appear on your TV screen — enter it when prompted.",
+
+  "pairingRokuProgressHint": "Make sure mobile control is enabled in Roku settings.",
+
+  "pairingRokuPreStep0": "On TV, open Settings > System > Advanced system settings.",
+
+  "pairingRokuPreStep1": "Set Control by mobile apps to Enabled.",
+
+  "pairingTclLegacyProgressHint": "Connecting using legacy TCL Wi-Fi transport.",
+
+  "pairingTclLegacyPreStep0": "Legacy TCL Wi-Fi requires the TV IP address on port 4123.",
+
+  "pairingTclLegacyPreStep1": "Power-on may still require the original remote, CEC, or WOL.",
+
+  "pairingWaitingForApproval": "Waiting for TV approval...",
+
+  "pairingDiscoveryLimitedSupport": "Limited support — some remote features may not work on this TV.",
+  "pairingDiscoveryExperimentalSupport": "{brandName} — experimental support; pairing and commands may be unstable.",
+  "@pairingDiscoveryExperimentalSupport": {
+    "placeholders": {
+      "brandName": {"type": "String"}
+    }
+  },
+  "pairingDiscoveryHisenseLimitedSupport": "Limited support — remote keys work; app keyboard may not be available.",
+  "pairingDiscoveryRokuLimitedSupport": "Limited support — keys and power work; no app keyboard or PIN pairing.",
+
+  "pairingNotePreviouslyPaired": "Previously paired",
+  "pairingNotePreviouslyPairedAt": "Previously paired ({pairedAt})",
+  "@pairingNotePreviouslyPairedAt": {
+    "placeholders": {
+      "pairedAt": {"type": "String"}
+    }
+  },
+
+  "pairingDevicePairedOn": "(paired on {pairedAt})",
+  "@pairingDevicePairedOn": {
+    "placeholders": {
+      "pairedAt": {"type": "String"}
+    }
+  },
+
+  "pairingDeviceRemoved": "Removed {deviceName}",
+  "@pairingDeviceRemoved": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingExceptionFailed": "Pairing failed. Please try again.",
+  "pairingDiscoveryFailed": "Discovery failed. Please try again.",
+  "pairingNoTvConnected": "No TV connected",
+  "pairingNoDevicesFound": "No TVs found yet. Run a scan to discover devices.",
+  "pairingAddManuallyTooltip": "Add manually",
+  "pairingScanTooltip": "Scan for TVs",
+  "pairingSelectRemoteTitle": "Select Remote",
+  "pairingHelpTooltip": "Pairing help",
+  "pairingRenameTooltip": "Rename",
+  "pairingDeviceInfoTooltip": "Device info",
+
+  "pairingNeedHelpTitle": "Need help finding your TV?",
+  "pairingPermissionChecklistTitle": "Permission and network checklist",
+  "pairingPermissionChecklistBody": "- Keep phone and TV on the same Wi-Fi network.\n- Allow local network/Wi-Fi permissions when prompted.\n- Disable client/AP isolation on your router if enabled.",
+  "pairingCannotFindTvTitle": "Cannot find TV? Try this",
+  "pairingCannotFindTvBody": "- Run Scan for TVs again and wait a few seconds.\n- Use Add Manually with the TV IP address.\n- Restart TV network, then re-open the pairing screen.",
+
+  "pairingManualTitle": "Manual Pairing",
+  "pairingManualBrandLabel": "TV brand",
+  "pairingManualIpLabel": "TV IP address",
+  "pairingManualIpHint": "e.g. 192.168.1.20",
+  "pairingManualAddButton": "Add Manually",
+  "pairingManualErrorEmptyIp": "Enter a TV IP address.",
+  "pairingManualErrorInvalidIp": "Enter a valid IPv4 address (e.g. 192.168.1.20).",
+
+  "pairingPreCheckTitle": "Before pairing with {brandName}",
+  "@pairingPreCheckTitle": {
+    "placeholders": {
+      "brandName": {"type": "String"}
+    }
+  },
+  "pairingPreCheckMakeSure": "Make sure:",
+
+  "pairingPinTitle": "Enter TV pairing code",
+  "pairingPinBody": "A code will appear on your TV screen — enter it below to finish pairing.",
+  "pairingPinCodeLabel": "4-digit TV code",
+  "pairingPinCodeLabelHex": "6-character code (e.g. A4B2C1)",
+  "pairingPinSubmitButton": "Submit code",
+  "pairingPinErrorInvalid": "Enter exactly 4 digits.",
+  "pairingPinErrorInvalidHex": "Enter exactly 6 characters (0–9, A–F).",
+
+  "pairingOutcomeSuccessTitle": "Paired successfully",
+  "pairingOutcomeFailureTitle": "Pairing failed",
+  "pairingOutcomeSuccessBody": "{deviceName} is ready to use.",
+  "@pairingOutcomeSuccessBody": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingRenameDialogTitle": "Rename TV",
+  "pairingRenameNameLabel": "TV name",
+  "pairingRenameErrorEmpty": "Enter a name.",
+
+  "pairingRemoveTitle": "Remove saved device?",
+  "pairingRemoveActiveBody": "This is the currently connected device. Removing it may disconnect your current control session.",
+  "pairingRemoveSavedBody": "This will remove \"{deviceName}\" from saved devices.",
+  "@pairingRemoveSavedBody": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingDeviceInfoTitle": "Device Info",
+  "pairingDeviceInfoLabelName": "Name",
+  "pairingDeviceInfoLabelBrand": "Brand",
+  "pairingDeviceInfoLabelModel": "Model",
+  "pairingDeviceInfoLabelVariant": "Variant",
+  "pairingDeviceInfoLabelPairedOn": "Paired on",
+  "pairingDeviceInfoLabelLastIp": "Last known IP",
+
+  "remoteCommandUnsupported": "Command {commandName} is not supported for {brandName}.",
+  "@remoteCommandUnsupported": {
+    "placeholders": {
+      "commandName": {"type": "String"},
+      "brandName": {"type": "String"}
+    }
+  },
+
+  "remoteCommandSent": "Sent: {commandName}",
+  "@remoteCommandSent": {
+    "placeholders": {
+      "commandName": {"type": "String"}
+    }
+  },
+
+  "remoteCommandFailed": "Failed to send command to {deviceName}.",
+  "@remoteCommandFailed": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "remoteTextInputUnsupported": "Text input is not supported for {brandName}.",
+  "@remoteTextInputUnsupported": {
+    "placeholders": {
+      "brandName": {"type": "String"}
+    }
+  },
+
+  "remoteTextSent": "Text sent: \"{text}\"",
+  "@remoteTextSent": {
+    "placeholders": {
+      "text": {"type": "String"}
+    }
+  },
+
+  "remoteTextFailed": "Failed to send text to {deviceName}.",
+  "@remoteTextFailed": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "remoteTextLgImeFocusRequired": "LG IME text injection rejected — ensure a text field is focused on the TV.",
+
+  "remoteTextSamsungCompatibilityError": "Typing from this phone is not available on this TV screen or app. Use the TV on-screen keyboard and direction buttons to enter text.",
+
+  "settingsTitle": "Settings",
+  "settingsAppearanceSectionTitle": "Appearance",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "settingsThemeSystem": "System",
+  "settingsThemeSystemSubtitle": "Match your device light or dark mode",
+  "settingsDebugSectionTitle": "Debug",
+  "settingsUseFakeTransportsTitle": "Use fake transports",
+  "settingsUseFakeTransportsEnabled": "Using fake discovery and fake transport clients.",
+  "settingsUseFakeTransportsDisabled": "Using real discovery and real transport clients.",
+  "settingsCopyTransportLogs": "Copy transport logs",
+  "settingsDiagnosticsSummaryTitle": "Session diagnostics",
+  "settingsDiagnosticsDiscoveryLine": "Discovery: {attempts} attempts, {rate} found a TV",
+  "@settingsDiagnosticsDiscoveryLine": {
+    "placeholders": {
+      "attempts": {"type": "int"},
+      "rate": {"type": "String"}
+    }
+  },
+  "settingsDiagnosticsPairingLine": "Pairing sessions: {succeeded} ok, {failed} failed",
+  "@settingsDiagnosticsPairingLine": {
+    "placeholders": {
+      "succeeded": {"type": "int"},
+      "failed": {"type": "int"}
+    }
+  },
+  "settingsDiagnosticsUnhandledLine": "Unhandled errors: {count}",
+  "@settingsDiagnosticsUnhandledLine": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "settingsCopyDiagnosticsReport": "Copy diagnostics report",
+  "settingsCopyRuntimeFlagsTemplate": "Copy runtime flags template",
+  "settingsCopyRuntimeFlagsTemplateSubtitle": "Paste and fill dart-define values.",
+
+  "proSectionTitle": "Pro",
+  "proStatusActive": "Active",
+  "proStatusNotActive": "Pro is not active.",
+  "proStatusChecking": "Checking purchase status...",
+  "proStoreAccountHintGooglePlay": "Your purchase is tied to your current Google Play account. Use Restore on a new phone with the same account.",
+  "proStoreAccountHintAppStore": "Your purchase is tied to your current App Store account. Use Restore on a new phone with the same account.",
+  "proUpgradeButton": "Upgrade to Pro",
+  "proRestoreButton": "Restore purchases",
+  "proStoreUnavailable": "Store purchases are unavailable on this device.",
+  "proPurchaseStarted": "Purchase flow started.",
+  "proRestoreStarted": "Restoring purchases...",
+
+  "settingsLegalSectionTitle": "Legal",
+  "settingsPrivacyPolicy": "Privacy policy",
+  "settingsAdPrivacyOptions": "Ad privacy settings",
+  "settingsLegalLinkFailed": "Could not open the link."
+}
