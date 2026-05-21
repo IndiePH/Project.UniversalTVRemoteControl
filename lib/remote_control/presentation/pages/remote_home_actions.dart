@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
@@ -32,6 +33,7 @@ final class RemoteHomeActions {
     required RemoteCommandService commandService,
     required DeviceDiscoveryService discoveryService,
     required DeviceRepository deviceRepository,
+    required ProEntitlementService proEntitlementService,
     required String? activeDeviceId,
   }) async {
     final env = GetIt.instance<AppEnvironment>();
@@ -51,6 +53,7 @@ final class RemoteHomeActions {
           stepsRegistry: GetIt.instance<PrePairingStepsRegistry>(),
           hintRegistry: GetIt.instance<PairingProgressHintRegistry>(),
           reachabilityService: GetIt.instance<TvReachabilityService>(),
+          proEntitlementService: proEntitlementService,
           activeDeviceId: activeDeviceId,
         ),
       ),

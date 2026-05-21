@@ -44,7 +44,9 @@ Future<void> main() async {
 
   final env = kDebugMode ? AppEnvironment.debug : AppEnvironment.production;
   await DiBootstrap.initialize(env);
-  await GetIt.instance<ProEntitlementService>().refreshFromStore();
+  final proEntitlementService = GetIt.instance<ProEntitlementService>();
+  await proEntitlementService.applyLastKnownStatusFromCache();
+  await proEntitlementService.refreshFromStore(isDebugBuild: kDebugMode);
   if (_supportsMobileAds()) {
     await AdConsentCoordinator.prepareForAds();
     if (AdConsentCoordinator.canRequestAds) {

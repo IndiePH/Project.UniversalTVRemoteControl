@@ -1,5 +1,6 @@
 export 'command_dispatch_result.dart';
 export 'device_discovery_service.dart';
+export 'free_tier_saved_device_cleanup.dart';
 export 'device_repository.dart';
 export 'layout_repository.dart';
 export 'pin_required_exception.dart';

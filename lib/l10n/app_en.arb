@@ -23,6 +23,8 @@
   "layoutEditTooltip": "Edit layout",
   "layoutEditDoneTooltip": "Done editing layout",
   "proLayoutLockedTooltip": "Pro required to edit layout",
+  "proDeviceSwitchLockedTooltip": "Pro required to switch TVs",
+  "proDeviceSwitchLockedMessage": "Upgrade to Pro to switch between saved TVs.",
   "settingsTooltip": "Settings",
   "layoutEditorTitle": "Layout Editor",
   "layoutEditorResetButton": "Reset Layout",
@@ -139,6 +141,20 @@
     }
   },
 
+  "pairingAlreadyUsingDevice": "You're already using {deviceName}.",
+  "@pairingAlreadyUsingDevice": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
+  "pairingDeviceAlreadyPaired": "{deviceName} is already paired.",
+  "@pairingDeviceAlreadyPaired": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+
   "pairingExceptionFailed": "Pairing failed. Please try again.",
   "pairingDiscoveryFailed": "Discovery failed. Please try again.",
   "pairingNoTvConnected": "No TV connected",
@@ -201,6 +217,8 @@
       "deviceName": {"type": "String"}
     }
   },
+  "pairingSectionPaired": "Paired",
+  "pairingSectionAvailable": "Available",
 
   "pairingDeviceInfoTitle": "Device Info",
   "pairingDeviceInfoLabelName": "Name",

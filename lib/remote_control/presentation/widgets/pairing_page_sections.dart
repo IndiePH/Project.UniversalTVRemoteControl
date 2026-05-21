@@ -119,6 +119,9 @@ class PairedTvListItem extends StatefulWidget {
     super.key,
     required this.device,
     required this.pairedAt,
+    required this.isActive,
+    required this.switchLocked,
+    this.switchLockTooltip,
     required this.reachabilityService,
     required this.onConfirmDismiss,
     required this.onRename,
@@ -128,6 +131,9 @@ class PairedTvListItem extends StatefulWidget {
 
   final TvDevice device;
   final DateTime? pairedAt;
+  final bool isActive;
+  final bool switchLocked;
+  final String? switchLockTooltip;
   final TvReachabilityService reachabilityService;
   final Future<bool?> Function(DismissDirection) onConfirmDismiss;
   final VoidCallback onRename;
@@ -214,11 +220,29 @@ class _PairedTvListItemState extends State<PairedTvListItem> {
               visualDensity: VisualDensity.compact,
               onPressed: widget.onInfo,
             ),
-            Icon(
-              Icons.chevron_left,
-              size: 18,
-              color: Theme.of(context).disabledColor,
-            ),
+            if (widget.isActive)
+              Icon(
+                Icons.check_circle,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              )
+            else if (widget.switchLocked)
+              Tooltip(
+                message:
+                    widget.switchLockTooltip ??
+                    AppLocalizations.of(context)!.proDeviceSwitchLockedTooltip,
+                child: Icon(
+                  Icons.lock_outline,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              )
+            else
+              Icon(
+                Icons.chevron_left,
+                size: 18,
+                color: Theme.of(context).disabledColor,
+              ),
           ],
         ),
         onTap: widget.onTap,

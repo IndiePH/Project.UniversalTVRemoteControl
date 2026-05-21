@@ -162,7 +162,8 @@ class _DeviceNameHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Row(
           children: [
-            Expanded(child: title),
+            Flexible(fit: FlexFit.loose, child: title),
+            const SizedBox(width: 4),
             Icon(
               Icons.arrow_drop_down,
               color: Theme.of(context).colorScheme.onSurface,

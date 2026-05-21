@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
+import 'package:one_remote/remote_control/application/free_tier_saved_device_cleanup.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
@@ -15,6 +18,7 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_coordinator.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_data.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_dialogs.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_pairing_page_metrics.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_view_state.dart';
 import 'package:one_remote/remote_control/presentation/widgets/pairing_page_sections.dart';
 
@@ -33,6 +37,7 @@ class PairingPage extends StatefulWidget {
     required this.stepsRegistry,
     required this.hintRegistry,
     required this.reachabilityService,
+    required this.proEntitlementService,
     this.activeDeviceId,
   });
 
@@ -42,6 +47,7 @@ class PairingPage extends StatefulWidget {
   final PrePairingStepsRegistry stepsRegistry;
   final PairingProgressHintRegistry hintRegistry;
   final TvReachabilityService reachabilityService;
+  final ProEntitlementService proEntitlementService;
   final String? activeDeviceId;
 
   @override
@@ -51,29 +57,61 @@ class PairingPage extends StatefulWidget {
 class _PairingPageState extends State<PairingPage> {
   PairingPageViewState _viewState = const PairingPageViewState();
   TvDevice? _activePairingDevice;
-  late final PairingPageCoordinator _pairingCoordinator = PairingPageCoordinator(
-    commandService: widget.commandService,
-    deviceRepository: widget.deviceRepository,
-    diagnosticsRecorder: GetIt.instance.isRegistered<AppDiagnosticsRecorder>()
-        ? GetIt.instance<AppDiagnosticsRecorder>()
-        : null,
-  );
+  final ScrollController _pairedDevicesScrollController = ScrollController();
+  late final PairingPageCoordinator _pairingCoordinator =
+      PairingPageCoordinator(
+        commandService: widget.commandService,
+        deviceRepository: widget.deviceRepository,
+        diagnosticsRecorder:
+            GetIt.instance.isRegistered<AppDiagnosticsRecorder>()
+            ? GetIt.instance<AppDiagnosticsRecorder>()
+            : null,
+      );
 
   @override
   void dispose() {
+    widget.proEntitlementService.statusNotifier.removeListener(
+      _handleProEntitlementChanged,
+    );
+    _pairedDevicesScrollController.dispose();
     super.dispose();
+  }
+
+  void _showPairingSnackBar(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   void initState() {
     super.initState();
+    widget.proEntitlementService.statusNotifier.addListener(
+      _handleProEntitlementChanged,
+    );
     _scanDevices();
     _loadRecentManualIps();
-    _loadPairingMetadata();
+    _loadPairingMetadata(refreshDiscoveryAfterCleanup: true);
   }
 
+  void _handleProEntitlementChanged() {
+    if (!_isResolvedFreeTier) {
+      return;
+    }
+    unawaited(_loadPairingMetadata(refreshDiscoveryAfterCleanup: true));
+  }
+
+  bool get _isResolvedFreeTier =>
+      widget.proEntitlementService.statusNotifier.value ==
+      ProEntitlementStatus.notEntitled;
+
   Future<void> _loadRecentManualIps() async {
-    final ips = await PairingPageData.loadRecentManualIps(widget.deviceRepository);
+    final ips = await PairingPageData.loadRecentManualIps(
+      widget.deviceRepository,
+    );
     if (!mounted) {
       return;
     }
@@ -82,10 +120,25 @@ class _PairingPageState extends State<PairingPage> {
     });
   }
 
-  Future<void> _loadPairingMetadata() async {
-    final metadata = await PairingPageData.loadPairingMetadata(
+  Future<void> _loadPairingMetadata({
+    bool refreshDiscoveryAfterCleanup = false,
+  }) async {
+    var metadata = await PairingPageData.loadPairingMetadata(
       widget.deviceRepository,
     );
+    final removedExtraDevices =
+        await FreeTierSavedDeviceCleanup.removeNonActiveSavedDevices(
+          isFreeTier: _isResolvedFreeTier,
+          activeDeviceId: widget.activeDeviceId,
+          savedDevices: metadata.savedDevices,
+          commandService: widget.commandService,
+          deviceRepository: widget.deviceRepository,
+        );
+    if (removedExtraDevices) {
+      metadata = await PairingPageData.loadPairingMetadata(
+        widget.deviceRepository,
+      );
+    }
 
     if (!mounted) {
       return;
@@ -97,6 +150,9 @@ class _PairingPageState extends State<PairingPage> {
         pairingHistoryByDeviceId: metadata.pairingHistoryByDeviceId,
       );
     });
+    if (removedExtraDevices && refreshDiscoveryAfterCleanup) {
+      unawaited(_scanDevices());
+    }
   }
 
   Future<void> _scanDevices() async {
@@ -138,6 +194,30 @@ class _PairingPageState extends State<PairingPage> {
   }
 
   Future<void> _selectPairedDevice(TvDevice device) async {
+    if (device.id == widget.activeDeviceId) {
+      _showPairingSnackBar(
+        AppLocalizations.of(
+          context,
+        )!.pairingAlreadyUsingDevice(device.displayName),
+      );
+      return;
+    }
+    final activeId = widget.activeDeviceId;
+    if (!widget.proEntitlementService.isPro &&
+        activeId != null &&
+        activeId != device.id) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.proDeviceSwitchLockedMessage,
+          ),
+        ),
+      );
+      return;
+    }
     await widget.deviceRepository.setLastUsedDevice(device.id);
     if (!mounted) {
       return;
@@ -147,10 +227,17 @@ class _PairingPageState extends State<PairingPage> {
 
   Future<void> _selectDevice(TvDevice device) async {
     if (_viewState.savedDeviceIds.contains(device.id)) {
-      _selectPairedDevice(device);
+      _showPairingSnackBar(
+        AppLocalizations.of(
+          context,
+        )!.pairingDeviceAlreadyPaired(device.displayName),
+      );
       return;
     }
-    final steps = widget.stepsRegistry.stepsFor(device.brand, device.protocolVariant);
+    final steps = widget.stepsRegistry.stepsFor(
+      device.brand,
+      device.protocolVariant,
+    );
     if (steps != null) {
       if (!mounted) return;
       final confirmed = await PairingPageDialogs.confirmPrePairing(
@@ -163,11 +250,38 @@ class _PairingPageState extends State<PairingPage> {
     await _pairSelectedDevice(device: device);
   }
 
+  Future<void> _replaceActivePairedDeviceForFreeTier(TvDevice newDevice) async {
+    if (widget.proEntitlementService.isPro) {
+      return;
+    }
+    final activeId = widget.activeDeviceId;
+    if (activeId == null || activeId == newDevice.id) {
+      return;
+    }
+    TvDevice? activeDevice;
+    for (final saved in _viewState.savedDevices) {
+      if (saved.id == activeId) {
+        activeDevice = saved;
+        break;
+      }
+    }
+    if (activeDevice == null) {
+      return;
+    }
+    await widget.commandService.unpairDevice(device: activeDevice);
+    await widget.deviceRepository.removeSavedDevice(activeDevice.id);
+    await _loadPairingMetadata();
+  }
+
   Future<void> _pairSelectedDevice({
     required TvDevice device,
     String? manualIpToSave,
   }) async {
     if (_viewState.isPairingInProgress) {
+      return;
+    }
+    await _replaceActivePairedDeviceForFreeTier(device);
+    if (!mounted) {
       return;
     }
     _activePairingDevice = device;
@@ -211,8 +325,9 @@ class _PairingPageState extends State<PairingPage> {
         },
         onPinRejected: (message) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(message)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
           setState(() {
             _viewState = _viewState.copyWith(isPairingInProgress: false);
           });
@@ -290,9 +405,15 @@ class _PairingPageState extends State<PairingPage> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.pairingDeviceRemoved(device.displayName))));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(
+            context,
+          )!.pairingDeviceRemoved(device.displayName),
+        ),
+      ),
+    );
   }
 
   Future<void> _renameDevice(TvDevice device) async {
@@ -301,7 +422,9 @@ class _PairingPageState extends State<PairingPage> {
       currentName: device.displayName,
     );
     if (newName == null || !mounted) return;
-    await widget.deviceRepository.saveDevice(device.copyWith(displayName: newName));
+    await widget.deviceRepository.saveDevice(
+      device.copyWith(displayName: newName),
+    );
     await _loadPairingMetadata();
   }
 
@@ -410,50 +533,114 @@ class _PairingPageState extends State<PairingPage> {
     );
   }
 
+  /// Saved TVs under **Paired** — active TV first, then remaining save order.
+  List<TvDevice> _pairedDevicesForDisplay() {
+    final saved = _viewState.savedDevices;
+    if (saved.isEmpty) {
+      return const [];
+    }
+    final activeId = widget.activeDeviceId;
+    final ordered = <TvDevice>[];
+    if (activeId != null) {
+      for (final device in saved) {
+        if (device.id == activeId) {
+          ordered.add(device);
+          break;
+        }
+      }
+    }
+    for (final device in saved) {
+      if (ordered.any((d) => d.id == device.id)) {
+        continue;
+      }
+      ordered.add(device);
+    }
+    return ordered;
+  }
+
+  Widget _buildPairedDeviceList(List<TvDevice> pairedDevices) {
+    const maxVisible = RemotePairingPageMetrics.maxVisiblePairedDevices;
+    const rowExtent = RemotePairingPageMetrics.pairedListRowExtent;
+    final needsBoundedViewport = pairedDevices.length > maxVisible;
+    final activeDeviceId = widget.activeDeviceId;
+    final isPro = widget.proEntitlementService.isPro;
+    final l10n = AppLocalizations.of(context)!;
+
+    final listView = ListView.builder(
+      key: const Key('pairing_paired_devices_list'),
+      controller: needsBoundedViewport ? _pairedDevicesScrollController : null,
+      shrinkWrap: !needsBoundedViewport,
+      physics: needsBoundedViewport
+          ? const ClampingScrollPhysics()
+          : const NeverScrollableScrollPhysics(),
+      itemExtent: rowExtent,
+      itemCount: pairedDevices.length,
+      itemBuilder: (context, index) {
+        final device = pairedDevices[index];
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical:
+                RemotePairingPageMetrics.pairedListItemVerticalPadding / 2,
+          ),
+          child: PairedTvListItem(
+            key: ValueKey('${device.id}_${_viewState.scanCount}'),
+            device: device,
+            pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
+            isActive: device.id == activeDeviceId,
+            switchLocked:
+                !isPro && activeDeviceId != null && activeDeviceId != device.id,
+            switchLockTooltip: l10n.proDeviceSwitchLockedTooltip,
+            reachabilityService: widget.reachabilityService,
+            onConfirmDismiss: (_) async {
+              await _confirmRemoveSavedDevice(device);
+              return false;
+            },
+            onRename: () => unawaited(_renameDevice(device)),
+            onInfo: () => unawaited(
+              PairingPageDialogs.showDeviceInfo(
+                context: context,
+                device: device,
+                pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
+              ),
+            ),
+            onTap: () => unawaited(_selectPairedDevice(device)),
+          ),
+        );
+      },
+    );
+
+    if (!needsBoundedViewport) {
+      return listView;
+    }
+    return SizedBox(
+      height: maxVisible * rowExtent,
+      child: Scrollbar(
+        thumbVisibility: true,
+        controller: _pairedDevicesScrollController,
+        child: listView,
+      ),
+    );
+  }
+
   Widget _buildScrollBody() {
-    final savedDevices = _viewState.savedDevices;
+    final pairedDevices = _pairedDevicesForDisplay();
+    final l10n = AppLocalizations.of(context)!;
     return CustomScrollView(
       slivers: [
-        if (savedDevices.isNotEmpty) ...[
+        if (pairedDevices.isNotEmpty) ...[
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: const RemoteSelectionSectionHeader('Paired'),
+              child: RemoteSelectionSectionHeader(l10n.pairingSectionPaired),
             ),
           ),
-          SliverList.builder(
-            itemCount: savedDevices.length,
-            itemBuilder: (context, index) {
-              final device = savedDevices[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                child: PairedTvListItem(
-                  key: ValueKey('${device.id}_${_viewState.scanCount}'),
-                  device: device,
-                  pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
-                  reachabilityService: widget.reachabilityService,
-                  onConfirmDismiss: (_) async {
-                    await _confirmRemoveSavedDevice(device);
-                    return false;
-                  },
-                  onRename: () => unawaited(_renameDevice(device)),
-                  onInfo: () => unawaited(
-                    PairingPageDialogs.showDeviceInfo(
-                      context: context,
-                      device: device,
-                      pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
-                    ),
-                  ),
-                  onTap: () => unawaited(_selectPairedDevice(device)),
-                ),
-              );
-            },
-          ),
+          SliverToBoxAdapter(child: _buildPairedDeviceList(pairedDevices)),
         ],
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            child: const RemoteSelectionSectionHeader('Available'),
+            child: RemoteSelectionSectionHeader(l10n.pairingSectionAvailable),
           ),
         ),
         if (_viewState.errorMessage != null)
@@ -478,7 +665,9 @@ class _PairingPageState extends State<PairingPage> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Center(
-                child: Text(AppLocalizations.of(context)!.pairingNoDevicesFound),
+                child: Text(
+                  AppLocalizations.of(context)!.pairingNoDevicesFound,
+                ),
               ),
             ),
           )
@@ -495,7 +684,10 @@ class _PairingPageState extends State<PairingPage> {
                     device: device,
                     l10n: AppLocalizations.of(context)!,
                   ),
-                  pairingNote: _pairingNoteForDevice(device.id, AppLocalizations.of(context)!),
+                  pairingNote: _pairingNoteForDevice(
+                    device.id,
+                    AppLocalizations.of(context)!,
+                  ),
                   onTap: () => unawaited(_selectDevice(device)),
                 ),
               );

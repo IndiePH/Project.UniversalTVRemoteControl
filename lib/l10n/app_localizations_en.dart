@@ -66,6 +66,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proLayoutLockedTooltip => 'Pro required to edit layout';
 
   @override
+  String get proDeviceSwitchLockedTooltip => 'Pro required to switch TVs';
+
+  @override
+  String get proDeviceSwitchLockedMessage =>
+      'Upgrade to Pro to switch between saved TVs.';
+
+  @override
   String get settingsTooltip => 'Settings';
 
   @override
@@ -228,6 +235,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String pairingAlreadyUsingDevice(String deviceName) {
+    return 'You\'re already using $deviceName.';
+  }
+
+  @override
+  String pairingDeviceAlreadyPaired(String deviceName) {
+    return '$deviceName is already paired.';
+  }
+
+  @override
   String get pairingExceptionFailed => 'Pairing failed. Please try again.';
 
   @override
@@ -360,6 +377,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String pairingRemoveSavedBody(String deviceName) {
     return 'This will remove \"$deviceName\" from saved devices.';
   }
+
+  @override
+  String get pairingSectionPaired => 'Paired';
+
+  @override
+  String get pairingSectionAvailable => 'Available';
 
   @override
   String get pairingDeviceInfoTitle => 'Device Info';

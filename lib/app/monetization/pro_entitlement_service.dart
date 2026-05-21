@@ -27,7 +27,24 @@ final class ProEntitlementService {
 
   bool get isPro => statusNotifier.value == ProEntitlementStatus.entitled;
 
-  Future<void> refreshFromStore() async {
+  /// Applies the last cached entitlement for immediate UI while verification runs.
+  Future<void> applyLastKnownStatusFromCache() async {
+    final cached = await _cache.readLastKnownStatus();
+    if (cached != null) {
+      statusNotifier.value = cached;
+    }
+  }
+
+  Future<void> refreshFromStore({bool isDebugBuild = false}) async {
+    if (isDebugBuild && await _cache.readDebugEntitlementOverride()) {
+      final cached = await _cache.readLastKnownStatus();
+      if (cached != null) {
+        statusNotifier.value = cached;
+        storeAvailableNotifier.value = await _repository.isAvailable();
+        return;
+      }
+    }
+
     statusNotifier.value = ProEntitlementStatus.unknown;
     final available = await _repository.isAvailable();
     storeAvailableNotifier.value = available;
@@ -67,6 +84,9 @@ final class ProEntitlementService {
     final next = statusNotifier.value == ProEntitlementStatus.entitled
         ? ProEntitlementStatus.notEntitled
         : ProEntitlementStatus.entitled;
+    await _cache.writeDebugEntitlementOverride(
+      next == ProEntitlementStatus.entitled,
+    );
     await _setResolvedStatus(next);
   }
 
@@ -91,6 +111,9 @@ final class ProEntitlementService {
     if (status == ProEntitlementStatus.unknown) {
       statusNotifier.value = status;
       return;
+    }
+    if (status == ProEntitlementStatus.entitled) {
+      await _cache.writeDebugEntitlementOverride(false);
     }
     await _setResolvedStatus(status);
   }

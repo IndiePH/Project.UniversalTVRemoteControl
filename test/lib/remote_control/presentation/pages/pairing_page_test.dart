@@ -17,10 +17,26 @@ import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/app/monetization/fake_pro_entitlement_repository.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
+import 'package:one_remote/app/monetization/shared_prefs_pro_entitlement_cache.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_widget_test_metrics.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
 
 void main() {
+  ProEntitlementService buildProService({
+    ProEntitlementStatus status = ProEntitlementStatus.entitled,
+  }) {
+    final repository = FakeProEntitlementRepository(initialStatus: status);
+    final service = ProEntitlementService(
+      repository: repository,
+      cache: SharedPrefsProEntitlementCache(),
+    );
+    repository.setStatus(status);
+    return service;
+  }
+
   Widget buildPage({
     required RemoteCommandService commandService,
     _StubPrePairingStepsRegistry? stepsRegistry,
@@ -28,6 +44,8 @@ void main() {
     DeviceRepository? deviceRepository,
     DeviceDiscoveryService? discoveryService,
     TvReachabilityService? reachabilityService,
+    ProEntitlementService? proEntitlementService,
+    String? activeDeviceId,
   }) {
     return MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -40,6 +58,8 @@ void main() {
         hintRegistry: hintRegistry ?? _StubPairingProgressHintRegistry(),
         reachabilityService:
             reachabilityService ?? _StubTvReachabilityService(),
+        proEntitlementService: proEntitlementService ?? buildProService(),
+        activeDeviceId: activeDeviceId,
       ),
     );
   }
@@ -93,6 +113,7 @@ void main() {
                       stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
                       hintRegistry: _StubPairingProgressHintRegistry(),
                       reachabilityService: _StubTvReachabilityService(),
+                      proEntitlementService: buildProService(),
                     ),
                   ),
                 );
@@ -235,6 +256,7 @@ void main() {
             preparePairingResult: CommandDispatchResult.success('OK'),
           ),
           deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+          activeDeviceId: savedDevice.id,
         ),
       );
       await tester.pump();
@@ -242,6 +264,238 @@ void main() {
       expect(find.text('Paired'), findsOneWidget);
       expect(find.text('Saved TV'), findsOneWidget);
     });
+
+    testWidgets('Paired section lists active TV first then other saved TVs', (
+      tester,
+    ) async {
+      const activeDevice = TvDevice(
+        id: 'lg-active',
+        displayName: 'Active TV',
+        brand: TvBrand.lg,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      const otherDevice = TvDevice(
+        id: 'samsung-other',
+        displayName: 'Other TV',
+        brand: TvBrand.samsung,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(
+            savedDevices: [otherDevice, activeDevice],
+          ),
+          activeDeviceId: activeDevice.id,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Paired'), findsOneWidget);
+      expect(find.text('Active TV'), findsOneWidget);
+      expect(find.text('Other TV'), findsOneWidget);
+    });
+
+    testWidgets('Paired list scrolls when more than three TVs are saved', (
+      tester,
+    ) async {
+      const devices = [
+        TvDevice(
+          id: 'tv-1',
+          displayName: 'TV One',
+          brand: TvBrand.lg,
+          capabilities: {DeviceCapability.keyCommands},
+        ),
+        TvDevice(
+          id: 'tv-2',
+          displayName: 'TV Two',
+          brand: TvBrand.samsung,
+          capabilities: {DeviceCapability.keyCommands},
+        ),
+        TvDevice(
+          id: 'tv-3',
+          displayName: 'TV Three',
+          brand: TvBrand.lg,
+          capabilities: {DeviceCapability.keyCommands},
+        ),
+        TvDevice(
+          id: 'tv-4',
+          displayName: 'TV Four',
+          brand: TvBrand.hisense,
+          capabilities: {DeviceCapability.keyCommands},
+        ),
+      ];
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(savedDevices: devices),
+          activeDeviceId: 'tv-1',
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('TV Four'), findsNothing);
+      await tester.drag(
+        find.byKey(const Key('pairing_paired_devices_list')),
+        const Offset(0, -120),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('TV Four'), findsOneWidget);
+
+      final scrollbar = tester.widget<Scrollbar>(find.byType(Scrollbar));
+      expect(scrollbar.thumbVisibility, isTrue);
+    });
+
+    testWidgets('Paired list has no scrollbar when at most three TVs', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(
+            savedDevices: [
+              const TvDevice(
+                id: 'tv-1',
+                displayName: 'TV One',
+                brand: TvBrand.lg,
+                capabilities: {DeviceCapability.keyCommands},
+              ),
+              const TvDevice(
+                id: 'tv-2',
+                displayName: 'TV Two',
+                brand: TvBrand.samsung,
+                capabilities: {DeviceCapability.keyCommands},
+              ),
+            ],
+          ),
+          activeDeviceId: 'tv-1',
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(Scrollbar), findsNothing);
+    });
+
+    testWidgets('tapping already-paired discovery TV does not start pairing', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(savedDevices: [lgDevice]),
+          activeDeviceId: lgDevice.id,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('LG TV').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Paired successfully'), findsNothing);
+      expect(find.text('LG TV is already paired.'), findsOneWidget);
+    });
+
+    testWidgets('tapping active paired TV shows already-using feedback', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(savedDevices: [lgDevice]),
+          activeDeviceId: lgDevice.id,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('LG TV').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text("You're already using LG TV."), findsOneWidget);
+      expect(find.text('Paired successfully'), findsNothing);
+    });
+
+    testWidgets('free tier keeps only active paired TV on load', (
+      tester,
+    ) async {
+      const activeDevice = TvDevice(
+        id: 'tv-1',
+        displayName: 'TV One',
+        brand: TvBrand.lg,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      const otherDevice = TvDevice(
+        id: 'tv-2',
+        displayName: 'TV Two',
+        brand: TvBrand.samsung,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      final repo = _MutableSpyDeviceRepository(
+        savedDevices: [activeDevice, otherDevice],
+      );
+      final unpairedDevices = <TvDevice>[];
+      final discoveryService = _CountingDiscoveryService();
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+            recordUnpairTo: unpairedDevices,
+          ),
+          deviceRepository: repo,
+          discoveryService: discoveryService,
+          activeDeviceId: activeDevice.id,
+          proEntitlementService: buildProService(
+            status: ProEntitlementStatus.notEntitled,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('TV One'), findsOneWidget);
+      expect(find.text('TV Two'), findsNothing);
+      expect(unpairedDevices, [otherDevice]);
+      expect(repo.removedDeviceIds, [otherDevice.id]);
+      expect(discoveryService.callCount, 2);
+    });
+
+    testWidgets(
+      'free tier unpairs active TV before pairing a different discovered TV',
+      (tester) async {
+        final repo = _MutableSpyDeviceRepository(savedDevices: [lgDevice]);
+        final unpairedDevices = <TvDevice>[];
+        final commandService = _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+          recordUnpairTo: unpairedDevices,
+        );
+        await tester.pumpWidget(
+          buildPage(
+            commandService: commandService,
+            deviceRepository: repo,
+            activeDeviceId: lgDevice.id,
+            proEntitlementService: buildProService(
+              status: ProEntitlementStatus.notEntitled,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.text('Hisense TV'));
+        await tester.pumpAndSettle();
+
+        expect(unpairedDevices, [lgDevice]);
+        expect(repo.removedDeviceIds, [lgDevice.id]);
+        expect(find.text('Paired successfully'), findsOneWidget);
+      },
+    );
 
     testWidgets('discovery results appear under Available section header', (
       tester,
@@ -269,6 +523,7 @@ void main() {
             preparePairingResult: CommandDispatchResult.success('OK'),
           ),
           deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+          activeDeviceId: savedDevice.id,
         ),
       );
       await tester.pump();
@@ -289,6 +544,7 @@ void main() {
             preparePairingResult: CommandDispatchResult.success('OK'),
           ),
           deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+          activeDeviceId: savedDevice.id,
         ),
       );
       await tester.pump();
@@ -329,6 +585,7 @@ void main() {
             deviceRepository: _StubDeviceRepository(
               savedDevices: [savedDevice],
             ),
+            activeDeviceId: savedDevice.id,
           ),
         );
         await tester.pump();
@@ -351,6 +608,7 @@ void main() {
             preparePairingResult: CommandDispatchResult.success('OK'),
           ),
           deviceRepository: repo,
+          activeDeviceId: savedDevice.id,
         ),
       );
       await tester.pump();
@@ -373,6 +631,7 @@ void main() {
             preparePairingResult: CommandDispatchResult.success('OK'),
           ),
           deviceRepository: repo,
+          activeDeviceId: savedDevice.id,
         ),
       );
       await tester.pump();
@@ -393,6 +652,7 @@ void main() {
             preparePairingResult: CommandDispatchResult.success('OK'),
           ),
           deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+          activeDeviceId: savedDevice.id,
         ),
       );
       await tester.pump();
@@ -518,7 +778,9 @@ void main() {
       await tester.pumpWidget(
         buildPage(
           commandService: _StubCommandService(
-            preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+            preparePairingResult: CommandDispatchResult.pinRequired(
+              'Needs PIN',
+            ),
             submitPairingResults: [CommandDispatchResult.success('OK')],
           ),
           stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
@@ -587,10 +849,12 @@ class _StubCommandService implements RemoteCommandService {
   _StubCommandService({
     required this.preparePairingResult,
     this.submitPairingResults = const [],
+    this.recordUnpairTo,
   });
 
   final CommandDispatchResult preparePairingResult;
   final List<CommandDispatchResult> submitPairingResults;
+  final List<TvDevice>? recordUnpairTo;
   int _submitIndex = 0;
 
   @override
@@ -612,7 +876,9 @@ class _StubCommandService implements RemoteCommandService {
   }
 
   @override
-  Future<void> unpairDevice({required TvDevice device}) async {}
+  Future<void> unpairDevice({required TvDevice device}) async {
+    recordUnpairTo?.add(device);
+  }
 
   @override
   Future<void> cancelPairing({required TvDevice device}) async {}
@@ -699,6 +965,16 @@ class _StubDiscoveryService implements DeviceDiscoveryService {
   Future<List<TvDevice>> discoverDevices() async => [lgDevice, hisenseDevice];
 }
 
+class _CountingDiscoveryService extends _StubDiscoveryService {
+  int callCount = 0;
+
+  @override
+  Future<List<TvDevice>> discoverDevices() async {
+    callCount++;
+    return super.discoverDevices();
+  }
+}
+
 class _SlowDiscoveryService implements DeviceDiscoveryService {
   @override
   Future<List<TvDevice>> discoverDevices() =>
@@ -757,10 +1033,35 @@ class _StubDeviceRepository implements DeviceRepository {
 class _SpyDeviceRepository extends _StubDeviceRepository {
   _SpyDeviceRepository({super.savedDevices});
   TvDevice? lastSavedDevice;
+  int setLastUsedDeviceCallCount = 0;
 
   @override
   Future<void> saveDevice(TvDevice device) async {
     lastSavedDevice = device;
+  }
+
+  @override
+  Future<void> setLastUsedDevice(String deviceId) async {
+    setLastUsedDeviceCallCount++;
+  }
+}
+
+class _MutableSpyDeviceRepository extends _SpyDeviceRepository {
+  _MutableSpyDeviceRepository({required List<TvDevice> savedDevices})
+    : _devices = List<TvDevice>.from(savedDevices),
+      super(savedDevices: savedDevices);
+
+  final List<TvDevice> _devices;
+  final List<String> removedDeviceIds = [];
+
+  @override
+  Future<List<TvDevice>> getSavedDevices() async =>
+      List<TvDevice>.unmodifiable(_devices);
+
+  @override
+  Future<void> removeSavedDevice(String deviceId) async {
+    removedDeviceIds.add(deviceId);
+    _devices.removeWhere((device) => device.id == deviceId);
   }
 }
 

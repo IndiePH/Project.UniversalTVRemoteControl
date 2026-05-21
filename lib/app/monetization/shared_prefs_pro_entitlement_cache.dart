@@ -6,6 +6,7 @@ import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
 final class SharedPrefsProEntitlementCache {
   static const String _entitledKey = 'pro.entitled';
   static const String _verifiedAtEpochMsKey = 'pro.verified_at_epoch_ms';
+  static const String _debugOverrideKey = 'pro.debug_entitlement_override';
 
   Future<void> writeStatus(ProEntitlementStatus status) async {
     final prefs = await SharedPreferences.getInstance();
@@ -48,9 +49,24 @@ final class SharedPrefsProEntitlementCache {
     return DateTime.fromMillisecondsSinceEpoch(value);
   }
 
+  Future<bool> readDebugEntitlementOverride() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_debugOverrideKey) ?? false;
+  }
+
+  Future<void> writeDebugEntitlementOverride(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (enabled) {
+      await prefs.setBool(_debugOverrideKey, true);
+    } else {
+      await prefs.remove(_debugOverrideKey);
+    }
+  }
+
   Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_entitledKey);
     await prefs.remove(_verifiedAtEpochMsKey);
+    await prefs.remove(_debugOverrideKey);
   }
 }

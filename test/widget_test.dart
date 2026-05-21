@@ -375,6 +375,183 @@ void main() {
     expect(await repository.getLastUsedDevice(), bedroom);
   });
 
+  testWidgets('places active paired TV first in pro device switcher', (
+    WidgetTester tester,
+  ) async {
+    final repository = InMemoryDeviceRepository();
+    const livingRoom = TvDevice(
+      id: 'samsung-living-room',
+      displayName: 'Living Room TV',
+      brand: TvBrand.samsung,
+      capabilities: {DeviceCapability.keyCommands},
+    );
+    const bedroom = TvDevice(
+      id: 'lg-bedroom',
+      displayName: 'Bedroom TV',
+      brand: TvBrand.lg,
+      capabilities: {DeviceCapability.keyCommands},
+    );
+    await repository.saveDevice(livingRoom);
+    await repository.saveDevice(bedroom);
+    await repository.setLastUsedDevice(bedroom.id);
+    final commandService = _ConnectionStateStubCommandService(
+      initialState: remote_connection.ConnectionState.connected,
+    );
+    addTearDown(commandService.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RemoteHomePage(
+          appEnvironment: AppEnvironment.debug,
+          interstitialAdController: _buildInterstitialAdController(),
+          commandService: commandService,
+          deviceRepository: repository,
+          discoveryService: _EmptyDiscoveryService(),
+          layoutRepository: _InMemoryLayoutRepository(),
+          proEntitlementService: _buildEntitledProService(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Switch TV'));
+    await tester.pumpAndSettle();
+
+    Finder switcherTile(String title) => find.byWidgetPredicate(
+      (widget) =>
+          widget is ListTile &&
+          widget.title is Text &&
+          (widget.title as Text).data == title,
+    );
+
+    expect(
+      tester.getTopLeft(switcherTile('Bedroom TV')).dy,
+      lessThan(tester.getTopLeft(switcherTile('Living Room TV')).dy),
+    );
+  });
+
+  testWidgets('free tier shows device switcher but cannot switch TVs', (
+    WidgetTester tester,
+  ) async {
+    final repository = InMemoryDeviceRepository();
+    const livingRoom = TvDevice(
+      id: 'samsung-living-room',
+      displayName: 'Living Room TV',
+      brand: TvBrand.samsung,
+      capabilities: {DeviceCapability.keyCommands},
+    );
+    const bedroom = TvDevice(
+      id: 'lg-bedroom',
+      displayName: 'Bedroom TV',
+      brand: TvBrand.lg,
+      capabilities: {DeviceCapability.keyCommands},
+    );
+    await repository.saveDevice(livingRoom);
+    await repository.saveDevice(bedroom);
+    await repository.setLastUsedDevice(livingRoom.id);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RemoteHomePage(
+          appEnvironment: AppEnvironment.debug,
+          interstitialAdController: _buildInterstitialAdController(),
+          commandService: _ConnectionStateStubCommandService(
+            initialState: remote_connection.ConnectionState.connected,
+          ),
+          deviceRepository: repository,
+          discoveryService: _EmptyDiscoveryService(),
+          layoutRepository: _InMemoryLayoutRepository(),
+          proEntitlementService: _buildFreeProService(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Switch TV'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your TVs'), findsOneWidget);
+    expect(
+      find.text('Upgrade to Pro to switch between saved TVs.'),
+      findsOneWidget,
+    );
+    expect(find.text('Bedroom TV'), findsOneWidget);
+    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+    expect(find.byTooltip('Pro required to switch TVs'), findsOneWidget);
+
+    await tester.tap(find.text('Bedroom TV'));
+    await tester.pumpAndSettle();
+
+    expect(await repository.getLastUsedDevice(), livingRoom);
+    expect(find.text('Your TVs'), findsOneWidget);
+    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+  });
+
+  testWidgets(
+    'downgrading to free tier refreshes Your TVs list to active device only',
+    (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final repository = InMemoryDeviceRepository();
+      const livingRoom = TvDevice(
+        id: 'samsung-living-room',
+        displayName: 'Living Room TV',
+        brand: TvBrand.samsung,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      const bedroom = TvDevice(
+        id: 'lg-bedroom',
+        displayName: 'Bedroom TV',
+        brand: TvBrand.lg,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(livingRoom);
+      await repository.saveDevice(bedroom);
+      await repository.setLastUsedDevice(livingRoom.id);
+
+      final unpairedDevices = <TvDevice>[];
+      final proService = _buildEntitledProService();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: _ConnectionStateStubCommandService(
+              initialState: remote_connection.ConnectionState.connected,
+              recordUnpairTo: unpairedDevices,
+            ),
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: proService,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Switch TV'));
+      await tester.pumpAndSettle();
+      expect(find.text('Bedroom TV'), findsOneWidget);
+
+      await proService.debugToggleEntitlement();
+      await tester.pumpAndSettle();
+
+      expect(unpairedDevices, [bedroom]);
+      expect(await repository.getSavedDevices(), [livingRoom]);
+      expect(find.text('Bedroom TV'), findsNothing);
+      expect(find.widgetWithText(ListTile, 'Living Room TV'), findsOneWidget);
+      expect(
+        find.text('Upgrade to Pro to switch between saved TVs.'),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('clears active device when current paired TV is removed', (
     WidgetTester tester,
   ) async {
@@ -464,6 +641,7 @@ void main() {
               localizedStrings: FakeLocalizedStrings(),
             ),
             reachabilityService: _StubTvReachabilityService(),
+            proEntitlementService: _buildEntitledProService(),
           ),
         ),
       );
@@ -532,6 +710,7 @@ void main() {
               localizedStrings: FakeLocalizedStrings(),
             ),
             reachabilityService: _StubTvReachabilityService(),
+            proEntitlementService: _buildEntitledProService(),
             activeDeviceId: 'samsung-living-room',
           ),
         ),
@@ -541,9 +720,9 @@ void main() {
       expect(find.text('Living Room TV'), findsOneWidget);
 
       await tester.drag(
-      find.text('Living Room TV'),
-      kRemoteWidgetTestSwipeToDismissOffset,
-    );
+        find.text('Living Room TV'),
+        kRemoteWidgetTestSwipeToDismissOffset,
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
@@ -604,6 +783,7 @@ void main() {
               localizedStrings: FakeLocalizedStrings(),
             ),
             reachabilityService: _StubTvReachabilityService(),
+            proEntitlementService: _buildEntitledProService(),
             activeDeviceId: activeDevice.id,
           ),
         ),
@@ -693,10 +873,24 @@ ProEntitlementService _buildEntitledProService() {
   final repository = FakeProEntitlementRepository(
     initialStatus: ProEntitlementStatus.entitled,
   );
-  return ProEntitlementService(
+  final service = ProEntitlementService(
     repository: repository,
     cache: SharedPrefsProEntitlementCache(),
   );
+  repository.setStatus(ProEntitlementStatus.entitled);
+  return service;
+}
+
+ProEntitlementService _buildFreeProService() {
+  final repository = FakeProEntitlementRepository(
+    initialStatus: ProEntitlementStatus.notEntitled,
+  );
+  final service = ProEntitlementService(
+    repository: repository,
+    cache: SharedPrefsProEntitlementCache(),
+  );
+  repository.setStatus(ProEntitlementStatus.notEntitled);
+  return service;
 }
 
 InterstitialAdController _buildInterstitialAdController() {
@@ -713,13 +907,16 @@ InterstitialAdController _buildInterstitialAdController() {
 class _ConnectionStateStubCommandService implements RemoteCommandService {
   _ConnectionStateStubCommandService({
     required remote_connection.ConnectionState initialState,
+    List<TvDevice>? recordUnpairTo,
   }) : _state = initialState,
+       _recordUnpairTo = recordUnpairTo,
        _controller =
            StreamController<remote_connection.ConnectionState>.broadcast(
              onListen: () {},
            );
 
   remote_connection.ConnectionState _state;
+  final List<TvDevice>? _recordUnpairTo;
   final StreamController<remote_connection.ConnectionState> _controller;
 
   void emitConnectionState(remote_connection.ConnectionState state) {
@@ -743,7 +940,9 @@ class _ConnectionStateStubCommandService implements RemoteCommandService {
   }) async => CommandDispatchResult.success('ok');
 
   @override
-  Future<void> unpairDevice({required TvDevice device}) async {}
+  Future<void> unpairDevice({required TvDevice device}) async {
+    _recordUnpairTo?.add(device);
+  }
 
   @override
   Future<void> cancelPairing({required TvDevice device}) async {}

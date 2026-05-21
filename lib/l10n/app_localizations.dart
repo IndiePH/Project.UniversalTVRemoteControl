@@ -208,6 +208,18 @@ abstract class AppLocalizations {
   /// **'Pro required to edit layout'**
   String get proLayoutLockedTooltip;
 
+  /// No description provided for @proDeviceSwitchLockedTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro required to switch TVs'**
+  String get proDeviceSwitchLockedTooltip;
+
+  /// No description provided for @proDeviceSwitchLockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Pro to switch between saved TVs.'**
+  String get proDeviceSwitchLockedMessage;
+
   /// No description provided for @settingsTooltip.
   ///
   /// In en, this message translates to:
@@ -460,6 +472,18 @@ abstract class AppLocalizations {
   /// **'Removed {deviceName}'**
   String pairingDeviceRemoved(String deviceName);
 
+  /// No description provided for @pairingAlreadyUsingDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already using {deviceName}.'**
+  String pairingAlreadyUsingDevice(String deviceName);
+
+  /// No description provided for @pairingDeviceAlreadyPaired.
+  ///
+  /// In en, this message translates to:
+  /// **'{deviceName} is already paired.'**
+  String pairingDeviceAlreadyPaired(String deviceName);
+
   /// No description provided for @pairingExceptionFailed.
   ///
   /// In en, this message translates to:
@@ -699,6 +723,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This will remove \"{deviceName}\" from saved devices.'**
   String pairingRemoveSavedBody(String deviceName);
+
+  /// No description provided for @pairingSectionPaired.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired'**
+  String get pairingSectionPaired;
+
+  /// No description provided for @pairingSectionAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get pairingSectionAvailable;
 
   /// No description provided for @pairingDeviceInfoTitle.
   ///

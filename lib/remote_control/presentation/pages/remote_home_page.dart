@@ -85,6 +85,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   remote_connection.ConnectionState _connectionState =
       remote_connection.ConnectionState.disconnected;
   bool _hasAnyPairedDevice = false;
+  bool _deviceSwitcherSheetOpen = false;
   bool _showPairingHint = false;
   bool _pairButtonBlinkOn = false;
   Timer? _pairButtonBlinkTimer;
@@ -135,6 +136,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     super.dispose();
   }
 
+  bool get _isResolvedFreeTier =>
+      widget.proEntitlementService.statusNotifier.value ==
+      ProEntitlementStatus.notEntitled;
+
   void _handleProEntitlementChanged() {
     _syncInterstitialWarmUp();
     if (!mounted) {
@@ -143,9 +148,72 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (!widget.proEntitlementService.isPro && _isLayoutEditMode) {
       setState(() => _isLayoutEditMode = false);
     }
+    if (_isResolvedFreeTier) {
+      unawaited(_refreshSavedDevicesForFreeTier());
+      return;
+    }
     final device = _activeDevice;
     if (device != null) {
       unawaited(_loadLayoutForDevice(device));
+    }
+  }
+
+  Future<void> _refreshSavedDevicesForFreeTier() async {
+    var savedDevices = await widget.deviceRepository.getSavedDevices();
+    final removedExtraDevices =
+        await FreeTierSavedDeviceCleanup.removeNonActiveSavedDevices(
+          isFreeTier: _isResolvedFreeTier,
+          activeDeviceId: _activeDevice?.id,
+          savedDevices: savedDevices,
+          commandService: widget.commandService,
+          deviceRepository: widget.deviceRepository,
+        );
+    if (removedExtraDevices) {
+      savedDevices = await widget.deviceRepository.getSavedDevices();
+    }
+    if (!mounted) {
+      return;
+    }
+
+    final shouldReopenDeviceSwitcher = _deviceSwitcherSheetOpen;
+    if (shouldReopenDeviceSwitcher && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      _deviceSwitcherSheetOpen = false;
+    }
+
+    _hasAnyPairedDevice = savedDevices.isNotEmpty;
+    final lastUsed = await widget.deviceRepository.getLastUsedDevice();
+    if (!mounted) {
+      return;
+    }
+
+    if (lastUsed == null) {
+      setState(() {
+        _activeDevice = null;
+        _status = 'Connect a TV to begin';
+        _isLayoutEditMode = false;
+      });
+      _subscribeRemoteTextReady(null);
+      _subscribeConnectionState(null);
+      _resetLayoutToDefaults();
+    } else if (_activeDevice?.id != lastUsed.id) {
+      await _activateDevice(lastUsed);
+    } else if (removedExtraDevices) {
+      setState(() {});
+    }
+
+    if (!mounted) {
+      return;
+    }
+    final device = _activeDevice;
+    if (device != null) {
+      await _loadLayoutForDevice(device);
+    }
+    if (!mounted) {
+      return;
+    }
+    if (shouldReopenDeviceSwitcher && _hasAnyPairedDevice) {
+      unawaited(_showDeviceSwitcher());
     }
   }
 
@@ -439,6 +507,42 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     await _loadLayoutForDevice(device);
   }
 
+  void _showProDeviceSwitchLockedMessage() {
+    final l10n = AppLocalizations.of(context)!;
+    _showToast(l10n.proDeviceSwitchLockedMessage, isError: false);
+  }
+
+  void _showProLayoutLockedMessage() {
+    final l10n = AppLocalizations.of(context)!;
+    _showToast(l10n.proLayoutLockedTooltip, isError: false);
+  }
+
+  bool _canSwitchToPairedDevice(TvDevice device) {
+    if (widget.proEntitlementService.isPro) {
+      return true;
+    }
+    final activeId = _activeDevice?.id;
+    return activeId == null || activeId == device.id;
+  }
+
+  List<TvDevice> _devicesForSwitcherDisplay(List<TvDevice> savedDevices) {
+    final activeId = _activeDevice?.id;
+    if (activeId == null) {
+      return savedDevices;
+    }
+    final activeIndex = savedDevices.indexWhere(
+      (device) => device.id == activeId,
+    );
+    if (activeIndex <= 0) {
+      return savedDevices;
+    }
+    return [
+      savedDevices[activeIndex],
+      ...savedDevices.take(activeIndex),
+      ...savedDevices.skip(activeIndex + 1),
+    ];
+  }
+
   Future<void> _showDeviceSwitcher() async {
     if (!_hasAnyPairedDevice) {
       await _openPairing();
@@ -448,15 +552,22 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (!mounted || savedDevices.isEmpty) {
       return;
     }
+    final canSwitchDevices = widget.proEntitlementService.isPro;
+    _deviceSwitcherSheetOpen = true;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (sheetContext) {
         return RemoteHomeDeviceSwitcherSheet(
-          devices: savedDevices,
+          devices: _devicesForSwitcherDisplay(savedDevices),
           activeDeviceId: _activeDevice?.id,
+          canSwitchDevices: canSwitchDevices,
           onDeviceSelected: (device) {
+            if (!_canSwitchToPairedDevice(device)) {
+              _showProDeviceSwitchLockedMessage();
+              return;
+            }
             Navigator.pop(sheetContext);
             unawaited(() async {
               await widget.deviceRepository.setLastUsedDevice(device.id);
@@ -466,6 +577,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
               await _activateDevice(device);
             }());
           },
+          onSwitchBlocked: _showProDeviceSwitchLockedMessage,
           onManageDevices: () {
             Navigator.pop(sheetContext);
             unawaited(_openPairing());
@@ -473,6 +585,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         );
       },
     );
+    _deviceSwitcherSheetOpen = false;
   }
 
   Future<void> _openPairing() async {
@@ -482,6 +595,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       commandService: widget.commandService,
       discoveryService: widget.discoveryService,
       deviceRepository: widget.deviceRepository,
+      proEntitlementService: widget.proEntitlementService,
       activeDeviceId: _activeDevice?.id,
     );
     if (!mounted) return;
@@ -638,9 +752,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                           entitlementStatus: status,
                           storeAvailable: storeAvailable,
                           themePreference: themePreference,
-                          onThemePreferenceChanged: (value) => unawaited(
-                            themeController.setPreference(value),
-                          ),
+                          onThemePreferenceChanged: (value) =>
+                              unawaited(themeController.setPreference(value)),
                           onUpgradeToPro: () => unawaited(_purchasePro()),
                           onRestorePurchases: () => unawaited(_restorePro()),
                           showDebugSection: showDebugSection,
@@ -946,6 +1059,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         final isPro = proStatus == ProEntitlementStatus.entitled;
         final canToggleLayout =
             _isLayoutEditMode || (_activeDevice != null && isPro);
+        final showLayoutLockedOnPress =
+            !canToggleLayout && _activeDevice != null && !isPro;
         final showAds = proStatus == ProEntitlementStatus.notEntitled;
         final adOverlay = BottomBannerAdPlacement.buildOverlay(
           appEnvironment: widget.appEnvironment,
@@ -964,6 +1079,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                 isLayoutEditMode: _isLayoutEditMode,
                 onToggleLayoutEditMode: canToggleLayout
                     ? _toggleLayoutEditMode
+                    : showLayoutLockedOnPress
+                    ? _showProLayoutLockedMessage
                     : null,
                 onShowSettings: () => unawaited(_showSettingsSheet()),
                 isPro: isPro,
@@ -1037,9 +1154,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                             onDisabledInteraction: _onDisabledGridInteraction,
                             onInterstitialTestPressed: () =>
                                 unawaited(_triggerInterstitialTestAd()),
-                            onProToggleTestPressed: () => unawaited(
-                              _toggleProEntitlementForTesting(),
-                            ),
+                            onProToggleTestPressed: () =>
+                                unawaited(_toggleProEntitlementForTesting()),
                             proToggleTestIsPro: isPro,
                           ),
                         ),
