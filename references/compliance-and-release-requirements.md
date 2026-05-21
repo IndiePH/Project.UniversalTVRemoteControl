@@ -12,9 +12,9 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 
 ### 1.1 App Tracking Transparency — iOS only
 
-- [x] Integrate the `app_tracking_transparency` Flutter plugin
-- [x] Request ATT permission **before** any ad loads — via `AdConsentCoordinator.prepareForAds()` ahead of `MobileAds.initialize()` in `main.dart`
-- [ ] Handle both granted and denied states gracefully on device (ads must degrade, not crash — code paths exist; physical validation pending)
+- [ ] Integrate the `app_tracking_transparency` Flutter plugin
+- [ ] Request ATT permission **before** any ad loads — not after, not lazily
+- [ ] Handle both granted and denied states gracefully (ads must degrade, not crash)
 
 > Apple mandates this on iOS 14.5+. Skipping it = automatic App Store rejection.
 
@@ -22,16 +22,11 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 
 ### 1.2 GDPR + CCPA Consent Screen — both platforms
 
-- [x] Integrate Google's UMP (User Messaging Platform) SDK via the `google_mobile_ads` plugin (`AdConsentCoordinator`)
-- [x] Gather consent before initializing the Mobile Ads SDK; banner/interstitial placements check `AdConsentCoordinator.canRequestAds`
-- [x] Settings sheet exposes UMP privacy-options form when required
-- [ ] EU/California behavioral validation on physical devices before release ads go live
+- [ ] Integrate Google's UMP (User Messaging Platform) SDK via the `google_mobile_ads` plugin
+- [ ] Show consent dialog before loading any ads for EU and California users
+- [ ] UMP SDK handles both GDPR and CCPA — one integration covers both
 
 > Required for all users in EU and California. Both Apple and Google enforce this at review.
-
-> Note: `google_mobile_ads` renders banner + interstitial scaffolds via `lib/app/ads/`
-> (see `references/changelog.md` 2026-05-13 and 2026-05-20). UMP + ATT are integrated
-> in app code; production AdMob IDs and regional device validation remain release blockers.
 
 ---
 
@@ -39,7 +34,6 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 
 - [ ] Write a Privacy Policy describing: what data is collected, how it is used, how users can request deletion
 - [ ] Host it at a **live, publicly accessible URL** (GitHub Pages, Notion, or similar is sufficient)
-- [x] In-app link scaffold: `AppLegalUrls` + `LegalLinkLauncher` + settings-sheet entry (URL must be set before release)
 - [ ] Add the URL to the App Store Connect listing before submission
 - [ ] Add the URL to the Google Play Console listing before submission
 
@@ -53,10 +47,7 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 - [ ] Do not use Stripe, PayPal, or any external payment processor for digital goods inside the app
 - [ ] Set up the "remove ads" product as a **non-consumable** IAP in App Store Connect
 - [ ] Set up the "remove ads" product as a **non-consumable** in Google Play Console
-- [x] Integrate via the `in_app_purchase` Flutter plugin (official) — **TVREMOTE-66**
-- [x] Use one non-consumable product ID on both stores (`one_remote_pro` by default; override with `--dart-define=PRO_PRODUCT_ID=...` per environment)
-- [x] On app launch, call `refreshFromStore()` / restore path and gate banner, interstitial, and layout-editor Pro features by verified entitlement
-- [ ] End-to-end sandbox purchase + restore validated on signed builds (**TVREMOTE-67**)
+- [ ] Integrate via the `in_app_purchase` Flutter plugin (official)
 
 > Violation of this rule results in app rejection or removal from both stores. This is non-negotiable.
 
@@ -129,7 +120,6 @@ Code-level tests (widget/integration) are necessary but not sufficient. Each bra
 | Apple Developer Program account | iOS | Cannot submit | ☐ |
 | Google Play Developer account | Android | Cannot submit | ☐ |
 | AdMob account | Both | Ads cannot go live | ☐ |
-| Swap test AdMob ids for production (`AndroidManifest.xml`, `Info.plist` `GADApplicationIdentifier` + full `SKAdNetworkItems`, `--dart-define` banner unit IDs) | Both | Ads cannot go live | ☐ |
 | Physical device validation (Samsung) | Android | Quality gate | ☐ |
 | Physical device validation (LG) | Android | Quality gate | ☐ |
 | Physical device validation (Hisense) | Android | Quality gate | ☐ |

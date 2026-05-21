@@ -104,7 +104,7 @@ MVP implementation priority (current baseline)—same **platform** stance as §1
 #### Remote Customization
 
 * Settings access on remote screen toggles an in-place layout editor
-* Grid-based layout customization (`5x8`) with drag-and-drop repositioning (bottom row reserved for the banner ad overlay)
+* Grid-based layout customization (`5x9`) with drag-and-drop repositioning
 * When a drop overlaps another control, the editor attempts a **swap**: the dragged control lands at the dropped cell; the displaced control is placed using **footprint-aware** rules (validation footprints: d-pad `3x3`, channel/volume rockers `1x3`, others from control size) so unrelated controls are not overlapped. If no valid placement exists, the drop is **rejected**
 * Multi-cell control support:
     * D-pad occupies `3x3`
