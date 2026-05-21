@@ -2,6 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
+import 'package:one_remote/remote_control/presentation/interaction/remote_command_haptic_feedback.dart';
+import 'package:one_remote/remote_control/presentation/interaction/remote_command_interaction_category.dart';
+import 'package:one_remote/remote_control/presentation/interaction/remote_press_feedback.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_circular_dpad.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_icon_circle_button.dart';
@@ -25,6 +28,9 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     required this.onSendCommand,
     required this.onSearchInputPressed,
     required this.onDisabledInteraction,
+    this.onInterstitialTestPressed,
+    this.onProToggleTestPressed,
+    this.proToggleTestIsPro = false,
   });
 
   final List<LayoutEditItem> layoutItems;
@@ -36,6 +42,11 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
   final void Function(RemoteCommand command) onSendCommand;
   final VoidCallback onSearchInputPressed;
   final VoidCallback onDisabledInteraction;
+  /// Debug-only: tap target immediately right of the power button (grid `[1,0]`).
+  final VoidCallback? onInterstitialTestPressed;
+  /// Debug-only: tap target immediately below the power button (grid `[0,1]`).
+  final VoidCallback? onProToggleTestPressed;
+  final bool proToggleTestIsPro;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +85,27 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
                             context: context,
                             item: item,
                             cellSize: cellSize,
+                          ),
+                        ),
+                      if (onInterstitialTestPressed != null)
+                        Positioned(
+                          left: cellSize + gridGap,
+                          top: 0,
+                          child: _buildInterstitialTestButton(
+                            context: context,
+                            cellSize: cellSize,
+                            onPressed: onInterstitialTestPressed!,
+                          ),
+                        ),
+                      if (onProToggleTestPressed != null)
+                        Positioned(
+                          left: 0,
+                          top: cellSize + gridGap,
+                          child: _buildProToggleTestButton(
+                            context: context,
+                            cellSize: cellSize,
+                            isPro: proToggleTestIsPro,
+                            onPressed: onProToggleTestPressed!,
                           ),
                         ),
                     ],
@@ -119,6 +151,7 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
       default:
         final width = (item.width * cellSize) + ((item.width - 1) * gridGap);
         final height = (item.height * cellSize) + ((item.height - 1) * gridGap);
+        final definition = kRemoteLayoutItemDefinitionById[item.id];
         final command = commandForLayoutItemId(item.id);
         final onPressed = command == null
             ? _noopAction
@@ -136,9 +169,13 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
               fit: BoxFit.contain,
               child: RemoteIconCircleButton(
                 icon: item.icon,
+                imageAsset: definition?.imageAsset ?? item.imageAsset,
+                imageIconSize: definition?.imageIconSize,
+                brandColor: definition?.brandColor,
                 label: item.label,
                 isPower: controlsEnabled && item.isPower,
                 onPressed: onPressed,
+                interactionCommand: command,
               ),
             ),
           ),
@@ -211,6 +248,11 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
                   : pairingHintActive
                   ? null
                   : onDisabledInteraction,
+              onPressHaptic: controlsEnabled
+                  ? () => RemoteCommandHapticFeedback.playForCategory(
+                      RemoteCommandInteractionCategory.system,
+                    )
+                  : null,
             ),
           ),
         ),
@@ -238,13 +280,17 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
         child: Material(
           color: appColors.remoteSurface,
           borderRadius: BorderRadius.circular(innerHeight / 2),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(innerHeight / 2),
-            onTap: controlsEnabled
+          child: RemotePressFeedback(
+            onPressed: controlsEnabled
                 ? () => onSendCommand(RemoteCommand.playPause)
                 : pairingHintActive
                 ? null
                 : onDisabledInteraction,
+            onPressHaptic: controlsEnabled
+                ? () => RemoteCommandHapticFeedback.playFor(
+                    RemoteCommand.playPause,
+                  )
+                : null,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(innerHeight / 2),
@@ -305,6 +351,8 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
                 : pairingHintActive
                 ? _noopAction
                 : onDisabledInteraction,
+            topInteractionCommand: RemoteCommand.channelUp,
+            bottomInteractionCommand: RemoteCommand.channelDown,
           ),
         ),
       ),
@@ -335,6 +383,64 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
                 : pairingHintActive
                 ? _noopAction
                 : onDisabledInteraction,
+            topInteractionCommand: RemoteCommand.volumeUp,
+            bottomInteractionCommand: RemoteCommand.volumeDown,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProToggleTestButton({
+    required BuildContext context,
+    required double cellSize,
+    required bool isPro,
+    required VoidCallback onPressed,
+  }) {
+    final width = cellSize;
+    final height = cellSize;
+    final appColors = AppTheme.colorsOf(context);
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Padding(
+        padding: EdgeInsets.all(cellSize * kRemoteLayoutCellInsetRatio),
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: RemoteIconCircleButton(
+            label: isPro ? 'PRO' : 'FREE',
+            backgroundColor: isPro ? appColors.remotePowerFill : null,
+            foregroundColor: isPro ? appColors.remoteGlyphOnPower : null,
+            onPressed: onPressed,
+            onPressHaptic: () => RemoteCommandHapticFeedback.playForCategory(
+              RemoteCommandInteractionCategory.system,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInterstitialTestButton({
+    required BuildContext context,
+    required double cellSize,
+    required VoidCallback onPressed,
+  }) {
+    final width = cellSize;
+    final height = cellSize;
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Padding(
+        padding: EdgeInsets.all(cellSize * kRemoteLayoutCellInsetRatio),
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: RemoteIconCircleButton(
+            icon: Icons.ad_units_outlined,
+            onPressed: onPressed,
+            onPressHaptic: () => RemoteCommandHapticFeedback.playForCategory(
+              RemoteCommandInteractionCategory.system,
+            ),
           ),
         ),
       ),

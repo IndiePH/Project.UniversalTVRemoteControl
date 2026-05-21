@@ -172,6 +172,24 @@ abstract class AppLocalizations {
   /// **'Connect TV'**
   String get connectTvTooltip;
 
+  /// No description provided for @remoteSwitchDeviceTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch TV'**
+  String get remoteSwitchDeviceTooltip;
+
+  /// No description provided for @remoteDeviceSwitcherTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your TVs'**
+  String get remoteDeviceSwitcherTitle;
+
+  /// No description provided for @remoteDeviceSwitcherManageButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add or manage TVs'**
+  String get remoteDeviceSwitcherManageButton;
+
   /// No description provided for @layoutEditTooltip.
   ///
   /// In en, this message translates to:
@@ -393,6 +411,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting for TV approval...'**
   String get pairingWaitingForApproval;
+
+  /// No description provided for @pairingDiscoveryLimitedSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited support — some remote features may not work on this TV.'**
+  String get pairingDiscoveryLimitedSupport;
+
+  /// No description provided for @pairingDiscoveryExperimentalSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'{brandName} — experimental support; pairing and commands may be unstable.'**
+  String pairingDiscoveryExperimentalSupport(String brandName);
+
+  /// No description provided for @pairingDiscoveryHisenseLimitedSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited support — remote keys work; app keyboard may not be available.'**
+  String get pairingDiscoveryHisenseLimitedSupport;
+
+  /// No description provided for @pairingDiscoveryRokuLimitedSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited support — keys and power work; no app keyboard or PIN pairing.'**
+  String get pairingDiscoveryRokuLimitedSupport;
 
   /// No description provided for @pairingNotePreviouslyPaired.
   ///
@@ -754,6 +796,36 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// No description provided for @settingsAppearanceSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearanceSectionTitle;
+
+  /// No description provided for @settingsThemeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get settingsThemeLight;
+
+  /// No description provided for @settingsThemeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get settingsThemeDark;
+
+  /// No description provided for @settingsThemeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsThemeSystem;
+
+  /// No description provided for @settingsThemeSystemSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match your device light or dark mode'**
+  String get settingsThemeSystemSubtitle;
+
   /// No description provided for @settingsDebugSectionTitle.
   ///
   /// In en, this message translates to:
@@ -784,6 +856,36 @@ abstract class AppLocalizations {
   /// **'Copy transport logs'**
   String get settingsCopyTransportLogs;
 
+  /// No description provided for @settingsDiagnosticsSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Session diagnostics'**
+  String get settingsDiagnosticsSummaryTitle;
+
+  /// No description provided for @settingsDiagnosticsDiscoveryLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovery: {attempts} attempts, {rate} found a TV'**
+  String settingsDiagnosticsDiscoveryLine(int attempts, String rate);
+
+  /// No description provided for @settingsDiagnosticsPairingLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing sessions: {succeeded} ok, {failed} failed'**
+  String settingsDiagnosticsPairingLine(int succeeded, int failed);
+
+  /// No description provided for @settingsDiagnosticsUnhandledLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Unhandled errors: {count}'**
+  String settingsDiagnosticsUnhandledLine(int count);
+
+  /// No description provided for @settingsCopyDiagnosticsReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy diagnostics report'**
+  String get settingsCopyDiagnosticsReport;
+
   /// No description provided for @settingsCopyRuntimeFlagsTemplate.
   ///
   /// In en, this message translates to:
@@ -805,7 +907,7 @@ abstract class AppLocalizations {
   /// No description provided for @proStatusActive.
   ///
   /// In en, this message translates to:
-  /// **'Pro is active.'**
+  /// **'Active'**
   String get proStatusActive;
 
   /// No description provided for @proStatusNotActive.
@@ -820,11 +922,17 @@ abstract class AppLocalizations {
   /// **'Checking purchase status...'**
   String get proStatusChecking;
 
-  /// No description provided for @proStoreAccountHint.
+  /// No description provided for @proStoreAccountHintGooglePlay.
   ///
   /// In en, this message translates to:
-  /// **'Your purchase is tied to your current Google Play or App Store account. Use Restore on a new phone with the same account.'**
-  String get proStoreAccountHint;
+  /// **'Your purchase is tied to your current Google Play account. Use Restore on a new phone with the same account.'**
+  String get proStoreAccountHintGooglePlay;
+
+  /// No description provided for @proStoreAccountHintAppStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Your purchase is tied to your current App Store account. Use Restore on a new phone with the same account.'**
+  String get proStoreAccountHintAppStore;
 
   /// No description provided for @proUpgradeButton.
   ///
@@ -855,6 +963,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restoring purchases...'**
   String get proRestoreStarted;
+
+  /// No description provided for @settingsLegalSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal'**
+  String get settingsLegalSectionTitle;
+
+  /// No description provided for @settingsPrivacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get settingsPrivacyPolicy;
+
+  /// No description provided for @settingsAdPrivacyOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad privacy settings'**
+  String get settingsAdPrivacyOptions;
+
+  /// No description provided for @settingsLegalLinkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the link.'**
+  String get settingsLegalLinkFailed;
 }
 
 class _AppLocalizationsDelegate

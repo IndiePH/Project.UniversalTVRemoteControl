@@ -16,6 +16,9 @@
   "connectionStateError": "Connection error",
   "connectionStateDisconnected": "Disconnected",
   "connectTvTooltip": "Connect TV",
+  "remoteSwitchDeviceTooltip": "Switch TV",
+  "remoteDeviceSwitcherTitle": "Your TVs",
+  "remoteDeviceSwitcherManageButton": "Add or manage TVs",
 
   "layoutEditTooltip": "Edit layout",
   "layoutEditDoneTooltip": "Done editing layout",
@@ -103,6 +106,16 @@
   "pairingTclLegacyPreStep1": "Power-on may still require the original remote, CEC, or WOL.",
 
   "pairingWaitingForApproval": "Waiting for TV approval...",
+
+  "pairingDiscoveryLimitedSupport": "Limited support — some remote features may not work on this TV.",
+  "pairingDiscoveryExperimentalSupport": "{brandName} — experimental support; pairing and commands may be unstable.",
+  "@pairingDiscoveryExperimentalSupport": {
+    "placeholders": {
+      "brandName": {"type": "String"}
+    }
+  },
+  "pairingDiscoveryHisenseLimitedSupport": "Limited support — remote keys work; app keyboard may not be available.",
+  "pairingDiscoveryRokuLimitedSupport": "Limited support — keys and power work; no app keyboard or PIN pairing.",
 
   "pairingNotePreviouslyPaired": "Previously paired",
   "pairingNotePreviouslyPairedAt": "Previously paired ({pairedAt})",
@@ -245,22 +258,55 @@
   "remoteTextSamsungCompatibilityError": "Typing from this phone is not available on this TV screen or app. Use the TV on-screen keyboard and direction buttons to enter text.",
 
   "settingsTitle": "Settings",
+  "settingsAppearanceSectionTitle": "Appearance",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "settingsThemeSystem": "System",
+  "settingsThemeSystemSubtitle": "Match your device light or dark mode",
   "settingsDebugSectionTitle": "Debug",
   "settingsUseFakeTransportsTitle": "Use fake transports",
   "settingsUseFakeTransportsEnabled": "Using fake discovery and fake transport clients.",
   "settingsUseFakeTransportsDisabled": "Using real discovery and real transport clients.",
   "settingsCopyTransportLogs": "Copy transport logs",
+  "settingsDiagnosticsSummaryTitle": "Session diagnostics",
+  "settingsDiagnosticsDiscoveryLine": "Discovery: {attempts} attempts, {rate} found a TV",
+  "@settingsDiagnosticsDiscoveryLine": {
+    "placeholders": {
+      "attempts": {"type": "int"},
+      "rate": {"type": "String"}
+    }
+  },
+  "settingsDiagnosticsPairingLine": "Pairing sessions: {succeeded} ok, {failed} failed",
+  "@settingsDiagnosticsPairingLine": {
+    "placeholders": {
+      "succeeded": {"type": "int"},
+      "failed": {"type": "int"}
+    }
+  },
+  "settingsDiagnosticsUnhandledLine": "Unhandled errors: {count}",
+  "@settingsDiagnosticsUnhandledLine": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "settingsCopyDiagnosticsReport": "Copy diagnostics report",
   "settingsCopyRuntimeFlagsTemplate": "Copy runtime flags template",
   "settingsCopyRuntimeFlagsTemplateSubtitle": "Paste and fill dart-define values.",
 
   "proSectionTitle": "Pro",
-  "proStatusActive": "Pro is active.",
+  "proStatusActive": "Active",
   "proStatusNotActive": "Pro is not active.",
   "proStatusChecking": "Checking purchase status...",
-  "proStoreAccountHint": "Your purchase is tied to your current Google Play or App Store account. Use Restore on a new phone with the same account.",
+  "proStoreAccountHintGooglePlay": "Your purchase is tied to your current Google Play account. Use Restore on a new phone with the same account.",
+  "proStoreAccountHintAppStore": "Your purchase is tied to your current App Store account. Use Restore on a new phone with the same account.",
   "proUpgradeButton": "Upgrade to Pro",
   "proRestoreButton": "Restore purchases",
   "proStoreUnavailable": "Store purchases are unavailable on this device.",
   "proPurchaseStarted": "Purchase flow started.",
-  "proRestoreStarted": "Restoring purchases..."
+  "proRestoreStarted": "Restoring purchases...",
+
+  "settingsLegalSectionTitle": "Legal",
+  "settingsPrivacyPolicy": "Privacy policy",
+  "settingsAdPrivacyOptions": "Ad privacy settings",
+  "settingsLegalLinkFailed": "Could not open the link."
 }

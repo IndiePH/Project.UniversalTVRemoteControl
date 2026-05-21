@@ -48,6 +48,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectTvTooltip => 'Connect TV';
 
   @override
+  String get remoteSwitchDeviceTooltip => 'Switch TV';
+
+  @override
+  String get remoteDeviceSwitcherTitle => 'Your TVs';
+
+  @override
+  String get remoteDeviceSwitcherManageButton => 'Add or manage TVs';
+
+  @override
   String get layoutEditTooltip => 'Edit layout';
 
   @override
@@ -182,6 +191,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pairingWaitingForApproval => 'Waiting for TV approval...';
+
+  @override
+  String get pairingDiscoveryLimitedSupport =>
+      'Limited support — some remote features may not work on this TV.';
+
+  @override
+  String pairingDiscoveryExperimentalSupport(String brandName) {
+    return '$brandName — experimental support; pairing and commands may be unstable.';
+  }
+
+  @override
+  String get pairingDiscoveryHisenseLimitedSupport =>
+      'Limited support — remote keys work; app keyboard may not be available.';
+
+  @override
+  String get pairingDiscoveryRokuLimitedSupport =>
+      'Limited support — keys and power work; no app keyboard or PIN pairing.';
 
   @override
   String get pairingNotePreviouslyPaired => 'Previously paired';
@@ -398,6 +424,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get settingsAppearanceSectionTitle => 'Appearance';
+
+  @override
+  String get settingsThemeLight => 'Light';
+
+  @override
+  String get settingsThemeDark => 'Dark';
+
+  @override
+  String get settingsThemeSystem => 'System';
+
+  @override
+  String get settingsThemeSystemSubtitle =>
+      'Match your device light or dark mode';
+
+  @override
   String get settingsDebugSectionTitle => 'Debug';
 
   @override
@@ -415,6 +457,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsCopyTransportLogs => 'Copy transport logs';
 
   @override
+  String get settingsDiagnosticsSummaryTitle => 'Session diagnostics';
+
+  @override
+  String settingsDiagnosticsDiscoveryLine(int attempts, String rate) {
+    return 'Discovery: $attempts attempts, $rate found a TV';
+  }
+
+  @override
+  String settingsDiagnosticsPairingLine(int succeeded, int failed) {
+    return 'Pairing sessions: $succeeded ok, $failed failed';
+  }
+
+  @override
+  String settingsDiagnosticsUnhandledLine(int count) {
+    return 'Unhandled errors: $count';
+  }
+
+  @override
+  String get settingsCopyDiagnosticsReport => 'Copy diagnostics report';
+
+  @override
   String get settingsCopyRuntimeFlagsTemplate => 'Copy runtime flags template';
 
   @override
@@ -425,7 +488,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proSectionTitle => 'Pro';
 
   @override
-  String get proStatusActive => 'Pro is active.';
+  String get proStatusActive => 'Active';
 
   @override
   String get proStatusNotActive => 'Pro is not active.';
@@ -434,8 +497,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proStatusChecking => 'Checking purchase status...';
 
   @override
-  String get proStoreAccountHint =>
-      'Your purchase is tied to your current Google Play or App Store account. Use Restore on a new phone with the same account.';
+  String get proStoreAccountHintGooglePlay =>
+      'Your purchase is tied to your current Google Play account. Use Restore on a new phone with the same account.';
+
+  @override
+  String get proStoreAccountHintAppStore =>
+      'Your purchase is tied to your current App Store account. Use Restore on a new phone with the same account.';
 
   @override
   String get proUpgradeButton => 'Upgrade to Pro';
@@ -452,4 +519,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proRestoreStarted => 'Restoring purchases...';
+
+  @override
+  String get settingsLegalSectionTitle => 'Legal';
+
+  @override
+  String get settingsPrivacyPolicy => 'Privacy policy';
+
+  @override
+  String get settingsAdPrivacyOptions => 'Ad privacy settings';
+
+  @override
+  String get settingsLegalLinkFailed => 'Could not open the link.';
 }

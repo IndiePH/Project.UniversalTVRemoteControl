@@ -11,4 +11,13 @@ void main() {
 
     expect(overlay, isNull);
   });
+
+  test('does not build overlay when regulatory consent blocks ads', () {
+    final overlay = BottomBannerAdPlacement.buildOverlay(
+      appEnvironment: AppEnvironment.production,
+      showAds: true,
+    );
+
+    expect(overlay, isNull);
+  });
 }

@@ -1,6 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
+import 'package:one_remote/app/theme/app_theme_preference.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
+import 'package:one_remote/remote_control/presentation/widgets/diagnostics_summary_panel.dart';
 
 /// User-facing settings and purchase actions for the remote home screen.
 class RemoteHomeSettingsSheet extends StatelessWidget {
@@ -15,7 +19,15 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
     required this.useFakeTransports,
     required this.onUseFakeTransportsChanged,
     required this.onCopyTransportLogs,
+    required this.onCopyDiagnosticsReport,
+    required this.diagnosticsRecorder,
     required this.onCopyRuntimeFlagsTemplate,
+    required this.showPrivacyPolicyLink,
+    required this.onOpenPrivacyPolicy,
+    required this.showAdPrivacyOptions,
+    required this.onOpenAdPrivacyOptions,
+    required this.themePreference,
+    required this.onThemePreferenceChanged,
   });
 
   final ProEntitlementStatus entitlementStatus;
@@ -27,7 +39,15 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   final bool useFakeTransports;
   final Future<void> Function(bool value) onUseFakeTransportsChanged;
   final VoidCallback onCopyTransportLogs;
+  final VoidCallback onCopyDiagnosticsReport;
+  final AppDiagnosticsRecorder diagnosticsRecorder;
   final VoidCallback onCopyRuntimeFlagsTemplate;
+  final bool showPrivacyPolicyLink;
+  final VoidCallback onOpenPrivacyPolicy;
+  final bool showAdPrivacyOptions;
+  final VoidCallback onOpenAdPrivacyOptions;
+  final AppThemePreference themePreference;
+  final ValueChanged<AppThemePreference> onThemePreferenceChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +59,12 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
     };
     final actionsDisabled =
         !storeAvailable || entitlementStatus == ProEntitlementStatus.unknown;
+    final isEntitled = entitlementStatus == ProEntitlementStatus.entitled;
+    final storeAccountHint = switch (defaultTargetPlatform) {
+      TargetPlatform.android => l10n.proStoreAccountHintGooglePlay,
+      TargetPlatform.iOS => l10n.proStoreAccountHintAppStore,
+      _ => l10n.proStoreAccountHintGooglePlay,
+    };
 
     return SafeArea(
       child: Padding(
@@ -54,6 +80,44 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
+                l10n.settingsAppearanceSectionTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<AppThemePreference>(
+                segments: [
+                  ButtonSegment(
+                    value: AppThemePreference.light,
+                    label: Text(l10n.settingsThemeLight),
+                    icon: const Icon(Icons.light_mode_outlined),
+                  ),
+                  ButtonSegment(
+                    value: AppThemePreference.dark,
+                    label: Text(l10n.settingsThemeDark),
+                    icon: const Icon(Icons.dark_mode_outlined),
+                  ),
+                  ButtonSegment(
+                    value: AppThemePreference.system,
+                    label: Text(l10n.settingsThemeSystem),
+                    icon: const Icon(Icons.brightness_auto_outlined),
+                  ),
+                ],
+                selected: {themePreference},
+                onSelectionChanged: (selected) {
+                  if (selected.isNotEmpty) {
+                    onThemePreferenceChanged(selected.first);
+                  }
+                },
+              ),
+              if (themePreference == AppThemePreference.system) ...[
+                const SizedBox(height: 6),
+                Text(
+                  l10n.settingsThemeSystemSubtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+              const SizedBox(height: 16),
+              Text(
                 l10n.proSectionTitle,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
@@ -61,19 +125,21 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
               Text(statusText),
               const SizedBox(height: 6),
               Text(
-                l10n.proStoreAccountHint,
+                storeAccountHint,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
-              FilledButton(
-                onPressed: actionsDisabled ? null : onUpgradeToPro,
-                child: Text(l10n.proUpgradeButton),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: actionsDisabled ? null : onRestorePurchases,
-                child: Text(l10n.proRestoreButton),
-              ),
+              if (!isEntitled) ...[
+                FilledButton(
+                  onPressed: actionsDisabled ? null : onUpgradeToPro,
+                  child: Text(l10n.proUpgradeButton),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: actionsDisabled ? null : onRestorePurchases,
+                  child: Text(l10n.proRestoreButton),
+                ),
+              ],
               if (!storeAvailable) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -81,12 +147,36 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
+              if (showPrivacyPolicyLink || showAdPrivacyOptions) ...[
+                const SizedBox(height: 16),
+                Text(
+                  l10n.settingsLegalSectionTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                if (showPrivacyPolicyLink)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: Text(l10n.settingsPrivacyPolicy),
+                    onTap: onOpenPrivacyPolicy,
+                  ),
+                if (showAdPrivacyOptions)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.ads_click_outlined),
+                    title: Text(l10n.settingsAdPrivacyOptions),
+                    onTap: onOpenAdPrivacyOptions,
+                  ),
+              ],
               if (showDebugSection) ...[
                 const SizedBox(height: 16),
                 Text(
                   l10n.settingsDebugSectionTitle,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
+                const SizedBox(height: 8),
+                DiagnosticsSummaryPanel(recorder: diagnosticsRecorder),
                 const SizedBox(height: 8),
                 if (showTransportToggle) ...[
                   SwitchListTile(
@@ -115,6 +205,12 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
                   leading: const Icon(Icons.copy),
                   title: Text(l10n.settingsCopyTransportLogs),
                   onTap: onCopyTransportLogs,
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.analytics_outlined),
+                  title: Text(l10n.settingsCopyDiagnosticsReport),
+                  onTap: onCopyDiagnosticsReport,
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,

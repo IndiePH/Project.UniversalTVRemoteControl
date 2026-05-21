@@ -62,6 +62,14 @@ final class ProEntitlementService {
     }
   }
 
+  /// Debug-only: flip between entitled and not entitled without the store.
+  Future<void> debugToggleEntitlement() async {
+    final next = statusNotifier.value == ProEntitlementStatus.entitled
+        ? ProEntitlementStatus.notEntitled
+        : ProEntitlementStatus.entitled;
+    await _setResolvedStatus(next);
+  }
+
   Future<bool> restorePurchases() async {
     if (!storeAvailableNotifier.value) {
       await refreshFromStore();
