@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_legacy_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variants.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
@@ -76,7 +77,9 @@ class TclLegacyTcpTransportClient
 
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required String deviceId}) async =>
-      const TvDeviceInfo(modelIdentifier: 'tcl_legacy_wifi');
+      const TvDeviceInfo(
+        modelIdentifier: TclProtocolVariants.legacyWifiModelMarker,
+      );
 
   @override
   Future<void> probe(String host) async {

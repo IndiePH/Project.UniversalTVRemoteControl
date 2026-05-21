@@ -13,6 +13,7 @@ import 'package:one_remote/remote_control/application/remote_command_service.dar
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
+import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variants.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_coordinator.dart';
@@ -433,7 +434,7 @@ class _PairingPageState extends State<PairingPage> {
     required String ip,
   }) async {
     final variant = brand == TvBrand.tcl
-        ? 'tcl_legacy_wifi'
+        ? TclProtocolVariants.legacyWifi
         : TvDevice.defaultProtocolVariant;
     final device = PairingPageData.buildManualDevice(
       brand: brand,
