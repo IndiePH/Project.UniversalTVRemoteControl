@@ -544,6 +544,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proRestoreStarted => 'Restoring purchases...';
 
   @override
+  String get settingsFeedbackSectionTitle => 'Feedback';
+
+  @override
+  String get settingsFeedbackHelper =>
+      'Share suggestions, usability issues, or bugs. For bugs, include your TV brand or model and what happened.';
+
+  @override
+  String get settingsSendFeedback => 'Send feedback';
+
+  @override
+  String get feedbackSheetTitle => 'Send feedback';
+
+  @override
+  String get feedbackSheetSubtitle =>
+      'Your message is sent from the app. We do not attach logs automatically.';
+
+  @override
+  String get feedbackCategorySuggestion => 'Suggestion';
+
+  @override
+  String get feedbackCategoryBug => 'Bug';
+
+  @override
+  String get feedbackCategoryOther => 'Other';
+
+  @override
+  String get feedbackMessageHint => 'Describe your idea or what went wrong…';
+
+  @override
+  String get feedbackSendButton => 'Send';
+
+  @override
+  String get feedbackSent => 'Thanks — your feedback was sent.';
+
+  @override
+  String get feedbackMessageTooShort => 'Enter at least 10 characters.';
+
+  @override
+  String get feedbackNotConfigured =>
+      'Feedback is not configured on this build.';
+
+  @override
+  String get feedbackSendFailed => 'Could not send feedback. Try again later.';
+
+  @override
   String get settingsLegalSectionTitle => 'Legal';
 
   @override

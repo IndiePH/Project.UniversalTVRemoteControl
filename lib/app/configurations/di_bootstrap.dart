@@ -6,6 +6,7 @@ import 'package:one_remote/app/app_localized_strings.dart';
 import 'package:one_remote/app/configurations/app_di_config.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/app_monetization_di_config.dart';
+import 'package:one_remote/app/configurations/feedback_di_config.dart';
 import 'package:one_remote/app/configurations/i_di_config.dart';
 import 'package:one_remote/app/localized_strings.dart';
 import 'package:one_remote/app/theme/app_theme_controller.dart';
@@ -25,6 +26,7 @@ final class DiBootstrap {
       AppEnvironment.production => [
         const RemoteControlDiConfig(),
         const AppMonetizationDiConfig(),
+        const FeedbackDiConfig(),
       ],
       AppEnvironment.development || AppEnvironment.debug => [
         useFake
@@ -32,6 +34,7 @@ final class DiBootstrap {
             : const RemoteControlDiConfig(),
         const DevAppDiConfig(),
         const AppMonetizationDiConfig(),
+        const FeedbackDiConfig(),
       ],
     };
   }

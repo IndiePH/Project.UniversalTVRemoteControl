@@ -1000,6 +1000,90 @@ abstract class AppLocalizations {
   /// **'Restoring purchases...'**
   String get proRestoreStarted;
 
+  /// No description provided for @settingsFeedbackSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get settingsFeedbackSectionTitle;
+
+  /// No description provided for @settingsFeedbackHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Share suggestions, usability issues, or bugs. For bugs, include your TV brand or model and what happened.'**
+  String get settingsFeedbackHelper;
+
+  /// No description provided for @settingsSendFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get settingsSendFeedback;
+
+  /// No description provided for @feedbackSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get feedbackSheetTitle;
+
+  /// No description provided for @feedbackSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your message is sent from the app. We do not attach logs automatically.'**
+  String get feedbackSheetSubtitle;
+
+  /// No description provided for @feedbackCategorySuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion'**
+  String get feedbackCategorySuggestion;
+
+  /// No description provided for @feedbackCategoryBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug'**
+  String get feedbackCategoryBug;
+
+  /// No description provided for @feedbackCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get feedbackCategoryOther;
+
+  /// No description provided for @feedbackMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your idea or what went wrong…'**
+  String get feedbackMessageHint;
+
+  /// No description provided for @feedbackSendButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get feedbackSendButton;
+
+  /// No description provided for @feedbackSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks — your feedback was sent.'**
+  String get feedbackSent;
+
+  /// No description provided for @feedbackMessageTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least 10 characters.'**
+  String get feedbackMessageTooShort;
+
+  /// No description provided for @feedbackNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback is not configured on this build.'**
+  String get feedbackNotConfigured;
+
+  /// No description provided for @feedbackSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send feedback. Try again later.'**
+  String get feedbackSendFailed;
+
   /// No description provided for @settingsLegalSectionTitle.
   ///
   /// In en, this message translates to:

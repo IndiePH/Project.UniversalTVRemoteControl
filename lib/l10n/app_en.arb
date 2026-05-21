@@ -323,6 +323,22 @@
   "proPurchaseStarted": "Purchase flow started.",
   "proRestoreStarted": "Restoring purchases...",
 
+  "settingsFeedbackSectionTitle": "Feedback",
+  "settingsFeedbackHelper": "Share suggestions, usability issues, or bugs. For bugs, include your TV brand or model and what happened.",
+  "settingsSendFeedback": "Send feedback",
+
+  "feedbackSheetTitle": "Send feedback",
+  "feedbackSheetSubtitle": "Your message is sent from the app. We do not attach logs automatically.",
+  "feedbackCategorySuggestion": "Suggestion",
+  "feedbackCategoryBug": "Bug",
+  "feedbackCategoryOther": "Other",
+  "feedbackMessageHint": "Describe your idea or what went wrong…",
+  "feedbackSendButton": "Send",
+  "feedbackSent": "Thanks — your feedback was sent.",
+  "feedbackMessageTooShort": "Enter at least 10 characters.",
+  "feedbackNotConfigured": "Feedback is not configured on this build.",
+  "feedbackSendFailed": "Could not send feedback. Try again later.",
+
   "settingsLegalSectionTitle": "Legal",
   "settingsPrivacyPolicy": "Privacy policy",
   "settingsAdPrivacyOptions": "Ad privacy settings",

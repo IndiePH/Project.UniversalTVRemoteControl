@@ -22,6 +22,7 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
     required this.onCopyDiagnosticsReport,
     required this.diagnosticsRecorder,
     required this.onCopyRuntimeFlagsTemplate,
+    required this.onOpenFeedback,
     required this.showPrivacyPolicyLink,
     required this.onOpenPrivacyPolicy,
     required this.showAdPrivacyOptions,
@@ -42,6 +43,7 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   final VoidCallback onCopyDiagnosticsReport;
   final AppDiagnosticsRecorder diagnosticsRecorder;
   final VoidCallback onCopyRuntimeFlagsTemplate;
+  final VoidCallback onOpenFeedback;
   final bool showPrivacyPolicyLink;
   final VoidCallback onOpenPrivacyPolicy;
   final bool showAdPrivacyOptions;
@@ -147,6 +149,23 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
+              const SizedBox(height: 16),
+              Text(
+                l10n.settingsFeedbackSectionTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l10n.settingsFeedbackHelper,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.rate_review_outlined),
+                title: Text(l10n.settingsSendFeedback),
+                onTap: onOpenFeedback,
+              ),
               if (showPrivacyPolicyLink || showAdPrivacyOptions) ...[
                 const SizedBox(height: 16),
                 Text(
