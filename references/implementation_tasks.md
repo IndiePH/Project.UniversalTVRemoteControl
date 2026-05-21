@@ -10,19 +10,20 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 
 - **TVREMOTE-1** — Workspace hygiene: stabilize repo against generated/transient noise (root `__pycache__/` ignore, `.gitignore`/`generated_plugins.cmake` verification); narrative and acceptance notes live under **Status Tracker → Completed** (`Workspace hygiene baseline`).
 - **TVREMOTE-8** — Saved-device remove/last-used fallback test coverage completed (`test/widget_test.dart`); tracks `Next Up → Expand tests → saved-device remove/last-used fallback paths`.
-- **TVREMOTE-36** — Per-brand TV adapters and transports (**implementation** epic; structured for additional OEMs later).
-- **TVREMOTE-37** — Per-brand TV adapter and transport **testing** epic (Samsung / LG / Hisense lanes today).
-- **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring), plus transport-abstraction follow-ups **TVREMOTE-52** (shared marker + required event source) and **TVREMOTE-53** (event adoption in Samsung/Hisense real+fake clients). **TVREMOTE-7**, **TVREMOTE-14**, and **TVREMOTE-18** are parented under TVREMOTE-36.
+- **TVREMOTE-36** — Per-brand TV adapters and transports (**implementation** epic; **To Do** in Jira; structured for additional OEMs later).
+- **TVREMOTE-37** — Per-brand TV adapter and transport **testing** epic (Samsung / LG / Hisense lanes today; **To Do** in Jira).
+- **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring), plus transport-abstraction **TVREMOTE-52** / **TVREMOTE-53** (**Done** in Jira — shared marker + event adoption shipped in repo). **TVREMOTE-7**, **TVREMOTE-14**, and **TVREMOTE-18** are parented under TVREMOTE-36.
 - **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung), **TVREMOTE-50** (LG), **TVREMOTE-51** (Hisense); **TVREMOTE-13** is parented under TVREMOTE-37 (Samsung approval timeout/rejection + recovery regression tests shipped in `samsung_test_lane_test.dart` and `samsung_pairing_token_store_test.dart`; **In Progress** in Jira). Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
 - Umbrella issues superseded by this split (historical, **Done** in Jira): **TVREMOTE-25**, **TVREMOTE-21**, **TVREMOTE-9**, **TVREMOTE-10**, **TVREMOTE-16**.
 - **TVREMOTE-63** — Bottom banner + interstitial AdMob scaffold; UMP/ATT consent gating in app code (**Done**; production ad IDs + store-listing privacy URL still **TVREMOTE-26**).
 - **TVREMOTE-66** — Pro (remove ads) IAP: `in_app_purchase`, entitlement service, settings sheet, gates banner + interstitial + layout editor (**In Progress**; E2E blocked by **TVREMOTE-67**).
 - **TVREMOTE-67** — Pro IAP store products + sandbox/device validation (**To Do**; parent **TVREMOTE-2**).
-- **TVREMOTE-26** — Legal/compliance release gate: ATT/UMP + in-app privacy link scaffold landed; live policy URL + device validation pending.
+- **TVREMOTE-26** — Legal/compliance release gate (**In Progress** in Jira): ATT/UMP + in-app privacy link scaffold landed; live policy URL + device validation pending.
 - **TVREMOTE-29** — Telemetry/diagnostics recorder + settings export (**In Progress**; C1 acceptance met in repo).
 - **TVREMOTE-28** — Interaction polish: press-scale + haptic on remote controls (**In Progress**).
-- **TVREMOTE-41** / **TVREMOTE-42** — Samsung/LG IME watch stream no eager `connect`; probe path explicit (**In Progress** / LG card **Done** with 2026-05-20 note).
-- **TVREMOTE-19** — Multi-device save/switch/edit/remove: pairing save/rename/remove + last-used persistence; remote-home device switcher sheet for quick active-TV change (**In Progress** in Jira; C1 shipped in repo).
+- **TVREMOTE-41** — Samsung IME watch stream no eager `connect`; probe path explicit (**In Progress** in Jira).
+- **TVREMOTE-42** — LG IME watch stream no eager `connect`; probe path explicit (**Done** in Jira, 2026-05-20).
+- **TVREMOTE-19** — Multi-device save/switch/edit/remove: pairing save/rename/remove + last-used persistence; remote-home device switcher sheet for quick active-TV change (**To Do** in Jira; C1 switcher + `setLastUsedDevice` shipped in repo).
 - **TVREMOTE-18** — Discovery brand identification + pairing routing (**In Progress** in Jira; Task 2.2 C1 shipped in repo — SSDP fingerprint module, IP-level merge with brand priority, limited/experimental support notes on discovery list).
 - **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (**In Progress** in Jira; C1 shipped in repo).
 
