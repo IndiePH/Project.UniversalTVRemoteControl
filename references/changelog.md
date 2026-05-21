@@ -6,6 +6,10 @@ Keep entries short and append new updates at the top.
 ## 2026-05-21
 
 ### Added
+- In-app user feedback (**TVREMOTE-68**): `FeedbackSubmissionSheet` entry in
+  `RemoteHomeSettingsSheet`; `HttpFeedbackSubmissionService` + `FeedbackConfig`
+  (`FEEDBACK_WEBHOOK_URL` / `FEEDBACK_WEBHOOK_TOKEN` via `--dart-define`); operator
+  setup in `references/feedback-collection-setup.md`.
 - Layout-focused tests (**TVREMOTE-20**): `remote_layout_drop_resolver_test.dart`
   (empty-cell move, bounds reject, multi-control footprint reject, 1x1 swap,
   congested swap reject, anchor offsets); `shared_prefs_layout_repository_test.dart`
@@ -29,6 +33,7 @@ Keep entries short and append new updates at the top.
   to remote home so relaunch and switcher stay aligned with the selected TV.
 
 ### Verification
+- `flutter test test/lib/app/feedback/ test/lib/app/package_info/` passed (**TVREMOTE-68**; 9 tests).
 - `flutter test test/lib/remote_control/presentation/widgets/remote_layout_drop_resolver_test.dart test/lib/remote_control/data/shared_prefs_layout_repository_test.dart test/lib/remote_control/presentation/widgets/remote_layout_grid_constraints_test.dart test/lib/remote_control/presentation/widgets/remote_layout_editor_widget_test.dart` passed (**TVREMOTE-20**; 16 tests).
 - `flutter test test/widget_test.dart --name "switches active TV"` passed.
 - `flutter test test/lib/remote_control/data/ssdp_brand_inference_test.dart test/lib/remote_control/data/discovery_result_merger_test.dart` passed (**TVREMOTE-18**).

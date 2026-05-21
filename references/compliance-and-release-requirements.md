@@ -52,8 +52,8 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 - [x] In-app form (category + message + Send) in Settings — no external browser for primary feedback
 - [x] Submission via configurable HTTPS webhook (`FeedbackConfig` / `HttpFeedbackSubmissionService`)
 - [x] Default `FEEDBACK_WEBHOOK_URL` in release builds via `FeedbackConfig` (Apps Script → Sheet; override with `--dart-define`; see `references/feedback-collection-setup.md`)
-- [ ] **Production:** set `FEEDBACK_WEBHOOK_TOKEN` and validate on the server/script side
-- [ ] Privacy policy mentions voluntary free-text feedback (no automatic diagnostic upload from this flow)
+- [ ] **Production:** set `FEEDBACK_WEBHOOK_TOKEN` and validate on the server/script side (**TVREMOTE-69**)
+- [ ] Privacy policy mentions voluntary free-text feedback (no automatic diagnostic upload from this flow) (**TVREMOTE-69**)
 
 > Override the webhook URL only when pointing at a non-default deployment. Confirm the Apps Script `doPost` + `Feedback` sheet tab are deployed before store release.
 
