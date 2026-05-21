@@ -11,6 +11,7 @@ import 'package:one_remote/remote_control/data/adapters/samsung/samsung_remote_t
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_logging.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_ws_handshake.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_tls_trust_store.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_app_launch.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 
@@ -99,6 +100,7 @@ class SamsungWebSocketTransportClient
   Future<void> connect({required String deviceId}) async {
     final existing = _socketsByDeviceId[deviceId];
     if (existing != null && existing.readyState == WebSocket.open) {
+      _emitConnectionState(deviceId, ConnectionState.connected);
       return;
     }
 
@@ -185,7 +187,10 @@ class SamsungWebSocketTransportClient
     final deadline = DateTime.now().add(approvalTimeout);
 
     await SamsungTlsTrustStore.instance.ensureLoaded();
-    await SamsungTlsTrustStore.instance.clearEndpoint(host, _tlsPort);
+    final hasStoredToken = _pairing.hasNonEmptyToken(host);
+    if (!hasStoredToken) {
+      await SamsungTlsTrustStore.instance.clearEndpoint(host, _tlsPort);
+    }
     emitTransportEvent(
       TransportEvent(
         transport: 'samsung',
@@ -195,20 +200,23 @@ class SamsungWebSocketTransportClient
     );
 
     await _resetConnection(deviceId);
-    await _connectWith(deviceId: deviceId, host: host);
 
-    if (!_pairing.hasNonEmptyToken(host)) {
+    if (!hasStoredToken) {
+      await _connectWith(deviceId: deviceId, host: host);
+
       final completer = Completer<void>();
       _pairing.registerPendingApproval(host, completer);
 
       try {
-        await sendKey(deviceId: deviceId, keyCode: triggerKeyCode);
-        await completer.future.timeout(
-          approvalTimeout,
-          onTimeout: () => throw TimeoutException(
-            'Timed out waiting for Samsung TV approval. Approve the TV popup and retry pairing.',
-          ),
-        );
+        if (_pairing.trimmedTokenForHost(host).isEmpty) {
+          await sendKey(deviceId: deviceId, keyCode: triggerKeyCode);
+          await completer.future.timeout(
+            approvalTimeout,
+            onTimeout: () => throw TimeoutException(
+              'Timed out waiting for Samsung TV approval. Approve the TV popup and retry pairing.',
+            ),
+          );
+        }
       } finally {
         _pairing.unregisterPendingApproval(host, completer);
       }
@@ -241,6 +249,12 @@ class SamsungWebSocketTransportClient
     required String deviceId,
     required String keyCode,
   }) async {
+    if (keyCode.startsWith(samsungLaunchPrefix)) {
+      final appId = keyCode.substring(samsungLaunchPrefix.length);
+      await launchApp(deviceId: deviceId, appId: appId);
+      return;
+    }
+
     final socket = await _socketFor(deviceId);
     await _applyKeyPacing(deviceId);
 
@@ -261,6 +275,39 @@ class SamsungWebSocketTransportClient
         deviceId: deviceId,
         type: 'key_sent',
         message: keyCode,
+      ),
+    );
+  }
+
+  /// Launches a Tizen app via `ms.channel.emit` / `ed.apps.launch`.
+  Future<void> launchApp({
+    required String deviceId,
+    required String appId,
+    String actionType = 'NATIVE_LAUNCH',
+  }) async {
+    final socket = await _socketFor(deviceId);
+    await _applyKeyPacing(deviceId);
+
+    final payload = jsonEncode(<String, dynamic>{
+      'method': 'ms.channel.emit',
+      'params': <String, dynamic>{
+        'event': 'ed.apps.launch',
+        'to': 'host',
+        'data': <String, dynamic>{
+          'appId': appId,
+          'action_type': actionType,
+        },
+      },
+    });
+    _logging.logOutbound(deviceId, payload);
+    socket.add(payload);
+    _lastSendAtByDeviceId[deviceId] = DateTime.now();
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'samsung',
+        deviceId: deviceId,
+        type: 'app_launched',
+        message: appId,
       ),
     );
   }

@@ -53,7 +53,8 @@ void main() {
 
   test('LG lane: unsupported command returns UI-safe result', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [const _SubsetLgAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+      adapters: [const _SubsetLgAdapter()],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
       localizedStrings: FakeLocalizedStrings(),
     );
     final result = await service.sendCommand(
@@ -83,7 +84,8 @@ void main() {
     'LG lane: preparePairing completes when fake transport issues a key',
     () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [LgAdapter(transportClient: FakeLgTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: lgDevice);
@@ -95,7 +97,8 @@ void main() {
     'LG lane: pairing timeout surfaces as CommandDispatchResult.failure',
     () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [LgAdapter(transportClient: _TimeoutLgTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [LgAdapter(transportClient: _TimeoutLgTransportClient())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: lgDevice);
@@ -110,7 +113,8 @@ void main() {
     'LG lane: stale key rejection surfaces as CommandDispatchResult.failure',
     () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [LgAdapter(transportClient: _StaleKeyLgTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [LgAdapter(transportClient: _StaleKeyLgTransportClient())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: lgDevice);
@@ -125,7 +129,8 @@ void main() {
 
   test('LG lane: sendText succeeds', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter(transportClient: FakeLgTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+      adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
       localizedStrings: FakeLocalizedStrings(),
     );
     final result = await service.sendText(device: lgDevice, text: 'hello');
@@ -138,7 +143,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           LgAdapter(transportClient: _ImeRejectingLgTransportClient()),
-        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendText(device: lgDevice, text: 'hello');
@@ -153,7 +159,8 @@ void main() {
     'LG lane: transport throw on sendCommand surfaces as CommandDispatchResult.failure',
     () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [LgAdapter(transportClient: _ErrorOnSendLgTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [LgAdapter(transportClient: _ErrorOnSendLgTransportClient())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.sendCommand(
@@ -203,7 +210,8 @@ void main() {
     'LG lane: submitPairingCode returns unsupported (LG uses client-key flow, not PIN)',
     () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [LgAdapter(transportClient: FakeLgTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.submitPairingCode(
@@ -227,7 +235,8 @@ void main() {
 
   test('LG lane: unpairDevice completes without error', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [LgAdapter(transportClient: FakeLgTransportClient())],variantRegistry: const DefaultVariantResolutionRegistry(),
+      adapters: [LgAdapter(transportClient: FakeLgTransportClient())],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
       localizedStrings: FakeLocalizedStrings(),
     );
     await expectLater(service.unpairDevice(device: lgDevice), completes);
@@ -241,7 +250,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           LgAdapter(transportClient: _TextInputReadyLgTransportClient()),
-        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final values = await service
@@ -252,10 +262,26 @@ void main() {
   );
 
   test(
+    'LG adapter: watch readiness does not trigger eager reconnect',
+    () async {
+      final transport = _ReconnectTrackingLgTransportClient();
+      final adapter = LgAdapter(transportClient: transport);
+
+      final values = await adapter
+          .watchRemoteTextInputReady(lgDeviceWithTextInput)
+          .toList();
+
+      expect(values, [false]);
+      expect(transport.connectCallCount, 0);
+    },
+  );
+
+  test(
     'LG lane: watchRemoteTextInputReady returns false when no adapter registered',
     () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [],variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final values = await service
@@ -271,7 +297,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           LgAdapter(transportClient: _TextInputReadyLgTransportClient()),
-        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       // lgDevice has no DeviceCapability.textInput
@@ -549,7 +576,9 @@ class _ImeRejectingLgTransportClient
     required String deviceId,
     required String text,
   }) async {
-    throw TextInputCompatibilityException(TextCompatibilityError.lgImeFocusRequired);
+    throw TextInputCompatibilityException(
+      TextCompatibilityError.lgImeFocusRequired,
+    );
   }
 
   @override

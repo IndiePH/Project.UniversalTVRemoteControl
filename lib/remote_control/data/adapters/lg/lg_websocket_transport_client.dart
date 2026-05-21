@@ -97,7 +97,10 @@ class LgWebSocketTransportClient
   @override
   Future<void> connect({required String deviceId}) async {
     final existing = _sockets[deviceId];
-    if (existing != null && existing.readyState == WebSocket.open) return;
+    if (existing != null && existing.readyState == WebSocket.open) {
+      _emitConnectionState(deviceId, ConnectionState.connected);
+      return;
+    }
 
     final host = _hostResolver(deviceId).trim();
     if (host.isEmpty) throw StateError('LG host resolver returned empty host.');
@@ -214,7 +217,9 @@ class LgWebSocketTransportClient
         (response?['payload'] as Map<String, dynamic>?)?['returnValue']
             as bool?;
     if (returnValue == false) {
-      throw TextInputCompatibilityException(TextCompatibilityError.lgImeFocusRequired);
+      throw TextInputCompatibilityException(
+        TextCompatibilityError.lgImeFocusRequired,
+      );
     }
   }
 

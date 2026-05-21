@@ -13,8 +13,18 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-36** — Per-brand TV adapters and transports (**implementation** epic; structured for additional OEMs later).
 - **TVREMOTE-37** — Per-brand TV adapter and transport **testing** epic (Samsung / LG / Hisense lanes today).
 - **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring), plus transport-abstraction follow-ups **TVREMOTE-52** (shared marker + required event source) and **TVREMOTE-53** (event adoption in Samsung/Hisense real+fake clients). **TVREMOTE-7**, **TVREMOTE-14**, and **TVREMOTE-18** are parented under TVREMOTE-36.
-- **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung), **TVREMOTE-50** (LG), **TVREMOTE-51** (Hisense); **TVREMOTE-13** is parented under TVREMOTE-37. Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
+- **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung), **TVREMOTE-50** (LG), **TVREMOTE-51** (Hisense); **TVREMOTE-13** is parented under TVREMOTE-37 (Samsung approval timeout/rejection + recovery regression tests shipped in `samsung_test_lane_test.dart` and `samsung_pairing_token_store_test.dart`; **In Progress** in Jira). Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
 - Umbrella issues superseded by this split (historical, **Done** in Jira): **TVREMOTE-25**, **TVREMOTE-21**, **TVREMOTE-9**, **TVREMOTE-10**, **TVREMOTE-16**.
+- **TVREMOTE-63** — Bottom banner + interstitial AdMob scaffold; UMP/ATT consent gating in app code (**Done**; production ad IDs + store-listing privacy URL still **TVREMOTE-26**).
+- **TVREMOTE-66** — Pro (remove ads) IAP: `in_app_purchase`, entitlement service, settings sheet, gates banner + interstitial + layout editor (**In Progress**; E2E blocked by **TVREMOTE-67**).
+- **TVREMOTE-67** — Pro IAP store products + sandbox/device validation (**To Do**; parent **TVREMOTE-2**).
+- **TVREMOTE-26** — Legal/compliance release gate: ATT/UMP + in-app privacy link scaffold landed; live policy URL + device validation pending.
+- **TVREMOTE-29** — Telemetry/diagnostics recorder + settings export (**In Progress**; C1 acceptance met in repo).
+- **TVREMOTE-28** — Interaction polish: press-scale + haptic on remote controls (**In Progress**).
+- **TVREMOTE-41** / **TVREMOTE-42** — Samsung/LG IME watch stream no eager `connect`; probe path explicit (**In Progress** / LG card **Done** with 2026-05-20 note).
+- **TVREMOTE-19** — Multi-device save/switch/edit/remove: pairing save/rename/remove + last-used persistence; remote-home device switcher sheet for quick active-TV change (**In Progress** in Jira; C1 shipped in repo).
+- **TVREMOTE-18** — Discovery brand identification + pairing routing (**In Progress** in Jira; Task 2.2 C1 shipped in repo — SSDP fingerprint module, IP-level merge with brand priority, limited/experimental support notes on discovery list).
+- **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (**In Progress** in Jira; C1 shipped in repo).
 
 ## Status Tracker (Current)
 
@@ -99,6 +109,12 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] **SRP Refactor Checklist (Tracked)** is fully complete (all items checked)
   - [x] Presentation metrics consolidation: `lib/remote_control/presentation/metrics/` now owns header height (`remote_layout_header_metrics.dart`), header/in-grid button geometry + play/pause pill ratios (`remote_layout_button_metrics.dart`), and the cross-fade duration shared by the pairing-hint switcher and status-panel blur overlay (`remote_pairing_hint_metrics.dart`); shared `RemoteHeaderIconButton` widget keeps the home-view pair button and editor reset button visually identical
   - [x] Remote home bottom banner ad integrated (free-tier monetization scaffold; production AdMob unit IDs still pending — see `references/marketing_strategy.md`):
+  - [x] Free-tier interstitial ad scaffold (`InterstitialAdController`, engagement policy, Pro + consent gating; **TVREMOTE-63** / **TVREMOTE-66**)
+  - [x] Ad consent bootstrap (`AdConsentCoordinator`: UMP + iOS ATT before `MobileAds.initialize()`; **TVREMOTE-26** partial)
+  - [x] Settings sheet: platform store-account hints, privacy-policy link, UMP privacy-options when required, diagnostics summary + copy report (**TVREMOTE-29** / **TVREMOTE-66**)
+  - [x] Remote interaction polish: `RemotePressFeedback` + command haptics on grid/d-pad/rockers (**TVREMOTE-28**)
+  - [x] Multi-device quick switch on remote home (**TVREMOTE-19** partial): `RemoteHomeDeviceSwitcherSheet` + header affordance; `setLastUsedDevice` on saved-device select from pairing and switcher
+  - [x] Samsung/LG `watchRemoteTextInputReady` — no adapter-side `connect()`; use `probeRemoteTextInputReady` for explicit probe (**TVREMOTE-41**, **TVREMOTE-42**)
     - [x] new `lib/app/ads/` module (`AdConfig`, `BottomBannerAd`, `BottomBannerAdPlacement`) using `google_mobile_ads ^8.0.0`; env-aware unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` with Google's test IDs as fallback
     - [x] `MobileAds.initialize()` runs only on Android/iOS; non-mobile/`kIsWeb` paths skip the overlay entirely so layout/tests are unaffected
     - [x] `AndroidManifest.xml` + `Info.plist` carry **test** `GADApplicationIdentifier` / AdMob `APPLICATION_ID` plus a placeholder `SKAdNetworkItems` entry — these **must be swapped for the production AdMob app id and the full network-supplied SKAdNetwork list before release**
@@ -163,14 +179,14 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] Connect pairing output to real protocol handshake/verification per non-Samsung brands
 - [ ] Expand tests:
   - [x] pairing success/failure paths (`TVREMOTE-12`): coordinator unit coverage in `test/lib/remote_control/presentation/pages/pairing_page_coordinator_test.dart` for non-PIN success (persistence, manual-IP save, enriched-device fallback), non-PIN failure (no-save invariants, sanitized message, unsupported→failure), PIN retry depth (3-rejection success, 5-rejection cancel, verbatim PIN forwarding, per-attempt `onPinRejected`), and `cancelPairing` delegation
-  - [ ] Samsung approval timeout/rejection handling paths
+  - [x] Samsung approval timeout/rejection handling paths (`TVREMOTE-13`): service-lane failures preserve `TimeoutException` / `SamsungTransportAuthorizationException` messaging; retry-after-failure + `cancelPairing` delegation; token-store unauthorized/cancel/recovery unit tests
   - [ ] adapter capability unsupported flows
   - [x] saved-device remove/last-used fallback paths
 - [ ] Implement missing per-brand text-input transports and re-enable capability flags after validation
-- [ ] Add focused widget tests for:
-  - [ ] drag/drop swap behavior (including multi-cell items and resolver rejection vs accept paths)
-  - [ ] layout persistence and default reset behavior
-  - [ ] `5x8` default layout occupancy constraints (no overlaps)
+- [x] Add focused widget tests for (**TVREMOTE-20**):
+  - [x] drag/drop swap behavior (including multi-cell items and resolver rejection vs accept paths) — `remote_layout_drop_resolver_test.dart`
+  - [x] layout persistence and default reset behavior — `shared_prefs_layout_repository_test.dart`, `remote_layout_editor_widget_test.dart` (reset callback)
+  - [x] `5x9` default layout occupancy constraints (no overlaps) — `remote_layout_grid_constraints_test.dart`
 
 ## Planning Notes
 
@@ -286,14 +302,14 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] Add protocol-specific error handling and reconnection behavior.
 
 ### Task 2.2 - Upgrade discovery and device type identification
-- [ ] Distinguish supported device brands in discovery results.
-- [ ] Route pairing flow to the correct protocol adapter.
-- [ ] Add explicit "limited support" messaging for partially supported models/protocols.
+- [x] Distinguish supported device brands in discovery results (`ssdp_brand_inference.dart`, Roku SSDP hint; `DiscoveryResultMerger` prefers Samsung/LG/Hisense over Android TV/Roku for the same IP; list sorted full → limited → experimental).
+- [x] Route pairing flow to the correct protocol adapter (unchanged `BrandRoutedRemoteCommandService` `(brand, protocolVariant)` routing; discovery merge avoids duplicate IPs with conflicting brands).
+- [x] Add explicit "limited support" messaging for partially supported models/protocols (`DiscoveredDeviceSupport` tiers + pairing discovery subtitles for Hisense/Roku/experimental brands).
 
 ### Task 2.3 - Implement multi-device management
-- [ ] Save multiple TVs.
-- [ ] Add device switcher and last-used device tracking.
-- [ ] Add edit/remove device operations.
+- [x] Save multiple TVs (pairing persistence + saved-device list).
+- [x] Add device switcher and last-used device tracking (remote-home switcher sheet; `setLastUsedDevice` on switch paths).
+- [x] Add edit/remove device operations (pairing screen rename + swipe-to-remove with active-device confirmation).
 
 ### Task 2.4 - Improve connection resilience
 - [ ] Add reconnect backoff strategy for temporary network failures.
@@ -319,9 +335,9 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 ## Cross-Cutting Tasks (Do in parallel)
 
 ### Task C1 - Telemetry and diagnostics
-- [ ] Track discovery success/failure rates.
-- [ ] Track pairing and command error categories.
-- [ ] Add internal debug view/log export for troubleshooting.
+- [x] Track discovery success/failure rates (`AppDiagnosticsRecorder` + discovery decorator; debug settings summary).
+- [x] Track pairing and command error categories (pairing session + dispatch outcome counters by brand/outcome).
+- [x] Add internal debug view/log export for troubleshooting (settings debug section: `DiagnosticsSummaryPanel`, copy diagnostics report; existing transport log copy retained).
 
 ### Task C2 - Testing strategy
 - [ ] Unit tests for domain and command routing.
@@ -368,12 +384,12 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] Record final go/no-go license status in `references/third_party_licenses.md`.
 - [ ] Block release if any unresolved copyleft or attribution obligations remain.
 - [ ] **Store submission blockers** (expanded checklist: `references/compliance-and-release-requirements.md`):
-  - [ ] Privacy policy at a live public URL; linked in App Store Connect and Play Console.
-  - [ ] iOS: App Tracking Transparency integrated; prompt before first ad load.
-  - [ ] EU/California: consent (for example UMP via `google_mobile_ads`) before ads where required.
+  - [ ] Privacy policy at a live public URL; linked in App Store Connect and Play Console (in-app link scaffold only until URL is live).
+  - [x] iOS: App Tracking Transparency integrated in app code; prompt before first ad SDK init (`AdConsentCoordinator`).
+  - [x] EU/California: UMP consent integrated in app code before ad load; device/regional validation still required.
   - [x] Pro / remove-ads: **non-consumable** IAP via Apple IAP + Google Play Billing only (`in_app_purchase`) with `PRO_PRODUCT_ID=one_remote_pro`.
   - [ ] Developer accounts and signing: Apple Developer Program, Google Play developer account, AdMob as needed before ads go live.
-  - [ ] Swap **placeholder AdMob ids** for production: replace test `APPLICATION_ID` in `android/app/src/main/AndroidManifest.xml`, test `GADApplicationIdentifier` in `ios/Runner/Info.plist`, and the placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list; provide production unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` for release builds.
+  - [ ] Swap **placeholder AdMob ids** for production: replace test `APPLICATION_ID` in `android/app/src/main/AndroidManifest.xml`, test `GADApplicationIdentifier` in `ios/Runner/Info.plist`, and the placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list; provide production unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` / `ADMOB_INTERSTITIAL_ANDROID` / `ADMOB_INTERSTITIAL_IOS` for release builds.
 - [ ] **Physical-device validation:** Do not claim store support for a brand until pairing and core commands are verified on at least one real TV of that brand (complements the brand readiness matrix in `references/product_specs.md`).
 - [ ] **Deferred code-quality/security follow-ups** from the April 2026 lib review (no code until individually confirmed): `references/goal-oneremote-lib-review.md`.
 

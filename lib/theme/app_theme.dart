@@ -178,8 +178,8 @@ final class AppTheme {
           remoteSurface: Color(0xFFF2F4F8),
           remoteRaisedSurface: Colors.white,
           remoteOutline: Color.fromARGB(15, 216, 221, 230),
-          // Matches pre-theme-audit remote tiles (white glyphs on light-gray surfaces).
-          remoteGlyphOnRemote: Color(0xFFFFFFFF),
+          // Dark glyphs on light remote surfaces (play/pause, d-pad, layout previews).
+          remoteGlyphOnRemote: Color(0xFF1A1D24),
           remotePowerFill: Color(0xFFE53935),
           remoteGlyphOnPower: Color(0xFFFFFFFF),
           remoteActionSuccessFill: Color(0xFF43A047),
@@ -217,17 +217,25 @@ final class AppTheme {
         createAppColors(brightness: theme.brightness);
   }
 
-  static ThemeData darkTheme() {
+  static ThemeData lightTheme() => _themeFor(Brightness.light);
+
+  static ThemeData darkTheme() => _themeFor(Brightness.dark);
+
+  static ThemeData _themeFor(Brightness brightness) {
     const seed = Color(0xFF3D5AFE);
-    final appColors = createAppColors(brightness: Brightness.dark);
+    final appColors = createAppColors(brightness: brightness);
+    final scaffoldBackgroundColor = switch (brightness) {
+      Brightness.light => const Color(0xFFE8EAEF),
+      Brightness.dark => const Color(0xFF111216),
+    };
     return ThemeData(
-      brightness: Brightness.dark,
+      brightness: brightness,
       colorScheme: ColorScheme.fromSeed(
         seedColor: seed,
-        brightness: Brightness.dark,
+        brightness: brightness,
       ),
       useMaterial3: true,
-      scaffoldBackgroundColor: const Color(0xFF111216),
+      scaffoldBackgroundColor: scaffoldBackgroundColor,
       extensions: <ThemeExtension<dynamic>>[appColors],
     );
   }

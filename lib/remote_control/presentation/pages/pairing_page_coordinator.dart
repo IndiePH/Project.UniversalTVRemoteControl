@@ -1,3 +1,4 @@
+import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/message_handler.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
@@ -10,11 +11,14 @@ class PairingPageCoordinator {
   const PairingPageCoordinator({
     required RemoteCommandService commandService,
     required DeviceRepository deviceRepository,
+    AppDiagnosticsRecorder? diagnosticsRecorder,
   }) : _commandService = commandService,
-       _deviceRepository = deviceRepository;
+       _deviceRepository = deviceRepository,
+       _diagnosticsRecorder = diagnosticsRecorder;
 
   final RemoteCommandService _commandService;
   final DeviceRepository _deviceRepository;
+  final AppDiagnosticsRecorder? _diagnosticsRecorder;
 
   Future<void> cancelPairing({required TvDevice device}) =>
       _commandService.cancelPairing(device: device);
@@ -36,9 +40,17 @@ class PairingPageCoordinator {
         onPinRejected: onPinRejected,
       );
       if (!paired) {
+        _diagnosticsRecorder?.recordPairingSession(
+          brand: device.brand,
+          success: false,
+        );
         return PairingAttemptResult.failure(pairingMessage);
       }
     } else if (!pairingResult.isSuccess) {
+      _diagnosticsRecorder?.recordPairingSession(
+        brand: device.brand,
+        success: false,
+      );
       return PairingAttemptResult.failure(MessageHandler.sanitize(pairingResult));
     }
 
@@ -53,6 +65,7 @@ class PairingPageCoordinator {
       deviceId: device.id,
       timestamp: pairedAt,
     );
+    _diagnosticsRecorder?.recordPairingSession(brand: device.brand, success: true);
     return PairingAttemptResult.success();
   }
 

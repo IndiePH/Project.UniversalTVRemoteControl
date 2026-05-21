@@ -38,6 +38,9 @@ class RemoteLayoutEditorItemPreview extends StatelessWidget {
     final definition = itemDefinitionsById[item.id];
     final previewStyle = definition?.previewStyle ?? RemoteLayoutPreviewStyle.standard;
     final icon = definition?.icon ?? item.icon;
+    final imageAsset = definition?.imageAsset ?? item.imageAsset;
+    final imageIconSize = definition?.imageIconSize;
+    final brandColor = definition?.brandColor;
     final label = definition?.label ?? item.label;
     final isPower = definition?.isPower ?? item.isPower;
     final isSingleCell = item.width == 1 && item.height == 1;
@@ -112,6 +115,9 @@ class RemoteLayoutEditorItemPreview extends StatelessWidget {
               child: AbsorbPointer(
                 child: RemoteIconCircleButton(
                   icon: icon,
+                  imageAsset: imageAsset,
+                  imageIconSize: imageIconSize,
+                  brandColor: brandColor,
                   label: label,
                   isPower: isPower,
                   onPressed: null,
@@ -176,6 +182,9 @@ class RemoteLayoutEditorItemPreview extends StatelessWidget {
               RemoteLayoutPreviewStyle.centeredCircleIcon => Center(
                   child: RemoteIconCircleButton(
                     icon: icon,
+                    imageAsset: imageAsset,
+                    imageIconSize: imageIconSize,
+                    brandColor: brandColor,
                     label: label,
                     onPressed: null,
                   ),

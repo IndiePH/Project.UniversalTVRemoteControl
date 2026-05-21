@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
+import 'package:one_remote/remote_control/presentation/widgets/streaming_service_brand_assets.dart';
 
 /// Default metadata for each control id (ids, labels, icons, default grid footprint).
 ///
@@ -23,6 +24,9 @@ class RemoteLayoutItemDefinition {
   const RemoteLayoutItemDefinition({
     required this.id,
     this.icon,
+    this.imageAsset,
+    this.imageIconSize,
+    this.brandColor,
     this.label,
     required this.col,
     required this.row,
@@ -34,6 +38,9 @@ class RemoteLayoutItemDefinition {
 
   final String id;
   final IconData? icon;
+  final String? imageAsset;
+  final double? imageIconSize;
+  final Color? brandColor;
   final String? label;
   final int col;
   final int row;
@@ -46,6 +53,7 @@ class RemoteLayoutItemDefinition {
     return LayoutEditItem(
       id: id,
       icon: icon,
+      imageAsset: imageAsset,
       label: label,
       col: col,
       row: row,
@@ -118,16 +126,23 @@ const List<RemoteLayoutItemDefinition> kRemoteLayoutItemDefinitions = [
   ),
   RemoteLayoutItemDefinition(
     id: 'netflix',
-    icon: Icons.movie_filter,
+    imageAsset: StreamingServiceBrandAssets.netflix,
+    brandColor: StreamingServiceBrandAssets.netflixBrand,
     col: 1,
-    row: 6,
+    row: 5,
   ),
-  RemoteLayoutItemDefinition(id: 'disney', icon: Icons.live_tv, col: 2, row: 6),
+  RemoteLayoutItemDefinition(
+    id: 'disney',
+    imageAsset: StreamingServiceBrandAssets.disneyPlus,
+    col: 2,
+    row: 5,
+  ),
   RemoteLayoutItemDefinition(
     id: 'prime',
-    icon: Icons.video_library_outlined,
+    imageAsset: StreamingServiceBrandAssets.primeVideo,
+    brandColor: StreamingServiceBrandAssets.primeVideoBrand,
     col: 3,
-    row: 6,
+    row: 5,
   ),
 
   /// Single cell; same footprint on main remote and layout editor.
@@ -135,7 +150,7 @@ const List<RemoteLayoutItemDefinition> kRemoteLayoutItemDefinitions = [
     id: 'searchInput',
     icon: Icons.keyboard_outlined,
     col: 2,
-    row: 7,
+    row: 6,
     previewStyle: RemoteLayoutPreviewStyle.centeredCircleIcon,
   ),
 ];

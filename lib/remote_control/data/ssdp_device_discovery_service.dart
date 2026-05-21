@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_multicast_lock/flutter_multicast_lock.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/remote_control/data/ssdp_brand_inference.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -65,7 +66,7 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
         }
         final payload = utf8.decode(datagram.data, allowMalformed: true);
         final headers = _parseHeaders(payload);
-        final brand = _inferBrand(headers);
+        final brand = inferSsdpTvBrand(headers);
         if (brand == null) {
           return;
         }
@@ -134,29 +135,6 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
       headers[key] = value;
     }
     return headers;
-  }
-
-  TvBrand? _inferBrand(Map<String, String> headers) {
-    final probe = [
-      headers['server'] ?? '',
-      headers['st'] ?? '',
-      headers['nt'] ?? '',
-      headers['usn'] ?? '',
-      headers['location'] ?? '',
-    ].join(' ');
-
-    if (probe.contains('samsung') || probe.contains('tizen')) {
-      return TvBrand.samsung;
-    }
-    if (probe.contains('lg') || probe.contains('webos')) {
-      return TvBrand.lg;
-    }
-    if (probe.contains('hisense') ||
-        probe.contains('vidaa') ||
-        probe.contains('hiview')) {
-      return TvBrand.hisense;
-    }
-    return null;
   }
 
   String? _extractHostFromLocation(String? locationHeader) {

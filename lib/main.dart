@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:one_remote/app/compliance/ad_consent_coordinator.dart';
+import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
@@ -16,6 +18,13 @@ StreamUnhandledErrorSource? _errorSource() {
   return sl.isRegistered<StreamUnhandledErrorSource>()
       ? sl<StreamUnhandledErrorSource>()
       : null;
+}
+
+void _recordUnhandledError(Object error) {
+  final sl = GetIt.instance;
+  if (sl.isRegistered<AppDiagnosticsRecorder>()) {
+    sl<AppDiagnosticsRecorder>().recordUnhandledError(error);
+  }
 }
 
 bool _supportsMobileAds() {
@@ -37,10 +46,14 @@ Future<void> main() async {
   await DiBootstrap.initialize(env);
   await GetIt.instance<ProEntitlementService>().refreshFromStore();
   if (_supportsMobileAds()) {
-    await MobileAds.instance.initialize();
+    await AdConsentCoordinator.prepareForAds();
+    if (AdConsentCoordinator.canRequestAds) {
+      await MobileAds.instance.initialize();
+    }
   }
 
   FlutterError.onError = (FlutterErrorDetails details) {
+    _recordUnhandledError(details.exception);
     final errorSource = _errorSource();
     if (errorSource != null) {
       errorSource.add(details.exception);
@@ -53,6 +66,7 @@ Future<void> main() async {
     Object error,
     StackTrace stack,
   ) {
+    _recordUnhandledError(error);
     final errorSource = _errorSource();
     if (errorSource != null) {
       errorSource.add(error);

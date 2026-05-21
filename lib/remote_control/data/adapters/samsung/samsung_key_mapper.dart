@@ -1,4 +1,5 @@
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_app_launch.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 
 /// Maps app-level command enums to Samsung remote key codes.
@@ -14,12 +15,20 @@ final class SamsungKeyMapper extends CommandKeyMap {
     RemoteCommand.channelDown: ['KEY_CHDOWN'],
     RemoteCommand.mute: ['KEY_MUTE'],
     RemoteCommand.input: ['KEY_SOURCE'],
-    // App shortcuts vary by model/firmware, so include common fallbacks.
-    RemoteCommand.web: ['KEY_WWW', 'KEY_WEB_BROWSER', 'KEY_INTERNET'],
-    RemoteCommand.netflix: ['KEY_NETFLIX'],
-    RemoteCommand.primeVideo: ['KEY_AMAZON', 'KEY_PRIME_VIDEO'],
-    RemoteCommand.disneyPlus: ['KEY_DISNEYPLUS', 'KEY_DISNEY'],
-    RemoteCommand.youtube: ['KEY_YOUTUBE'],
+    // App shortcuts launch via Tizen `ed.apps.launch` (physical keys often no-op).
+    RemoteCommand.web: ['${samsungLaunchPrefix}${SamsungTizenAppIds.browser}'],
+    RemoteCommand.netflix: [
+      '${samsungLaunchPrefix}${SamsungTizenAppIds.netflix}',
+    ],
+    RemoteCommand.primeVideo: [
+      '${samsungLaunchPrefix}${SamsungTizenAppIds.primeVideo}',
+    ],
+    RemoteCommand.disneyPlus: [
+      '${samsungLaunchPrefix}${SamsungTizenAppIds.disneyPlus}',
+    ],
+    RemoteCommand.youtube: [
+      '${samsungLaunchPrefix}${SamsungTizenAppIds.youtube}',
+    ],
     RemoteCommand.dpadUp: ['KEY_UP'],
     RemoteCommand.dpadDown: ['KEY_DOWN'],
     RemoteCommand.dpadLeft: ['KEY_LEFT'],

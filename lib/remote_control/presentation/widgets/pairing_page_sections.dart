@@ -232,23 +232,26 @@ class AvailableTvListItem extends StatelessWidget {
   const AvailableTvListItem({
     super.key,
     required this.device,
+    required this.supportNote,
     required this.pairingNote,
     required this.onTap,
   });
 
   final TvDevice device;
+  final String? supportNote;
   final String? pairingNote;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final subtitleParts = <String>[device.brand.displayName];
+    if (supportNote != null) subtitleParts.add(supportNote!);
+    if (pairingNote != null) subtitleParts.add(pairingNote!);
     return ListTile(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       tileColor: Theme.of(context).colorScheme.surface,
       title: Text(device.displayName),
-      subtitle: pairingNote == null
-          ? Text(device.brand.displayName)
-          : Text('${device.brand.displayName} • $pairingNote'),
+      subtitle: Text(subtitleParts.join(' • ')),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
     );

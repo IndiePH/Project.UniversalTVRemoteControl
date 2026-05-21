@@ -15,6 +15,7 @@ class RemoteHomeStatusPanel extends StatelessWidget {
     required this.status,
     required this.connectionState,
     required this.onOpenPairing,
+    this.onOpenDeviceSwitcher,
     required this.hasActiveDevice,
     required this.hasAnyPairedDevice,
     this.highlightPairButton = false,
@@ -27,6 +28,7 @@ class RemoteHomeStatusPanel extends StatelessWidget {
   final String status;
   final remote_connection.ConnectionState connectionState;
   final VoidCallback onOpenPairing;
+  final VoidCallback? onOpenDeviceSwitcher;
   final bool hasActiveDevice;
   final bool hasAnyPairedDevice;
   final bool highlightPairButton;
@@ -82,12 +84,10 @@ class RemoteHomeStatusPanel extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: blurWhenPairFocus(
-                      Text(
-                        deviceName,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
+                    child: blurWhenPairFocus(_DeviceNameHeader(
+                      deviceName: deviceName,
+                      onOpenDeviceSwitcher: onOpenDeviceSwitcher,
+                    )),
                   ),
                   _PairButton(
                     isActive: hasActiveDevice,
@@ -130,6 +130,46 @@ class RemoteHomeStatusPanel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _DeviceNameHeader extends StatelessWidget {
+  const _DeviceNameHeader({
+    required this.deviceName,
+    required this.onOpenDeviceSwitcher,
+  });
+
+  final String deviceName;
+  final VoidCallback? onOpenDeviceSwitcher;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = Text(
+      deviceName,
+      style: Theme.of(context).textTheme.titleLarge,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    if (onOpenDeviceSwitcher == null) {
+      return title;
+    }
+    final l10n = AppLocalizations.of(context)!;
+    return Tooltip(
+      message: l10n.remoteSwitchDeviceTooltip,
+      child: InkWell(
+        onTap: onOpenDeviceSwitcher,
+        borderRadius: BorderRadius.circular(8),
+        child: Row(
+          children: [
+            Expanded(child: title),
+            Icon(
+              Icons.arrow_drop_down,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
