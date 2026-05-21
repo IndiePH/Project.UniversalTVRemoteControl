@@ -48,10 +48,15 @@ class DefaultVariantResolutionRegistry implements VariantResolutionRegistry {
       matches: (_) => true,
       variant: TvDevice.defaultProtocolVariant,
     ),
+    // ── TCL (legacy Wi-Fi only; no default-variant adapter registered) ───────
     _VariantResolutionEntry(
       brand: TvBrand.tcl,
-      matches: (info) =>
-          (info.modelIdentifier ?? '').toLowerCase().contains('legacy_wifi'),
+      matches: TclProtocolVariants.isLegacyWifi,
+      variant: TclProtocolVariants.legacyWifi,
+    ),
+    _VariantResolutionEntry(
+      brand: TvBrand.tcl,
+      matches: (_) => true,
       variant: TclProtocolVariants.legacyWifi,
     ),
   ];

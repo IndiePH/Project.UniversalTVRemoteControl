@@ -47,6 +47,10 @@ class TvCapabilities {
       DeviceCapability.keyCommands,
       DeviceCapability.powerControl,
     },
+    (TvBrand.tcl, TvDevice.defaultProtocolVariant): {
+      DeviceCapability.keyCommands,
+      DeviceCapability.powerControl,
+    },
   };
 
   Set<DeviceCapability> capabilitiesFor(TvBrand brand, [String? variant]) {
