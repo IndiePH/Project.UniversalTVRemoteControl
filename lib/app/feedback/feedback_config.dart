@@ -10,7 +10,7 @@ class FeedbackConfig {
   static const String webhookUrl = String.fromEnvironment(
     'FEEDBACK_WEBHOOK_URL',
     defaultValue:
-        'https://script.google.com/macros/s/AKfycbxx5TXjDYZ2hEl-IdqEGHB0Q776pVR90q2iIEFePRISOINcIfq9eoBKOjS87N2F-dlg/exec',
+        'https://script.google.com/macros/s/AKfycbyYdrlh8oVk1BwA2w5xa6JGW0kPwGSRaSElpqmClz2VyfhPpEX3rRvT3oTPbcS8w4HTWQ/exec',
   );
 
   /// Optional shared secret sent as `X-Feedback-Token` for simple webhook auth.

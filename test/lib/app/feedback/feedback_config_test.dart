@@ -6,7 +6,7 @@ void main() {
     expect(FeedbackConfig.hasWebhookUrl, isTrue);
     expect(
       FeedbackConfig.webhookUrl,
-      contains('AKfycbxx5TXjDYZ2hEl-IdqEGHB0Q776pVR90q2iIEFePRISOINcIfq9eoBKOjS87N2F-dlg'),
+      contains('AKfycbyYdrlh8oVk1BwA2w5xa6JGW0kPwGSRaSElpqmClz2VyfhPpEX3rRvT3oTPbcS8w4HTWQ'),
     );
   });
 }
