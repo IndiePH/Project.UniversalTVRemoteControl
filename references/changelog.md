@@ -5,7 +5,17 @@ Keep entries short and append new updates at the top.
 
 ## 2026-05-21
 
+### Changed
+- TCL legacy Wi-Fi variant resolution (**TVREMOTE-70**): `TclProtocolVariants.isLegacyWifi`
+  matches exact transport `legacyWifiModelMarker` (replaces substring
+  `contains('legacy_wifi')`); TCL catch-all registry entry maps empty device info
+  to `tcl_legacy_wifi`; manual pairing uses shared constant; `TvCapabilities`
+  exposes `keyCommands` + `powerControl` for `(TvBrand.tcl, defaultProtocolVariant)`.
+
 ### Added
+- TCL variant resolution unit tests (**TVREMOTE-70**):
+  `test/lib/remote_control/data/variant_resolution_registry_test.dart` (marker
+  match, TCL catch-all, brand default fallthrough).
 - In-app user feedback (**TVREMOTE-68**): `FeedbackSubmissionSheet` entry in
   `RemoteHomeSettingsSheet`; `HttpFeedbackSubmissionService` + `FeedbackConfig`
   (`FEEDBACK_WEBHOOK_URL` / `FEEDBACK_WEBHOOK_TOKEN` via `--dart-define`); operator
@@ -38,6 +48,7 @@ Keep entries short and append new updates at the top.
   to remote home so relaunch and switcher stay aligned with the selected TV.
 
 ### Verification
+- `flutter test test/lib/remote_control/data/variant_resolution_registry_test.dart` passed (**TVREMOTE-70**; 4 tests; post-push 2026-05-21).
 - `flutter test test/lib/app/feedback/feedback_config_test.dart` passed (webhook default; post-push 2026-05-21).
 - `flutter test test/lib/app/feedback/ test/lib/app/package_info/` passed (**TVREMOTE-68**; 9 tests).
 - `flutter test test/lib/remote_control/presentation/widgets/remote_layout_drop_resolver_test.dart test/lib/remote_control/data/shared_prefs_layout_repository_test.dart test/lib/remote_control/presentation/widgets/remote_layout_grid_constraints_test.dart test/lib/remote_control/presentation/widgets/remote_layout_editor_widget_test.dart` passed (**TVREMOTE-20**; 16 tests).

@@ -29,6 +29,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-19** — Multi-device save/switch/edit/remove: pairing save/rename/remove + last-used persistence; remote-home device switcher sheet for quick active-TV change (**To Do** in Jira; C1 switcher + `setLastUsedDevice` shipped in repo).
 - **TVREMOTE-18** — Discovery brand identification + pairing routing (**In Progress** in Jira; Task 2.2 C1 shipped in repo — SSDP fingerprint module, IP-level merge with brand priority, limited/experimental support notes on discovery list).
 - **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (**In Progress** in Jira; C1 shipped in repo).
+- **TVREMOTE-70** — TCL legacy Wi-Fi variant resolution: exact transport model marker, registry catch-all, capabilities, pairing constant (**Done** in Jira; parent **TVREMOTE-36**). Physical validation still **experimental** — `references/tcl_validation_matrix.md`.
 
 ## Status Tracker (Current)
 
@@ -131,6 +132,11 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Debug fake/real transport toggle now applies at runtime for pairing discovery (no app restart required), and debug sheet copy-log flow keeps sheet context visible on empty-log feedback
   - [x] Debug DI baseline uses real SSDP discovery; fake discovery is selected dynamically only when fake transport mode is enabled
   - [x] Hisense transport naming normalized to `HisenseMqttTransportClient` and fake client moved under `lib/remote_control/debug/` to match cross-brand conventions
+- [x] TCL legacy Wi-Fi variant resolution (`TVREMOTE-70`):
+  - [x] `TclProtocolVariants.isLegacyWifi` + `legacyWifiModelMarker`; legacy TCP/fake transports stamp marker at `queryDeviceInfo`
+  - [x] `DefaultVariantResolutionRegistry` — exact marker entry + TCL catch-all → `tcl_legacy_wifi`; pairing manual-add uses `TclProtocolVariants.legacyWifi`
+  - [x] `TvCapabilities` — `keyCommands` + `powerControl` for `(TvBrand.tcl, TvDevice.defaultProtocolVariant)`
+  - [x] Unit tests in `test/lib/remote_control/data/variant_resolution_registry_test.dart` (4 tests)
 - [x] Milestone 2 / Task 2.1 — Hisense adapter refinement (`TVREMOTE-40`):
   - [x] Real MQTT transport forwards the TV-shown 4-digit PIN verbatim (no more hard-coded `1234`); fake transport keeps the dev shortcut so offline/lab runs still pair without a real TV. PIN-rejected recovery still flows through the existing PIN-retry pairing UI.
   - [x] `_pollConnectivity` attempts one non-overlapping `_ensureConnected` for previously authorized devices when the broker is detected down, instead of waiting for the next user action. Unauthorized devices keep the lazy-reconnect path.
