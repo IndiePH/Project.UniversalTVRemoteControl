@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
@@ -8,6 +9,11 @@ import 'package:one_remote/app/compliance/ad_consent_coordinator.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/compliance/app_legal_urls.dart';
 import 'package:one_remote/app/compliance/legal_link_launcher.dart';
+import 'package:one_remote/app/feedback/feedback_payload.dart';
+import 'package:one_remote/app/feedback/feedback_submission_result.dart';
+import 'package:one_remote/app/feedback/feedback_submission_sheet.dart';
+import 'package:one_remote/app/feedback/feedback_submission_service.dart';
+import 'package:one_remote/app/package_info/app_package_info_source.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/message_handler.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
@@ -685,6 +691,64 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     }
   }
 
+  Future<void> _showFeedbackSheet() async {
+    final l10n = AppLocalizations.of(context)!;
+    final submissionService = GetIt.instance<FeedbackSubmissionService>();
+    final packageInfo =
+        await GetIt.instance<AppPackageInfoSource>().getPackageInfo();
+    if (!mounted) {
+      return;
+    }
+    final platform = defaultTargetPlatform.name;
+
+    final sent = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return FeedbackSubmissionSheet(
+          onSubmit: ({required message, required category}) async {
+            final result = await submissionService.submit(
+              FeedbackPayload(
+                message: message,
+                category: category,
+                platform: platform,
+                appVersion: packageInfo.versionLabel,
+                submittedAtUtc: DateTime.now().toUtc(),
+              ),
+            );
+            if (!mounted) {
+              return FeedbackSheetSubmitOutcome.failed;
+            }
+            if (result.isSuccess) {
+              return FeedbackSheetSubmitOutcome.success;
+            }
+            switch (result.outcome) {
+              case FeedbackSubmissionOutcome.emptyMessage:
+                _showToast(l10n.feedbackMessageTooShort, isError: true);
+                return FeedbackSheetSubmitOutcome.empty;
+              case FeedbackSubmissionOutcome.notConfigured:
+                _showToast(l10n.feedbackNotConfigured, isError: true);
+                return FeedbackSheetSubmitOutcome.notConfigured;
+              case FeedbackSubmissionOutcome.networkError:
+                _showToast(l10n.feedbackSendFailed, isError: true);
+                return FeedbackSheetSubmitOutcome.failed;
+              case FeedbackSubmissionOutcome.success:
+                return FeedbackSheetSubmitOutcome.success;
+            }
+          },
+        );
+      },
+    );
+
+    if (!mounted) {
+      return;
+    }
+    if (sent == true) {
+      _showToast(l10n.feedbackSent);
+    }
+  }
+
   Future<void> _openPrivacyPolicy(BuildContext sheetContext) async {
     final l10n = AppLocalizations.of(context)!;
     final opened = await LegalLinkLauncher.openUrl(
@@ -788,6 +852,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                           onCopyRuntimeFlagsTemplate: () {
                             Navigator.pop(sheetContext);
                             unawaited(_copyRuntimeFlagsTemplate());
+                          },
+                          onOpenFeedback: () {
+                            Navigator.pop(sheetContext);
+                            unawaited(_showFeedbackSheet());
                           },
                           showPrivacyPolicyLink: showPrivacyPolicyLink,
                           onOpenPrivacyPolicy: () =>

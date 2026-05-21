@@ -372,6 +372,7 @@ Lean **product** scope (platform/release: §1):
     * Manual pairing
     * Save and auto-reconnect last used device
     * Settings access with per-device editable grid layout persistence
+    * In-app user feedback in settings (category + message; HTTPS webhook to operator Sheet — see `references/compliance-and-release-requirements.md` §1.5)
 
 Explicitly out of **initial lean** milestone:
 

@@ -47,6 +47,18 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 
 ---
 
+### 1.5 In-app user feedback
+
+- [x] In-app form (category + message + Send) in Settings — no external browser for primary feedback
+- [x] Submission via configurable HTTPS webhook (`FeedbackConfig` / `HttpFeedbackSubmissionService`)
+- [x] Default `FEEDBACK_WEBHOOK_URL` in release builds via `FeedbackConfig` (Apps Script → Sheet; override with `--dart-define`; see `references/feedback-collection-setup.md`)
+- [ ] **Production:** set `FEEDBACK_WEBHOOK_TOKEN` and validate on the server/script side (**TVREMOTE-69**)
+- [ ] Privacy policy mentions voluntary free-text feedback (no automatic diagnostic upload from this flow) (**TVREMOTE-69**)
+
+> Override the webhook URL only when pointing at a non-default deployment. Confirm the Apps Script `doPost` + `Feedback` sheet tab are deployed before store release.
+
+---
+
 ### 1.4 In-App Purchase — Platform Payment Systems Only
 
 - [ ] All "remove ads" purchases must go through **Apple In-App Purchase** (iOS) and **Google Play Billing** (Android)
@@ -122,6 +134,7 @@ Code-level tests (widget/integration) are necessary but not sufficient. Each bra
 | ATT permission dialog | iOS | Store rejection | ☐ |
 | GDPR/CCPA consent screen (UMP) | Both | Store rejection | ☐ |
 | Privacy Policy at live URL | Both | Store rejection | ☐ |
+| Production feedback webhook token (`FEEDBACK_WEBHOOK_TOKEN`; default URL in `FeedbackConfig`) | Both | Support / quality | ☐ |
 | IAP via Apple/Google only | Both | Store rejection / removal | ☐ |
 | Samsung API ToS review | Both | Legal / API access | ☐ |
 | LG API ToS review | Both | Legal / API access | ☐ |

@@ -35,6 +35,10 @@ Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — 
 - Samsung text-input capability exposure gate (keep disabled until physical validation):
   - default is OFF (Samsung device capability set excludes text input; adapter reports `supportsTextInput=false`)
   - enable only for validation runs with `--dart-define=SAMSUNG_ENABLE_TEXT_INPUT=true`
+- In-app feedback webhook (default Apps Script URL in `FeedbackConfig`; optional overrides):
+  - `--dart-define=FEEDBACK_WEBHOOK_URL=https://...`
+  - `--dart-define=FEEDBACK_WEBHOOK_TOKEN=...`
+  - Operator setup: `references/feedback-collection-setup.md`
 
 ## Getting Started
 
