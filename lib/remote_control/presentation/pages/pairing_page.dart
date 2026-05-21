@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
@@ -52,6 +54,9 @@ class _PairingPageState extends State<PairingPage> {
   late final PairingPageCoordinator _pairingCoordinator = PairingPageCoordinator(
     commandService: widget.commandService,
     deviceRepository: widget.deviceRepository,
+    diagnosticsRecorder: GetIt.instance.isRegistered<AppDiagnosticsRecorder>()
+        ? GetIt.instance<AppDiagnosticsRecorder>()
+        : null,
   );
 
   @override
@@ -132,11 +137,19 @@ class _PairingPageState extends State<PairingPage> {
     }
   }
 
-  void _selectPairedDevice(TvDevice device) {
+  Future<void> _selectPairedDevice(TvDevice device) async {
+    await widget.deviceRepository.setLastUsedDevice(device.id);
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pop(device);
   }
 
   Future<void> _selectDevice(TvDevice device) async {
+    if (_viewState.savedDeviceIds.contains(device.id)) {
+      _selectPairedDevice(device);
+      return;
+    }
     final steps = widget.stepsRegistry.stepsFor(device.brand, device.protocolVariant);
     if (steps != null) {
       if (!mounted) return;
@@ -431,7 +444,7 @@ class _PairingPageState extends State<PairingPage> {
                       pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
                     ),
                   ),
-                  onTap: () => _selectPairedDevice(device),
+                  onTap: () => unawaited(_selectPairedDevice(device)),
                 ),
               );
             },
@@ -478,6 +491,10 @@ class _PairingPageState extends State<PairingPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 child: AvailableTvListItem(
                   device: device,
+                  supportNote: PairingPageData.discoverySupportNoteForDevice(
+                    device: device,
+                    l10n: AppLocalizations.of(context)!,
+                  ),
                   pairingNote: _pairingNoteForDevice(device.id, AppLocalizations.of(context)!),
                   onTap: () => unawaited(_selectDevice(device)),
                 ),

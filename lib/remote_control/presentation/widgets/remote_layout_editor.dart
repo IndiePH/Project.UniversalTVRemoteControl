@@ -8,6 +8,7 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_layout_edi
 import 'package:one_remote/remote_control/presentation/widgets/remote_header_icon_button.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_grid_geometry.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_item_preview.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_layout_editor_metrics.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_header_metrics.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
 import 'package:one_remote/theme/app_theme.dart';
@@ -297,7 +298,7 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: kRemoteLayoutEditorInstructionTopSpacing),
               Text(
                 AppLocalizations.of(context)!.layoutEditorInstruction,
                 style: Theme.of(context).textTheme.bodyMedium,

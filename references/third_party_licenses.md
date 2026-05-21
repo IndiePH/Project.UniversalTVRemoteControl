@@ -11,6 +11,10 @@ Smart TV control uses each vendor’s APIs or protocols. **Commercial shipping**
 - **`mqtt_client`** (pub.dev, MIT): used for **Hisense VIDAA** local MQTT (`RealHisenseTransportClient`). Preserve upstream copyright notice per MIT when shipping.
 - **`flutter_multicast_lock`** (pub.dev, MIT): used on **Android** during SSDP discovery to acquire `WifiManager.MulticastLock` for the scan. Preserve upstream copyright notice per MIT when shipping.
 - **`crypto`** (pub.dev, BSD-3-Clause): SHA-256 fingerprints for Samsung WSS trust-on-first-use (`SamsungTlsTrustStore`). Preserve upstream copyright notice when shipping.
+- **`flutter_svg`** (pub.dev, MIT): renders streaming shortcut brand SVGs in the remote grid.
+- **Simple Icons** (CC0 1.0): Netflix SVG mark under `assets/icons/streaming/` (from [simple-icons/simple-icons](https://github.com/simple-icons/simple-icons) v12.4.0). Preserve upstream license notice when shipping.
+- **Prime Video** wordmark: `assets/icons/streaming/prime_video.svg` (custom export; not from Simple Icons). Confirm trademark/brand usage complies with your distribution policy.
+- **Disney+ logo SVG** (Wikimedia Commons): `assets/icons/streaming/disney_plus.svg` — trademark of Disney; used to identify the Disney+ app shortcut. Review brand/trademark guidelines before commercial release.
 - Samsung / LG transports remain project-owned code paths (no third-party TV protocol SDK beyond `mqtt_client` for Hisense).
 - This tracker is retained for future evaluations and release audit traceability.
 

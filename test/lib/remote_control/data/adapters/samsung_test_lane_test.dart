@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/text_compatibility_error.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
@@ -39,7 +42,8 @@ void main() {
 
   test('Samsung lane: unsupported command returns UI-safe result', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [const _SubsetSamsungAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+      adapters: [const _SubsetSamsungAdapter()],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
       localizedStrings: FakeLocalizedStrings(),
     );
 
@@ -59,7 +63,8 @@ void main() {
     'Samsung lane: compatibility text exception is surfaced safely',
     () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [const _CompatibilitySamsungAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [const _CompatibilitySamsungAdapter()],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
 
@@ -70,7 +75,10 @@ void main() {
 
       expect(result.isSuccess, isFalse);
       expect(result.getOutcome(), CommandOutcome.compatibility);
-      expect(result.message, FakeLocalizedStrings().remoteTextSamsungCompatibilityError);
+      expect(
+        result.message,
+        FakeLocalizedStrings().remoteTextSamsungCompatibilityError,
+      );
     },
   );
 
@@ -78,7 +86,8 @@ void main() {
     'Samsung lane: text send returns unsupported when flag is off',
     () async {
       final service = BrandRoutedRemoteCommandService(
-        adapters: [const _SubsetSamsungAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [const _SubsetSamsungAdapter()],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
 
@@ -112,7 +121,7 @@ void main() {
   });
 
   test(
-    'Samsung adapter: watch readiness returns false on connect failure',
+    'Samsung adapter: watch readiness does not trigger eager reconnect',
     () async {
       final transport = _SpySamsungTransportClient(throwOnConnect: true);
       final adapter = SamsungAdapter(transportClient: transport);
@@ -121,7 +130,8 @@ void main() {
           .watchRemoteTextInputReady(samsungDevice)
           .toList();
 
-      expect(values, [false]);
+      expect(values, [true]);
+      expect(transport.connectCalls, 0);
     },
   );
 
@@ -133,11 +143,100 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           SamsungAdapter(transportClient: _SpySamsungTransportClient()),
-        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.preparePairing(device: samsungDevice);
       expect(result.isSuccess, isTrue);
+    },
+  );
+
+  test(
+    'Samsung lane: approval timeout surfaces as CommandDispatchResult.failure',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          SamsungAdapter(transportClient: _TimeoutSamsungTransportClient()),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+      final result = await service.preparePairing(device: samsungDevice);
+      expect(result.isSuccess, isFalse);
+      expect(result.message, 'Pairing failed for Samsung Test TV.');
+      expect(result.exception, isA<TimeoutException>());
+      expect(
+        result.exception.toString(),
+        contains('Timed out waiting for Samsung TV approval'),
+      );
+      expect(
+        result.exception.toString(),
+        contains('Approve the TV popup and retry pairing'),
+      );
+    },
+  );
+
+  test(
+    'Samsung lane: authorization rejection surfaces as CommandDispatchResult.failure',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          SamsungAdapter(
+            transportClient: _RejectingSamsungTransportClient(),
+          ),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+      final result = await service.preparePairing(device: samsungDevice);
+      expect(result.isSuccess, isFalse);
+      expect(result.message, 'Pairing failed for Samsung Test TV.');
+      expect(
+        result.exception,
+        isA<SamsungTransportAuthorizationException>(),
+      );
+      expect(
+        result.exception.toString(),
+        contains('Samsung TV rejected remote-control authorization'),
+      );
+    },
+  );
+
+  test(
+    'Samsung lane: retry after approval failure succeeds when transport accepts',
+    () async {
+      final transport = _FlakySamsungTransportClient(
+        failuresBeforeSuccess: 1,
+        failure: () => throw TimeoutException(
+          'Timed out waiting for Samsung TV approval. '
+          'Approve the TV popup and retry pairing.',
+        ),
+      );
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [SamsungAdapter(transportClient: transport)],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+
+      final first = await service.preparePairing(device: samsungDevice);
+      expect(first.isSuccess, isFalse);
+      expect(first.exception, isA<TimeoutException>());
+
+      final second = await service.preparePairing(device: samsungDevice);
+      expect(second.isSuccess, isTrue);
+      expect(transport.approvalRequestCount, 2);
+    },
+  );
+
+  test(
+    'Samsung adapter: cancelPairing delegates to transport for recovery cleanup',
+    () async {
+      final transport = _SpySamsungTransportClient();
+      final adapter = SamsungAdapter(transportClient: transport);
+      await adapter.cancelPairing(device: samsungDevice);
+      expect(transport.cancelPairingCalls, 1);
+      expect(transport.cancelPairingDeviceIds, [samsungDevice.id]);
     },
   );
 
@@ -147,7 +246,8 @@ void main() {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
           SamsungAdapter(transportClient: _SpySamsungTransportClient()),
-        ],variantRegistry: const DefaultVariantResolutionRegistry(),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final result = await service.submitPairingCode(
@@ -176,7 +276,8 @@ void main() {
       // _CompatibilitySamsungAdapter has supportsTextInput=true so the service
       // proceeds past that gate and reaches the capability check.
       final service = BrandRoutedRemoteCommandService(
-        adapters: [const _CompatibilitySamsungAdapter()],variantRegistry: const DefaultVariantResolutionRegistry(),
+        adapters: [const _CompatibilitySamsungAdapter()],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
       final values = await service
@@ -186,10 +287,43 @@ void main() {
     },
   );
 
+  test(
+    'Samsung adapter: app shortcuts route launch keys for web/netflix/prime',
+    () async {
+      final transport = _SpySamsungTransportClient();
+      final adapter = SamsungAdapter(transportClient: transport);
+
+      await adapter.sendCommand(
+        device: samsungDevice,
+        command: RemoteCommand.web,
+      );
+      await adapter.sendCommand(
+        device: samsungDevice,
+        command: RemoteCommand.netflix,
+      );
+      await adapter.sendCommand(
+        device: samsungDevice,
+        command: RemoteCommand.primeVideo,
+      );
+
+      expect(
+        transport.sentKeyCodes,
+        [
+          'LAUNCH:org.tizen.browser',
+          'LAUNCH:3201907018807',
+          'LAUNCH:3201910019365',
+        ],
+      );
+    },
+  );
+
   test('Samsung adapter: menu publishes fallback aliases in order', () async {
     final transport = _SpySamsungTransportClient();
     final adapter = SamsungAdapter(transportClient: transport);
-    await adapter.sendCommand(device: samsungDevice, command: RemoteCommand.menu);
+    await adapter.sendCommand(
+      device: samsungDevice,
+      command: RemoteCommand.menu,
+    );
     expect(
       transport.sentKeyCodes,
       containsAllInOrder([
@@ -227,6 +361,8 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
   int sendKeyCalls = 0;
   int sendTextCalls = 0;
   int probeRemoteTextInputReadyCalls = 0;
+  int cancelPairingCalls = 0;
+  final List<String> cancelPairingDeviceIds = [];
   final List<String> sentKeyCodes = [];
 
   @override
@@ -276,6 +412,174 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
     probeRemoteTextInputReadyCalls += 1;
     return true;
   }
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
+
+  @override
+  Future<void> probe(String host) async {}
+
+  @override
+  void cancelPairing(String deviceId) {
+    cancelPairingCalls += 1;
+    cancelPairingDeviceIds.add(deviceId);
+  }
+}
+
+class _TimeoutSamsungTransportClient implements SamsungTransportClient {
+  @override
+  Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
+
+  @override
+  Future<void> connect({required String deviceId}) async {}
+
+  @override
+  Future<void> requestPairingApproval({
+    required String deviceId,
+    required String triggerKeyCode,
+    Duration approvalTimeout = const Duration(seconds: 45),
+  }) async {
+    throw TimeoutException(
+      'Timed out waiting for Samsung TV approval. '
+      'Approve the TV popup and retry pairing.',
+    );
+  }
+
+  @override
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
+
+  @override
+  Stream<bool> watchRemoteTextInputReady(String deviceId) =>
+      Stream<bool>.value(false);
+
+  @override
+  Future<bool> probeRemoteTextInputReady({
+    required String deviceId,
+    Duration timeout = const Duration(milliseconds: 750),
+  }) async => false;
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.disconnected);
+
+  @override
+  Future<void> probe(String host) async {}
+
+  @override
+  void cancelPairing(String deviceId) {}
+}
+
+class _RejectingSamsungTransportClient implements SamsungTransportClient {
+  @override
+  Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
+
+  @override
+  Future<void> connect({required String deviceId}) async {}
+
+  @override
+  Future<void> requestPairingApproval({
+    required String deviceId,
+    required String triggerKeyCode,
+    Duration approvalTimeout = const Duration(seconds: 45),
+  }) async {
+    throw const SamsungTransportAuthorizationException(
+      'Samsung TV rejected remote-control authorization.',
+    );
+  }
+
+  @override
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
+
+  @override
+  Stream<bool> watchRemoteTextInputReady(String deviceId) =>
+      Stream<bool>.value(false);
+
+  @override
+  Future<bool> probeRemoteTextInputReady({
+    required String deviceId,
+    Duration timeout = const Duration(milliseconds: 750),
+  }) async => false;
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.disconnected);
+
+  @override
+  Future<void> probe(String host) async {}
+
+  @override
+  void cancelPairing(String deviceId) {}
+}
+
+class _FlakySamsungTransportClient implements SamsungTransportClient {
+  _FlakySamsungTransportClient({
+    required this.failuresBeforeSuccess,
+    required this.failure,
+  });
+
+  final int failuresBeforeSuccess;
+  final void Function() failure;
+
+  int approvalRequestCount = 0;
+
+  @override
+  Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
+
+  @override
+  Future<void> connect({required String deviceId}) async {}
+
+  @override
+  Future<void> requestPairingApproval({
+    required String deviceId,
+    required String triggerKeyCode,
+    Duration approvalTimeout = const Duration(seconds: 45),
+  }) async {
+    approvalRequestCount += 1;
+    if (approvalRequestCount <= failuresBeforeSuccess) {
+      failure();
+    }
+  }
+
+  @override
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
+
+  @override
+  Stream<bool> watchRemoteTextInputReady(String deviceId) =>
+      Stream<bool>.value(true);
+
+  @override
+  Future<bool> probeRemoteTextInputReady({
+    required String deviceId,
+    Duration timeout = const Duration(milliseconds: 750),
+  }) async => true;
 
   @override
   Stream<ConnectionState> watchConnectionState(String deviceId) =>
@@ -391,7 +695,9 @@ class _CompatibilitySamsungAdapter implements TvBrandAdapter {
     required TvDevice device,
     required String text,
   }) async {
-    throw TextInputCompatibilityException(TextCompatibilityError.samsungScreenNotAcceptingInput);
+    throw TextInputCompatibilityException(
+      TextCompatibilityError.samsungScreenNotAcceptingInput,
+    );
   }
 
   @override

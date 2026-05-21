@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_app_launch.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_key_mapper.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 
@@ -38,28 +39,38 @@ void main() {
       expect(mapper.keyCodesFor(RemoteCommand.input), ['KEY_SOURCE']);
     });
 
-    test('returns multiple fallbacks for web', () {
+    test('returns launch key for web browser', () {
       expect(
         mapper.keyCodesFor(RemoteCommand.web),
-        ['KEY_WWW', 'KEY_WEB_BROWSER', 'KEY_INTERNET'],
+        [samsungLaunchKeyFor(SamsungTizenAppIds.browser)],
       );
     });
 
-    test('returns KEY_NETFLIX for netflix', () {
-      expect(mapper.keyCodesFor(RemoteCommand.netflix), ['KEY_NETFLIX']);
+    test('returns launch key for netflix', () {
+      expect(
+        mapper.keyCodesFor(RemoteCommand.netflix),
+        [samsungLaunchKeyFor(SamsungTizenAppIds.netflix)],
+      );
     });
 
-    test('returns multiple fallbacks for primeVideo', () {
+    test('returns launch key for primeVideo', () {
       expect(
         mapper.keyCodesFor(RemoteCommand.primeVideo),
-        ['KEY_AMAZON', 'KEY_PRIME_VIDEO'],
+        [samsungLaunchKeyFor(SamsungTizenAppIds.primeVideo)],
       );
     });
 
-    test('returns multiple fallbacks for disneyPlus', () {
+    test('returns launch key for disneyPlus', () {
       expect(
         mapper.keyCodesFor(RemoteCommand.disneyPlus),
-        ['KEY_DISNEYPLUS', 'KEY_DISNEY'],
+        [samsungLaunchKeyFor(SamsungTizenAppIds.disneyPlus)],
+      );
+    });
+
+    test('returns launch key for youtube', () {
+      expect(
+        mapper.keyCodesFor(RemoteCommand.youtube),
+        [samsungLaunchKeyFor(SamsungTizenAppIds.youtube)],
       );
     });
 

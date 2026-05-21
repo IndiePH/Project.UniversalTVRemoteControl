@@ -17,6 +17,7 @@ import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_widget_test_metrics.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
 
 void main() {
@@ -272,7 +273,10 @@ void main() {
       );
       await tester.pump();
 
-      await tester.drag(find.text('Saved TV'), const Offset(-500, 0));
+      await tester.drag(
+        find.text('Saved TV'),
+        kRemoteWidgetTestSwipeToDismissOffset,
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Remove saved device?'), findsOneWidget);
@@ -289,7 +293,10 @@ void main() {
       );
       await tester.pump();
 
-      await tester.drag(find.text('Saved TV'), const Offset(-500, 0));
+      await tester.drag(
+        find.text('Saved TV'),
+        kRemoteWidgetTestSwipeToDismissOffset,
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Cancel'));

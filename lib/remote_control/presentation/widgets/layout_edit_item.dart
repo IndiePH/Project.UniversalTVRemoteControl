@@ -5,6 +5,7 @@ class LayoutEditItem {
   LayoutEditItem({
     required this.id,
     this.icon,
+    this.imageAsset,
     this.label,
     required this.col,
     required this.row,
@@ -15,6 +16,7 @@ class LayoutEditItem {
 
   final String id;
   final IconData? icon;
+  final String? imageAsset;
   final String? label;
   int col;
   int row;

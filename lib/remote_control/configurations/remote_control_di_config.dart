@@ -1,6 +1,9 @@
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/i_di_config.dart';
+import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
+import 'package:one_remote/app/diagnostics/diagnostics_recording_device_discovery_service.dart';
+import 'package:one_remote/app/diagnostics/diagnostics_recording_remote_command_service.dart';
 import 'package:one_remote/app/localized_strings.dart';
 import 'package:one_remote/remote_control/application/application.dart';
 import 'package:one_remote/remote_control/data/data.dart';
@@ -33,6 +36,7 @@ import 'package:one_remote/remote_control/data/adapters/tcl_legacy_wifi_adapter.
 import 'package:one_remote/remote_control/data/adapters/tcl_roku_adapter.dart';
 
 void _configureShared(GetIt sl) {
+  sl.registerSingleton<AppDiagnosticsRecorder>(AppDiagnosticsRecorder());
   sl.registerSingleton<DeviceRepository>(SharedPrefsDeviceRepository());
   sl.registerSingleton<LayoutRepository>(SharedPrefsLayoutRepository());
   sl.registerSingleton<PrePairingStepsRegistry>(
@@ -63,12 +67,15 @@ final class RemoteControlDiConfig implements IDiConfig {
   void configure(GetIt sl, AppEnvironment env) {
     _configureShared(sl);
     sl.registerSingleton<DeviceDiscoveryService>(
-      CompositeDeviceDiscoveryService(
-        services: [
-          SsdpDeviceDiscoveryService(),
-          MdnsDeviceDiscoveryService(),
-          RokuSsdpDiscoveryService(),
-        ],
+      DiagnosticsRecordingDeviceDiscoveryService(
+        delegate: CompositeDeviceDiscoveryService(
+          services: [
+            SsdpDeviceDiscoveryService(),
+            MdnsDeviceDiscoveryService(),
+            RokuSsdpDiscoveryService(),
+          ],
+        ),
+        recorder: sl<AppDiagnosticsRecorder>(),
       ),
     );
     sl.registerSingleton<LgPairingKeyStore>(LgPairingKeyStore());
@@ -119,8 +126,13 @@ final class RemoteControlDiConfig implements IDiConfig {
       variantRegistry: sl<VariantResolutionRegistry>(),
       localizedStrings: sl<LocalizedStrings>(),
     );
-    sl.registerSingleton<RemoteCommandService>(commandService);
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
+    sl.registerSingleton<RemoteCommandService>(
+      DiagnosticsRecordingRemoteCommandService(
+        delegate: commandService,
+        recorder: sl<AppDiagnosticsRecorder>(),
+      ),
+    );
     sl.registerSingleton<TvReachabilityService>(
       AdapterTvReachabilityService(adapters: adapters),
     );
@@ -149,12 +161,15 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
     // Debug config keeps command transports fake-able via DI. Discovery mode can
     // still be switched at runtime from the debug settings flow (pairing path).
     sl.registerSingleton<DeviceDiscoveryService>(
-      CompositeDeviceDiscoveryService(
-        services: [
-          SsdpDeviceDiscoveryService(),
-          MdnsDeviceDiscoveryService(),
-          RokuSsdpDiscoveryService(),
-        ],
+      DiagnosticsRecordingDeviceDiscoveryService(
+        delegate: CompositeDeviceDiscoveryService(
+          services: [
+            SsdpDeviceDiscoveryService(),
+            MdnsDeviceDiscoveryService(),
+            RokuSsdpDiscoveryService(),
+          ],
+        ),
+        recorder: sl<AppDiagnosticsRecorder>(),
       ),
     );
     sl.registerSingleton<SamsungTransportClient>(FakeSamsungTransportClient());
@@ -180,8 +195,13 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
       variantRegistry: sl<VariantResolutionRegistry>(),
       localizedStrings: sl<LocalizedStrings>(),
     );
-    sl.registerSingleton<RemoteCommandService>(commandService);
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
+    sl.registerSingleton<RemoteCommandService>(
+      DiagnosticsRecordingRemoteCommandService(
+        delegate: commandService,
+        recorder: sl<AppDiagnosticsRecorder>(),
+      ),
+    );
     sl.registerSingleton<TvReachabilityService>(
       AdapterTvReachabilityService(adapters: adapters),
     );

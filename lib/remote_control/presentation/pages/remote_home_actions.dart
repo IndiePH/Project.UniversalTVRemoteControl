@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
+import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
@@ -64,6 +65,17 @@ final class RemoteHomeActions {
       return false;
     }
     await Clipboard.setData(ClipboardData(text: logs));
+    return true;
+  }
+
+  static Future<bool> copyDiagnosticsReport({
+    required AppDiagnosticsRecorder recorder,
+  }) async {
+    final report = recorder.buildReport().trim();
+    if (report.isEmpty) {
+      return false;
+    }
+    await Clipboard.setData(ClipboardData(text: report));
     return true;
   }
 

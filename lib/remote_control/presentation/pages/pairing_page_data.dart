@@ -2,6 +2,8 @@ import 'package:intl/intl.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
+import 'package:one_remote/remote_control/application/discovered_device_support.dart';
+import 'package:one_remote/remote_control/domain/models/device_support_tier.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -40,8 +42,27 @@ final class PairingPageData {
 
   static Future<List<TvDevice>> discoverDevices(
     DeviceDiscoveryService discoveryService,
-  ) {
-    return discoveryService.discoverDevices();
+  ) async {
+    final devices = await discoveryService.discoverDevices();
+    return List<TvDevice>.from(devices)
+      ..sort(DiscoveredDeviceSupport.compareForDiscoveryList);
+  }
+
+  static String? discoverySupportNoteForDevice({
+    required TvDevice device,
+    required AppLocalizations l10n,
+  }) {
+    return switch (DiscoveredDeviceSupport.tierFor(device)) {
+      DeviceSupportTier.full => null,
+      DeviceSupportTier.limited => switch (device.brand) {
+        TvBrand.hisense => l10n.pairingDiscoveryHisenseLimitedSupport,
+        TvBrand.roku => l10n.pairingDiscoveryRokuLimitedSupport,
+        _ => l10n.pairingDiscoveryLimitedSupport,
+      },
+      DeviceSupportTier.experimental => l10n.pairingDiscoveryExperimentalSupport(
+        device.brand.displayName,
+      ),
+    };
   }
 
   static TvDevice buildManualDevice({

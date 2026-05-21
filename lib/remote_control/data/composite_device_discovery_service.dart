@@ -2,10 +2,11 @@ import 'dart:io';
 
 import 'package:flutter_multicast_lock/flutter_multicast_lock.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/remote_control/data/discovery_result_merger.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 /// Runs multiple [DeviceDiscoveryService] implementations in parallel and
-/// merges their results, deduplicating by device ID.
+/// merges their results, deduplicating by host IP and brand priority.
 class CompositeDeviceDiscoveryService implements DeviceDiscoveryService {
   const CompositeDeviceDiscoveryService({required this.services});
 
@@ -31,12 +32,9 @@ class CompositeDeviceDiscoveryService implements DeviceDiscoveryService {
         }),
       );
 
-      final seen = <String>{};
-      return results
-          .expand((list) => list)
-          .where((device) => seen.add(device.id))
-          .toList()
-        ..sort((a, b) => a.displayName.compareTo(b.displayName));
+      return DiscoveryResultMerger.mergeByHost(
+        results.expand((list) => list).toList(),
+      );
     } finally {
       if (Platform.isAndroid) {
         try {

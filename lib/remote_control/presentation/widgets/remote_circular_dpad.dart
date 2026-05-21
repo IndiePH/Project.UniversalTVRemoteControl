@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/domain/models/remote_command.dart';
+import 'package:one_remote/remote_control/presentation/interaction/remote_command_haptic_feedback.dart';
+import 'package:one_remote/remote_control/presentation/interaction/remote_press_feedback.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
 class RemoteCircularDpad extends StatelessWidget {
@@ -41,6 +44,7 @@ class RemoteCircularDpad extends StatelessWidget {
             iconPadding: const EdgeInsets.only(bottom: 16),
             onTap: onUp,
             iconColor: appColors.remoteGlyphOnRemote,
+            interactionCommand: RemoteCommand.dpadUp,
           ),
           _ArrowButton(
             alignment: Alignment.bottomCenter,
@@ -48,6 +52,7 @@ class RemoteCircularDpad extends StatelessWidget {
             iconPadding: const EdgeInsets.only(top: 16),
             onTap: onDown,
             iconColor: appColors.remoteGlyphOnRemote,
+            interactionCommand: RemoteCommand.dpadDown,
           ),
           _ArrowButton(
             alignment: Alignment.centerLeft,
@@ -55,6 +60,7 @@ class RemoteCircularDpad extends StatelessWidget {
             iconPadding: const EdgeInsets.only(right: 16),
             onTap: onLeft,
             iconColor: appColors.remoteGlyphOnRemote,
+            interactionCommand: RemoteCommand.dpadLeft,
           ),
           _ArrowButton(
             alignment: Alignment.centerRight,
@@ -62,24 +68,28 @@ class RemoteCircularDpad extends StatelessWidget {
             iconPadding: const EdgeInsets.only(left: 16),
             onTap: onRight,
             iconColor: appColors.remoteGlyphOnRemote,
+            interactionCommand: RemoteCommand.dpadRight,
           ),
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: appColors.remoteRaisedSurface,
-              border: Border.all(color: appColors.remoteOutline, width: 1.4),
-            ),
-            child: TextButton(
-              onPressed: onOk,
-              style: TextButton.styleFrom(shape: const CircleBorder()),
-              child: Text(
-                'OK',
-                style: TextStyle(
-                  color: appColors.remoteGlyphOnRemote,
-                  fontSize: 34,
-                  fontWeight: FontWeight.w800,
+          RemotePressFeedback(
+            onPressed: onOk,
+            onPressHaptic: () =>
+                RemoteCommandHapticFeedback.playFor(RemoteCommand.dpadOk),
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: appColors.remoteRaisedSurface,
+                border: Border.all(color: appColors.remoteOutline, width: 1.4),
+              ),
+              child: Center(
+                child: Text(
+                  'OK',
+                  style: TextStyle(
+                    color: appColors.remoteGlyphOnRemote,
+                    fontSize: 34,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
@@ -96,6 +106,7 @@ class _ArrowButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     required this.iconColor,
+    required this.interactionCommand,
     this.iconPadding = EdgeInsets.zero,
   });
 
@@ -103,6 +114,7 @@ class _ArrowButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final Color iconColor;
+  final RemoteCommand interactionCommand;
   final EdgeInsets iconPadding;
 
   @override
@@ -112,12 +124,13 @@ class _ArrowButton extends StatelessWidget {
       child: SizedBox(
         width: 82,
         height: 82,
-        child: Material(
-          color: Colors.transparent,
-          shape: const CircleBorder(),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: onTap,
+        child: RemotePressFeedback(
+          onPressed: onTap,
+          onPressHaptic: () =>
+              RemoteCommandHapticFeedback.playFor(interactionCommand),
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
             child: Padding(
               padding: iconPadding,
               child: Icon(icon, size: 46, color: iconColor),

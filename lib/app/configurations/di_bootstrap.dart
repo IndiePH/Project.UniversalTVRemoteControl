@@ -8,6 +8,7 @@ import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/app_monetization_di_config.dart';
 import 'package:one_remote/app/configurations/i_di_config.dart';
 import 'package:one_remote/app/localized_strings.dart';
+import 'package:one_remote/app/theme/app_theme_controller.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/remote_control/configurations/remote_control_di_config.dart';
 
@@ -42,6 +43,7 @@ final class DiBootstrap {
       ValueNotifier(PlatformDispatcher.instance.locale),
     );
     sl.registerSingleton<LocalizedStrings>(AppLocalizedStrings());
+    sl.registerSingleton<AppThemeController>(await AppThemeController.load());
     for (final config in await _configsFor(env)) {
       config.configure(sl, env);
     }

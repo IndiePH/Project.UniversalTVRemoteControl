@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/domain/models/remote_command.dart';
+import 'package:one_remote/remote_control/presentation/interaction/remote_command_haptic_feedback.dart';
+import 'package:one_remote/remote_control/presentation/interaction/remote_press_feedback.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
 class RemoteVerticalRocker extends StatelessWidget {
@@ -9,6 +12,8 @@ class RemoteVerticalRocker extends StatelessWidget {
     required this.bottomText,
     required this.onTopTap,
     required this.onBottomTap,
+    this.topInteractionCommand,
+    this.bottomInteractionCommand,
   });
 
   final String topText;
@@ -16,6 +21,8 @@ class RemoteVerticalRocker extends StatelessWidget {
   final String bottomText;
   final VoidCallback onTopTap;
   final VoidCallback onBottomTap;
+  final RemoteCommand? topInteractionCommand;
+  final RemoteCommand? bottomInteractionCommand;
 
   @override
   Widget build(BuildContext context) {
@@ -36,9 +43,17 @@ class RemoteVerticalRocker extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _RockerTapArea(label: topText, onTap: onTopTap),
+          _RockerTapArea(
+            label: topText,
+            onTap: onTopTap,
+            interactionCommand: topInteractionCommand,
+          ),
           Text(centerText, style: textStyle),
-          _RockerTapArea(label: bottomText, onTap: onBottomTap),
+          _RockerTapArea(
+            label: bottomText,
+            onTap: onBottomTap,
+            interactionCommand: bottomInteractionCommand,
+          ),
         ],
       ),
     );
@@ -49,21 +64,25 @@ class _RockerTapArea extends StatelessWidget {
   const _RockerTapArea({
     required this.label,
     required this.onTap,
+    this.interactionCommand,
   });
 
   final String label;
   final VoidCallback onTap;
+  final RemoteCommand? interactionCommand;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 84,
       width: double.infinity,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(32),
-          onTap: onTap,
+      child: RemotePressFeedback(
+        onPressed: onTap,
+        onPressHaptic: interactionCommand == null
+            ? null
+            : () => RemoteCommandHapticFeedback.playFor(interactionCommand!),
+        child: Material(
+          color: Colors.transparent,
           child: Center(
             child: Text(
               label,
