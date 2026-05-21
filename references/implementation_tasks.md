@@ -371,7 +371,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [ ] Privacy policy at a live public URL; linked in App Store Connect and Play Console.
   - [ ] iOS: App Tracking Transparency integrated; prompt before first ad load.
   - [ ] EU/California: consent (for example UMP via `google_mobile_ads`) before ads where required.
-  - [ ] Pro / remove-ads: **non-consumable** IAP via Apple IAP + Google Play Billing only (`in_app_purchase`).
+  - [x] Pro / remove-ads: **non-consumable** IAP via Apple IAP + Google Play Billing only (`in_app_purchase`) with `PRO_PRODUCT_ID=one_remote_pro`.
   - [ ] Developer accounts and signing: Apple Developer Program, Google Play developer account, AdMob as needed before ads go live.
   - [ ] Swap **placeholder AdMob ids** for production: replace test `APPLICATION_ID` in `android/app/src/main/AndroidManifest.xml`, test `GADApplicationIdentifier` in `ios/Runner/Info.plist`, and the placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list; provide production unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` for release builds.
 - [ ] **Physical-device validation:** Do not claim store support for a brand until pairing and core commands are verified on at least one real TV of that brand (complements the brand readiness matrix in `references/product_specs.md`).

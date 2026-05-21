@@ -3,6 +3,70 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-21
+
+### Added
+- Layout-focused tests (**TVREMOTE-20**): `remote_layout_drop_resolver_test.dart`
+  (empty-cell move, bounds reject, multi-control footprint reject, 1x1 swap,
+  congested swap reject, anchor offsets); `shared_prefs_layout_repository_test.dart`
+  (save/load/overwrite, invalid payload skip); `remote_layout_grid_constraints_test.dart`
+  (default `5x9` validation footprints fit with no overlaps); `remote_layout_editor_widget_test.dart`
+  (editor chrome + reset invokes `onResetLayout`).
+- Discovery brand identification (**TVREMOTE-18**): `inferSsdpTvBrand` /
+  `ssdp_brand_inference.dart`; `DiscoveryResultMerger` dedupes parallel scans by
+  host IP with Samsung/LG/Hisense priority; `DiscoveredDeviceSupport` tiers with
+  limited/experimental subtitles on pairing discovery rows.
+- Multi-device quick switch on remote home (**TVREMOTE-19**): tappable device name
+  opens `RemoteHomeDeviceSwitcherSheet` with saved TVs; selecting one updates
+  active control, per-device layout, and `last_used_device_id`.
+- Samsung approval timeout/rejection regression tests (**TVREMOTE-13**):
+  `samsung_test_lane_test.dart` (service failure messaging, retry recovery,
+  `cancelPairing` delegation) and `samsung_pairing_token_store_test.dart`
+  (unauthorized frame, token completion, cancel cleanup).
+
+### Changed
+- Saved-device tap on pairing screen now calls `setLastUsedDevice` before returning
+  to remote home so relaunch and switcher stay aligned with the selected TV.
+
+### Verification
+- `flutter test test/lib/remote_control/presentation/widgets/remote_layout_drop_resolver_test.dart test/lib/remote_control/data/shared_prefs_layout_repository_test.dart test/lib/remote_control/presentation/widgets/remote_layout_grid_constraints_test.dart test/lib/remote_control/presentation/widgets/remote_layout_editor_widget_test.dart` passed (**TVREMOTE-20**; 16 tests).
+- `flutter test test/widget_test.dart --name "switches active TV"` passed.
+- `flutter test test/lib/remote_control/data/ssdp_brand_inference_test.dart test/lib/remote_control/data/discovery_result_merger_test.dart` passed (**TVREMOTE-18**).
+- `flutter test test/lib/remote_control/data/adapters/samsung_test_lane_test.dart test/lib/remote_control/data/adapters/samsung/samsung_pairing_token_store_test.dart` passed (**TVREMOTE-13**; 19 tests).
+
+## 2026-05-20
+
+### Added
+- Pro IAP app integration (`TVREMOTE-66`, commit `640c702`): `in_app_purchase`,
+  `ProEntitlementService` / store + fake repositories, settings sheet purchase +
+  restore, banner hidden + layout editor unlocked when entitled.
+- Free-tier **interstitial** ads (`TVREMOTE-63` / `TVREMOTE-66`): `InterstitialAdController`,
+  `InterstitialAdPolicy`, engagement-gated show after successful remote commands;
+  `AdConfig.interstitialAdUnitId` with test IDs and
+  `--dart-define=ADMOB_INTERSTITIAL_ANDROID` / `ADMOB_INTERSTITIAL_IOS`.
+- **Ad consent** (`TVREMOTE-26`): `AdConsentCoordinator` — UMP via `google_mobile_ads`,
+  iOS ATT via `app_tracking_transparency`; `main.dart` runs consent before
+  `MobileAds.initialize()`; placements respect `canRequestAds`.
+- **Compliance UX**: `AppLegalUrls`, `LegalLinkLauncher`, privacy-policy link and
+  UMP privacy-options entry in `RemoteHomeSettingsSheet` (`url_launcher`).
+- **Diagnostics** (`TVREMOTE-29`): `AppDiagnosticsRecorder`, discovery/command
+  decorators, pairing session counters, `DiagnosticsSummaryPanel` + copy report in
+  settings; unhandled errors recorded from `main.dart`.
+- **Interaction polish** (`TVREMOTE-28`): `RemotePressFeedback` scale animation +
+  `RemoteCommandHapticFeedback` on d-pad, rockers, icon buttons, and grid controls.
+
+### Changed
+- Samsung/LG adapters (`TVREMOTE-41`, `TVREMOTE-42`): `watchRemoteTextInputReady`
+  no longer side-effects `connect()`; explicit `probeRemoteTextInputReady` for
+  connect+probe. Test lanes updated (`TVREMOTE-49`, `TVREMOTE-50`).
+- `RemoteHomePage`: connection status sync (`Ready` / `Disconnected`); Pro
+  entitlement reloads saved layout; interstitial warm-up tied to Pro + consent;
+  debug entitlement toggle + interstitial test hook.
+- `PairingPageCoordinator`: records pairing session success/failure into diagnostics.
+
+### Verification
+- Not run in this doc-sync pass (working tree uncommitted).
+
 ## 2026-05-14
 
 ### Changed

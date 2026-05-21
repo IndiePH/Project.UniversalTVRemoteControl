@@ -7,6 +7,7 @@ import 'package:get_it/get_it.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
+import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/app/one_remote_app.dart';
 import 'package:one_remote/app/stream_unhandled_error_source.dart';
 
@@ -30,12 +31,11 @@ bool _supportsMobileAds() {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   final env = kDebugMode ? AppEnvironment.debug : AppEnvironment.production;
   await DiBootstrap.initialize(env);
+  await GetIt.instance<ProEntitlementService>().refreshFromStore();
   if (_supportsMobileAds()) {
     await MobileAds.instance.initialize();
   }
@@ -49,15 +49,15 @@ Future<void> main() async {
     }
   };
 
-  runZonedGuarded(
-    () => runApp(const OneRemoteApp()),
-    (Object error, StackTrace stack) {
-      final errorSource = _errorSource();
-      if (errorSource != null) {
-        errorSource.add(error);
-      } else if (env == AppEnvironment.debug) {
-        debugPrint('Unhandled error: $error\n$stack');
-      }
-    },
-  );
+  runZonedGuarded(() => runApp(const OneRemoteApp()), (
+    Object error,
+    StackTrace stack,
+  ) {
+    final errorSource = _errorSource();
+    if (errorSource != null) {
+      errorSource.add(error);
+    } else if (env == AppEnvironment.debug) {
+      debugPrint('Unhandled error: $error\n$stack');
+    }
+  });
 }

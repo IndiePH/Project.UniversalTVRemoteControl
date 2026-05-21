@@ -22,18 +22,45 @@ class AdConfig {
 
     final isProduction = environment == AppEnvironment.production;
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android => isProduction
-          ? const String.fromEnvironment(
-              'ADMOB_BANNER_ANDROID',
-              defaultValue: _androidTestBannerAdUnitId,
-            )
-          : _androidTestBannerAdUnitId,
-      TargetPlatform.iOS => isProduction
-          ? const String.fromEnvironment(
-              'ADMOB_BANNER_IOS',
-              defaultValue: _iosTestBannerAdUnitId,
-            )
-          : _iosTestBannerAdUnitId,
+      TargetPlatform.android =>
+        isProduction
+            ? const String.fromEnvironment(
+                'ADMOB_BANNER_ANDROID',
+                defaultValue: _androidTestBannerAdUnitId,
+              )
+            : _androidTestBannerAdUnitId,
+      TargetPlatform.iOS =>
+        isProduction
+            ? const String.fromEnvironment(
+                'ADMOB_BANNER_IOS',
+                defaultValue: _iosTestBannerAdUnitId,
+              )
+            : _iosTestBannerAdUnitId,
+      _ => null,
+    };
+  }
+
+  static String? interstitialAdUnitId(AppEnvironment environment) {
+    if (!supportsMobileAds) {
+      return null;
+    }
+
+    final isProduction = environment == AppEnvironment.production;
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android =>
+        isProduction
+            ? const String.fromEnvironment(
+                'ADMOB_INTERSTITIAL_ANDROID',
+                defaultValue: _androidTestInterstitialAdUnitId,
+              )
+            : _androidTestInterstitialAdUnitId,
+      TargetPlatform.iOS =>
+        isProduction
+            ? const String.fromEnvironment(
+                'ADMOB_INTERSTITIAL_IOS',
+                defaultValue: _iosTestInterstitialAdUnitId,
+              )
+            : _iosTestInterstitialAdUnitId,
       _ => null,
     };
   }
@@ -42,4 +69,8 @@ class AdConfig {
       'ca-app-pub-3940256099942544/6300978111';
   static const String _iosTestBannerAdUnitId =
       'ca-app-pub-3940256099942544/2934735716';
+  static const String _androidTestInterstitialAdUnitId =
+      'ca-app-pub-3940256099942544/1033173712';
+  static const String _iosTestInterstitialAdUnitId =
+      'ca-app-pub-3940256099942544/4411468910';
 }
