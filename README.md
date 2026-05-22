@@ -42,7 +42,7 @@ Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — 
 
 ## CI and local quality checks
 
-GitHub Actions workflow [`.github/workflows/flutter_ci.yml`](.github/workflows/flutter_ci.yml) runs on pushes and pull requests to `main` and `master`:
+GitHub Actions workflow [`.github/workflows/flutter_ci.yml`](.github/workflows/flutter_ci.yml) runs on pushes and pull requests to `main`, `master`, and `develop`. CI is **skipped** when the commit/PR diff touches **only** paths under `references/` (any commit subject, e.g. `docs(references): …` or `chore: tweak docs in references`). If `lib/`, `test/`, or any path outside `references/` changes, CI runs.
 
 1. `dart format --output=none --set-exit-if-changed .` - fails when formatting drifts
 2. `flutter analyze --fatal-infos` - static analysis / lints
