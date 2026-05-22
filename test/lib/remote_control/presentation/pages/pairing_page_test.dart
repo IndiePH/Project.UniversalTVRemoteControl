@@ -17,6 +17,7 @@ import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/app/monetization/fake_pro_entitlement_repository.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
@@ -911,6 +912,10 @@ class _StubCommandService implements RemoteCommandService {
   Stream<remote_connection.ConnectionState> watchConnectionState({
     required TvDevice device,
   }) => const Stream.empty();
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      null;
 }
 
 class _SlowCommandService implements RemoteCommandService {
@@ -958,6 +963,10 @@ class _SlowCommandService implements RemoteCommandService {
   Stream<remote_connection.ConnectionState> watchConnectionState({
     required TvDevice device,
   }) => const Stream.empty();
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      null;
 }
 
 class _StubDiscoveryService implements DeviceDiscoveryService {

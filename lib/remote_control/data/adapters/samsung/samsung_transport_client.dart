@@ -1,5 +1,6 @@
 import 'package:one_remote/remote_control/data/adapters/transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_source.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 abstract class SamsungTransportClient
     implements TransportClient, TransportEventSource {
@@ -31,4 +32,7 @@ abstract class SamsungTransportClient
   /// Cancels an in-progress pairing approval wait. Safe to call when no
   /// pairing is active.
   void cancelPairing(String deviceId);
+
+  /// Last `ms.channel.connect` details for [deviceId], if the TV sent them.
+  TvDeviceInfo? getCachedDeviceInfo(String deviceId);
 }

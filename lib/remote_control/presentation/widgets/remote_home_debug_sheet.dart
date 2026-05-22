@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
+import 'package:one_remote/remote_control/presentation/widgets/tv_device_debug_info_panel.dart';
 
 /// Debug/settings content rendered inside the remote home bottom sheet.
 class RemoteHomeDebugSheet extends StatelessWidget {
   const RemoteHomeDebugSheet({
     super.key,
+    this.activeDevice,
+    this.queryDeviceInfo,
     required this.showTransportToggle,
     required this.useFakeTransports,
     required this.onUseFakeTransportsChanged,
@@ -11,6 +16,9 @@ class RemoteHomeDebugSheet extends StatelessWidget {
     required this.onCopyRuntimeFlagsTemplate,
   });
 
+  final TvDevice? activeDevice;
+  final Future<TvDeviceInfo?> Function({required TvDevice device})?
+      queryDeviceInfo;
   final bool showTransportToggle;
   final bool useFakeTransports;
   final Future<void> Function(bool value) onUseFakeTransportsChanged;
@@ -28,6 +36,13 @@ class RemoteHomeDebugSheet extends StatelessWidget {
           children: [
             Text('Debug', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
+            if (queryDeviceInfo != null) ...[
+              TvDeviceDebugInfoPanel(
+                device: activeDevice,
+                infoFuture: queryDeviceInfo!,
+              ),
+              const SizedBox(height: 8),
+            ],
             if (showTransportToggle) ...[
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,

@@ -9,8 +9,13 @@ Keep entries short and append new updates at the top.
 - Samsung approval-variant physical validation runbook (**TVREMOTE-14**):
   scenarios A–C (first-time approval, token reuse, rejection/timeout recovery),
   code-under-test map, outcome table, and follow-up template in
-  `references/samsung_validation_matrix.md` (physical pass/fail rows still
-  pending hardware).
+  `references/samsung_validation_matrix.md`.
+
+### Verification
+- Samsung approval-variant physical validation (**TVREMOTE-14**): scenarios A–C
+  recorded **pass** on Samsung TV (2026-05-22) in
+  `references/samsung_validation_matrix.md` approval outcome table; no follow-up
+  Jira from matrix.
 - Vertical-slice widget/integration coverage (**TVREMOTE-11**): `test/widget_test.dart`
   adds discovery failure + empty-rescan recovery, returning last-used launch with
   command send, and command-dispatch failure surfacing (status + toast).
@@ -23,7 +28,7 @@ Keep entries short and append new updates at the top.
 - `AdConsentCoordinator.isPrivacyOptionsRequired` uses timeout + fallback when the
   Mobile Ads plugin is absent so the settings sheet is not blocked in widget tests.
 
-### Verification
+### Verification (automated)
 - `dart format --output=none --set-exit-if-changed .`, `flutter analyze --fatal-infos`,
   `flutter test` (389 passed, 1 skipped; includes **TVREMOTE-11** widget edge cases).
 

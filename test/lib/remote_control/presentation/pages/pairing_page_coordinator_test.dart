@@ -6,6 +6,7 @@ import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_coordinator.dart';
@@ -884,6 +885,10 @@ class _StubCommandService implements RemoteCommandService {
   @override
   Stream<ConnectionState> watchConnectionState({required TvDevice device}) =>
       const Stream.empty();
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      null;
 }
 
 class _StubDeviceRepository implements DeviceRepository {

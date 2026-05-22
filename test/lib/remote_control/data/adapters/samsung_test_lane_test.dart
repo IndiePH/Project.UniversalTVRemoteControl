@@ -413,6 +413,9 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
   Future<void> probe(String host) async {}
 
   @override
+  TvDeviceInfo? getCachedDeviceInfo(String deviceId) => null;
+
+  @override
   void cancelPairing(String deviceId) {
     cancelPairingCalls += 1;
     cancelPairingDeviceIds.add(deviceId);
@@ -468,6 +471,10 @@ class _TimeoutSamsungTransportClient implements SamsungTransportClient {
   Future<void> probe(String host) async {}
 
   @override
+  @override
+  TvDeviceInfo? getCachedDeviceInfo(String deviceId) => null;
+
+  @override
   void cancelPairing(String deviceId) {}
 }
 
@@ -517,6 +524,10 @@ class _RejectingSamsungTransportClient implements SamsungTransportClient {
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  @override
+  TvDeviceInfo? getCachedDeviceInfo(String deviceId) => null;
 
   @override
   void cancelPairing(String deviceId) {}
@@ -579,6 +590,10 @@ class _FlakySamsungTransportClient implements SamsungTransportClient {
 
   @override
   Future<void> probe(String host) async {}
+
+  @override
+  @override
+  TvDeviceInfo? getCachedDeviceInfo(String deviceId) => null;
 
   @override
   void cancelPairing(String deviceId) {}

@@ -916,6 +916,36 @@ abstract class AppLocalizations {
   /// **'Unhandled errors: {count}'**
   String settingsDiagnosticsUnhandledLine(int count);
 
+  /// No description provided for @settingsTvDeviceInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Active TV (transport)'**
+  String get settingsTvDeviceInfoTitle;
+
+  /// No description provided for @settingsTvDeviceInfoUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No device selected, or the TV has not sent connect details yet. Pair or open Remote after connecting.'**
+  String get settingsTvDeviceInfoUnavailable;
+
+  /// No description provided for @settingsTvDeviceInfoModelLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Model: {value}'**
+  String settingsTvDeviceInfoModelLine(String value);
+
+  /// No description provided for @settingsTvDeviceInfoFirmwareLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Firmware: {value}'**
+  String settingsTvDeviceInfoFirmwareLine(String value);
+
+  /// No description provided for @settingsTvDeviceInfoUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown'**
+  String get settingsTvDeviceInfoUnknown;
+
   /// No description provided for @settingsCopyDiagnosticsReport.
   ///
   /// In en, this message translates to:

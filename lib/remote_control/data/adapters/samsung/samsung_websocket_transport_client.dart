@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_device_info_snapshot.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/remote_control/data/adapters/adapter_device_info_log_gate.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
@@ -71,6 +73,8 @@ class SamsungWebSocketTransportClient
       <String, ConnectionState>{};
   final AdapterDeviceInfoLogGate _deviceInfoLogGate =
       AdapterDeviceInfoLogGate();
+  final Map<String, TvDeviceInfo> _cachedDeviceInfoByDeviceId =
+      <String, TvDeviceInfo>{};
 
   @override
   Stream<bool> watchRemoteTextInputReady(String deviceId) {
@@ -433,7 +437,7 @@ class SamsungWebSocketTransportClient
           return;
         }
         final decoded = _tryDecodeMessage(message);
-        _logSamsungDeviceInfo(deviceId, decoded);
+        _captureSamsungDeviceInfo(deviceId, decoded);
         _text.ingestDecoded(
           deviceId,
           decoded,
@@ -547,14 +551,17 @@ class SamsungWebSocketTransportClient
     return null;
   }
 
-  void _logSamsungDeviceInfo(String deviceId, Map<String, dynamic>? decoded) {
-    if (!_logging.enabled || decoded == null) {
-      return;
-    }
-    if (!_deviceInfoLogGate.shouldLog(deviceId)) {
-      return;
-    }
+  @override
+  TvDeviceInfo? getCachedDeviceInfo(String deviceId) =>
+      _cachedDeviceInfoByDeviceId[deviceId];
 
+  void _captureSamsungDeviceInfo(
+    String deviceId,
+    Map<String, dynamic>? decoded,
+  ) {
+    if (decoded == null) {
+      return;
+    }
     final event = decoded['event'];
     if (event is! String || event != 'ms.channel.connect') {
       return;
@@ -563,31 +570,21 @@ class SamsungWebSocketTransportClient
     if (data is! Map<String, dynamic>) {
       return;
     }
-
-    final model = data['model']?.toString().trim();
-    final os = data['OS']?.toString().trim();
-    final firmware = data['firmwareVersion']?.toString().trim();
-    final frameVersion = data['version']?.toString().trim();
-    final id = data['id']?.toString().trim();
-
-    final hasInfo = <String?>[
-      model,
-      os,
-      firmware,
-      frameVersion,
-      id,
-    ].any((value) => value != null && value.isNotEmpty);
-    if (!hasInfo) {
+    final snapshot = SamsungDeviceInfoSnapshot.fromConnectData(data);
+    if (snapshot == null) {
       return;
     }
-
+    _cachedDeviceInfoByDeviceId[deviceId] = snapshot.toTvDeviceInfo();
+    if (!_logging.enabled || !_deviceInfoLogGate.shouldLog(deviceId)) {
+      return;
+    }
     _logging.logDebug(
       '[$deviceId] samsung device info: '
-      'model=${model ?? "unknown"} '
-      'os=${os ?? "unknown"} '
-      'firmware=${firmware ?? "unknown"} '
-      'frameVersion=${frameVersion ?? "unknown"} '
-      'id=${id ?? "unknown"}',
+      'model=${snapshot.model ?? "unknown"} '
+      'os=${snapshot.os ?? "unknown"} '
+      'firmware=${snapshot.firmwareVersion ?? "unknown"} '
+      'frameVersion=${snapshot.frameVersion ?? "unknown"} '
+      'id=${snapshot.deviceFrameId ?? "unknown"}',
     );
   }
 

@@ -4,7 +4,10 @@ import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/theme/app_theme_preference.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/remote_control/presentation/widgets/diagnostics_summary_panel.dart';
+import 'package:one_remote/remote_control/presentation/widgets/tv_device_debug_info_panel.dart';
 
 /// User-facing settings and purchase actions for the remote home screen.
 class RemoteHomeSettingsSheet extends StatelessWidget {
@@ -15,6 +18,8 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
     required this.onUpgradeToPro,
     required this.onRestorePurchases,
     required this.showDebugSection,
+    required this.activeDevice,
+    required this.queryDeviceInfo,
     required this.showTransportToggle,
     required this.useFakeTransports,
     required this.onUseFakeTransportsChanged,
@@ -36,6 +41,9 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   final VoidCallback onUpgradeToPro;
   final VoidCallback onRestorePurchases;
   final bool showDebugSection;
+  final TvDevice? activeDevice;
+  final Future<TvDeviceInfo?> Function({required TvDevice device})
+      queryDeviceInfo;
   final bool showTransportToggle;
   final bool useFakeTransports;
   final Future<void> Function(bool value) onUseFakeTransportsChanged;
@@ -196,6 +204,11 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 DiagnosticsSummaryPanel(recorder: diagnosticsRecorder),
+                const SizedBox(height: 8),
+                TvDeviceDebugInfoPanel(
+                  device: activeDevice,
+                  infoFuture: queryDeviceInfo,
+                ),
                 const SizedBox(height: 8),
                 if (showTransportToggle) ...[
                   SwitchListTile(

@@ -16,6 +16,7 @@ import 'package:one_remote/remote_control/application/remote_command_service.dar
 import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_home_debug_sheet.dart';
 
@@ -86,6 +87,9 @@ final class RemoteHomeActions {
     required BuildContext context,
     required Future<bool> Function() onCopyTransportLogs,
     required Future<void> Function() onCopyRuntimeFlagsTemplate,
+    TvDevice? activeDevice,
+    Future<TvDeviceInfo?> Function({required TvDevice device})?
+        queryDeviceInfo,
   }) async {
     final env = GetIt.instance<AppEnvironment>();
     final isDebug = env == AppEnvironment.debug;
@@ -101,6 +105,8 @@ final class RemoteHomeActions {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return RemoteHomeDebugSheet(
+              activeDevice: activeDevice,
+              queryDeviceInfo: queryDeviceInfo,
               showTransportToggle: isDebug,
               useFakeTransports: pendingFake,
               onUseFakeTransportsChanged: (value) async {

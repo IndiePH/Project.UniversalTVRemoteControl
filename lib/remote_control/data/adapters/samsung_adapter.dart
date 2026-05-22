@@ -27,8 +27,18 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   String get protocolVariant => SamsungProtocolVariants.defaultVariant;
 
   @override
-  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
-      const TvDeviceInfo();
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async {
+    final cached = _transportClient.getCachedDeviceInfo(device.id);
+    if (cached != null) {
+      return cached;
+    }
+    try {
+      await _transportClient.connect(deviceId: device.id);
+    } catch (_) {
+      // Debug probe only; cache may still be empty if TV did not connect.
+    }
+    return _transportClient.getCachedDeviceInfo(device.id);
+  }
 
   @override
   TransportLogReader get transportLogReader =>

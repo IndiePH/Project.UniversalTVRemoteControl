@@ -43,6 +43,7 @@ import 'package:one_remote/remote_control/domain/models/connection_state.dart'
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
@@ -1198,4 +1199,8 @@ class _ConnectionStateStubCommandService implements RemoteCommandService {
     );
     multi.onCancel = () => sub.cancel();
   });
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      null;
 }

@@ -307,6 +307,21 @@
       "count": {"type": "int"}
     }
   },
+  "settingsTvDeviceInfoTitle": "Active TV (transport)",
+  "settingsTvDeviceInfoUnavailable": "No device selected, or the TV has not sent connect details yet. Pair or open Remote after connecting.",
+  "settingsTvDeviceInfoModelLine": "Model: {value}",
+  "@settingsTvDeviceInfoModelLine": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "settingsTvDeviceInfoFirmwareLine": "Firmware: {value}",
+  "@settingsTvDeviceInfoFirmwareLine": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "settingsTvDeviceInfoUnknown": "unknown",
   "settingsCopyDiagnosticsReport": "Copy diagnostics report",
   "settingsCopyRuntimeFlagsTemplate": "Copy runtime flags template",
   "settingsCopyRuntimeFlagsTemplateSubtitle": "Paste and fill dart-define values.",

@@ -821,6 +821,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                           onUpgradeToPro: () => unawaited(_purchasePro()),
                           onRestorePurchases: () => unawaited(_restorePro()),
                           showDebugSection: showDebugSection,
+                          activeDevice: _activeDevice,
+                          queryDeviceInfo: widget.commandService.queryDeviceInfo,
                           diagnosticsRecorder:
                               GetIt.instance<AppDiagnosticsRecorder>(),
                           showTransportToggle: isDebug,

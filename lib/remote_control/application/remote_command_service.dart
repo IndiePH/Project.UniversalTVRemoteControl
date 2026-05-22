@@ -2,6 +2,7 @@ import 'package:one_remote/remote_control/application/command_dispatch_result.da
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 abstract class RemoteCommandService {
   Future<CommandDispatchResult> preparePairing({required TvDevice device});
@@ -40,4 +41,7 @@ abstract class RemoteCommandService {
 
   /// Normalized remote connection state for the selected TV session.
   Stream<ConnectionState> watchConnectionState({required TvDevice device});
+
+  /// Cached or probed model/firmware from the active transport (brand-dependent).
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device});
 }

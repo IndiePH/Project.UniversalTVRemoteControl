@@ -498,6 +498,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsTvDeviceInfoTitle => 'Active TV (transport)';
+
+  @override
+  String get settingsTvDeviceInfoUnavailable =>
+      'No device selected, or the TV has not sent connect details yet. Pair or open Remote after connecting.';
+
+  @override
+  String settingsTvDeviceInfoModelLine(String value) {
+    return 'Model: $value';
+  }
+
+  @override
+  String settingsTvDeviceInfoFirmwareLine(String value) {
+    return 'Firmware: $value';
+  }
+
+  @override
+  String get settingsTvDeviceInfoUnknown => 'unknown';
+
+  @override
   String get settingsCopyDiagnosticsReport => 'Copy diagnostics report';
 
   @override

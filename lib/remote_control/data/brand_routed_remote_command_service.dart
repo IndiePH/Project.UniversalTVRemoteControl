@@ -247,6 +247,15 @@ class BrandRoutedRemoteCommandService
   }
 
   @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async {
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
+    if (adapter == null) {
+      return null;
+    }
+    return adapter.queryDeviceInfo(device: device);
+  }
+
+  @override
   TransportLogReader readerForDevice(TvDevice device) {
     final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter is TransportLogProvider) {

@@ -6,6 +6,7 @@ import 'package:one_remote/remote_control/application/remote_command_service.dar
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class InMemoryRemoteCommandService implements RemoteCommandService {
   @override
@@ -80,4 +81,8 @@ class InMemoryRemoteCommandService implements RemoteCommandService {
   @override
   Stream<ConnectionState> watchConnectionState({required TvDevice device}) =>
       Stream<ConnectionState>.value(ConnectionState.connected);
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
+      null;
 }

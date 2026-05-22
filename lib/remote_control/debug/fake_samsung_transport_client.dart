@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
@@ -17,6 +18,8 @@ class FakeSamsungTransportClient
       <String, StreamController<ConnectionState>>{};
   final Map<String, ConnectionState> _lastConnectionStates =
       <String, ConnectionState>{};
+  final Map<String, TvDeviceInfo> _cachedDeviceInfoByDeviceId =
+      <String, TvDeviceInfo>{};
 
   void _notifyImeReady(String deviceId, bool value) {
     final c = _imeReadyBroadcasters[deviceId];
@@ -26,9 +29,18 @@ class FakeSamsungTransportClient
   }
 
   @override
+  TvDeviceInfo? getCachedDeviceInfo(String deviceId) =>
+      _cachedDeviceInfoByDeviceId[deviceId];
+
+  @override
   Future<void> connect({required String deviceId}) async {
     _emitConnectionState(deviceId, ConnectionState.connecting);
     _connectedDeviceIds.add(deviceId);
+    _cachedDeviceInfoByDeviceId[deviceId] = const TvDeviceInfo(
+      modelIdentifier: 'FAKE-SAMSUNG',
+      firmwareVersion: '0.0.0-fake',
+      debugDetails: 'OS: FakeTizen\nFrame: fake-ms.channel.connect',
+    );
     _notifyImeReady(deviceId, true);
     _emitConnectionState(deviceId, ConnectionState.connected);
     emitTransportEvent(

@@ -4,6 +4,7 @@ import 'package:one_remote/remote_control/application/remote_command_service.dar
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
+import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 /// Records pairing and command dispatch outcomes for the diagnostics dashboard.
 final class DiagnosticsRecordingRemoteCommandService
@@ -101,4 +102,8 @@ final class DiagnosticsRecordingRemoteCommandService
   @override
   Stream<bool> watchRemoteTextInputReady({required TvDevice device}) =>
       _delegate.watchRemoteTextInputReady(device: device);
+
+  @override
+  Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) =>
+      _delegate.queryDeviceInfo(device: device);
 }
