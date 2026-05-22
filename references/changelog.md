@@ -6,6 +6,10 @@ Keep entries short and append new updates at the top.
 ## 2026-05-22
 
 ### Added
+- Samsung connect device info for validation/debug (**TVREMOTE-14**): cache
+  model/firmware/OS from `ms.channel.connect`; `RemoteCommandService.queryDeviceInfo`;
+  `TvDeviceDebugInfoPanel` in settings and debug sheets (`SamsungDeviceInfoSnapshot`,
+  `samsung_device_info_snapshot_test.dart`).
 - Samsung approval-variant physical validation runbook (**TVREMOTE-14**):
   scenarios A–C (first-time approval, token reuse, rejection/timeout recovery),
   code-under-test map, outcome table, and follow-up template in

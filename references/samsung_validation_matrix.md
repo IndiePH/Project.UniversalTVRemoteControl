@@ -125,7 +125,7 @@ transport fix (if TV behavior differs from contract)
 
 **Physical validation (2026-05-22):** scenarios A–C recorded `pass` on Samsung TV
 (hardware run). No follow-up Jira opened from this matrix. Jira **TVREMOTE-14**
-may move to Done when refs are synced and assignee confirms AC closure.
+**Done** (2026-05-22 post-push-sync).
 
 ## Findings (running log)
 
