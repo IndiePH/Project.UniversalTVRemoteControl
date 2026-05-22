@@ -33,6 +33,10 @@ abstract class SamsungTransportClient
   /// pairing is active.
   void cancelPairing(String deviceId);
 
+  /// Clears in-memory pairing token, cached device info, and open sockets for
+  /// [deviceId] so the next pair attempt re-enters TV approval.
+  Future<void> clearPairing({required String deviceId});
+
   /// Last `ms.channel.connect` details for [deviceId], if the TV sent them.
   TvDeviceInfo? getCachedDeviceInfo(String deviceId);
 }

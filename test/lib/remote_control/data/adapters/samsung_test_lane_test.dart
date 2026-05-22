@@ -256,14 +256,39 @@ void main() {
   );
 
   test(
-    'Samsung adapter: unpairDevice is a no-op and completes without error',
+    'Samsung adapter: unpairDevice clears transport pairing for the device',
     () async {
-      final adapter = SamsungAdapter(
-        transportClient: _SpySamsungTransportClient(),
-      );
-      await expectLater(adapter.unpairDevice(device: samsungDevice), completes);
+      final transport = _SpySamsungTransportClient();
+      final adapter = SamsungAdapter(transportClient: transport);
+      await adapter.unpairDevice(device: samsungDevice);
+      expect(transport.clearPairingCalls, 1);
+      expect(transport.clearPairingDeviceIds, [samsungDevice.id]);
     },
   );
+
+  test('Samsung lane: unpairDevice completes without error', () async {
+    final service = BrandRoutedRemoteCommandService(
+      adapters: [
+        SamsungAdapter(transportClient: _SpySamsungTransportClient()),
+      ],
+      variantRegistry: const DefaultVariantResolutionRegistry(),
+      localizedStrings: FakeLocalizedStrings(),
+    );
+    await expectLater(
+      service.unpairDevice(device: samsungDevice),
+      completes,
+    );
+  });
+
+  test('Samsung adapter: back publishes fallback aliases in order', () async {
+    final transport = _SpySamsungTransportClient();
+    final adapter = SamsungAdapter(transportClient: transport);
+    await adapter.sendCommand(
+      device: samsungDevice,
+      command: RemoteCommand.back,
+    );
+    expect(transport.sentKeyCodes, ['KEY_RETURN', 'KEY_BACK']);
+  });
 
   test(
     'Samsung lane: watchRemoteTextInputReady returns false when device lacks textInput capability',
@@ -355,6 +380,8 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
   int probeRemoteTextInputReadyCalls = 0;
   int cancelPairingCalls = 0;
   final List<String> cancelPairingDeviceIds = [];
+  int clearPairingCalls = 0;
+  final List<String> clearPairingDeviceIds = [];
   final List<String> sentKeyCodes = [];
 
   @override
@@ -420,6 +447,12 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
     cancelPairingCalls += 1;
     cancelPairingDeviceIds.add(deviceId);
   }
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {
+    clearPairingCalls += 1;
+    clearPairingDeviceIds.add(deviceId);
+  }
 }
 
 class _TimeoutSamsungTransportClient implements SamsungTransportClient {
@@ -476,6 +509,9 @@ class _TimeoutSamsungTransportClient implements SamsungTransportClient {
 
   @override
   void cancelPairing(String deviceId) {}
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {}
 }
 
 class _RejectingSamsungTransportClient implements SamsungTransportClient {
@@ -531,6 +567,9 @@ class _RejectingSamsungTransportClient implements SamsungTransportClient {
 
   @override
   void cancelPairing(String deviceId) {}
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {}
 }
 
 class _FlakySamsungTransportClient implements SamsungTransportClient {
@@ -597,6 +636,9 @@ class _FlakySamsungTransportClient implements SamsungTransportClient {
 
   @override
   void cancelPairing(String deviceId) {}
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {}
 }
 
 class _SubsetSamsungAdapter implements TvBrandAdapter {

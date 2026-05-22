@@ -151,6 +151,15 @@ class FakeSamsungTransportClient
   @override
   void cancelPairing(String deviceId) {}
 
+  @override
+  Future<void> clearPairing({required String deviceId}) async {
+    _connectedDeviceIds.remove(deviceId);
+    _cachedDeviceInfoByDeviceId.remove(deviceId);
+    _imeReadyBroadcasters.remove(deviceId)?.close();
+    _emitConnectionState(deviceId, ConnectionState.disconnected);
+    log('Samsung transport clearPairing: $deviceId', name: 'samsung_transport');
+  }
+
   Future<void> _ensureConnected(String deviceId) async {
     if (_connectedDeviceIds.contains(deviceId)) {
       return;

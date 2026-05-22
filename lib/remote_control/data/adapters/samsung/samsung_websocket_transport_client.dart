@@ -609,6 +609,19 @@ class SamsungWebSocketTransportClient
   }
 
   @override
+  Future<void> clearPairing({required String deviceId}) async {
+    final host = _hostResolver(deviceId).trim();
+    _pairing.cancelPendingApprovals(host);
+    await _resetConnection(deviceId);
+    _cachedDeviceInfoByDeviceId.remove(deviceId);
+    if (host.isNotEmpty) {
+      _pairing.clearTokenForHost(host);
+      await SamsungTlsTrustStore.instance.clearEndpoint(host, _tlsPort);
+    }
+    _emitConnectionState(deviceId, ConnectionState.disconnected);
+  }
+
+  @override
   Future<void> probe(String host) async {
     for (final port in const [_tlsPort, _plainPort]) {
       try {

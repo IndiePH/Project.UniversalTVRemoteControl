@@ -62,10 +62,9 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   }
 
   @override
-  // TODO(unpair): Samsung has no persistent pairing state yet, so nothing to clear.
-  // When Samsung token/session persistence is added, follow the SharedPreferences
-  // pattern in LgPairingKeyStore + LgWebSocketTransportClient.clearPairing.
-  Future<void> unpairDevice({required TvDevice device}) async {}
+  Future<void> unpairDevice({required TvDevice device}) async {
+    await _transportClient.clearPairing(deviceId: device.id);
+  }
 
   @override
   Future<void> cancelPairing({required TvDevice device}) async =>

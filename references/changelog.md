@@ -6,6 +6,12 @@ Keep entries short and append new updates at the top.
 ## 2026-05-22
 
 ### Added
+- Samsung adapter refinement C1 (**TVREMOTE-38**): `SamsungTransportClient.clearPairing`;
+  WebSocket client clears token, cached device info, TLS pins, and sockets;
+  `SamsungAdapter.unpairDevice` delegates; fake transport mirrors.
+  `SamsungKeyMapper` back command adds `KEY_BACK` alias after `KEY_RETURN`.
+  Tests in `samsung_test_lane_test.dart` and `samsung_key_mapper_test.dart` (44
+  Samsung-lane tests passed).
 - Hisense SSDP fingerprint regression tests (**TVREMOTE-7**): expanded
   `ssdp_brand_inference_test.dart` for `hisense` / `vidaa` / `hiview` headers
   and `nt` probe inclusion.

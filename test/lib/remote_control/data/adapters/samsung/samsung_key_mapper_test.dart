@@ -89,8 +89,11 @@ void main() {
       expect(mapper.keyCodesFor(RemoteCommand.dpadOk), ['KEY_ENTER']);
     });
 
-    test('returns KEY_RETURN for back', () {
-      expect(mapper.keyCodesFor(RemoteCommand.back), ['KEY_RETURN']);
+    test('returns back aliases in firmware-tolerant order', () {
+      expect(mapper.keyCodesFor(RemoteCommand.back), [
+        'KEY_RETURN',
+        'KEY_BACK',
+      ]);
     });
 
     test('returns KEY_HOME for home', () {
