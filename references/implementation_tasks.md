@@ -12,7 +12,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-8** — Saved-device remove/last-used fallback test coverage completed (`test/widget_test.dart`); tracks `Next Up → Expand tests → saved-device remove/last-used fallback paths`.
 - **TVREMOTE-36** — Per-brand TV adapters and transports (**implementation** epic; **To Do** in Jira; structured for additional OEMs later).
 - **TVREMOTE-37** — Per-brand TV adapter and transport **testing** epic (Samsung / LG / Hisense lanes today; **To Do** in Jira).
-- **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring), plus transport-abstraction **TVREMOTE-52** / **TVREMOTE-53** (**Done** in Jira — shared marker + event adoption shipped in repo). **TVREMOTE-40** — Hisense adapter refinement (**In Progress** in Jira; C1 shipped in repo — Status Tracker). **TVREMOTE-48** — Hisense protocol-level pairing verification (**Done** in Jira; merged into **TVREMOTE-40**). **TVREMOTE-7**, **TVREMOTE-14**, and **TVREMOTE-18** are parented under TVREMOTE-36.
+- **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring), plus transport-abstraction **TVREMOTE-52** / **TVREMOTE-53** (**Done** in Jira — shared marker + event adoption shipped in repo). **TVREMOTE-40** — Hisense adapter refinement (**In Progress** in Jira; C1 shipped in repo — Status Tracker). **TVREMOTE-48** — Hisense protocol-level pairing verification (**Done** in Jira; merged into **TVREMOTE-40**). **TVREMOTE-7** — Hisense Android SSDP re-validation (**In Progress** in Jira; physical validation **pass** on Hisense TV 2026-05-22 — `references/hisense_validation_matrix.md`; repo AC met). **TVREMOTE-14** and **TVREMOTE-18** are parented under TVREMOTE-36.
 - **TVREMOTE-14** — Samsung approval variants on physical devices (**Done** in Jira; runbook + outcome table in `references/samsung_validation_matrix.md`; scenarios A–C **pass** on Samsung TV 2026-05-22; Samsung connect info in settings/debug sheets for model/firmware capture).
 - **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung; **In Progress**), **TVREMOTE-50** (LG; **Done** in Jira), **TVREMOTE-51** (Hisense; **In Progress**); **TVREMOTE-13** is parented under TVREMOTE-37 (Samsung approval timeout/rejection + recovery regression tests shipped in `samsung_test_lane_test.dart` and `samsung_pairing_token_store_test.dart`; **In Progress** in Jira). Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
 - **TVREMOTE-12** — Pairing success/failure path tests (**In Progress** in Jira; coordinator coverage shipped in `pairing_page_coordinator_test.dart`; parent **TVREMOTE-2**).
@@ -182,10 +182,12 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Physical validation — scenario B token reuse: **pass** (Samsung TV, 2026-05-22)
   - [x] Physical validation — scenario C rejection/timeout recovery UX: **pass** (Samsung TV, 2026-05-22; unit paths in `TVREMOTE-13`)
   - [x] Samsung `ms.channel.connect` device info cached and shown in settings/debug via `queryDeviceInfo` + `TvDeviceDebugInfoPanel` (2026-05-22)
+- [x] Milestone 1 / Task 1.1 — Hisense Android SSDP re-validation (`TVREMOTE-7`):
+  - [x] Runbook + fallback-path decision in `references/hisense_validation_matrix.md` (manual IP + `TV_HOST_OVERRIDE`; port-`36669` sweep deferred)
+  - [x] SSDP fingerprint unit tests (`ssdp_brand_inference_test.dart` — `hisense` / `vidaa` / `hiview` + `nt` probe)
+  - [x] Physical validation on Hisense TV (2026-05-22): SSDP scan, manual-IP pair, PIN flow, keys, reconnect **pass** in known-good matrix
 
 ### In Progress
-- [ ] Milestone 1 / Task 1.1:
-  - [ ] Re-validate **Hisense discovery on Android APK** after multicast-lock change (empty scan vs AP isolation vs SSDP headers); runbook + fallback-path decision live in `references/hisense_validation_matrix.md` (`TVREMOTE-7`). Decision recorded: manual IP via pairing UI + `TV_HOST_OVERRIDE` is the primary fallback; active port-`36669` sweep deferred until ≥2 validated routers still empty-scan on real Hisense hardware. Outstanding: fill known-good matrix from physical-device runs.
 - [ ] Milestone 3 / Task 3.1:
   - [ ] Continue usability polish for edit mode visual affordances and small-screen readability
 

@@ -6,6 +6,9 @@ Keep entries short and append new updates at the top.
 ## 2026-05-22
 
 ### Added
+- Hisense SSDP fingerprint regression tests (**TVREMOTE-7**): expanded
+  `ssdp_brand_inference_test.dart` for `hisense` / `vidaa` / `hiview` headers
+  and `nt` probe inclusion.
 - Samsung connect device info for validation/debug (**TVREMOTE-14**): cache
   model/firmware/OS from `ms.channel.connect`; `RemoteCommandService.queryDeviceInfo`;
   `TvDeviceDebugInfoPanel` in settings and debug sheets (`SamsungDeviceInfoSnapshot`,
@@ -16,6 +19,10 @@ Keep entries short and append new updates at the top.
   `references/samsung_validation_matrix.md`.
 
 ### Verification
+- Hisense Android SSDP physical validation (**TVREMOTE-7**): Hisense TV —
+  SSDP scan, manual-IP pair, PIN flow, keys, reconnect **pass** (2026-05-22)
+  in `references/hisense_validation_matrix.md` known-good matrix; fallback
+  policy unchanged (manual IP + `TV_HOST_OVERRIDE`; port sweep deferred).
 - Samsung approval-variant physical validation (**TVREMOTE-14**): scenarios A–C
   recorded **pass** on Samsung TV (2026-05-22) in
   `references/samsung_validation_matrix.md` approval outcome table; no follow-up
@@ -33,6 +40,8 @@ Keep entries short and append new updates at the top.
   Mobile Ads plugin is absent so the settings sheet is not blocked in widget tests.
 
 ### Verification (automated)
+- `flutter test test/lib/remote_control/data/ssdp_brand_inference_test.dart` passed
+  (**TVREMOTE-7**; 8 tests; 2026-05-22).
 - `dart format --output=none --set-exit-if-changed .`, `flutter analyze --fatal-infos`,
   `flutter test` (389 passed, 1 skipped; includes **TVREMOTE-11** widget edge cases).
 

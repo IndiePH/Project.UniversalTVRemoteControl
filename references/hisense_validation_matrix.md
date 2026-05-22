@@ -74,7 +74,7 @@ lane), aligned with implementation threads under `TVREMOTE-36`.
 
 | Date | TV model | Firmware | SSDP scan | Manual-IP pair | PIN flow | Keys | Reconnect | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| YYYY-MM-DD |  |  | pass / fail (empty) | pass / fail | pass / fail | pass / fail | pass / fail |  |
+| 2026-05-22 | Hisense TV |  | pass | pass | pass | pass | pass | Android APK; SSDP discovered TV on scan; manual-IP fallback not required on this hardware |
 
 ## Findings (running log)
 
@@ -83,6 +83,13 @@ lane), aligned with implementation threads under `TVREMOTE-36`.
   `hisense` / `vidaa` / `hiview`, M-SEARCH includes `MediaServer:1`. No
   regression vs shipped Task 1.1 hardening. Awaiting physical-device run to
   fill the known-good matrix.
+- _2026-05-22_ — Automated regression (**TVREMOTE-7** C1): unit tests in
+  `test/lib/remote_control/data/ssdp_brand_inference_test.dart` lock Hisense
+  SSDP fingerprints (`hisense` / `vidaa` / `hiview` + `nt` in probe text).
+- _2026-05-22_ — Physical validation (**TVREMOTE-7**): Hisense TV — SSDP scan,
+  manual-IP pair, PIN flow, keys, reconnect **pass** (known-good matrix row).
+  Fallback policy unchanged (manual IP + `TV_HOST_OVERRIDE`; port-`36669`
+  sweep still deferred — SSDP succeeded on validated hardware).
 
 ## Fallback Path Decision (TVREMOTE-7 AC)
 
@@ -128,3 +135,4 @@ for single-TV lab runs. **Defer** an active port-`36669` LAN sweep.
 - Store concise failures with reproduction hints and mitigation notes.
 - Link Jira follow-ups when new issues are identified (e.g. router-specific
   multicast bugs, firmware-specific empty-header responses).
+
