@@ -30,7 +30,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-18** — Discovery brand identification + pairing routing (**In Progress** in Jira; Task 2.2 C1 shipped in repo — SSDP fingerprint module, IP-level merge with brand priority, limited/experimental support notes on discovery list).
 - **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (**In Progress** in Jira; C1 shipped in repo).
 - **TVREMOTE-70** — TCL legacy Wi-Fi variant resolution: exact transport model marker, registry catch-all, capabilities, pairing constant (**Done** in Jira; parent **TVREMOTE-36**). Physical validation still **experimental** — `references/tcl_validation_matrix.md`.
-- **TVREMOTE-31** — Milestone 0 / Task 0.2: CI quality baseline (`flutter_ci.yml`: format, analyze, test on PRs); `AppBuildConfig` + README build-profile/flavor gap notes; Gradle flavor placeholder comments (**In Progress** in Jira; C1 shipped in repo).
+- **TVREMOTE-31** — Milestone 0 / Task 0.2: CI quality baseline (`flutter_ci.yml`: format, analyze, test on PRs); `AppBuildConfig` + README build-profile/flavor gap notes; Gradle flavor placeholder comments (**Done** in Jira; parent **TVREMOTE-5**).
 
 ## Status Tracker (Current)
 
