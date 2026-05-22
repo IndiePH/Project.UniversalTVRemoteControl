@@ -156,9 +156,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Android APK SSDP: acquire Wi‑Fi **multicast lock** for the scan window (`flutter_multicast_lock`); manifest already declared `CHANGE_WIFI_MULTICAST_STATE` / `ACCESS_WIFI_STATE` / `INTERNET` — runtime lock was the missing piece for reliable multicast receive
   - [x] Hisense-oriented SSDP tuning: extra M-SEARCH `urn:schemas-upnp-org:device:MediaServer:1`, include `NT` in fingerprint probe, match `hiview` where firmware omits `hisense`/`vidaa` in headers
   - [x] Note: community Hisense MQTT docs (e.g. mqtt-hisensetv) assume **manual IP** + port `36669`; SSDP remains best-effort for VIDAA/DLNA fingerprints
-
-### In Progress
-- [ ] Milestone 1 / Task 1.6:
+- [x] Milestone 1 / Task 1.6 (`TVREMOTE-11`):
   - [x] Basic widget test coverage is in place
   - [x] Added full-loop widget pass:
     - [x] pair to newly discovered TV
@@ -171,11 +169,13 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [x] fake transport mode shows fake discovery devices in pairing list
     - [x] copy transport logs keeps debug sheet open when no log exists
   - [x] Added pairing success/failure/retry coordinator coverage (`TVREMOTE-12`) in `test/lib/remote_control/presentation/pages/pairing_page_coordinator_test.dart`: non-PIN success persistence + manual-IP save + enriched-device fallback, non-PIN failure no-save invariants + sanitized-message + unsupported→failure, PIN retry depth (3-rejection eventual success, 5-rejection cancel, verbatim PIN forwarding, per-attempt `onPinRejected`), and `cancelPairing` delegation to `RemoteCommandService`
-  - [x] Broader scenario tests and network edge-case validation (`TVREMOTE-11`):
+  - [x] Broader scenario tests and network edge-case validation:
     - [x] Discovery scan failure surfaces `pairingDiscoveryFailed` and clears loading state
     - [x] Empty discovery shows `pairingNoDevicesFound`; manual rescan recovers devices
     - [x] Returning flow: last-used TV restored on `RemoteHomePage` launch with connected stub; command send succeeds
     - [x] Command dispatch failure surfaces error status/toast without success message
+
+### In Progress
 - [ ] Milestone 1 / Task 1.1:
   - [ ] Broaden physical-device validation for Samsung approval/pairing variants:
     - [ ] first-time approval
