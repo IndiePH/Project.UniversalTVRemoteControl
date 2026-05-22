@@ -30,6 +30,7 @@ Keep entries short and append new updates at the top.
   pairing session + unhandled-error hooks.
 
 ### Verification
+- Third-party license scan (**TVREMOTE-32**): `flutter test` — full suite passed (2026-05-22); `flutter analyze` clean on settings/license touchpoints.
 - Telemetry/diagnostics C1 (**TVREMOTE-29**): `flutter test test/lib/app/diagnostics/app_diagnostics_recorder_test.dart` — 1 test passed (2026-05-22).
 - Hisense Android SSDP physical validation (**TVREMOTE-7**): Hisense TV —
   SSDP scan, manual-IP pair, PIN flow, keys, reconnect **pass** (2026-05-22)
