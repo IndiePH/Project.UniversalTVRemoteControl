@@ -1120,6 +1120,12 @@ abstract class AppLocalizations {
   /// **'Legal'**
   String get settingsLegalSectionTitle;
 
+  /// No description provided for @settingsOpenSourceLicenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open source licenses'**
+  String get settingsOpenSourceLicenses;
+
   /// No description provided for @settingsPrivacyPolicy.
   ///
   /// In en, this message translates to:

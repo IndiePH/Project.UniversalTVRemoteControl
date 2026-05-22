@@ -355,6 +355,7 @@
   "feedbackSendFailed": "Could not send feedback. Try again later.",
 
   "settingsLegalSectionTitle": "Legal",
+  "settingsOpenSourceLicenses": "Open source licenses",
   "settingsPrivacyPolicy": "Privacy policy",
   "settingsAdPrivacyOptions": "Ad privacy settings",
   "settingsLegalLinkFailed": "Could not open the link."

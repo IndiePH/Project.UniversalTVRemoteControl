@@ -6,6 +6,7 @@ Keep entries short and append new updates at the top.
 ## 2026-05-22
 
 ### Added
+- Third-party license scan (**TVREMOTE-32**): full direct-dependency table, protocol/asset audit, and release go/no-go in `references/third_party_licenses.md`; Settings → Legal → **Open source licenses** (`showLicensePage` with app version).
 - Samsung adapter refinement C1 (**TVREMOTE-38**): `SamsungTransportClient.clearPairing`;
   WebSocket client clears token, cached device info, TLS pins, and sockets;
   `SamsungAdapter.unpairDevice` delegates; fake transport mirrors.

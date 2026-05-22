@@ -762,6 +762,26 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     }
   }
 
+  Future<void> _showOpenSourceLicenses(BuildContext sheetContext) async {
+    final l10n = AppLocalizations.of(sheetContext)!;
+    String? versionLabel;
+    try {
+      final packageInfo =
+          await GetIt.instance<AppPackageInfoSource>().getPackageInfo();
+      versionLabel = packageInfo.versionLabel;
+    } catch (_) {
+      versionLabel = null;
+    }
+    if (!sheetContext.mounted) {
+      return;
+    }
+    showLicensePage(
+      context: sheetContext,
+      applicationName: l10n.appTitle,
+      applicationVersion: versionLabel,
+    );
+  }
+
   Future<void> _openAdPrivacyOptions(BuildContext sheetContext) async {
     await AdConsentCoordinator.showPrivacyOptionsForm();
     if (sheetContext.mounted) {
@@ -859,6 +879,9 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                             Navigator.pop(sheetContext);
                             unawaited(_showFeedbackSheet());
                           },
+                          onOpenOpenSourceLicenses: () => unawaited(
+                            _showOpenSourceLicenses(sheetContext),
+                          ),
                           showPrivacyPolicyLink: showPrivacyPolicyLink,
                           onOpenPrivacyPolicy: () =>
                               unawaited(_openPrivacyPolicy(sheetContext)),

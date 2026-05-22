@@ -31,6 +31,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-18** — Discovery brand identification + pairing routing (**In Progress** in Jira; Task 2.2 C1 shipped in repo — SSDP fingerprint module, IP-level merge with brand priority, limited/experimental support notes on discovery list).
 - **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (four test files, 16 tests; **Done** in Jira, 2026-05-22).
 - **TVREMOTE-70** — TCL legacy Wi-Fi variant resolution: exact transport model marker, registry catch-all, capabilities, pairing constant (**Done** in Jira; parent **TVREMOTE-36**). Physical validation still **experimental** — `references/tcl_validation_matrix.md`.
+- **TVREMOTE-32** — Third-party license scan + attribution (**Done** in Jira, 2026-05-22): direct `pubspec.yaml` deps audited in `references/third_party_licenses.md`; no GPL/AGPL direct runtime deps; Settings → Legal → **Open source licenses** (`showLicensePage`). Manufacturer API ToS + Prime/Disney streaming trademarks still pending (not copyleft blockers).
 - **TVREMOTE-31** — Milestone 0 / Task 0.2: CI quality baseline (`flutter_ci.yml`: format, analyze, test on PRs); `AppBuildConfig` + README build-profile/flavor gap notes; Gradle flavor placeholder comments (**Done** in Jira; parent **TVREMOTE-5**).
 - **TVREMOTE-11** — Milestone 1 / Task 1.6: vertical-slice widget/integration coverage — pair→remote→command, remove-flow regressions, discovery failure/empty-rescan, returning last-used launch, command-dispatch failure (**Done** in Jira; shipped in `test/widget_test.dart`).
 
@@ -414,10 +415,10 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 
 ## Final Release Gate (Legal & Compliance)
 
-- [ ] Run a legal/license pass for any adopted external protocol references or copied logic before release.
-- [ ] Confirm third-party notices/attributions and license text obligations are satisfied in-app/repository.
-- [ ] Record final go/no-go license status in `references/third_party_licenses.md`.
-- [ ] Block release if any unresolved copyleft or attribution obligations remain.
+- [x] Run a legal/license pass for any adopted external protocol references or copied logic before release (**TVREMOTE-32**, 2026-05-22 — `references/third_party_licenses.md` protocol + dependency audit).
+- [x] Confirm third-party notices/attributions and license text obligations are satisfied in-app/repository (**TVREMOTE-32** — Settings → Legal → Open source licenses; tracker doc updated).
+- [x] Record final go/no-go license status in `references/third_party_licenses.md` (**TVREMOTE-32** — OSS **Go**; manufacturer ToS + streaming trademarks conditional).
+- [x] No unresolved **copyleft** obligations in direct runtime dependencies (**TVREMOTE-32**); manufacturer API ToS and brand marks remain separate gates (**TVREMOTE-26** / compliance §2.1).
 - [ ] **Store submission blockers** (expanded checklist: `references/compliance-and-release-requirements.md`):
   - [ ] Privacy policy at a live public URL; linked in App Store Connect and Play Console (in-app link scaffold only until URL is live).
   - [x] iOS: App Tracking Transparency integrated in app code; prompt before first ad SDK init (`AdConsentCoordinator`).

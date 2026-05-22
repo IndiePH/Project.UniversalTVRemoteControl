@@ -612,6 +612,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLegalSectionTitle => 'Legal';
 
   @override
+  String get settingsOpenSourceLicenses => 'Open source licenses';
+
+  @override
   String get settingsPrivacyPolicy => 'Privacy policy';
 
   @override

@@ -83,7 +83,7 @@ These won't trigger automated rejection but expose the project to API terminatio
 - [ ] **Samsung (SmartThings):** Review developer terms at Samsung's developer portal before commercial release. A formal developer agreement may be required.
 - [ ] **LG (ThinQ / webOS):** Review developer terms at LG's developer portal. Registration or approval may be required for commercial use.
 - [ ] **Hisense (VIDAA):** Verify whether commercial use of the VIDAA protocol requires any agreement.
-- [ ] Record the outcome of each review in `third_party_licenses.md`
+- [ ] Record the outcome of each review in `third_party_licenses.md` (OSS dependency + in-app license pass recorded **2026-05-22** — **TVREMOTE-32**; per-OEM ToS rows still open)
 
 > Shipping without complying with manufacturer API terms risks access being revoked post-launch.
 
