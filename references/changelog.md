@@ -6,6 +6,11 @@ Keep entries short and append new updates at the top.
 ## 2026-05-22
 
 ### Added
+- Samsung approval-variant physical validation runbook (**TVREMOTE-14**):
+  scenarios A–C (first-time approval, token reuse, rejection/timeout recovery),
+  code-under-test map, outcome table, and follow-up template in
+  `references/samsung_validation_matrix.md` (physical pass/fail rows still
+  pending hardware).
 - Vertical-slice widget/integration coverage (**TVREMOTE-11**): `test/widget_test.dart`
   adds discovery failure + empty-rescan recovery, returning last-used launch with
   command send, and command-dispatch failure surfacing (status + toast).
