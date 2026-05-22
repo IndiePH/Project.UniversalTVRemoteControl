@@ -31,6 +31,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (**In Progress** in Jira; C1 shipped in repo).
 - **TVREMOTE-70** — TCL legacy Wi-Fi variant resolution: exact transport model marker, registry catch-all, capabilities, pairing constant (**Done** in Jira; parent **TVREMOTE-36**). Physical validation still **experimental** — `references/tcl_validation_matrix.md`.
 - **TVREMOTE-31** — Milestone 0 / Task 0.2: CI quality baseline (`flutter_ci.yml`: format, analyze, test on PRs); `AppBuildConfig` + README build-profile/flavor gap notes; Gradle flavor placeholder comments (**Done** in Jira; parent **TVREMOTE-5**).
+- **TVREMOTE-11** — Milestone 1 / Task 1.6: vertical-slice widget/integration coverage — pair→remote→command, remove-flow regressions, discovery failure/empty-rescan, returning last-used launch, command-dispatch failure (**Done** in Jira; shipped in `test/widget_test.dart`).
 
 ## Status Tracker (Current)
 
@@ -170,7 +171,11 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [x] fake transport mode shows fake discovery devices in pairing list
     - [x] copy transport logs keeps debug sheet open when no log exists
   - [x] Added pairing success/failure/retry coordinator coverage (`TVREMOTE-12`) in `test/lib/remote_control/presentation/pages/pairing_page_coordinator_test.dart`: non-PIN success persistence + manual-IP save + enriched-device fallback, non-PIN failure no-save invariants + sanitized-message + unsupported→failure, PIN retry depth (3-rejection eventual success, 5-rejection cancel, verbatim PIN forwarding, per-attempt `onPinRejected`), and `cancelPairing` delegation to `RemoteCommandService`
-  - [ ] Broader scenario tests and network edge-case validation pending
+  - [x] Broader scenario tests and network edge-case validation (`TVREMOTE-11`):
+    - [x] Discovery scan failure surfaces `pairingDiscoveryFailed` and clears loading state
+    - [x] Empty discovery shows `pairingNoDevicesFound`; manual rescan recovers devices
+    - [x] Returning flow: last-used TV restored on `RemoteHomePage` launch with connected stub; command send succeeds
+    - [x] Command dispatch failure surfaces error status/toast without success message
 - [ ] Milestone 1 / Task 1.1:
   - [ ] Broaden physical-device validation for Samsung approval/pairing variants:
     - [ ] first-time approval
@@ -201,6 +206,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Samsung approval timeout/rejection handling paths (`TVREMOTE-13`): service-lane failures preserve `TimeoutException` / `SamsungTransportAuthorizationException` messaging; retry-after-failure + `cancelPairing` delegation; token-store unauthorized/cancel/recovery unit tests
   - [ ] adapter capability unsupported flows
   - [x] saved-device remove/last-used fallback paths
+  - [x] vertical-slice widget/integration edge cases (`TVREMOTE-11`): discovery failure, empty-rescan recovery, returning last-used launch, command failure surfacing
 - [ ] Implement missing per-brand text-input transports and re-enable capability flags after validation
 - [x] Add focused widget tests for (**TVREMOTE-20**):
   - [x] drag/drop swap behavior (including multi-cell items and resolver rejection vs accept paths) — `remote_layout_drop_resolver_test.dart`

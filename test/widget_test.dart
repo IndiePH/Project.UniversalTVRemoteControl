@@ -767,6 +767,163 @@ void main() {
     },
   );
 
+  testWidgets('shows discovery error when network scan throws', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: PairingPage(
+          commandService: InMemoryRemoteCommandService(),
+          discoveryService: _ThrowingDiscoveryService(),
+          deviceRepository: InMemoryDeviceRepository(),
+          stepsRegistry: DefaultPrePairingStepsRegistry(
+            localizedStrings: FakeLocalizedStrings(),
+          ),
+          hintRegistry: DefaultPairingProgressHintRegistry(
+            localizedStrings: FakeLocalizedStrings(),
+          ),
+          reachabilityService: _StubTvReachabilityService(),
+          proEntitlementService: _buildEntitledProService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Discovery failed. Please try again.'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('empty discovery rescan recovers after transient failure', (
+    WidgetTester tester,
+  ) async {
+    final discoveryService = _RecoveringDiscoveryService();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: PairingPage(
+          commandService: InMemoryRemoteCommandService(),
+          discoveryService: discoveryService,
+          deviceRepository: InMemoryDeviceRepository(),
+          stepsRegistry: DefaultPrePairingStepsRegistry(
+            localizedStrings: FakeLocalizedStrings(),
+          ),
+          hintRegistry: DefaultPairingProgressHintRegistry(
+            localizedStrings: FakeLocalizedStrings(),
+          ),
+          reachabilityService: _StubTvReachabilityService(),
+          proEntitlementService: _buildEntitledProService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('No TVs found yet. Run a scan to discover devices.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byTooltip('Scan for TVs'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('LG OLED - Bedroom'), findsOneWidget);
+    expect(discoveryService.scanAttempts, 2);
+  });
+
+  testWidgets('restores last-used TV on launch and sends command', (
+    WidgetTester tester,
+  ) async {
+    final repository = InMemoryDeviceRepository();
+    const savedTv = TvDevice(
+      id: 'samsung-living-room',
+      displayName: 'Living Room TV',
+      brand: TvBrand.samsung,
+      capabilities: {
+        DeviceCapability.keyCommands,
+        DeviceCapability.powerControl,
+      },
+    );
+    await repository.saveDevice(savedTv);
+    await repository.setLastUsedDevice(savedTv.id);
+    final commandService = _ConnectionStateStubCommandService(
+      initialState: remote_connection.ConnectionState.connected,
+    );
+    addTearDown(commandService.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RemoteHomePage(
+          appEnvironment: AppEnvironment.debug,
+          interstitialAdController: _buildInterstitialAdController(),
+          commandService: commandService,
+          deviceRepository: repository,
+          discoveryService: _EmptyDiscoveryService(),
+          layoutRepository: _InMemoryLayoutRepository(),
+          proEntitlementService: _buildEntitledProService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Living Room TV'), findsOneWidget);
+    expect(find.text('Ready'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.power_settings_new));
+    await tester.pump();
+
+    expect(find.text('Sent: power'), findsOneWidget);
+  });
+
+  testWidgets('surfaces command dispatch failure on remote grid', (
+    WidgetTester tester,
+  ) async {
+    final repository = InMemoryDeviceRepository();
+    const savedTv = TvDevice(
+      id: 'samsung-living-room',
+      displayName: 'Living Room TV',
+      brand: TvBrand.samsung,
+      capabilities: {
+        DeviceCapability.keyCommands,
+        DeviceCapability.powerControl,
+      },
+    );
+    await repository.saveDevice(savedTv);
+    await repository.setLastUsedDevice(savedTv.id);
+    final commandService = _ConnectionStateStubCommandService(
+      initialState: remote_connection.ConnectionState.connected,
+      sendCommandResult: CommandDispatchResult.failure('Network timeout'),
+    );
+    addTearDown(commandService.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RemoteHomePage(
+          appEnvironment: AppEnvironment.debug,
+          interstitialAdController: _buildInterstitialAdController(),
+          commandService: commandService,
+          deviceRepository: repository,
+          discoveryService: _EmptyDiscoveryService(),
+          layoutRepository: _InMemoryLayoutRepository(),
+          proEntitlementService: _buildEntitledProService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.power_settings_new));
+    await tester.pump();
+
+    expect(find.text('Network timeout'), findsWidgets);
+    expect(find.text('Sent: power'), findsNothing);
+  });
+
   testWidgets(
     'removing non-active last-used device falls back without REMOVE guard',
     (WidgetTester tester) async {
@@ -883,6 +1040,26 @@ class _EmptyDiscoveryService implements DeviceDiscoveryService {
   Future<List<TvDevice>> discoverDevices() async => const <TvDevice>[];
 }
 
+class _ThrowingDiscoveryService implements DeviceDiscoveryService {
+  @override
+  Future<List<TvDevice>> discoverDevices() async {
+    throw StateError('simulated discovery transport failure');
+  }
+}
+
+class _RecoveringDiscoveryService implements DeviceDiscoveryService {
+  int scanAttempts = 0;
+
+  @override
+  Future<List<TvDevice>> discoverDevices() async {
+    scanAttempts++;
+    if (scanAttempts == 1) {
+      return const <TvDevice>[];
+    }
+    return _StaticDiscoveryService._devices;
+  }
+}
+
 class _StubTvReachabilityService implements TvReachabilityService {
   @override
   Future<bool> isReachable(TvDevice device) async => false;
@@ -937,8 +1114,10 @@ class _ConnectionStateStubCommandService implements RemoteCommandService {
   _ConnectionStateStubCommandService({
     required remote_connection.ConnectionState initialState,
     List<TvDevice>? recordUnpairTo,
+    CommandDispatchResult? sendCommandResult,
   }) : _state = initialState,
        _recordUnpairTo = recordUnpairTo,
+       _sendCommandResult = sendCommandResult,
        _controller =
            StreamController<remote_connection.ConnectionState>.broadcast(
              onListen: () {},
@@ -946,6 +1125,7 @@ class _ConnectionStateStubCommandService implements RemoteCommandService {
 
   remote_connection.ConnectionState _state;
   final List<TvDevice>? _recordUnpairTo;
+  final CommandDispatchResult? _sendCommandResult;
   final StreamController<remote_connection.ConnectionState> _controller;
 
   void emitConnectionState(remote_connection.ConnectionState state) {
@@ -980,7 +1160,13 @@ class _ConnectionStateStubCommandService implements RemoteCommandService {
   Future<CommandDispatchResult> sendCommand({
     required TvDevice device,
     required RemoteCommand command,
-  }) async => CommandDispatchResult.success('ok');
+  }) async {
+    final override = _sendCommandResult;
+    if (override != null) {
+      return override;
+    }
+    return CommandDispatchResult.success('Sent: ${command.name}');
+  }
 
   @override
   Future<CommandDispatchResult> sendText({

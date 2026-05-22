@@ -6,6 +6,9 @@ Keep entries short and append new updates at the top.
 ## 2026-05-22
 
 ### Added
+- Vertical-slice widget/integration coverage (**TVREMOTE-11**): `test/widget_test.dart`
+  adds discovery failure + empty-rescan recovery, returning last-used launch with
+  command send, and command-dispatch failure surfacing (status + toast).
 - CI / environment baseline (**TVREMOTE-31**): `.github/workflows/flutter_ci.yml`
   (format, analyze, test on PRs to `main` / `master` / `develop`);
   `AppBuildConfig` maps Flutter build mode to `AppEnvironment`; README build-profile
@@ -17,7 +20,7 @@ Keep entries short and append new updates at the top.
 
 ### Verification
 - `dart format --output=none --set-exit-if-changed .`, `flutter analyze --fatal-infos`,
-  `flutter test` (385 passed, 1 skipped).
+  `flutter test` (389 passed, 1 skipped; includes **TVREMOTE-11** widget edge cases).
 
 ## 2026-05-21
 
