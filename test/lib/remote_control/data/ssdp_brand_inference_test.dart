@@ -24,9 +24,7 @@ void main() {
 
     test('identifies Hisense from hisense in server header', () {
       expect(
-        inferSsdpTvBrand({
-          'server': 'hisense upnp/1.0 linux/3.14',
-        }),
+        inferSsdpTvBrand({'server': 'hisense upnp/1.0 linux/3.14'}),
         TvBrand.hisense,
       );
     });

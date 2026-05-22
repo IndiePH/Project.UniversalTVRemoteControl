@@ -44,7 +44,7 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   final bool showDebugSection;
   final TvDevice? activeDevice;
   final Future<TvDeviceInfo?> Function({required TvDevice device})
-      queryDeviceInfo;
+  queryDeviceInfo;
   final bool showTransportToggle;
   final bool useFakeTransports;
   final Future<void> Function(bool value) onUseFakeTransportsChanged;

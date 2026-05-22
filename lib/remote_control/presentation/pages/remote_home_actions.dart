@@ -88,8 +88,7 @@ final class RemoteHomeActions {
     required Future<bool> Function() onCopyTransportLogs,
     required Future<void> Function() onCopyRuntimeFlagsTemplate,
     TvDevice? activeDevice,
-    Future<TvDeviceInfo?> Function({required TvDevice device})?
-        queryDeviceInfo,
+    Future<TvDeviceInfo?> Function({required TvDevice device})? queryDeviceInfo,
   }) async {
     final env = GetIt.instance<AppEnvironment>();
     final isDebug = env == AppEnvironment.debug;

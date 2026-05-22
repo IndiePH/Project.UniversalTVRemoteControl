@@ -268,16 +268,11 @@ void main() {
 
   test('Samsung lane: unpairDevice completes without error', () async {
     final service = BrandRoutedRemoteCommandService(
-      adapters: [
-        SamsungAdapter(transportClient: _SpySamsungTransportClient()),
-      ],
+      adapters: [SamsungAdapter(transportClient: _SpySamsungTransportClient())],
       variantRegistry: const DefaultVariantResolutionRegistry(),
       localizedStrings: FakeLocalizedStrings(),
     );
-    await expectLater(
-      service.unpairDevice(device: samsungDevice),
-      completes,
-    );
+    await expectLater(service.unpairDevice(device: samsungDevice), completes);
   });
 
   test('Samsung adapter: back publishes fallback aliases in order', () async {

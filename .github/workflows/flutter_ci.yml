@@ -5,12 +5,10 @@ on:
     branches:
       - main
       - master
-      - develop
   pull_request:
     branches:
       - main
       - master
-      - develop
 
 concurrency:
   group: flutter-ci-${{ github.workflow }}-${{ github.ref }}

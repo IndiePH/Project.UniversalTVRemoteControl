@@ -766,8 +766,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     final l10n = AppLocalizations.of(sheetContext)!;
     String? versionLabel;
     try {
-      final packageInfo =
-          await GetIt.instance<AppPackageInfoSource>().getPackageInfo();
+      final packageInfo = await GetIt.instance<AppPackageInfoSource>()
+          .getPackageInfo();
       versionLabel = packageInfo.versionLabel;
     } catch (_) {
       versionLabel = null;
@@ -842,7 +842,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                           onRestorePurchases: () => unawaited(_restorePro()),
                           showDebugSection: showDebugSection,
                           activeDevice: _activeDevice,
-                          queryDeviceInfo: widget.commandService.queryDeviceInfo,
+                          queryDeviceInfo:
+                              widget.commandService.queryDeviceInfo,
                           diagnosticsRecorder:
                               GetIt.instance<AppDiagnosticsRecorder>(),
                           showTransportToggle: isDebug,
@@ -879,9 +880,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                             Navigator.pop(sheetContext);
                             unawaited(_showFeedbackSheet());
                           },
-                          onOpenOpenSourceLicenses: () => unawaited(
-                            _showOpenSourceLicenses(sheetContext),
-                          ),
+                          onOpenOpenSourceLicenses: () =>
+                              unawaited(_showOpenSourceLicenses(sheetContext)),
                           showPrivacyPolicyLink: showPrivacyPolicyLink,
                           onOpenPrivacyPolicy: () =>
                               unawaited(_openPrivacyPolicy(sheetContext)),

@@ -42,7 +42,7 @@ Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — 
 
 ## CI and local quality checks
 
-GitHub Actions workflow [`.github/workflows/flutter_ci.yml`](.github/workflows/flutter_ci.yml) runs on pushes and pull requests to `main`, `master`, and `develop`:
+GitHub Actions workflow [`.github/workflows/flutter_ci.yml`](.github/workflows/flutter_ci.yml) runs on pushes and pull requests to `main` and `master`:
 
 1. `dart format --output=none --set-exit-if-changed .` - fails when formatting drifts
 2. `flutter analyze --fatal-infos` - static analysis / lints
