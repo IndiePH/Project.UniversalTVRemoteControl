@@ -27,7 +27,9 @@ final class PairingPageData {
 
     for (final device in savedDevices) {
       savedIds.add(device.id);
-      final pairedAt = await deviceRepository.getLastSuccessfulPairingAt(device.id);
+      final pairedAt = await deviceRepository.getLastSuccessfulPairingAt(
+        device.id,
+      );
       if (pairedAt != null) {
         pairingHistory[device.id] = pairedAt;
       }
@@ -59,9 +61,8 @@ final class PairingPageData {
         TvBrand.roku => l10n.pairingDiscoveryRokuLimitedSupport,
         _ => l10n.pairingDiscoveryLimitedSupport,
       },
-      DeviceSupportTier.experimental => l10n.pairingDiscoveryExperimentalSupport(
-        device.brand.displayName,
-      ),
+      DeviceSupportTier.experimental =>
+        l10n.pairingDiscoveryExperimentalSupport(device.brand.displayName),
     };
   }
 
@@ -75,7 +76,10 @@ final class PairingPageData {
       displayName: '${brand.displayName} TV ($ip)',
       brand: brand,
       protocolVariant: protocolVariant,
-      capabilities: const TvCapabilities().capabilitiesFor(brand, protocolVariant),
+      capabilities: const TvCapabilities().capabilitiesFor(
+        brand,
+        protocolVariant,
+      ),
     );
   }
 

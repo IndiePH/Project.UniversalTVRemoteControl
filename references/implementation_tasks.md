@@ -30,6 +30,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-18** — Discovery brand identification + pairing routing (**In Progress** in Jira; Task 2.2 C1 shipped in repo — SSDP fingerprint module, IP-level merge with brand priority, limited/experimental support notes on discovery list).
 - **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (**In Progress** in Jira; C1 shipped in repo).
 - **TVREMOTE-70** — TCL legacy Wi-Fi variant resolution: exact transport model marker, registry catch-all, capabilities, pairing constant (**Done** in Jira; parent **TVREMOTE-36**). Physical validation still **experimental** — `references/tcl_validation_matrix.md`.
+- **TVREMOTE-31** — Milestone 0 / Task 0.2: CI quality baseline (`flutter_ci.yml`: format, analyze, test on PRs); `AppBuildConfig` + README build-profile/flavor gap notes; Gradle flavor placeholder comments (**In Progress** in Jira; C1 shipped in repo).
 
 ## Status Tracker (Current)
 
@@ -41,6 +42,13 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [x] Milestone 0 / Task 0.1:
   - [x] Established layered structure (`presentation` / `application` / `data` / `domain`)
   - [x] Added extensible brand adapter contracts and router-based dispatch
+- [x] Milestone 0 / Task 0.2 (`TVREMOTE-31`):
+  - [x] GitHub Actions CI: `dart format --set-exit-if-changed`, `flutter analyze --fatal-infos`, `flutter test` on PRs to `main` / `master` / `develop` (`.github/workflows/flutter_ci.yml`)
+  - [x] Repo-wide `dart format` baseline applied so the format gate passes
+  - [x] `AppBuildConfig` / `AppBuildProfile` centralize debug vs release → `AppEnvironment`; `main.dart` uses `environmentForMain()`
+  - [x] README documents CI commands, intentional Gradle product-flavor gap, and `AppEnvironment.development` reservation
+  - [x] `AdConsentCoordinator.isPrivacyOptionsRequired` timeout + fallback so settings sheet opens under widget tests (simulated Android / no Mobile Ads plugin)
+  - [x] Widget tests: fake-transport discovery via prefs; one copy-transport sheet test skipped pending modal scroll/hit-test harness
 - [x] Milestone 0 / Task 0.3:
   - [x] Added core entities and contracts:
     - [x] `TvDevice`, `TvBrand`, `RemoteCommand`, `DeviceCapability`, `ConnectionState`
@@ -251,9 +259,9 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] Document extension points for adding new TV protocols.
 
 ### Task 0.2 - Setup environment and quality baseline
-- [ ] Confirm Flutter project settings and lint/test configuration.
-- [ ] Add CI checks for format, analyze, and tests.
-- [ ] Add app flavor/config placeholders for debug and release.
+- [x] Confirm Flutter project settings and lint/test configuration (`analysis_options.yaml` → `flutter_lints`).
+- [x] Add CI checks for format, analyze, and tests (`.github/workflows/flutter_ci.yml`).
+- [x] Add app flavor/config placeholders for debug and release (`AppBuildConfig`; README + Gradle comments; no Gradle `productFlavors` yet).
 
 ### Task 0.3 - Define shared domain models
 - [ ] Create core entities:

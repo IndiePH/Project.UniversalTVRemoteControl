@@ -9,11 +9,7 @@ import 'package:one_remote/theme/app_theme.dart';
 
 /// Busy overlay shown while waiting for TV-side pairing confirmation.
 class PairingBusyOverlay extends StatelessWidget {
-  const PairingBusyOverlay({
-    super.key,
-    required this.visible,
-    this.hint,
-  });
+  const PairingBusyOverlay({super.key, required this.visible, this.hint});
 
   final bool visible;
   final String? hint;
@@ -100,7 +96,11 @@ class RemoteSelectionSectionHeader extends StatelessWidget {
 ///
 /// [onConfirmDismiss] must always return false; visual removal is driven by
 /// the parent list rebuilding after the underlying state update.
-String _pairedTvSubtitle(TvDevice device, DateTime? pairedAt, AppLocalizations l10n) {
+String _pairedTvSubtitle(
+  TvDevice device,
+  DateTime? pairedAt,
+  AppLocalizations l10n,
+) {
   final parts = [device.brand.displayName];
   if (device.modelIdentifier != null) parts.add(device.modelIdentifier!);
   if (device.protocolVariant != TvDevice.defaultProtocolVariant) {
@@ -180,7 +180,11 @@ class _PairedTvListItemState extends State<PairedTvListItem> {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          _pairedTvSubtitle(widget.device, widget.pairedAt, AppLocalizations.of(context)!),
+          _pairedTvSubtitle(
+            widget.device,
+            widget.pairedAt,
+            AppLocalizations.of(context)!,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -302,9 +306,7 @@ class PairingTroubleshootingGuidanceSection extends StatelessWidget {
             title: Text(l10n.pairingPermissionChecklistTitle),
             childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             expandedCrossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.pairingPermissionChecklistBody),
-            ],
+            children: [Text(l10n.pairingPermissionChecklistBody)],
           ),
         ),
         Card(
@@ -312,9 +314,7 @@ class PairingTroubleshootingGuidanceSection extends StatelessWidget {
             title: Text(l10n.pairingCannotFindTvTitle),
             childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             expandedCrossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.pairingCannotFindTvBody),
-            ],
+            children: [Text(l10n.pairingCannotFindTvBody)],
           ),
         ),
       ],
@@ -351,7 +351,10 @@ class PairingManualAddSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(l10n.pairingManualTitle, style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          l10n.pairingManualTitle,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 8),
         DropdownButtonFormField<TvBrand>(
           initialValue: manualBrand,
@@ -408,7 +411,10 @@ class PairingManualAddSection extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 8),
-        PairingActionButton(label: l10n.pairingManualAddButton, onPressed: onAddManualDevice),
+        PairingActionButton(
+          label: l10n.pairingManualAddButton,
+          onPressed: onAddManualDevice,
+        ),
       ],
     );
   }

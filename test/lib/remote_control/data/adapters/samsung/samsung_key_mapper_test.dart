@@ -40,38 +40,33 @@ void main() {
     });
 
     test('returns launch key for web browser', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.web),
-        [samsungLaunchKeyFor(SamsungTizenAppIds.browser)],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.web), [
+        samsungLaunchKeyFor(SamsungTizenAppIds.browser),
+      ]);
     });
 
     test('returns launch key for netflix', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.netflix),
-        [samsungLaunchKeyFor(SamsungTizenAppIds.netflix)],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.netflix), [
+        samsungLaunchKeyFor(SamsungTizenAppIds.netflix),
+      ]);
     });
 
     test('returns launch key for primeVideo', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.primeVideo),
-        [samsungLaunchKeyFor(SamsungTizenAppIds.primeVideo)],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.primeVideo), [
+        samsungLaunchKeyFor(SamsungTizenAppIds.primeVideo),
+      ]);
     });
 
     test('returns launch key for disneyPlus', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.disneyPlus),
-        [samsungLaunchKeyFor(SamsungTizenAppIds.disneyPlus)],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.disneyPlus), [
+        samsungLaunchKeyFor(SamsungTizenAppIds.disneyPlus),
+      ]);
     });
 
     test('returns launch key for youtube', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.youtube),
-        [samsungLaunchKeyFor(SamsungTizenAppIds.youtube)],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.youtube), [
+        samsungLaunchKeyFor(SamsungTizenAppIds.youtube),
+      ]);
     });
 
     test('returns KEY_UP for dpadUp', () {
@@ -103,10 +98,12 @@ void main() {
     });
 
     test('returns multiple fallbacks for menu', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.menu),
-        ['KEY_MENU', 'KEY_SETTINGS', 'KEY_SETTING', 'KEY_OPTION'],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.menu), [
+        'KEY_MENU',
+        'KEY_SETTINGS',
+        'KEY_SETTING',
+        'KEY_OPTION',
+      ]);
     });
 
     test('every RemoteCommand value has a mapping', () {
@@ -124,5 +121,4 @@ void main() {
       expect(() => (result).add('EXTRA'), throwsUnsupportedError);
     });
   });
-
 }

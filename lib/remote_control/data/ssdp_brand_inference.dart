@@ -28,8 +28,7 @@ TvBrand? inferSsdpTvBrand(Map<String, String> headers) {
       probe.contains('hiview')) {
     return TvBrand.hisense;
   }
-  if (probe.contains('androidtvremote') ||
-      probe.contains('_androidtvremote')) {
+  if (probe.contains('androidtvremote') || probe.contains('_androidtvremote')) {
     return TvBrand.androidTv;
   }
   return null;

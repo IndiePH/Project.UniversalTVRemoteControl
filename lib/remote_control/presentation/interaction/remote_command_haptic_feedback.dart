@@ -3,12 +3,7 @@ import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/presentation/interaction/remote_command_interaction_category.dart';
 
 /// Maps remote command categories to platform haptic feedback patterns.
-enum RemoteHapticImpact {
-  heavy,
-  medium,
-  light,
-  selection,
-}
+enum RemoteHapticImpact { heavy, medium, light, selection }
 
 /// Resolves the haptic impact for a command interaction category.
 RemoteHapticImpact hapticImpactForCategory(

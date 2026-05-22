@@ -43,7 +43,8 @@ class RemoteLayoutDropResolver {
   RemoteLayoutDropResolver(this.validationFootprintFor);
 
   /// Same rules as the editor: dpad/channel/volume overrides, else item dimensions.
-  final RemoteLayoutItemFootprint Function(LayoutEditItem item) validationFootprintFor;
+  final RemoteLayoutItemFootprint Function(LayoutEditItem item)
+  validationFootprintFor;
 
   String _cellKey(int col, int row) => '$col:$row';
 
@@ -57,7 +58,8 @@ class RemoteLayoutDropResolver {
     if (col < 0 || row < 0) {
       return false;
     }
-    if (col + footprint.width > gridColumns || row + footprint.height > gridRows) {
+    if (col + footprint.width > gridColumns ||
+        row + footprint.height > gridRows) {
       return false;
     }
     return true;
@@ -69,7 +71,9 @@ class RemoteLayoutDropResolver {
     required int gridColumns,
     required int gridRows,
   }) {
-    final placedIds = <String>{for (final placement in placements) placement.item.id};
+    final placedIds = <String>{
+      for (final placement in placements) placement.item.id,
+    };
     final finalCells = <String, String>{};
 
     for (final placement in placements) {
@@ -83,11 +87,20 @@ class RemoteLayoutDropResolver {
         return false;
       }
 
-      for (var row = placement.row; row < placement.row + placement.footprint.height; row++) {
-        for (var col = placement.col; col < placement.col + placement.footprint.width; col++) {
+      for (
+        var row = placement.row;
+        row < placement.row + placement.footprint.height;
+        row++
+      ) {
+        for (
+          var col = placement.col;
+          col < placement.col + placement.footprint.width;
+          col++
+        ) {
           final key = _cellKey(col, row);
           final existingPlacedId = finalCells[key];
-          if (existingPlacedId != null && existingPlacedId != placement.item.id) {
+          if (existingPlacedId != null &&
+              existingPlacedId != placement.item.id) {
             return false;
           }
           finalCells[key] = placement.item.id;
@@ -114,7 +127,11 @@ class RemoteLayoutDropResolver {
   }) {
     final overlapped = <String>{};
     for (var targetRow = row; targetRow < row + footprint.height; targetRow++) {
-      for (var targetCol = col; targetCol < col + footprint.width; targetCol++) {
+      for (
+        var targetCol = col;
+        targetCol < col + footprint.width;
+        targetCol++
+      ) {
         final occupyingId = occupancyByCell[_cellKey(targetCol, targetRow)];
         if (occupyingId == null || ignoreIds.contains(occupyingId)) {
           continue;
@@ -211,7 +228,8 @@ class RemoteLayoutDropResolver {
     required int gridRows,
   }) {
     final seen = <String>{};
-    final candidates = <({int col, int row, int priority, int sideRank, int distance})>[];
+    final candidates =
+        <({int col, int row, int priority, int sideRank, int distance})>[];
 
     final preferredColDir = (moving.col - movingDropPlacement.col).sign;
     final preferredRowDir = (moving.row - movingDropPlacement.row).sign;
@@ -227,15 +245,13 @@ class RemoteLayoutDropResolver {
         return;
       }
       final distance = (col - target.col).abs() + (row - target.row).abs();
-      candidates.add(
-        (
-          col: col,
-          row: row,
-          priority: priority,
-          sideRank: sideRank,
-          distance: distance,
-        ),
-      );
+      candidates.add((
+        col: col,
+        row: row,
+        priority: priority,
+        sideRank: sideRank,
+        distance: distance,
+      ));
     }
 
     // 1) Preserve old simple behavior first.
@@ -280,12 +296,7 @@ class RemoteLayoutDropResolver {
       targetHeight: targetFootprint.height,
     );
     for (final c in aroundInitial) {
-      addCandidate(
-        col: c.col,
-        row: c.row,
-        priority: 2,
-        sideRank: 0,
-      );
+      addCandidate(col: c.col, row: c.row, priority: 2, sideRank: 0);
     }
 
     candidates.sort((a, b) {
@@ -384,8 +395,16 @@ class RemoteLayoutDropResolver {
 
     final overlapCellsById = <String, List<({int col, int row})>>{};
     final occupancyAtDropCells = <String>[];
-    for (var row = dropPlacement.row; row < dropPlacement.row + dropPlacement.footprint.height; row++) {
-      for (var col = dropPlacement.col; col < dropPlacement.col + dropPlacement.footprint.width; col++) {
+    for (
+      var row = dropPlacement.row;
+      row < dropPlacement.row + dropPlacement.footprint.height;
+      row++
+    ) {
+      for (
+        var col = dropPlacement.col;
+        col < dropPlacement.col + dropPlacement.footprint.width;
+        col++
+      ) {
         final key = _cellKey(col, row);
         final occupantId = occupancyByCell[key];
         occupancyAtDropCells.add(
@@ -394,10 +413,9 @@ class RemoteLayoutDropResolver {
         if (occupantId == null || occupantId == movingId) {
           continue;
         }
-        overlapCellsById.putIfAbsent(occupantId, () => <({int col, int row})>[]).add((
-          col: col,
-          row: row,
-        ));
+        overlapCellsById
+            .putIfAbsent(occupantId, () => <({int col, int row})>[])
+            .add((col: col, row: row));
       }
     }
 
@@ -411,7 +429,9 @@ class RemoteLayoutDropResolver {
     final targetInitialPos = target == null
         ? 'n/a'
         : _formatPos(col: target.col, row: target.row);
-    final targetSize = target == null ? 'n/a' : _formatSize(validationFootprintFor(target));
+    final targetSize = target == null
+        ? 'n/a'
+        : _formatSize(validationFootprintFor(target));
     final targetFinalPos = resolved.displacedPlacement == null
         ? 'n/a'
         : _formatPos(
@@ -421,28 +441,34 @@ class RemoteLayoutDropResolver {
 
     final overlapSummary = overlapCellsById.isEmpty
         ? 'none'
-        : overlapCellsById.entries.map((entry) {
-            final targetItem = itemsById[entry.key];
-            final targetTop = targetItem?.row;
-            final targetLeft = targetItem?.col;
-            final cells = entry.value.map((c) {
-              if (targetTop == null || targetLeft == null) {
-                return _formatPos(col: c.col, row: c.row);
-              }
-              final relativeCol = (c.col - targetLeft) + 1;
-              final relativeRow = (c.row - targetTop) + 1;
-              return '${_formatPos(col: c.col, row: c.row)} [targetCell:$relativeCol,$relativeRow]';
-            }).join(', ');
-            return '${entry.key}: $cells';
-          }).join(' | ');
+        : overlapCellsById.entries
+              .map((entry) {
+                final targetItem = itemsById[entry.key];
+                final targetTop = targetItem?.row;
+                final targetLeft = targetItem?.col;
+                final cells = entry.value
+                    .map((c) {
+                      if (targetTop == null || targetLeft == null) {
+                        return _formatPos(col: c.col, row: c.row);
+                      }
+                      final relativeCol = (c.col - targetLeft) + 1;
+                      final relativeRow = (c.row - targetTop) + 1;
+                      return '${_formatPos(col: c.col, row: c.row)} [targetCell:$relativeCol,$relativeRow]';
+                    })
+                    .join(', ');
+                return '${entry.key}: $cells';
+              })
+              .join(' | ');
 
     final sortedIds = itemsById.keys.toList()..sort();
     final initialLayout = _buildInitialLayoutSnapshot(itemsById);
 
     final finalColById = <String, int>{};
     final finalRowById = <String, int>{};
-    finalColById[resolved.movingPlacement.item.id] = resolved.movingPlacement.col;
-    finalRowById[resolved.movingPlacement.item.id] = resolved.movingPlacement.row;
+    finalColById[resolved.movingPlacement.item.id] =
+        resolved.movingPlacement.col;
+    finalRowById[resolved.movingPlacement.item.id] =
+        resolved.movingPlacement.row;
     final displaced = resolved.displacedPlacement;
     if (displaced != null) {
       finalColById[displaced.item.id] = displaced.col;
@@ -634,28 +660,39 @@ class RemoteLayoutDropResolver {
 
     final occupancyAtDropCells = <String>[];
     final overlapCellsById = <String, List<({int col, int row})>>{};
-    for (var row = dropPlacement.row; row < dropPlacement.row + dropPlacement.footprint.height; row++) {
-      for (var col = dropPlacement.col; col < dropPlacement.col + dropPlacement.footprint.width; col++) {
+    for (
+      var row = dropPlacement.row;
+      row < dropPlacement.row + dropPlacement.footprint.height;
+      row++
+    ) {
+      for (
+        var col = dropPlacement.col;
+        col < dropPlacement.col + dropPlacement.footprint.width;
+        col++
+      ) {
         final occupantId = occupancyByCell[_cellKey(col, row)];
-        occupancyAtDropCells.add('${_formatPos(col: col, row: row)}=${occupantId ?? 'empty'}');
+        occupancyAtDropCells.add(
+          '${_formatPos(col: col, row: row)}=${occupantId ?? 'empty'}',
+        );
         if (occupantId == null || occupantId == movingId) {
           continue;
         }
-        overlapCellsById.putIfAbsent(occupantId, () => <({int col, int row})>[]).add((
-          col: col,
-          row: row,
-        ));
+        overlapCellsById
+            .putIfAbsent(occupantId, () => <({int col, int row})>[])
+            .add((col: col, row: row));
       }
     }
 
     final overlapSummary = overlapCellsById.isEmpty
         ? 'none'
-        : overlapCellsById.entries.map((entry) {
-            final cells = entry.value
-                .map((c) => _formatPos(col: c.col, row: c.row))
-                .join(', ');
-            return '${entry.key}: $cells';
-          }).join(' | ');
+        : overlapCellsById.entries
+              .map((entry) {
+                final cells = entry.value
+                    .map((c) => _formatPos(col: c.col, row: c.row))
+                    .join(', ');
+                return '${entry.key}: $cells';
+              })
+              .join(' | ');
 
     final reason = _diagnoseDropFailureReason(
       gridColumns: gridColumns,
@@ -735,7 +772,9 @@ class RemoteLayoutDropResolver {
         gridColumns: gridColumns,
         gridRows: gridRows,
       );
-      return valid ? RemoteLayoutResolvedDrop(movingPlacement: movingDropPlacement) : null;
+      return valid
+          ? RemoteLayoutResolvedDrop(movingPlacement: movingDropPlacement)
+          : null;
     }
 
     if (overlappedIds.length > 1) {

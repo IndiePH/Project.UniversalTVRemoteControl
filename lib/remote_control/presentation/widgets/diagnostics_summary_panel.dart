@@ -4,10 +4,7 @@ import 'package:one_remote/l10n/app_localizations.dart';
 
 /// Compact diagnostics counters for the debug settings section.
 class DiagnosticsSummaryPanel extends StatelessWidget {
-  const DiagnosticsSummaryPanel({
-    super.key,
-    required this.recorder,
-  });
+  const DiagnosticsSummaryPanel({super.key, required this.recorder});
 
   final AppDiagnosticsRecorder recorder;
 

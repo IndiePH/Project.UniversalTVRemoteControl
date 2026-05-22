@@ -50,7 +50,9 @@ class InMemoryDeviceRepository implements DeviceRepository {
     _lastSuccessfulPairingByDeviceId.remove(deviceId);
 
     // Keep last-used reference valid after deletion.
-    final hasLastUsed = _devices.any((device) => device.id == _lastUsedDeviceId);
+    final hasLastUsed = _devices.any(
+      (device) => device.id == _lastUsedDeviceId,
+    );
     if (hasLastUsed) {
       return;
     }

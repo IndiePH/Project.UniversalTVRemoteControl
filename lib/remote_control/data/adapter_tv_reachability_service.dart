@@ -4,7 +4,7 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 class AdapterTvReachabilityService implements TvReachabilityService {
   AdapterTvReachabilityService({required List<TvBrandAdapter> adapters})
-      : _adapters = adapters;
+    : _adapters = adapters;
 
   final List<TvBrandAdapter> _adapters;
 

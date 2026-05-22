@@ -15,10 +15,7 @@ void main() {
     displayName: 'TCL Legacy TV',
     brand: TvBrand.tcl,
     protocolVariant: 'tcl_legacy_wifi',
-    capabilities: {
-      DeviceCapability.keyCommands,
-      DeviceCapability.powerControl,
-    },
+    capabilities: {DeviceCapability.keyCommands, DeviceCapability.powerControl},
   );
 
   test('TclLegacyWifiAdapter sends legacy frame for menu', () async {
@@ -53,7 +50,10 @@ class _SpyLegacyTransportClient implements TclLegacyTransportClient {
       const TvDeviceInfo(modelIdentifier: 'tcl_legacy_wifi');
 
   @override
-  Future<void> sendFrame({required String deviceId, required String frame}) async {
+  Future<void> sendFrame({
+    required String deviceId,
+    required String frame,
+  }) async {
     frames.add(frame);
   }
 }

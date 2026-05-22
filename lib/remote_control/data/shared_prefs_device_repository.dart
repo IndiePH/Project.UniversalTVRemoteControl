@@ -58,7 +58,10 @@ class SharedPrefsDeviceRepository implements DeviceRepository {
       ids.add(device.id);
       await prefs.setString(_deviceIdsKey, jsonEncode(ids));
     }
-    await prefs.setString('$_deviceKeyPrefix${device.id}', jsonEncode(device.toJson()));
+    await prefs.setString(
+      '$_deviceKeyPrefix${device.id}',
+      jsonEncode(device.toJson()),
+    );
   }
 
   @override
@@ -92,7 +95,10 @@ class SharedPrefsDeviceRepository implements DeviceRepository {
     required DateTime timestamp,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('$_pairingAtPrefix$deviceId', timestamp.millisecondsSinceEpoch);
+    await prefs.setInt(
+      '$_pairingAtPrefix$deviceId',
+      timestamp.millisecondsSinceEpoch,
+    );
   }
 
   @override
@@ -102,7 +108,10 @@ class SharedPrefsDeviceRepository implements DeviceRepository {
   }
 
   @override
-  Future<void> saveDeviceSystemInfo(String deviceId, Map<String, dynamic> info) async {
+  Future<void> saveDeviceSystemInfo(
+    String deviceId,
+    Map<String, dynamic> info,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('$_systemInfoPrefix$deviceId', jsonEncode(info));
   }

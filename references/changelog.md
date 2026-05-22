@@ -3,6 +3,22 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-22
+
+### Added
+- CI / environment baseline (**TVREMOTE-31**): `.github/workflows/flutter_ci.yml`
+  (format, analyze, test on PRs to `main` / `master` / `develop`);
+  `AppBuildConfig` maps Flutter build mode to `AppEnvironment`; README build-profile
+  table documents intentional Gradle product-flavor gaps.
+
+### Changed
+- `AdConsentCoordinator.isPrivacyOptionsRequired` uses timeout + fallback when the
+  Mobile Ads plugin is absent so the settings sheet is not blocked in widget tests.
+
+### Verification
+- `dart format --output=none --set-exit-if-changed .`, `flutter analyze --fatal-infos`,
+  `flutter test` (385 passed, 1 skipped).
+
 ## 2026-05-21
 
 ### Changed

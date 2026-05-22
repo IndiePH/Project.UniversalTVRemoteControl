@@ -24,7 +24,8 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
 
   static const Map<RemoteCommand, String> _appLinks = {
     RemoteCommand.netflix: 'market://launch?id=com.netflix.ninja',
-    RemoteCommand.primeVideo: 'market://launch?id=com.amazon.avod.thirdpartyclient',
+    RemoteCommand.primeVideo:
+        'market://launch?id=com.amazon.avod.thirdpartyclient',
     RemoteCommand.disneyPlus: 'market://launch?id=com.disney.disneyplus',
     RemoteCommand.youtube: 'market://launch?id=com.google.android.youtube.tv',
   };
@@ -87,7 +88,9 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
     }
     final keyCodes = _keyMap.keyCodesFor(command);
     if (keyCodes.isEmpty) {
-      throw UnsupportedError('No TCL Google TV key mapping for command: $command');
+      throw UnsupportedError(
+        'No TCL Google TV key mapping for command: $command',
+      );
     }
     for (final keyCode in keyCodes) {
       await _transportClient.sendKey(deviceId: device.id, keyCode: keyCode);
@@ -95,7 +98,10 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
   }
 
   @override
-  Future<void> sendText({required TvDevice device, required String text}) async {
+  Future<void> sendText({
+    required TvDevice device,
+    required String text,
+  }) async {
     await _transportClient.connect(deviceId: device.id);
     await _transportClient.sendText(deviceId: device.id, text: text);
   }

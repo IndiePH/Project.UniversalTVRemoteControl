@@ -182,9 +182,7 @@ void main() {
     () async {
       final service = BrandRoutedRemoteCommandService(
         adapters: [
-          SamsungAdapter(
-            transportClient: _RejectingSamsungTransportClient(),
-          ),
+          SamsungAdapter(transportClient: _RejectingSamsungTransportClient()),
         ],
         variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
@@ -192,10 +190,7 @@ void main() {
       final result = await service.preparePairing(device: samsungDevice);
       expect(result.isSuccess, isFalse);
       expect(result.message, 'Pairing failed for Samsung Test TV.');
-      expect(
-        result.exception,
-        isA<SamsungTransportAuthorizationException>(),
-      );
+      expect(result.exception, isA<SamsungTransportAuthorizationException>());
       expect(
         result.exception.toString(),
         contains('Samsung TV rejected remote-control authorization'),
@@ -306,14 +301,11 @@ void main() {
         command: RemoteCommand.primeVideo,
       );
 
-      expect(
-        transport.sentKeyCodes,
-        [
-          'LAUNCH:org.tizen.browser',
-          'LAUNCH:3201907018807',
-          'LAUNCH:3201910019365',
-        ],
-      );
+      expect(transport.sentKeyCodes, [
+        'LAUNCH:org.tizen.browser',
+        'LAUNCH:3201907018807',
+        'LAUNCH:3201910019365',
+      ]);
     },
   );
 

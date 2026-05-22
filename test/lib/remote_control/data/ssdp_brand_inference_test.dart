@@ -12,10 +12,7 @@ void main() {
     });
 
     test('identifies LG from webOS fingerprint', () {
-      expect(
-        inferSsdpTvBrand({'server': 'webos/6.0 upnp/1.1'}),
-        TvBrand.lg,
-      );
+      expect(inferSsdpTvBrand({'server': 'webos/6.0 upnp/1.1'}), TvBrand.lg);
     });
 
     test('identifies Hisense from vidaa hint', () {
@@ -26,10 +23,7 @@ void main() {
     });
 
     test('prefers Roku when roku appears in probe', () {
-      expect(
-        inferSsdpTvBrand({'server': 'roku:ecp'}),
-        TvBrand.roku,
-      );
+      expect(inferSsdpTvBrand({'server': 'roku:ecp'}), TvBrand.roku);
     });
 
     test('returns null for unrelated UPnP devices', () {

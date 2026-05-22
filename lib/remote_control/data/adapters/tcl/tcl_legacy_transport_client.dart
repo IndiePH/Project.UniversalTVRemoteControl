@@ -6,10 +6,7 @@ abstract class TclLegacyTransportClient
     implements TransportClient, TransportEventSource {
   Future<void> connect({required String deviceId});
 
-  Future<void> sendFrame({
-    required String deviceId,
-    required String frame,
-  });
+  Future<void> sendFrame({required String deviceId, required String frame});
 
   Future<TvDeviceInfo?> queryDeviceInfo({required String deviceId});
 

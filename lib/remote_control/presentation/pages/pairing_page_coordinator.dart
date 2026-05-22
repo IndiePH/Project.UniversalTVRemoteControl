@@ -26,7 +26,11 @@ class PairingPageCoordinator {
   Future<PairingAttemptResult> pairSelectedDevice({
     required TvDevice device,
     String? manualIpToSave,
-    required Future<String?> Function(String pairingMessage, PinFormat pinFormat) promptPin,
+    required Future<String?> Function(
+      String pairingMessage,
+      PinFormat pinFormat,
+    )
+    promptPin,
     required void Function(String retryMessage) onPinRejected,
   }) async {
     final pairingResult = await _commandService.preparePairing(device: device);
@@ -51,7 +55,9 @@ class PairingPageCoordinator {
         brand: device.brand,
         success: false,
       );
-      return PairingAttemptResult.failure(MessageHandler.sanitize(pairingResult));
+      return PairingAttemptResult.failure(
+        MessageHandler.sanitize(pairingResult),
+      );
     }
 
     if (manualIpToSave != null && manualIpToSave.isNotEmpty) {
@@ -65,7 +71,10 @@ class PairingPageCoordinator {
       deviceId: device.id,
       timestamp: pairedAt,
     );
-    _diagnosticsRecorder?.recordPairingSession(brand: device.brand, success: true);
+    _diagnosticsRecorder?.recordPairingSession(
+      brand: device.brand,
+      success: true,
+    );
     return PairingAttemptResult.success();
   }
 
@@ -92,9 +101,10 @@ class PairingPageCoordinator {
 enum PairingOutcome { success, failure }
 
 final class PairingAttemptResult extends Result {
-  PairingAttemptResult.success() : super(outcome: PairingOutcome.success.name,message: '');
+  PairingAttemptResult.success()
+    : super(outcome: PairingOutcome.success.name, message: '');
   PairingAttemptResult.failure(String message)
-    : super(outcome: PairingOutcome.failure.name,message: message);
+    : super(outcome: PairingOutcome.failure.name, message: message);
 
   PairingOutcome getOutcome() => PairingOutcome.values.byName(outcome);
 

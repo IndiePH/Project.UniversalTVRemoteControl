@@ -27,7 +27,9 @@ class RemoteDpad extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: RemoteButton(label: l10n.dpadLeft, onPressed: onLeft)),
+            Expanded(
+              child: RemoteButton(label: l10n.dpadLeft, onPressed: onLeft),
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: RemoteButton(
@@ -37,7 +39,9 @@ class RemoteDpad extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(child: RemoteButton(label: l10n.dpadRight, onPressed: onRight)),
+            Expanded(
+              child: RemoteButton(label: l10n.dpadRight, onPressed: onRight),
+            ),
           ],
         ),
         const SizedBox(height: 8),

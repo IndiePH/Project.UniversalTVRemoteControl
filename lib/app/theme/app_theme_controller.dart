@@ -5,7 +5,7 @@ import 'package:one_remote/app/theme/app_theme_settings.dart';
 /// Holds the active [AppThemePreference] and persists updates.
 final class AppThemeController {
   AppThemeController(AppThemePreference initial)
-      : preferenceNotifier = ValueNotifier(initial);
+    : preferenceNotifier = ValueNotifier(initial);
 
   final ValueNotifier<AppThemePreference> preferenceNotifier;
 

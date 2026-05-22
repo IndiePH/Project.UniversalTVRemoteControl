@@ -15,13 +15,19 @@ void main() {
 
   group('DefaultPrePairingStepsRegistry.stepsFor', () {
     test('returns two LG steps for LG default variant', () {
-      final steps = registry.stepsFor(TvBrand.lg, TvDevice.defaultProtocolVariant);
+      final steps = registry.stepsFor(
+        TvBrand.lg,
+        TvDevice.defaultProtocolVariant,
+      );
       expect(steps, isNotNull);
       expect(steps, [fake.pairingLgPreStep0, fake.pairingLgPreStep1]);
     });
 
     test('returns two Samsung steps for Samsung default variant', () {
-      final steps = registry.stepsFor(TvBrand.samsung, TvDevice.defaultProtocolVariant);
+      final steps = registry.stepsFor(
+        TvBrand.samsung,
+        TvDevice.defaultProtocolVariant,
+      );
       expect(steps, isNotNull);
       expect(steps, [fake.pairingSamsungPreStep0, fake.pairingSamsungPreStep1]);
     });
@@ -38,12 +44,18 @@ void main() {
     });
 
     test('LG steps list has exactly two entries', () {
-      final steps = registry.stepsFor(TvBrand.lg, TvDevice.defaultProtocolVariant)!;
+      final steps = registry.stepsFor(
+        TvBrand.lg,
+        TvDevice.defaultProtocolVariant,
+      )!;
       expect(steps, hasLength(2));
     });
 
     test('Samsung steps list has exactly two entries', () {
-      final steps = registry.stepsFor(TvBrand.samsung, TvDevice.defaultProtocolVariant)!;
+      final steps = registry.stepsFor(
+        TvBrand.samsung,
+        TvDevice.defaultProtocolVariant,
+      )!;
       expect(steps, hasLength(2));
     });
   });

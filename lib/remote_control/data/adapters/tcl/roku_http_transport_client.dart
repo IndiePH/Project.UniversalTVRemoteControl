@@ -143,7 +143,9 @@ class RokuHttpTransportClient
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException('Roku request failed (${response.statusCode})');
       }
-      return utf8.decode(await response.fold<List<int>>(<int>[], (a, b) => a..addAll(b)));
+      return utf8.decode(
+        await response.fold<List<int>>(<int>[], (a, b) => a..addAll(b)),
+      );
     } finally {
       client.close(force: true);
     }

@@ -36,7 +36,8 @@ class RemoteLayoutEditorItemPreview extends StatelessWidget {
     final innerWidth = math.max(1.0, width - inset * 2);
     final innerHeight = math.max(1.0, height - inset * 2);
     final definition = itemDefinitionsById[item.id];
-    final previewStyle = definition?.previewStyle ?? RemoteLayoutPreviewStyle.standard;
+    final previewStyle =
+        definition?.previewStyle ?? RemoteLayoutPreviewStyle.standard;
     final icon = definition?.icon ?? item.icon;
     final imageAsset = definition?.imageAsset ?? item.imageAsset;
     final imageIconSize = definition?.imageIconSize;
@@ -93,14 +94,17 @@ class RemoteLayoutEditorItemPreview extends StatelessWidget {
     }
 
     final appColors = AppTheme.colorsOf(context);
-    final background = isPower ? appColors.remotePowerFill : appColors.remoteSurface;
+    final background = isPower
+        ? appColors.remotePowerFill
+        : appColors.remoteSurface;
 
     // Single-cell items that boil down to a circular icon/label button render
     // through the same widget the home grid uses
     // ([RemoteIconCircleButton] inside [FittedBox]) so labels like "WWW" and
     // icons like the keyboard glyph scale identically in edit and live modes.
     // Larger standard items fall back to the rounded-rectangle shell below.
-    final usesIconCircleButton = isSingleCell &&
+    final usesIconCircleButton =
+        isSingleCell &&
         (previewStyle == RemoteLayoutPreviewStyle.standard ||
             previewStyle == RemoteLayoutPreviewStyle.centeredCircleIcon);
     if (usesIconCircleButton) {
@@ -138,8 +142,9 @@ class RemoteLayoutEditorItemPreview extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               shape: isSingleCell ? BoxShape.circle : BoxShape.rectangle,
-              borderRadius:
-                  isSingleCell ? null : BorderRadius.circular(cellSize * 0.6),
+              borderRadius: isSingleCell
+                  ? null
+                  : BorderRadius.circular(cellSize * 0.6),
               color: background,
               border: Border.all(
                 color: appColors.remoteOutline,
@@ -148,68 +153,71 @@ class RemoteLayoutEditorItemPreview extends StatelessWidget {
             ),
             child: switch (previewStyle) {
               RemoteLayoutPreviewStyle.playPause => Builder(
-                  builder: (_) {
-                    final glyphSize = math.min(innerWidth, innerHeight) *
-                        kRemotePlayPauseGlyphSizeRatio;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: kRemotePlayPauseInnerHorizontalPadding,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.play_arrow,
-                            color: appColors.remoteGlyphOnRemote,
-                            size: glyphSize + kRemotePlayPausePlayGlyphBoost,
+                builder: (_) {
+                  final glyphSize =
+                      math.min(innerWidth, innerHeight) *
+                      kRemotePlayPauseGlyphSizeRatio;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: kRemotePlayPauseInnerHorizontalPadding,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.play_arrow,
+                          color: appColors.remoteGlyphOnRemote,
+                          size: glyphSize + kRemotePlayPausePlayGlyphBoost,
+                        ),
+                        SizedBox(
+                          width: math.max(
+                            1,
+                            glyphSize * kRemotePlayPauseGlyphGapRatio,
                           ),
-                          SizedBox(
-                            width: math.max(
-                              1,
-                              glyphSize * kRemotePlayPauseGlyphGapRatio,
-                            ),
-                          ),
-                          Icon(
-                            Icons.pause,
-                            color: appColors.remoteGlyphOnRemote,
-                            size: glyphSize + kRemotePlayPausePauseGlyphBoost,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        ),
+                        Icon(
+                          Icons.pause,
+                          color: appColors.remoteGlyphOnRemote,
+                          size: glyphSize + kRemotePlayPausePauseGlyphBoost,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
               RemoteLayoutPreviewStyle.centeredCircleIcon => Center(
-                  child: RemoteIconCircleButton(
-                    icon: icon,
-                    imageAsset: imageAsset,
-                    imageIconSize: imageIconSize,
-                    brandColor: brandColor,
-                    label: label,
-                    onPressed: null,
-                  ),
+                child: RemoteIconCircleButton(
+                  icon: icon,
+                  imageAsset: imageAsset,
+                  imageIconSize: imageIconSize,
+                  brandColor: brandColor,
+                  label: label,
+                  onPressed: null,
                 ),
+              ),
               // Multi-cell standard fallback (no single-cell items reach here:
               // they are handled by the [RemoteIconCircleButton] path above).
-              RemoteLayoutPreviewStyle.standard => icon != null
-                  ? Icon(
-                      icon,
-                      size: math.min(innerWidth, innerHeight) * 0.45,
-                      color: appColors.remoteGlyphOnRemote,
-                    )
+              RemoteLayoutPreviewStyle.standard =>
+                icon != null
+                    ? Icon(
+                        icon,
+                        size: math.min(innerWidth, innerHeight) * 0.45,
+                        color: appColors.remoteGlyphOnRemote,
+                      )
                     : Center(
-                      child: Text(
-                        label ?? '',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: appColors.remoteGlyphOnRemote,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
+                        child: Text(
+                          label ?? '',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: appColors.remoteGlyphOnRemote,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.6,
+                          ),
                         ),
                       ),
-                    ),
               RemoteLayoutPreviewStyle.circularDpad => const SizedBox.shrink(),
-              RemoteLayoutPreviewStyle.verticalRocker => const SizedBox.shrink(),
+              RemoteLayoutPreviewStyle.verticalRocker =>
+                const SizedBox.shrink(),
             },
           ),
         ),

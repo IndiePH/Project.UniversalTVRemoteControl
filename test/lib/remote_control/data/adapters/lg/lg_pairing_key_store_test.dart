@@ -7,18 +7,24 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('LgPairingKeyStore: stored key survives a fresh getInstance() call', () async {
-    final store = LgPairingKeyStore();
-    await store.storeKeyForHost('192.168.1.10', 'abc123');
+  test(
+    'LgPairingKeyStore: stored key survives a fresh getInstance() call',
+    () async {
+      final store = LgPairingKeyStore();
+      await store.storeKeyForHost('192.168.1.10', 'abc123');
 
-    final retrieved = await store.keyForHost('192.168.1.10');
-    expect(retrieved, 'abc123');
-  });
+      final retrieved = await store.keyForHost('192.168.1.10');
+      expect(retrieved, 'abc123');
+    },
+  );
 
-  test('LgPairingKeyStore: keyForHost returns null when no key is stored', () async {
-    final store = LgPairingKeyStore();
-    expect(await store.keyForHost('192.168.1.99'), isNull);
-  });
+  test(
+    'LgPairingKeyStore: keyForHost returns null when no key is stored',
+    () async {
+      final store = LgPairingKeyStore();
+      expect(await store.keyForHost('192.168.1.99'), isNull);
+    },
+  );
 
   test('LgPairingKeyStore: clearKeyForHost removes the stored key', () async {
     final store = LgPairingKeyStore();
@@ -37,13 +43,16 @@ void main() {
     expect(await store.keyForHost('192.168.1.20'), 'key-for-tv2');
   });
 
-  test('LgPairingKeyStore: clearing one host does not affect another', () async {
-    final store = LgPairingKeyStore();
-    await store.storeKeyForHost('192.168.1.10', 'key-for-tv1');
-    await store.storeKeyForHost('192.168.1.20', 'key-for-tv2');
-    await store.clearKeyForHost('192.168.1.10');
+  test(
+    'LgPairingKeyStore: clearing one host does not affect another',
+    () async {
+      final store = LgPairingKeyStore();
+      await store.storeKeyForHost('192.168.1.10', 'key-for-tv1');
+      await store.storeKeyForHost('192.168.1.20', 'key-for-tv2');
+      await store.clearKeyForHost('192.168.1.10');
 
-    expect(await store.keyForHost('192.168.1.10'), isNull);
-    expect(await store.keyForHost('192.168.1.20'), 'key-for-tv2');
-  });
+      expect(await store.keyForHost('192.168.1.10'), isNull);
+      expect(await store.keyForHost('192.168.1.20'), 'key-for-tv2');
+    },
+  );
 }

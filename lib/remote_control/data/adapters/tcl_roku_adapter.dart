@@ -107,7 +107,10 @@ class TclRokuAdapter implements TvBrandAdapter {
   }
 
   @override
-  Future<void> sendText({required TvDevice device, required String text}) async {
+  Future<void> sendText({
+    required TvDevice device,
+    required String text,
+  }) async {
     throw UnsupportedError('Text input is not supported for Roku TVs.');
   }
 

@@ -11,10 +11,10 @@ void main() {
     });
 
     test('returns multiple fallbacks for playPause', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.playPause),
-        ['KEY_PLAYPAUSE', 'KEY_PLAY'],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.playPause), [
+        'KEY_PLAYPAUSE',
+        'KEY_PLAY',
+      ]);
     });
 
     test('returns KEY_VOLUMEUP for volumeUp', () {
@@ -26,17 +26,17 @@ void main() {
     });
 
     test('returns multiple fallbacks for channelUp', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.channelUp),
-        ['KEY_CHANNELUP', 'KEY_CHSUP'],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.channelUp), [
+        'KEY_CHANNELUP',
+        'KEY_CHSUP',
+      ]);
     });
 
     test('returns multiple fallbacks for channelDown', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.channelDown),
-        ['KEY_CHANNELDOWN', 'KEY_CHSDOWN'],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.channelDown), [
+        'KEY_CHANNELDOWN',
+        'KEY_CHSDOWN',
+      ]);
     });
 
     test('returns KEY_MUTE for mute', () {
@@ -44,10 +44,10 @@ void main() {
     });
 
     test('returns multiple fallbacks for input', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.input),
-        ['KEY_SOURCE', 'KEY_INPUT'],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.input), [
+        'KEY_SOURCE',
+        'KEY_INPUT',
+      ]);
     });
 
     test('returns KEY_UP for dpadUp', () {
@@ -71,10 +71,11 @@ void main() {
     });
 
     test('returns multiple fallbacks for back', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.back),
-        ['KEY_RETURNS', 'KEY_RETURN', 'KEY_BACK'],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.back), [
+        'KEY_RETURNS',
+        'KEY_RETURN',
+        'KEY_BACK',
+      ]);
     });
 
     test('returns KEY_HOME for home', () {
@@ -82,51 +83,62 @@ void main() {
     });
 
     test('returns multiple fallbacks for menu', () {
-      expect(
-        mapper.keyCodesFor(RemoteCommand.menu),
-        ['KEY_MENU', 'KEY_SETTINGS', 'KEY_SETTING', 'KEY_OPTION'],
-      );
+      expect(mapper.keyCodesFor(RemoteCommand.menu), [
+        'KEY_MENU',
+        'KEY_SETTINGS',
+        'KEY_SETTING',
+        'KEY_OPTION',
+      ]);
     });
   });
 
-  group('HisenseKeyMapper: app-launch commands return empty (handled via launchVidaaApp)', () {
-    test('web returns empty', () {
-      expect(mapper.keyCodesFor(RemoteCommand.web), isEmpty);
-    });
+  group(
+    'HisenseKeyMapper: app-launch commands return empty (handled via launchVidaaApp)',
+    () {
+      test('web returns empty', () {
+        expect(mapper.keyCodesFor(RemoteCommand.web), isEmpty);
+      });
 
-    test('netflix returns empty', () {
-      expect(mapper.keyCodesFor(RemoteCommand.netflix), isEmpty);
-    });
+      test('netflix returns empty', () {
+        expect(mapper.keyCodesFor(RemoteCommand.netflix), isEmpty);
+      });
 
-    test('primeVideo returns empty', () {
-      expect(mapper.keyCodesFor(RemoteCommand.primeVideo), isEmpty);
-    });
+      test('primeVideo returns empty', () {
+        expect(mapper.keyCodesFor(RemoteCommand.primeVideo), isEmpty);
+      });
 
-    test('disneyPlus returns empty', () {
-      expect(mapper.keyCodesFor(RemoteCommand.disneyPlus), isEmpty);
-    });
+      test('disneyPlus returns empty', () {
+        expect(mapper.keyCodesFor(RemoteCommand.disneyPlus), isEmpty);
+      });
 
-    test('primaryKeyCodeFor returns null for all app-launch commands', () {
-      for (final command in [
-        RemoteCommand.web,
-        RemoteCommand.netflix,
-        RemoteCommand.primeVideo,
-        RemoteCommand.disneyPlus,
-      ]) {
-        expect(
-          mapper.primaryKeyCodeFor(command),
-          isNull,
-          reason: '${command.name} should have no primary key code',
-        );
-      }
-    });
-  });
+      test('primaryKeyCodeFor returns null for all app-launch commands', () {
+        for (final command in [
+          RemoteCommand.web,
+          RemoteCommand.netflix,
+          RemoteCommand.primeVideo,
+          RemoteCommand.disneyPlus,
+        ]) {
+          expect(
+            mapper.primaryKeyCodeFor(command),
+            isNull,
+            reason: '${command.name} should have no primary key code',
+          );
+        }
+      });
+    },
+  );
 
   group('HisenseKeyMapper: primaryKeyCodeFor', () {
     test('returns first key for commands with multiple fallbacks', () {
-      expect(mapper.primaryKeyCodeFor(RemoteCommand.playPause), 'KEY_PLAYPAUSE');
+      expect(
+        mapper.primaryKeyCodeFor(RemoteCommand.playPause),
+        'KEY_PLAYPAUSE',
+      );
       expect(mapper.primaryKeyCodeFor(RemoteCommand.back), 'KEY_RETURNS');
-      expect(mapper.primaryKeyCodeFor(RemoteCommand.channelUp), 'KEY_CHANNELUP');
+      expect(
+        mapper.primaryKeyCodeFor(RemoteCommand.channelUp),
+        'KEY_CHANNELUP',
+      );
     });
 
     test('returns the single key for single-mapping commands', () {

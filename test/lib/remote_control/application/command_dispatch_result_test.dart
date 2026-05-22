@@ -56,12 +56,16 @@ void main() {
 
   group('CommandDispatchResult.compatibility', () {
     test('isSuccess is false', () {
-      final result = CommandDispatchResult.compatibility('No focused text field');
+      final result = CommandDispatchResult.compatibility(
+        'No focused text field',
+      );
       expect(result.isSuccess, isFalse);
     });
 
     test('outcome is compatibility', () {
-      final result = CommandDispatchResult.compatibility('No focused text field');
+      final result = CommandDispatchResult.compatibility(
+        'No focused text field',
+      );
       expect(result.getOutcome(), CommandOutcome.compatibility);
     });
 
@@ -71,16 +75,19 @@ void main() {
     });
   });
 
-  group('CommandDispatchResult: outcome discriminates all four cases (R-11)', () {
-    test('unsupported and failure have distinct outcomes', () {
-      final unsupported = CommandDispatchResult.unsupported('not available');
-      final failure = CommandDispatchResult.failure('transport error');
+  group(
+    'CommandDispatchResult: outcome discriminates all four cases (R-11)',
+    () {
+      test('unsupported and failure have distinct outcomes', () {
+        final unsupported = CommandDispatchResult.unsupported('not available');
+        final failure = CommandDispatchResult.failure('transport error');
 
-      expect(unsupported.getOutcome(), CommandOutcome.unsupported);
-      expect(failure.getOutcome(), CommandOutcome.failure);
-      expect(unsupported.getOutcome(), isNot(failure.getOutcome()));
-    });
-  });
+        expect(unsupported.getOutcome(), CommandOutcome.unsupported);
+        expect(failure.getOutcome(), CommandOutcome.failure);
+        expect(unsupported.getOutcome(), isNot(failure.getOutcome()));
+      });
+    },
+  );
 
   group('CommandDispatchResult.pinRequired', () {
     test('isPinRequired is true', () {

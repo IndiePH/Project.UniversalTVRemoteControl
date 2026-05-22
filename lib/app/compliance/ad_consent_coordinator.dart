@@ -30,9 +30,15 @@ class AdConsentCoordinator {
     if (!AdConfig.supportsMobileAds) {
       return false;
     }
-    final status = await ConsentInformation.instance
-        .getPrivacyOptionsRequirementStatus();
-    return status == PrivacyOptionsRequirementStatus.required;
+    try {
+      final status = await ConsentInformation.instance
+          .getPrivacyOptionsRequirementStatus()
+          .timeout(const Duration(seconds: 2));
+      return status == PrivacyOptionsRequirementStatus.required;
+    } on Object {
+      // Widget tests simulate Android but lack the Mobile Ads plugin.
+      return false;
+    }
   }
 
   static Future<void> showPrivacyOptionsForm() async {

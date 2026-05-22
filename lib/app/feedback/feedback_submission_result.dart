@@ -1,10 +1,16 @@
 /// Outcome of an in-app feedback submission attempt.
-enum FeedbackSubmissionOutcome { success, emptyMessage, notConfigured, networkError }
+enum FeedbackSubmissionOutcome {
+  success,
+  emptyMessage,
+  notConfigured,
+  networkError,
+}
 
 final class FeedbackSubmissionResult {
   const FeedbackSubmissionResult._(this.outcome);
 
-  const FeedbackSubmissionResult.success() : this._(FeedbackSubmissionOutcome.success);
+  const FeedbackSubmissionResult.success()
+    : this._(FeedbackSubmissionOutcome.success);
 
   const FeedbackSubmissionResult.emptyMessage()
     : this._(FeedbackSubmissionOutcome.emptyMessage);

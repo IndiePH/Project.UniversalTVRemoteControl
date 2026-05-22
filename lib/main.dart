@@ -7,6 +7,7 @@ import 'package:get_it/get_it.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:one_remote/app/compliance/ad_consent_coordinator.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
+import 'package:one_remote/app/configurations/app_build_config.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
@@ -42,7 +43,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  final env = kDebugMode ? AppEnvironment.debug : AppEnvironment.production;
+  final env = AppBuildConfig.environmentForMain();
   await DiBootstrap.initialize(env);
   final proEntitlementService = GetIt.instance<ProEntitlementService>();
   await proEntitlementService.applyLastKnownStatusFromCache();

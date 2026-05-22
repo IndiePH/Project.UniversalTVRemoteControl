@@ -17,6 +17,7 @@ final class PairingPageViewState {
 
   final bool isLoading;
   final bool isPairingInProgress;
+
   /// Contextual hint shown inside the busy overlay (e.g. "Check your TV screen").
   final String? pairingHint;
   final String? errorMessage;
@@ -25,6 +26,7 @@ final class PairingPageViewState {
   final List<String> recentManualIps;
   final Set<String> savedDeviceIds;
   final Map<String, DateTime> pairingHistoryByDeviceId;
+
   /// Incremented on each scan; used as a key seed to force reachability re-probe.
   final int scanCount;
 
@@ -46,7 +48,9 @@ final class PairingPageViewState {
       isLoading: isLoading ?? this.isLoading,
       isPairingInProgress: isPairingInProgress ?? this.isPairingInProgress,
       pairingHint: clearPairingHint ? null : (pairingHint ?? this.pairingHint),
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
       savedDevices: savedDevices ?? this.savedDevices,
       discoveredDevices: discoveredDevices ?? this.discoveredDevices,
       recentManualIps: recentManualIps ?? this.recentManualIps,

@@ -6,10 +6,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 /// Renders nothing until the ad is fully loaded so the layout does not reserve
 /// an empty placement bar while sizing/fetching is in flight.
 class BottomBannerAd extends StatefulWidget {
-  const BottomBannerAd({
-    super.key,
-    required this.adUnitId,
-  });
+  const BottomBannerAd({super.key, required this.adUnitId});
 
   final String adUnitId;
 

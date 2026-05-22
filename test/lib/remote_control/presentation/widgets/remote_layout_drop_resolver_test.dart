@@ -118,16 +118,8 @@ void main() {
 
     test('accepts swap between two 1x1 controls', () {
       final items = [
-        _item(
-          id: 'home',
-          col: _homeDefinition.col,
-          row: _homeDefinition.row,
-        ),
-        _item(
-          id: 'menu',
-          col: _menuDefinition.col,
-          row: _menuDefinition.row,
-        ),
+        _item(id: 'home', col: _homeDefinition.col, row: _homeDefinition.row),
+        _item(id: 'menu', col: _menuDefinition.col, row: _menuDefinition.row),
       ];
       final occupancy = RemoteLayoutEditorGridGeometry.occupancyByCell(items);
 
@@ -175,47 +167,48 @@ void main() {
       expect(resolved, isNull);
     });
 
-    test('rejects swap when displaced dpad has no non-overlapping placement', () {
-      bool isDpadCell(int col, int row) =>
-          col >= _dpadDefinition.col &&
-          col < _dpadDefinition.col + _dpadDefinition.width &&
-          row >= _dpadDefinition.row &&
-          row < _dpadDefinition.row + _dpadDefinition.height;
-      final items = <LayoutEditItem>[
-        for (var col = 0; col < kRemoteLayoutGridColumns; col++)
-          for (var row = 0; row < kRemoteLayoutGridRows; row++)
-            if (!isDpadCell(col, row))
-              _item(id: 'fill-$col-$row', col: col, row: row),
-        _item(
-          id: 'dpad',
-          col: _dpadDefinition.col,
-          row: _dpadDefinition.row,
-          width: _dpadDefinition.width,
-          height: _dpadDefinition.height,
-        ),
-        _item(id: 'menu', col: _lastGridCol, row: _lastGridRow),
-      ];
-      final occupancy = RemoteLayoutEditorGridGeometry.occupancyByCell(items);
+    test(
+      'rejects swap when displaced dpad has no non-overlapping placement',
+      () {
+        bool isDpadCell(int col, int row) =>
+            col >= _dpadDefinition.col &&
+            col < _dpadDefinition.col + _dpadDefinition.width &&
+            row >= _dpadDefinition.row &&
+            row < _dpadDefinition.row + _dpadDefinition.height;
+        final items = <LayoutEditItem>[
+          for (var col = 0; col < kRemoteLayoutGridColumns; col++)
+            for (var row = 0; row < kRemoteLayoutGridRows; row++)
+              if (!isDpadCell(col, row))
+                _item(id: 'fill-$col-$row', col: col, row: row),
+          _item(
+            id: 'dpad',
+            col: _dpadDefinition.col,
+            row: _dpadDefinition.row,
+            width: _dpadDefinition.width,
+            height: _dpadDefinition.height,
+          ),
+          _item(id: 'menu', col: _lastGridCol, row: _lastGridRow),
+        ];
+        final occupancy = RemoteLayoutEditorGridGeometry.occupancyByCell(items);
 
-      final resolved = resolver.resolveDrop(
-        gridColumns: kRemoteLayoutGridColumns,
-        gridRows: kRemoteLayoutGridRows,
-        movingId: 'menu',
-        hoverCol: 2,
-        hoverRow: 3,
-        occupancyByCell: occupancy,
-        itemsById: _itemsById(items),
-        anchorColOffset: 0,
-        anchorRowOffset: 0,
-      );
+        final resolved = resolver.resolveDrop(
+          gridColumns: kRemoteLayoutGridColumns,
+          gridRows: kRemoteLayoutGridRows,
+          movingId: 'menu',
+          hoverCol: 2,
+          hoverRow: 3,
+          occupancyByCell: occupancy,
+          itemsById: _itemsById(items),
+          anchorColOffset: 0,
+          anchorRowOffset: 0,
+        );
 
-      expect(resolved, isNull);
-    });
+        expect(resolved, isNull);
+      },
+    );
 
     test('respects drag anchor offsets when resolving hover cell', () {
-      final items = [
-        _item(id: 'wide', col: 0, row: 0, width: 2, height: 1),
-      ];
+      final items = [_item(id: 'wide', col: 0, row: 0, width: 2, height: 1)];
       final occupancy = RemoteLayoutEditorGridGeometry.occupancyByCell(items);
 
       final resolved = resolver.resolveDrop(

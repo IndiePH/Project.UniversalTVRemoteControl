@@ -42,9 +42,9 @@ class AndroidTvTcpTransportClient
     required AndroidTvCertificateStore certStore,
     AndroidTvHandshakeTracer? tracer,
     this.connectTimeout = const Duration(seconds: 8),
-  })  : _hostResolver = hostResolver,
-        _certStore = certStore,
-        _tracer = tracer;
+  }) : _hostResolver = hostResolver,
+       _certStore = certStore,
+       _tracer = tracer;
 
   final String Function(String deviceId) _hostResolver;
   final AndroidTvCertificateStore _certStore;
@@ -198,7 +198,9 @@ class AndroidTvTcpTransportClient
     _sendRemoteMessage(
       deviceId,
       RemoteMessage(
-        remoteAppLinkLaunchRequest: RemoteAppLinkLaunchRequest(appLink: appLink),
+        remoteAppLinkLaunchRequest: RemoteAppLinkLaunchRequest(
+          appLink: appLink,
+        ),
       ),
     );
   }
@@ -339,14 +341,18 @@ class AndroidTvTcpTransportClient
       final (msgLen, consumed) = varint;
       if (buf.length < consumed + msgLen) return;
 
-      final msgBytes =
-          Uint8List.fromList(buf.sublist(consumed, consumed + msgLen));
+      final msgBytes = Uint8List.fromList(
+        buf.sublist(consumed, consumed + msgLen),
+      );
       buf.removeRange(0, consumed + msgLen);
 
       try {
         _handlePairingMessage(deviceId, OuterMessage.fromBuffer(msgBytes));
       } catch (e) {
-        final hex = msgBytes.take(32).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+        final hex = msgBytes
+            .take(32)
+            .map((b) => b.toRadixString(16).padLeft(2, '0'))
+            .join(' ');
         _failPendingPairing(
           deviceId,
           AndroidTvConnectionException(
@@ -412,8 +418,14 @@ class AndroidTvTcpTransportClient
   }
 
   void _onPairingSocketError(String deviceId, Object error) {
-    log('Android TV pairing socket error: $error', name: 'android_tv_transport');
-    _failPendingPairing(deviceId, AndroidTvConnectionException(error.toString()));
+    log(
+      'Android TV pairing socket error: $error',
+      name: 'android_tv_transport',
+    );
+    _failPendingPairing(
+      deviceId,
+      AndroidTvConnectionException(error.toString()),
+    );
     _cleanupPairing(deviceId);
     _emitState(deviceId, ConnectionState.error);
   }
@@ -547,8 +559,9 @@ class AndroidTvTcpTransportClient
       final (msgLen, consumed) = varint;
       if (buf.length < consumed + msgLen) return;
 
-      final msgBytes =
-          Uint8List.fromList(buf.sublist(consumed, consumed + msgLen));
+      final msgBytes = Uint8List.fromList(
+        buf.sublist(consumed, consumed + msgLen),
+      );
       buf.removeRange(0, consumed + msgLen);
 
       try {
@@ -576,7 +589,10 @@ class AndroidTvTcpTransportClient
     if (msg.hasRemoteConfigure()) {
       final negotiated = _remoteClientFeatures & msg.remoteConfigure.code1;
       _remoteNegotiatedFeatures[deviceId] = negotiated;
-      _tracer?.recordEvent(deviceId, 'rx:RemoteConfigure(code1=${msg.remoteConfigure.code1},negotiated=$negotiated)');
+      _tracer?.recordEvent(
+        deviceId,
+        'rx:RemoteConfigure(code1=${msg.remoteConfigure.code1},negotiated=$negotiated)',
+      );
       // Server initiates handshake — echo code1, send our device info.
       _sendRemoteMessage(
         deviceId,
@@ -595,17 +611,22 @@ class AndroidTvTcpTransportClient
       _tracer?.recordEvent(deviceId, 'tx:RemoteConfigure');
     } else if (msg.hasRemoteSetActive()) {
       // TV sends its own active bitmask; we respond with our negotiated features.
-      final features = _remoteNegotiatedFeatures[deviceId] ?? _remoteClientFeatures;
-      _tracer?.recordEvent(deviceId, 'rx:RemoteSetActive(active=${msg.remoteSetActive.active})');
+      final features =
+          _remoteNegotiatedFeatures[deviceId] ?? _remoteClientFeatures;
+      _tracer?.recordEvent(
+        deviceId,
+        'rx:RemoteSetActive(active=${msg.remoteSetActive.active})',
+      );
       _sendRemoteMessage(
         deviceId,
-        RemoteMessage(
-          remoteSetActive: RemoteSetActive(active: features),
-        ),
+        RemoteMessage(remoteSetActive: RemoteSetActive(active: features)),
       );
       _tracer?.recordEvent(deviceId, 'tx:RemoteSetActive(active=$features)');
     } else if (msg.hasRemoteStart()) {
-      _tracer?.recordEvent(deviceId, 'rx:RemoteStart(started=${msg.remoteStart.started})');
+      _tracer?.recordEvent(
+        deviceId,
+        'rx:RemoteStart(started=${msg.remoteStart.started})',
+      );
       // Handshake complete — unblock _connectRemote.
       final c = _remoteStartedCompleters[deviceId];
       if (c != null && !c.isCompleted) c.complete();
@@ -645,10 +666,7 @@ class AndroidTvTcpTransportClient
     try {
       await _connectRemote(deviceId);
     } catch (e) {
-      log(
-        'Android TV: reconnect failed: $e',
-        name: 'android_tv_transport',
-      );
+      log('Android TV: reconnect failed: $e', name: 'android_tv_transport');
       _remoteActive.remove(deviceId);
       _emitState(deviceId, ConnectionState.error);
     }
@@ -676,7 +694,9 @@ class AndroidTvTcpTransportClient
     _fieldCounters.remove(deviceId);
     final c = _remoteStartedCompleters.remove(deviceId);
     if (c != null && !c.isCompleted) {
-      c.completeError(const AndroidTvConnectionException('Remote connection closed'));
+      c.completeError(
+        const AndroidTvConnectionException('Remote connection closed'),
+      );
     }
   }
 

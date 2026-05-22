@@ -106,55 +106,50 @@ final class AppColors extends ThemeExtension<AppColors> {
           Color.lerp(remoteSurface, other.remoteSurface, t) ?? remoteSurface,
       remoteRaisedSurface:
           Color.lerp(remoteRaisedSurface, other.remoteRaisedSurface, t) ??
-              remoteRaisedSurface,
+          remoteRaisedSurface,
       remoteOutline:
           Color.lerp(remoteOutline, other.remoteOutline, t) ?? remoteOutline,
       remoteGlyphOnRemote:
           Color.lerp(remoteGlyphOnRemote, other.remoteGlyphOnRemote, t) ??
-              remoteGlyphOnRemote,
+          remoteGlyphOnRemote,
       remotePowerFill:
           Color.lerp(remotePowerFill, other.remotePowerFill, t) ??
-              remotePowerFill,
+          remotePowerFill,
       remoteGlyphOnPower:
           Color.lerp(remoteGlyphOnPower, other.remoteGlyphOnPower, t) ??
-              remoteGlyphOnPower,
-      remoteActionSuccessFill: Color.lerp(
+          remoteGlyphOnPower,
+      remoteActionSuccessFill:
+          Color.lerp(
             remoteActionSuccessFill,
             other.remoteActionSuccessFill,
             t,
           ) ??
           remoteActionSuccessFill,
-      remoteActionSuccessOnFill: Color.lerp(
+      remoteActionSuccessOnFill:
+          Color.lerp(
             remoteActionSuccessOnFill,
             other.remoteActionSuccessOnFill,
             t,
           ) ??
           remoteActionSuccessOnFill,
-      layoutEditorDropValid: Color.lerp(
-            layoutEditorDropValid,
-            other.layoutEditorDropValid,
-            t,
-          ) ??
+      layoutEditorDropValid:
+          Color.lerp(layoutEditorDropValid, other.layoutEditorDropValid, t) ??
           layoutEditorDropValid,
-      layoutEditorDropInvalid: Color.lerp(
+      layoutEditorDropInvalid:
+          Color.lerp(
             layoutEditorDropInvalid,
             other.layoutEditorDropInvalid,
             t,
           ) ??
           layoutEditorDropInvalid,
-      pairingModalBarrier: Color.lerp(
-            pairingModalBarrier,
-            other.pairingModalBarrier,
-            t,
-          ) ??
+      pairingModalBarrier:
+          Color.lerp(pairingModalBarrier, other.pairingModalBarrier, t) ??
           pairingModalBarrier,
-      pairingBusyOnCard: Color.lerp(
-            pairingBusyOnCard,
-            other.pairingBusyOnCard,
-            t,
-          ) ??
+      pairingBusyOnCard:
+          Color.lerp(pairingBusyOnCard, other.pairingBusyOnCard, t) ??
           pairingBusyOnCard,
-      remoteDisabledControlTint: Color.lerp(
+      remoteDisabledControlTint:
+          Color.lerp(
             remoteDisabledControlTint,
             other.remoteDisabledControlTint,
             t,
@@ -162,7 +157,7 @@ final class AppColors extends ThemeExtension<AppColors> {
           remoteDisabledControlTint,
       pairingHintGridTint:
           Color.lerp(pairingHintGridTint, other.pairingHintGridTint, t) ??
-              pairingHintGridTint,
+          pairingHintGridTint,
     );
   }
 }

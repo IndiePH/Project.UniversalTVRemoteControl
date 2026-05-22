@@ -7,8 +7,9 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 final class RuntimeFlagsTemplateDebug {
   const RuntimeFlagsTemplateDebug._();
 
-  static const bool _compileUseFakeTransports =
-      bool.fromEnvironment('USE_FAKE_TRANSPORTS');
+  static const bool _compileUseFakeTransports = bool.fromEnvironment(
+    'USE_FAKE_TRANSPORTS',
+  );
 
   static Future<void> copyRuntimeFlagsTemplate({
     required TvDevice? activeDevice,

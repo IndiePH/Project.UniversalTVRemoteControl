@@ -28,8 +28,7 @@ class RemotePressFeedback extends StatefulWidget {
 class _RemotePressFeedbackState extends State<RemotePressFeedback> {
   bool _pressed = false;
 
-  bool get _interactive =>
-      widget.enabled && widget.onPressed != null;
+  bool get _interactive => widget.enabled && widget.onPressed != null;
 
   void _setPressed(bool value) {
     if (_pressed == value || !mounted) {

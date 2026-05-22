@@ -28,7 +28,8 @@ final class RemoteKeyboardAvailability {
     if (!device.capabilities.contains(DeviceCapability.textInput)) {
       return const RemoteKeyboardAvailability._(
         isAvailable: false,
-        unavailableReason: RemoteKeyboardUnavailableReason.noTextInputCapability,
+        unavailableReason:
+            RemoteKeyboardUnavailableReason.noTextInputCapability,
       );
     }
     if (requireImeReady && !remoteTextInputReady) {
@@ -41,10 +42,7 @@ final class RemoteKeyboardAvailability {
   }
 
   /// Returns a concise diagnostic line for debug logs.
-  String toDebugLog({
-    required String action,
-    required String deviceId,
-  }) {
+  String toDebugLog({required String action, required String deviceId}) {
     switch (unavailableReason) {
       case RemoteKeyboardUnavailableReason.noTextInputCapability:
         return '[OneRemote] keyboard $action: no textInput capability device=$deviceId';

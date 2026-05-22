@@ -51,15 +51,15 @@ class RemoteLayoutEditorActiveDragHover {
 
   @override
   int get hashCode => Object.hash(
-        movingId,
-        hoverCol,
-        hoverRow,
-        snapCol,
-        snapRow,
-        width,
-        height,
-        canDrop,
-      );
+    movingId,
+    hoverCol,
+    hoverRow,
+    snapCol,
+    snapRow,
+    width,
+    height,
+    canDrop,
+  );
 }
 
 /// Drag anchor, hover highlight, and [RemoteLayoutDropResolver] wiring for the editor grid.
@@ -67,9 +67,9 @@ class RemoteLayoutEditorActiveDragHover {
 /// Does not call [State.setState]; callers rebuild when mutators return `true`.
 class RemoteLayoutEditorDragSession {
   RemoteLayoutEditorDragSession()
-      : _dropResolver = RemoteLayoutDropResolver(
-          RemoteLayoutEditorGridGeometry.validationFootprintFor,
-        );
+    : _dropResolver = RemoteLayoutDropResolver(
+        RemoteLayoutEditorGridGeometry.validationFootprintFor,
+      );
 
   final RemoteLayoutDropResolver _dropResolver;
   final Map<String, RemoteLayoutEditorDragAnchor> _dragAnchorOffsetsByItemId =
@@ -85,7 +85,9 @@ class RemoteLayoutEditorDragSession {
     required double cellSize,
     required double gridGap,
   }) {
-    final footprint = RemoteLayoutEditorGridGeometry.validationFootprintFor(item);
+    final footprint = RemoteLayoutEditorGridGeometry.validationFootprintFor(
+      item,
+    );
     final stride = cellSize + gridGap;
     final colOffset = (localPosition.dx / stride).floor().clamp(
       0,

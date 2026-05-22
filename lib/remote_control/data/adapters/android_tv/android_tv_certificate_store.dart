@@ -36,7 +36,8 @@ class AndroidTvCertificateStore {
     if (certFile.existsSync() && keyFile.existsSync() && rsaFile.existsSync()) {
       final certPem = await certFile.readAsString();
       final keyPem = await keyFile.readAsString();
-      final rsa = jsonDecode(await rsaFile.readAsString()) as Map<String, dynamic>;
+      final rsa =
+          jsonDecode(await rsaFile.readAsString()) as Map<String, dynamic>;
       _clientModulus = BigInt.parse(rsa['m'] as String, radix: 16);
       _clientExponent = BigInt.parse(rsa['e'] as String, radix: 16);
       _clientContext = _makeContext(certPem, keyPem);
@@ -54,16 +55,22 @@ class AndroidTvCertificateStore {
       privateKey,
       publicKey,
     );
-    final certPem = X509Utils.generateSelfSignedCertificate(privateKey, csr, 3650);
+    final certPem = X509Utils.generateSelfSignedCertificate(
+      privateKey,
+      csr,
+      3650,
+    );
     final keyPem = CryptoUtils.encodeRSAPrivateKeyToPem(privateKey);
 
     await Future.wait([
       certFile.writeAsString(certPem),
       keyFile.writeAsString(keyPem),
-      rsaFile.writeAsString(jsonEncode({
-        'm': publicKey.modulus!.toRadixString(16),
-        'e': publicKey.exponent!.toRadixString(16),
-      })),
+      rsaFile.writeAsString(
+        jsonEncode({
+          'm': publicKey.modulus!.toRadixString(16),
+          'e': publicKey.exponent!.toRadixString(16),
+        }),
+      ),
     ]);
 
     _clientModulus = publicKey.modulus!;
@@ -102,7 +109,9 @@ class AndroidTvCertificateStore {
   Future<void> storeServerCert(String host, Uint8List derBytes) async {
     final dir = await getApplicationDocumentsDirectory();
     final tag = _hostTag(host);
-    await File('${dir.path}/android_tv_server_$tag.cert.der').writeAsBytes(derBytes);
+    await File(
+      '${dir.path}/android_tv_server_$tag.cert.der',
+    ).writeAsBytes(derBytes);
     final components = _rsaFromCertDer(derBytes);
     if (components != null) {
       final (mod, exp) = components;
@@ -114,7 +123,8 @@ class AndroidTvCertificateStore {
 
   /// Extracts the RSA public key (modulus, exponent) from a DER-encoded X.509 cert.
   /// Returns null if the cert is not RSA or parsing fails.
-  static (BigInt, BigInt)? extractRsaFromDer(Uint8List der) => _rsaFromCertDer(der);
+  static (BigInt, BigInt)? extractRsaFromDer(Uint8List der) =>
+      _rsaFromCertDer(der);
 
   /// Removes all stored server certificate files for [host].
   Future<void> clearServerCert(String host) async {
@@ -131,7 +141,9 @@ class AndroidTvCertificateStore {
   /// Returns the server's RSA (modulus, exponent) for [host], or null if not yet paired.
   Future<(BigInt, BigInt)?> serverRsaComponents(String host) async {
     final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/android_tv_server_${_hostTag(host)}.rsa.json');
+    final file = File(
+      '${dir.path}/android_tv_server_${_hostTag(host)}.rsa.json',
+    );
     if (!file.existsSync()) return null;
     final rsa = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
     return (

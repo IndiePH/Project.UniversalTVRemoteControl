@@ -26,7 +26,9 @@ final class DiagnosticsRecordingRemoteCommandService
       _delegate.checkRemoteTextInputReady(device: device);
 
   @override
-  Future<CommandDispatchResult> preparePairing({required TvDevice device}) async {
+  Future<CommandDispatchResult> preparePairing({
+    required TvDevice device,
+  }) async {
     final result = await _delegate.preparePairing(device: device);
     _recorder.recordPairingDispatch(
       phase: 'prepare',

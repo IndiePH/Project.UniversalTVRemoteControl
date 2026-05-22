@@ -62,11 +62,14 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
           maxHeight: maxHeight,
         );
         final gridWidth =
-            (widget.gridColumns * cellSize) + ((widget.gridColumns - 1) * widget.gridGap);
+            (widget.gridColumns * cellSize) +
+            ((widget.gridColumns - 1) * widget.gridGap);
         final gridHeight =
-            (widget.gridRows * cellSize) + ((widget.gridRows - 1) * widget.gridGap);
-        final occupancyByCell =
-            RemoteLayoutEditorGridGeometry.occupancyByCell(widget.layoutItems);
+            (widget.gridRows * cellSize) +
+            ((widget.gridRows - 1) * widget.gridGap);
+        final occupancyByCell = RemoteLayoutEditorGridGeometry.occupancyByCell(
+          widget.layoutItems,
+        );
         final itemsById = <String, LayoutEditItem>{
           for (final item in widget.layoutItems) item.id: item,
         };
@@ -164,15 +167,19 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
                           unawaited(widget.onPersistLayout());
                         },
                         builder: (context, candidateData, _) {
-                          final footprintHover = _drag.cellInActiveFootprint(col, row);
-                          final hoverCanDrop = _drag.activeDragHover?.canDrop ?? false;
+                          final footprintHover = _drag.cellInActiveFootprint(
+                            col,
+                            row,
+                          );
+                          final hoverCanDrop =
+                              _drag.activeDragHover?.canDrop ?? false;
                           final directTarget = candidateData.isNotEmpty;
                           final highlightDrop = directTarget || footprintHover;
                           final borderColor = !highlightDrop
                               ? slotBorderColor
                               : (hoverCanDrop
-                                  ? appColors.layoutEditorDropValid
-                                  : appColors.layoutEditorDropInvalid);
+                                    ? appColors.layoutEditorDropValid
+                                    : appColors.layoutEditorDropInvalid);
                           final borderWidth = highlightDrop ? 2.0 : 1.0;
                           return SizedBox(
                             width: cellSize,

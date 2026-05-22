@@ -1,11 +1,4 @@
-enum TvBrand {
-  samsung,
-  lg,
-  hisense,
-  androidTv,
-  roku,
-  tcl,
-}
+enum TvBrand { samsung, lg, hisense, androidTv, roku, tcl }
 
 extension TvBrandDisplay on TvBrand {
   String get displayName => switch (this) {

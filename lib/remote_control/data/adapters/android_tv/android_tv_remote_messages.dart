@@ -9,8 +9,10 @@ import 'package:protobuf/protobuf.dart' as $pb;
 // ---------------------------------------------------------------------------
 
 class RemoteDirection extends $pb.ProtobufEnum {
-  static const RemoteDirection unknownDirection =
-      RemoteDirection._(0, 'UNKNOWN_DIRECTION');
+  static const RemoteDirection unknownDirection = RemoteDirection._(
+    0,
+    'UNKNOWN_DIRECTION',
+  );
   static const RemoteDirection startLong = RemoteDirection._(1, 'START_LONG');
   static const RemoteDirection endLong = RemoteDirection._(2, 'END_LONG');
   static const RemoteDirection short = RemoteDirection._(3, 'SHORT');
@@ -46,16 +48,16 @@ class RemoteSetActive extends $pb.GeneratedMessage {
   factory RemoteSetActive.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteSetActive',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'active', $pb.PbFieldType.O3)
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteSetActive',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(1, 'active', $pb.PbFieldType.O3)
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -116,24 +118,24 @@ class RemoteKeyInject extends $pb.GeneratedMessage {
   factory RemoteKeyInject.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteKeyInject',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'keyCode', $pb.PbFieldType.O3)
-    ..e<RemoteDirection>(
-      2,
-      'direction',
-      $pb.PbFieldType.OE,
-      defaultOrMaker: RemoteDirection.unknownDirection,
-      valueOf: RemoteDirection.valueOf,
-      enumValues: RemoteDirection.values,
-    )
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteKeyInject',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(1, 'keyCode', $pb.PbFieldType.O3)
+        ..e<RemoteDirection>(
+          2,
+          'direction',
+          $pb.PbFieldType.OE,
+          defaultOrMaker: RemoteDirection.unknownDirection,
+          valueOf: RemoteDirection.valueOf,
+          enumValues: RemoteDirection.values,
+        )
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -179,17 +181,17 @@ class RemotePingRequest extends $pb.GeneratedMessage {
   factory RemotePingRequest.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemotePingRequest',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'val1', $pb.PbFieldType.O3)
-    ..a<int>(2, 'val2', $pb.PbFieldType.O3)
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemotePingRequest',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(1, 'val1', $pb.PbFieldType.O3)
+        ..a<int>(2, 'val2', $pb.PbFieldType.O3)
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -233,16 +235,16 @@ class RemotePingResponse extends $pb.GeneratedMessage {
   factory RemotePingResponse.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemotePingResponse',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'val1', $pb.PbFieldType.O3)
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemotePingResponse',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(1, 'val1', $pb.PbFieldType.O3)
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -283,18 +285,18 @@ class RemoteImeObject extends $pb.GeneratedMessage {
   factory RemoteImeObject.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteImeObject',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'start', $pb.PbFieldType.O3)
-    ..a<int>(2, 'end', $pb.PbFieldType.O3)
-    ..aOS(3, 'value')
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteImeObject',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(1, 'start', $pb.PbFieldType.O3)
+        ..a<int>(2, 'end', $pb.PbFieldType.O3)
+        ..aOS(3, 'value')
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -346,18 +348,21 @@ class RemoteEditInfo extends $pb.GeneratedMessage {
   factory RemoteEditInfo.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteEditInfo',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'insert', $pb.PbFieldType.O3)
-    ..aOM<RemoteImeObject>(2, 'textFieldStatus',
-        subBuilder: RemoteImeObject.create)
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteEditInfo',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(1, 'insert', $pb.PbFieldType.O3)
+        ..aOM<RemoteImeObject>(
+          2,
+          'textFieldStatus',
+          subBuilder: RemoteImeObject.create,
+        )
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -411,23 +416,23 @@ class RemoteImeBatchEdit extends $pb.GeneratedMessage {
   factory RemoteImeBatchEdit.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteImeBatchEdit',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'imeCounter', $pb.PbFieldType.O3)
-    ..a<int>(2, 'fieldCounter', $pb.PbFieldType.O3)
-    ..pc<RemoteEditInfo>(
-      3,
-      'editInfo',
-      $pb.PbFieldType.PM,
-      subBuilder: RemoteEditInfo.create,
-    )
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteImeBatchEdit',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(1, 'imeCounter', $pb.PbFieldType.O3)
+        ..a<int>(2, 'fieldCounter', $pb.PbFieldType.O3)
+        ..pc<RemoteEditInfo>(
+          3,
+          'editInfo',
+          $pb.PbFieldType.PM,
+          subBuilder: RemoteEditInfo.create,
+        )
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -487,21 +492,21 @@ class RemoteTextFieldStatus extends $pb.GeneratedMessage {
   factory RemoteTextFieldStatus.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteTextFieldStatus',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'counterField', $pb.PbFieldType.O3)
-    ..aOS(2, 'value')
-    ..a<int>(3, 'start', $pb.PbFieldType.O3)
-    ..a<int>(4, 'end', $pb.PbFieldType.O3)
-    ..a<int>(5, 'int5', $pb.PbFieldType.O3)
-    ..aOS(6, 'label')
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteTextFieldStatus',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(1, 'counterField', $pb.PbFieldType.O3)
+        ..aOS(2, 'value')
+        ..a<int>(3, 'start', $pb.PbFieldType.O3)
+        ..a<int>(4, 'end', $pb.PbFieldType.O3)
+        ..a<int>(5, 'int5', $pb.PbFieldType.O3)
+        ..aOS(6, 'label')
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -569,24 +574,24 @@ class RemoteAppInfo extends $pb.GeneratedMessage {
   factory RemoteAppInfo.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteAppInfo',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'counter', $pb.PbFieldType.O3)    // index 0
-    ..a<int>(2, 'int2', $pb.PbFieldType.O3)        // index 1
-    ..a<int>(3, 'int3', $pb.PbFieldType.O3)        // index 2
-    ..aOS(4, 'int4')                                // index 3
-    ..a<int>(7, 'int7', $pb.PbFieldType.O3)        // index 4
-    ..a<int>(8, 'int8', $pb.PbFieldType.O3)        // index 5
-    ..aOS(10, 'label')                              // index 6
-    ..aOS(12, 'appPackage')                         // index 7
-    ..a<int>(13, 'int13', $pb.PbFieldType.O3)      // index 8
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteAppInfo',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(1, 'counter', $pb.PbFieldType.O3) // index 0
+        ..a<int>(2, 'int2', $pb.PbFieldType.O3) // index 1
+        ..a<int>(3, 'int3', $pb.PbFieldType.O3) // index 2
+        ..aOS(4, 'int4') // index 3
+        ..a<int>(7, 'int7', $pb.PbFieldType.O3) // index 4
+        ..a<int>(8, 'int8', $pb.PbFieldType.O3) // index 5
+        ..aOS(10, 'label') // index 6
+        ..aOS(12, 'appPackage') // index 7
+        ..a<int>(13, 'int13', $pb.PbFieldType.O3) // index 8
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -635,21 +640,21 @@ class RemoteImeKeyInject extends $pb.GeneratedMessage {
   factory RemoteImeKeyInject.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteImeKeyInject',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..aOM<RemoteAppInfo>(1, 'appInfo', subBuilder: RemoteAppInfo.create)
-    ..aOM<RemoteTextFieldStatus>(
-      2,
-      'textFieldStatus',
-      subBuilder: RemoteTextFieldStatus.create,
-    )
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteImeKeyInject',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..aOM<RemoteAppInfo>(1, 'appInfo', subBuilder: RemoteAppInfo.create)
+        ..aOM<RemoteTextFieldStatus>(
+          2,
+          'textFieldStatus',
+          subBuilder: RemoteTextFieldStatus.create,
+        )
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -707,21 +712,21 @@ class RemoteDeviceInfo extends $pb.GeneratedMessage {
   factory RemoteDeviceInfo.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteDeviceInfo',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..aOS(1, 'model')                              // index 0
-    ..aOS(2, 'vendor')                             // index 1
-    ..a<int>(3, 'unknown1', $pb.PbFieldType.O3)   // index 2
-    ..aOS(4, 'unknown2')                           // index 3
-    ..aOS(5, 'packageName')                        // index 4
-    ..aOS(6, 'appVersion')                         // index 5
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteDeviceInfo',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..aOS(1, 'model') // index 0
+        ..aOS(2, 'vendor') // index 1
+        ..a<int>(3, 'unknown1', $pb.PbFieldType.O3) // index 2
+        ..aOS(4, 'unknown2') // index 3
+        ..aOS(5, 'packageName') // index 4
+        ..aOS(6, 'appVersion') // index 5
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -788,18 +793,21 @@ class RemoteConfigure extends $pb.GeneratedMessage {
   factory RemoteConfigure.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteConfigure',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'code1', $pb.PbFieldType.O3)                         // index 0
-    ..aOM<RemoteDeviceInfo>(2, 'deviceInfo',
-        subBuilder: RemoteDeviceInfo.create)                          // index 1
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteConfigure',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(1, 'code1', $pb.PbFieldType.O3) // index 0
+        ..aOM<RemoteDeviceInfo>(
+          2,
+          'deviceInfo',
+          subBuilder: RemoteDeviceInfo.create,
+        ) // index 1
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -846,16 +854,16 @@ class RemoteStart extends $pb.GeneratedMessage {
   factory RemoteStart.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteStart',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..aOB(1, 'started')
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteStart',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..aOB(1, 'started')
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -866,8 +874,7 @@ class RemoteStart extends $pb.GeneratedMessage {
   static RemoteStart create() => RemoteStart._();
   @override
   RemoteStart createEmptyInstance() => create();
-  static $pb.PbList<RemoteStart> createRepeated() =>
-      $pb.PbList<RemoteStart>();
+  static $pb.PbList<RemoteStart> createRepeated() => $pb.PbList<RemoteStart>();
   static RemoteStart? _defaultInstance;
   static RemoteStart getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteStart>(create);
@@ -896,16 +903,16 @@ class RemoteAppLinkLaunchRequest extends $pb.GeneratedMessage {
   factory RemoteAppLinkLaunchRequest.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteAppLinkLaunchRequest',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..aOS(1, 'appLink')
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteAppLinkLaunchRequest',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..aOS(1, 'appLink')
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -962,7 +969,8 @@ class RemoteMessage extends $pb.GeneratedMessage {
     if (remoteImeKeyInject != null) r.remoteImeKeyInject = remoteImeKeyInject;
     if (remoteImeBatchEdit != null) r.remoteImeBatchEdit = remoteImeBatchEdit;
     if (remoteStart != null) r.remoteStart = remoteStart;
-    if (remoteAppLinkLaunchRequest != null) r.remoteAppLinkLaunchRequest = remoteAppLinkLaunchRequest;
+    if (remoteAppLinkLaunchRequest != null)
+      r.remoteAppLinkLaunchRequest = remoteAppLinkLaunchRequest;
     return r;
   }
 
@@ -971,33 +979,60 @@ class RemoteMessage extends $pb.GeneratedMessage {
   factory RemoteMessage.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'RemoteMessage',
-    package: const $pb.PackageName('remote'),
-    createEmptyInstance: create,
-  )
-    ..aOM<RemoteConfigure>(1, 'remoteConfigure',
-        subBuilder: RemoteConfigure.create)                           // index 0
-    ..aOM<RemoteSetActive>(2, 'remoteSetActive',
-        subBuilder: RemoteSetActive.create)                           // index 1
-    ..aOM<RemotePingRequest>(8, 'remotePingRequest',
-        subBuilder: RemotePingRequest.create)                         // index 2
-    ..aOM<RemotePingResponse>(9, 'remotePingResponse',
-        subBuilder: RemotePingResponse.create)                        // index 3
-    ..aOM<RemoteKeyInject>(10, 'remoteKeyInject',
-        subBuilder: RemoteKeyInject.create)                           // index 4
-    ..aOM<RemoteImeKeyInject>(20, 'remoteImeKeyInject',
-        subBuilder: RemoteImeKeyInject.create)                        // index 5
-    ..aOM<RemoteImeBatchEdit>(21, 'remoteImeBatchEdit',
-        subBuilder: RemoteImeBatchEdit.create)                        // index 6
-    ..aOM<RemoteStart>(40, 'remoteStart',
-        subBuilder: RemoteStart.create)                               // index 7
-    ..aOM<RemoteAppLinkLaunchRequest>(90, 'remoteAppLinkLaunchRequest',
-        subBuilder: RemoteAppLinkLaunchRequest.create)                // index 8
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'RemoteMessage',
+          package: const $pb.PackageName('remote'),
+          createEmptyInstance: create,
+        )
+        ..aOM<RemoteConfigure>(
+          1,
+          'remoteConfigure',
+          subBuilder: RemoteConfigure.create,
+        ) // index 0
+        ..aOM<RemoteSetActive>(
+          2,
+          'remoteSetActive',
+          subBuilder: RemoteSetActive.create,
+        ) // index 1
+        ..aOM<RemotePingRequest>(
+          8,
+          'remotePingRequest',
+          subBuilder: RemotePingRequest.create,
+        ) // index 2
+        ..aOM<RemotePingResponse>(
+          9,
+          'remotePingResponse',
+          subBuilder: RemotePingResponse.create,
+        ) // index 3
+        ..aOM<RemoteKeyInject>(
+          10,
+          'remoteKeyInject',
+          subBuilder: RemoteKeyInject.create,
+        ) // index 4
+        ..aOM<RemoteImeKeyInject>(
+          20,
+          'remoteImeKeyInject',
+          subBuilder: RemoteImeKeyInject.create,
+        ) // index 5
+        ..aOM<RemoteImeBatchEdit>(
+          21,
+          'remoteImeBatchEdit',
+          subBuilder: RemoteImeBatchEdit.create,
+        ) // index 6
+        ..aOM<RemoteStart>(
+          40,
+          'remoteStart',
+          subBuilder: RemoteStart.create,
+        ) // index 7
+        ..aOM<RemoteAppLinkLaunchRequest>(
+          90,
+          'remoteAppLinkLaunchRequest',
+          subBuilder: RemoteAppLinkLaunchRequest.create,
+        ) // index 8
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -1056,7 +1091,8 @@ class RemoteMessage extends $pb.GeneratedMessage {
 
   RemoteAppLinkLaunchRequest get remoteAppLinkLaunchRequest =>
       $_getN(8) as RemoteAppLinkLaunchRequest;
-  set remoteAppLinkLaunchRequest(RemoteAppLinkLaunchRequest v) => setField(90, v);
+  set remoteAppLinkLaunchRequest(RemoteAppLinkLaunchRequest v) =>
+      setField(90, v);
   bool hasRemoteAppLinkLaunchRequest() => $_has(8);
   void clearRemoteAppLinkLaunchRequest() => clearField(90);
 }

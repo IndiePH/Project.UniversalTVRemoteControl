@@ -7,9 +7,11 @@ abstract interface class TransportLogReaderProvider {
 }
 
 /// No-op fallback used when no provider is configured.
-final class NoopTransportLogReaderProvider implements TransportLogReaderProvider {
+final class NoopTransportLogReaderProvider
+    implements TransportLogReaderProvider {
   const NoopTransportLogReaderProvider();
 
   @override
-  TransportLogReader readerForDevice(TvDevice device) => const NoopTransportLogReader();
+  TransportLogReader readerForDevice(TvDevice device) =>
+      const NoopTransportLogReader();
 }

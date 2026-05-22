@@ -28,17 +28,21 @@ class RemoteIconCircleButton extends StatelessWidget {
 
   final IconData? icon;
   final String? imageAsset;
+
   /// When set, overrides [kRemoteIconCircleButtonIconSize] for [imageAsset] only.
   final double? imageIconSize;
   final Color? brandColor;
   final String? label;
+
   /// When null, the button is shown in a disabled (non-interactive) state.
   final VoidCallback? onPressed;
   final bool isPower;
   final Color? backgroundColor;
   final Color? foregroundColor;
+
   /// When set with [onPressed], drives category-aware haptic feedback on press.
   final RemoteCommand? interactionCommand;
+
   /// Custom haptic when no [interactionCommand] is available.
   final VoidCallback? onPressHaptic;
 
@@ -53,12 +57,12 @@ class RemoteIconCircleButton extends StatelessWidget {
     final background =
         backgroundColor ??
         (isPower ? appColors.remotePowerFill : appColors.remoteSurface);
-    final iconColor = foregroundColor ??
+    final iconColor =
+        foregroundColor ??
         (isPower ? appColors.remoteGlyphOnPower : colorScheme.onSurface);
     final Widget child;
     if (imageAsset != null) {
-      final imageSize =
-          imageIconSize ?? kRemoteIconCircleButtonIconSize;
+      final imageSize = imageIconSize ?? kRemoteIconCircleButtonIconSize;
       child = SvgPicture.asset(
         imageAsset!,
         width: imageSize,

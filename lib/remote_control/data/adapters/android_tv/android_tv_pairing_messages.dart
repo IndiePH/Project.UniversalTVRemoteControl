@@ -10,12 +10,15 @@ import 'package:protobuf/protobuf.dart' as $pb;
 
 class PairingStatus extends $pb.ProtobufEnum {
   static const PairingStatus statusOk = PairingStatus._(200, 'STATUS_OK');
-  static const PairingStatus statusError =
-      PairingStatus._(400, 'STATUS_ERROR');
-  static const PairingStatus statusBadConfiguration =
-      PairingStatus._(401, 'STATUS_BAD_CONFIGURATION');
-  static const PairingStatus statusBadSecret =
-      PairingStatus._(402, 'STATUS_BAD_SECRET');
+  static const PairingStatus statusError = PairingStatus._(400, 'STATUS_ERROR');
+  static const PairingStatus statusBadConfiguration = PairingStatus._(
+    401,
+    'STATUS_BAD_CONFIGURATION',
+  );
+  static const PairingStatus statusBadSecret = PairingStatus._(
+    402,
+    'STATUS_BAD_SECRET',
+  );
 
   static const List<PairingStatus> values = [
     statusOk,
@@ -26,8 +29,7 @@ class PairingStatus extends $pb.ProtobufEnum {
 
   static final Map<int, $pb.ProtobufEnum> _byValue =
       $pb.ProtobufEnum.initByValue(values);
-  static PairingStatus? valueOf(int value) =>
-      _byValue[value] as PairingStatus?;
+  static PairingStatus? valueOf(int value) => _byValue[value] as PairingStatus?;
 
   const PairingStatus._(super.v, super.n);
 }
@@ -37,16 +39,23 @@ class PairingStatus extends $pb.ProtobufEnum {
 // ---------------------------------------------------------------------------
 
 class EncodingType extends $pb.ProtobufEnum {
-  static const EncodingType unknown =
-      EncodingType._(0, 'ENCODING_TYPE_UNKNOWN');
-  static const EncodingType alphanumeric =
-      EncodingType._(1, 'ENCODING_TYPE_ALPHANUMERIC');
-  static const EncodingType numeric =
-      EncodingType._(2, 'ENCODING_TYPE_NUMERIC');
-  static const EncodingType hexadecimal =
-      EncodingType._(3, 'ENCODING_TYPE_HEXADECIMAL');
-  static const EncodingType qrCode =
-      EncodingType._(4, 'ENCODING_TYPE_QRCODE');
+  static const EncodingType unknown = EncodingType._(
+    0,
+    'ENCODING_TYPE_UNKNOWN',
+  );
+  static const EncodingType alphanumeric = EncodingType._(
+    1,
+    'ENCODING_TYPE_ALPHANUMERIC',
+  );
+  static const EncodingType numeric = EncodingType._(
+    2,
+    'ENCODING_TYPE_NUMERIC',
+  );
+  static const EncodingType hexadecimal = EncodingType._(
+    3,
+    'ENCODING_TYPE_HEXADECIMAL',
+  );
+  static const EncodingType qrCode = EncodingType._(4, 'ENCODING_TYPE_QRCODE');
 
   static const List<EncodingType> values = [
     unknown,
@@ -58,8 +67,7 @@ class EncodingType extends $pb.ProtobufEnum {
 
   static final Map<int, $pb.ProtobufEnum> _byValue =
       $pb.ProtobufEnum.initByValue(values);
-  static EncodingType? valueOf(int value) =>
-      _byValue[value] as EncodingType?;
+  static EncodingType? valueOf(int value) => _byValue[value] as EncodingType?;
 
   const EncodingType._(super.v, super.n);
 }
@@ -100,23 +108,23 @@ class OptionsEncoding extends $pb.GeneratedMessage {
   factory OptionsEncoding.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'Options.Encoding',
-    package: const $pb.PackageName('polo.wire.protobuf'),
-    createEmptyInstance: create,
-  )
-    ..e<EncodingType>(
-      1,
-      'type',
-      $pb.PbFieldType.QE,
-      defaultOrMaker: EncodingType.unknown,
-      valueOf: EncodingType.valueOf,
-      enumValues: EncodingType.values,
-    )
-    ..a<int>(2, 'symbolLength', $pb.PbFieldType.Q3);
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'Options.Encoding',
+          package: const $pb.PackageName('polo.wire.protobuf'),
+          createEmptyInstance: create,
+        )
+        ..e<EncodingType>(
+          1,
+          'type',
+          $pb.PbFieldType.QE,
+          defaultOrMaker: EncodingType.unknown,
+          valueOf: EncodingType.valueOf,
+          enumValues: EncodingType.values,
+        )
+        ..a<int>(2, 'symbolLength', $pb.PbFieldType.Q3);
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -133,8 +141,7 @@ class OptionsEncoding extends $pb.GeneratedMessage {
   static OptionsEncoding getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<OptionsEncoding>(create);
 
-  EncodingType get type =>
-      $_getN(0) as EncodingType? ?? EncodingType.unknown;
+  EncodingType get type => $_getN(0) as EncodingType? ?? EncodingType.unknown;
   set type(EncodingType v) => setField(1, v);
   bool hasType() => $_has(0);
   void clearType() => clearField(1);
@@ -163,16 +170,16 @@ class PairingRequest extends $pb.GeneratedMessage {
   factory PairingRequest.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'PairingRequest',
-    package: const $pb.PackageName('polo.wire.protobuf'),
-    createEmptyInstance: create,
-  )
-    ..a<String>(1, 'serviceName', $pb.PbFieldType.QS)
-    ..aOS(2, 'clientName');
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'PairingRequest',
+          package: const $pb.PackageName('polo.wire.protobuf'),
+          createEmptyInstance: create,
+        )
+        ..a<String>(1, 'serviceName', $pb.PbFieldType.QS)
+        ..aOS(2, 'clientName');
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -217,16 +224,16 @@ class PairingRequestAck extends $pb.GeneratedMessage {
   factory PairingRequestAck.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'PairingRequestAck',
-    package: const $pb.PackageName('polo.wire.protobuf'),
-    createEmptyInstance: create,
-  )
-    ..aOS(1, 'serverName')
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'PairingRequestAck',
+          package: const $pb.PackageName('polo.wire.protobuf'),
+          createEmptyInstance: create,
+        )
+        ..aOS(1, 'serverName')
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -273,35 +280,35 @@ class Options extends $pb.GeneratedMessage {
   factory Options.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'Options',
-    package: const $pb.PackageName('polo.wire.protobuf'),
-    createEmptyInstance: create,
-  )
-    ..pc<OptionsEncoding>(
-      1,
-      'inputEncodings',
-      $pb.PbFieldType.PM,
-      subBuilder: OptionsEncoding.create,
-    )
-    ..pc<OptionsEncoding>(
-      2,
-      'outputEncodings',
-      $pb.PbFieldType.PM,
-      subBuilder: OptionsEncoding.create,
-    )
-    ..e<RoleType>(
-      3,
-      'preferredRole',
-      $pb.PbFieldType.OE,
-      defaultOrMaker: RoleType.unknown,
-      valueOf: RoleType.valueOf,
-      enumValues: RoleType.values,
-    )
-    ..hasRequiredFields = false;
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'Options',
+          package: const $pb.PackageName('polo.wire.protobuf'),
+          createEmptyInstance: create,
+        )
+        ..pc<OptionsEncoding>(
+          1,
+          'inputEncodings',
+          $pb.PbFieldType.PM,
+          subBuilder: OptionsEncoding.create,
+        )
+        ..pc<OptionsEncoding>(
+          2,
+          'outputEncodings',
+          $pb.PbFieldType.PM,
+          subBuilder: OptionsEncoding.create,
+        )
+        ..e<RoleType>(
+          3,
+          'preferredRole',
+          $pb.PbFieldType.OE,
+          defaultOrMaker: RoleType.unknown,
+          valueOf: RoleType.valueOf,
+          enumValues: RoleType.values,
+        )
+        ..hasRequiredFields = false;
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -344,23 +351,27 @@ class Configuration extends $pb.GeneratedMessage {
   factory Configuration.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'Configuration',
-    package: const $pb.PackageName('polo.wire.protobuf'),
-    createEmptyInstance: create,
-  )
-    ..aOM<OptionsEncoding>(1, 'encoding', subBuilder: OptionsEncoding.create)
-    ..e<RoleType>(
-      2,
-      'clientRole',
-      $pb.PbFieldType.QE,
-      defaultOrMaker: RoleType.unknown,
-      valueOf: RoleType.valueOf,
-      enumValues: RoleType.values,
-    );
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'Configuration',
+          package: const $pb.PackageName('polo.wire.protobuf'),
+          createEmptyInstance: create,
+        )
+        ..aOM<OptionsEncoding>(
+          1,
+          'encoding',
+          subBuilder: OptionsEncoding.create,
+        )
+        ..e<RoleType>(
+          2,
+          'clientRole',
+          $pb.PbFieldType.QE,
+          defaultOrMaker: RoleType.unknown,
+          valueOf: RoleType.valueOf,
+          enumValues: RoleType.values,
+        );
 
   @override
   $pb.BuilderInfo get info_ => _i;
@@ -400,8 +411,7 @@ class ConfigurationAck extends $pb.GeneratedMessage {
   factory ConfigurationAck.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
     'ConfigurationAck',
@@ -441,8 +451,7 @@ class Secret extends $pb.GeneratedMessage {
   factory Secret.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
     'Secret',
@@ -486,8 +495,7 @@ class SecretAck extends $pb.GeneratedMessage {
   factory SecretAck.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
     'SecretAck',
@@ -553,35 +561,55 @@ class OuterMessage extends $pb.GeneratedMessage {
   factory OuterMessage.fromBuffer(
     List<int> i, [
     $pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY,
-  ]) =>
-      create()..mergeFromBuffer(i, r);
+  ]) => create()..mergeFromBuffer(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-    'OuterMessage',
-    package: const $pb.PackageName('polo.wire.protobuf'),
-    createEmptyInstance: create,
-  )
-    ..a<int>(1, 'protocolVersion', $pb.PbFieldType.QU3,
-        defaultOrMaker: 1)                                            // index 0
-    ..e<PairingStatus>(
-      2,
-      'status',
-      $pb.PbFieldType.QE,
-      defaultOrMaker: PairingStatus.statusOk,
-      valueOf: PairingStatus.valueOf,
-      enumValues: PairingStatus.values,
-    )                                                                 // index 1
-    ..aOM<PairingRequest>(10, 'pairingRequest',
-        subBuilder: PairingRequest.create)                            // index 2
-    ..aOM<PairingRequestAck>(11, 'pairingRequestAck',
-        subBuilder: PairingRequestAck.create)                         // index 3
-    ..aOM<Options>(20, 'options', subBuilder: Options.create)         // index 4
-    ..aOM<Configuration>(30, 'configuration',
-        subBuilder: Configuration.create)                             // index 5
-    ..aOM<ConfigurationAck>(31, 'configurationAck',
-        subBuilder: ConfigurationAck.create)                          // index 6
-    ..aOM<Secret>(40, 'secret', subBuilder: Secret.create)            // index 7
-    ..aOM<SecretAck>(41, 'secretAck', subBuilder: SecretAck.create);  // index 8
+  static final $pb.BuilderInfo _i =
+      $pb.BuilderInfo(
+          'OuterMessage',
+          package: const $pb.PackageName('polo.wire.protobuf'),
+          createEmptyInstance: create,
+        )
+        ..a<int>(
+          1,
+          'protocolVersion',
+          $pb.PbFieldType.QU3,
+          defaultOrMaker: 1,
+        ) // index 0
+        ..e<PairingStatus>(
+          2,
+          'status',
+          $pb.PbFieldType.QE,
+          defaultOrMaker: PairingStatus.statusOk,
+          valueOf: PairingStatus.valueOf,
+          enumValues: PairingStatus.values,
+        ) // index 1
+        ..aOM<PairingRequest>(
+          10,
+          'pairingRequest',
+          subBuilder: PairingRequest.create,
+        ) // index 2
+        ..aOM<PairingRequestAck>(
+          11,
+          'pairingRequestAck',
+          subBuilder: PairingRequestAck.create,
+        ) // index 3
+        ..aOM<Options>(20, 'options', subBuilder: Options.create) // index 4
+        ..aOM<Configuration>(
+          30,
+          'configuration',
+          subBuilder: Configuration.create,
+        ) // index 5
+        ..aOM<ConfigurationAck>(
+          31,
+          'configurationAck',
+          subBuilder: ConfigurationAck.create,
+        ) // index 6
+        ..aOM<Secret>(40, 'secret', subBuilder: Secret.create) // index 7
+        ..aOM<SecretAck>(
+          41,
+          'secretAck',
+          subBuilder: SecretAck.create,
+        ); // index 8
 
   @override
   $pb.BuilderInfo get info_ => _i;

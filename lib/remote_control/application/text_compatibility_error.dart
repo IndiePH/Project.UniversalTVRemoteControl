@@ -1,1 +1,4 @@
-enum TextCompatibilityError { lgImeFocusRequired, samsungScreenNotAcceptingInput }
+enum TextCompatibilityError {
+  lgImeFocusRequired,
+  samsungScreenNotAcceptingInput,
+}

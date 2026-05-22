@@ -27,12 +27,15 @@ void main() {
     expect(mapper.keyCodesFor(RemoteCommand.menu), ['82', '176']);
   });
 
-  test('AndroidTvAdapter: menu publishes fallback key codes in order', () async {
-    final transport = _SpyAndroidTvTransportClient();
-    final adapter = AndroidTvAdapter(transportClient: transport);
-    await adapter.sendCommand(device: device, command: RemoteCommand.menu);
-    expect(transport.sentKeys, containsAllInOrder(['82', '176']));
-  });
+  test(
+    'AndroidTvAdapter: menu publishes fallback key codes in order',
+    () async {
+      final transport = _SpyAndroidTvTransportClient();
+      final adapter = AndroidTvAdapter(transportClient: transport);
+      await adapter.sendCommand(device: device, command: RemoteCommand.menu);
+      expect(transport.sentKeys, containsAllInOrder(['82', '176']));
+    },
+  );
 }
 
 class _SpyAndroidTvTransportClient implements AndroidTvTransportClient {
@@ -51,12 +54,18 @@ class _SpyAndroidTvTransportClient implements AndroidTvTransportClient {
   }) async {}
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) async {
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {
     sentKeys.add(keyCode);
   }
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {}
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
 
   @override
   Future<void> sendAppLink({

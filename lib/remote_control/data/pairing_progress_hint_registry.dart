@@ -7,21 +7,29 @@ abstract interface class PairingProgressHintRegistry {
   String? hintFor(TvBrand brand, String protocolVariant);
 }
 
-class DefaultPairingProgressHintRegistry implements PairingProgressHintRegistry {
-  DefaultPairingProgressHintRegistry({required LocalizedStrings localizedStrings})
-    : _localizedStrings = localizedStrings;
+class DefaultPairingProgressHintRegistry
+    implements PairingProgressHintRegistry {
+  DefaultPairingProgressHintRegistry({
+    required LocalizedStrings localizedStrings,
+  }) : _localizedStrings = localizedStrings;
 
   final LocalizedStrings _localizedStrings;
 
   @override
   String? hintFor(TvBrand brand, String protocolVariant) =>
       switch ((brand, protocolVariant)) {
-        (TvBrand.lg, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingLgProgressHint,
-        (TvBrand.samsung, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingSamsungProgressHint,
-        (TvBrand.hisense, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingHisenseProgressHint,
-        (TvBrand.androidTv, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingAndroidTvProgressHint,
-        (TvBrand.roku, TvDevice.defaultProtocolVariant) => _localizedStrings.pairingRokuProgressHint,
-        (TvBrand.tcl, TclProtocolVariants.legacyWifi) => _localizedStrings.pairingTclLegacyProgressHint,
+        (TvBrand.lg, TvDevice.defaultProtocolVariant) =>
+          _localizedStrings.pairingLgProgressHint,
+        (TvBrand.samsung, TvDevice.defaultProtocolVariant) =>
+          _localizedStrings.pairingSamsungProgressHint,
+        (TvBrand.hisense, TvDevice.defaultProtocolVariant) =>
+          _localizedStrings.pairingHisenseProgressHint,
+        (TvBrand.androidTv, TvDevice.defaultProtocolVariant) =>
+          _localizedStrings.pairingAndroidTvProgressHint,
+        (TvBrand.roku, TvDevice.defaultProtocolVariant) =>
+          _localizedStrings.pairingRokuProgressHint,
+        (TvBrand.tcl, TclProtocolVariants.legacyWifi) =>
+          _localizedStrings.pairingTclLegacyProgressHint,
         _ => null,
       };
 }

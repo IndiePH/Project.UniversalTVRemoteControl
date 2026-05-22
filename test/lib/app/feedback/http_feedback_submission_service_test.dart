@@ -26,21 +26,24 @@ void main() {
     expect(FeedbackConfig.hasWebhookUrl, isTrue);
   });
 
-  test('succeeds when POST returns 302 and follow-up GET returns ok JSON', () async {
-    final client = MockClient((request) async {
-      if (request.method == 'POST') {
-        return http.Response(
-          'Moved',
-          302,
-          headers: {'location': 'https://script.googleusercontent.com/echo'},
-        );
-      }
-      return http.Response('{"ok":true}', 200);
-    });
-    final service = HttpFeedbackSubmissionService(client: client);
-    final result = await service.submit(_samplePayload());
-    expect(result.outcome, FeedbackSubmissionOutcome.success);
-  });
+  test(
+    'succeeds when POST returns 302 and follow-up GET returns ok JSON',
+    () async {
+      final client = MockClient((request) async {
+        if (request.method == 'POST') {
+          return http.Response(
+            'Moved',
+            302,
+            headers: {'location': 'https://script.googleusercontent.com/echo'},
+          );
+        }
+        return http.Response('{"ok":true}', 200);
+      });
+      final service = HttpFeedbackSubmissionService(client: client);
+      final result = await service.submit(_samplePayload());
+      expect(result.outcome, FeedbackSubmissionOutcome.success);
+    },
+  );
 
   test('returns networkError when follow-up GET reports ok false', () async {
     final client = MockClient((request) async {
@@ -59,9 +62,7 @@ void main() {
   });
 
   test('succeeds on direct 200 JSON ok without redirect', () async {
-    final client = MockClient(
-      (_) async => http.Response('{"ok":true}', 200),
-    );
+    final client = MockClient((_) async => http.Response('{"ok":true}', 200));
     final service = HttpFeedbackSubmissionService(client: client);
     final result = await service.submit(_samplePayload());
     expect(result.outcome, FeedbackSubmissionOutcome.success);

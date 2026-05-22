@@ -40,15 +40,11 @@ void main() {
 
       await repo.saveLayout(
         deviceId: deviceId,
-        positionsByItemId: {
-          'menu': const LayoutPosition(col: 4, row: 0),
-        },
+        positionsByItemId: {'menu': const LayoutPosition(col: 4, row: 0)},
       );
       await repo.saveLayout(
         deviceId: deviceId,
-        positionsByItemId: {
-          'menu': const LayoutPosition(col: 0, row: 8),
-        },
+        positionsByItemId: {'menu': const LayoutPosition(col: 0, row: 8)},
       );
 
       final loaded = await repo.loadLayout(deviceId: deviceId);

@@ -15,10 +15,7 @@ void main() {
     displayName: 'Roku TV',
     brand: TvBrand.roku,
     protocolVariant: TvDevice.defaultProtocolVariant,
-    capabilities: {
-      DeviceCapability.keyCommands,
-      DeviceCapability.powerControl,
-    },
+    capabilities: {DeviceCapability.keyCommands, DeviceCapability.powerControl},
   );
 
   test('TclRokuAdapter sends Roku key for dpad up', () async {
@@ -54,7 +51,10 @@ class _SpyRokuTransportClient implements RokuTransportClient {
   Future<void> connect({required String deviceId}) async {}
 
   @override
-  Future<void> launchApp({required String deviceId, required String appId}) async {
+  Future<void> launchApp({
+    required String deviceId,
+    required String appId,
+  }) async {
     launchedApps.add(appId);
   }
 

@@ -30,6 +30,9 @@ android {
         versionName = flutter.versionName
     }
 
+    // Product flavors (e.g. dev/staging/prod) are intentionally not defined yet.
+    // App configuration uses Flutter build modes + --dart-define; see README and
+    // lib/app/configurations/app_build_config.dart (TVREMOTE-31).
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

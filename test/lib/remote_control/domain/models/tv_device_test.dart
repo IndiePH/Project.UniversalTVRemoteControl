@@ -25,7 +25,9 @@ void main() {
     });
 
     test('preserves displayName when not provided', () {
-      final updated = base.copyWith(capabilities: {DeviceCapability.powerControl});
+      final updated = base.copyWith(
+        capabilities: {DeviceCapability.powerControl},
+      );
 
       expect(updated.displayName, base.displayName);
     });
@@ -79,32 +81,44 @@ void main() {
       expect(device!.capabilities, contains(DeviceCapability.textInput));
     });
 
-    test('fromJson falls back to brand defaults when capabilities list is empty', () {
-      final json = <String, dynamic>{
-        'id': 'tv-1',
-        'displayName': 'LG TV',
-        'brand': 'lg',
-        'capabilities': <String>[],
-      };
+    test(
+      'fromJson falls back to brand defaults when capabilities list is empty',
+      () {
+        final json = <String, dynamic>{
+          'id': 'tv-1',
+          'displayName': 'LG TV',
+          'brand': 'lg',
+          'capabilities': <String>[],
+        };
 
-      final device = TvDevice.fromJson(json);
+        final device = TvDevice.fromJson(json);
 
-      expect(device, isNotNull);
-      expect(device!.capabilities, equals(const TvCapabilities().capabilitiesFor(TvBrand.lg)));
-    });
+        expect(device, isNotNull);
+        expect(
+          device!.capabilities,
+          equals(const TvCapabilities().capabilitiesFor(TvBrand.lg)),
+        );
+      },
+    );
 
-    test('fromJson defaults protocolVariant to "default" when key is absent', () {
-      final json = <String, dynamic>{
-        'id': 'tv-1',
-        'displayName': 'LG TV',
-        'brand': 'lg',
-        'capabilities': ['keyCommands'],
-      };
+    test(
+      'fromJson defaults protocolVariant to "default" when key is absent',
+      () {
+        final json = <String, dynamic>{
+          'id': 'tv-1',
+          'displayName': 'LG TV',
+          'brand': 'lg',
+          'capabilities': ['keyCommands'],
+        };
 
-      final device = TvDevice.fromJson(json);
+        final device = TvDevice.fromJson(json);
 
-      expect(device!.protocolVariant, equals(TvDevice.defaultProtocolVariant));
-    });
+        expect(
+          device!.protocolVariant,
+          equals(TvDevice.defaultProtocolVariant),
+        );
+      },
+    );
 
     test('fromJson silently drops unrecognised capability names', () {
       final json = <String, dynamic>{

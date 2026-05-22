@@ -144,6 +144,8 @@ class SamsungRemoteTextSession {
     if (_isImeActiveByDeviceId[deviceId] ?? false) {
       return;
     }
-    throw TextInputCompatibilityException(TextCompatibilityError.samsungScreenNotAcceptingInput);
+    throw TextInputCompatibilityException(
+      TextCompatibilityError.samsungScreenNotAcceptingInput,
+    );
   }
 }

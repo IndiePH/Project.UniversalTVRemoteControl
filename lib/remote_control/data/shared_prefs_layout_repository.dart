@@ -39,7 +39,8 @@ class SharedPrefsLayoutRepository implements LayoutRepository {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonMap = <String, dynamic>{
-      for (final entry in positionsByItemId.entries) entry.key: entry.value.toJson(),
+      for (final entry in positionsByItemId.entries)
+        entry.key: entry.value.toJson(),
     };
     await prefs.setString('$_keyPrefix$deviceId', jsonEncode(jsonMap));
   }

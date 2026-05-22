@@ -39,8 +39,7 @@ abstract final class RemoteLayoutEditorGridGeometry {
   }) {
     final widthLimited =
         (maxWidth - ((gridColumns - 1) * gridGap)) / gridColumns;
-    final heightLimited =
-        (maxHeight - ((gridRows - 1) * gridGap)) / gridRows;
+    final heightLimited = (maxHeight - ((gridRows - 1) * gridGap)) / gridRows;
     return math.max(1, math.min(widthLimited, heightLimited));
   }
 }

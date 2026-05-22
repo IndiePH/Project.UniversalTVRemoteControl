@@ -172,43 +172,47 @@ void main() {
       expect(capturedFormat, PinFormat.sixCharHex);
     });
 
-    test('PinFormat.sixCharHex is forwarded to promptPin when result carries it',
-        () async {
-      PinFormat? receivedFormat;
-      final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.pinRequired(
-          'Enter hex code',
-          pinFormat: PinFormat.sixCharHex,
-        ),
-        submitPairingResults: [CommandDispatchResult.success('OK')],
-      );
+    test(
+      'PinFormat.sixCharHex is forwarded to promptPin when result carries it',
+      () async {
+        PinFormat? receivedFormat;
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.pinRequired(
+            'Enter hex code',
+            pinFormat: PinFormat.sixCharHex,
+          ),
+          submitPairingResults: [CommandDispatchResult.success('OK')],
+        );
 
-      await coordinator.pairSelectedDevice(
-        device: pinPairingDevice,
-        promptPin: (_, format) async {
-          receivedFormat = format;
-          return 'A1B2C3';
-        },
-        onPinRejected: (_) {},
-      );
+        await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_, format) async {
+            receivedFormat = format;
+            return 'A1B2C3';
+          },
+          onPinRejected: (_) {},
+        );
 
-      expect(receivedFormat, PinFormat.sixCharHex);
-    });
+        expect(receivedFormat, PinFormat.sixCharHex);
+      },
+    );
 
-    test('cancelling promptPin dialog results in PairingAttemptResult.failure',
-        () async {
-      final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
-      );
+    test(
+      'cancelling promptPin dialog results in PairingAttemptResult.failure',
+      () async {
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+        );
 
-      final result = await coordinator.pairSelectedDevice(
-        device: pinPairingDevice,
-        promptPin: (_, _) async => null,
-        onPinRejected: (_) {},
-      );
+        final result = await coordinator.pairSelectedDevice(
+          device: pinPairingDevice,
+          promptPin: (_, _) async => null,
+          onPinRejected: (_) {},
+        );
 
-      expect(result.isSuccess, isFalse);
-    });
+        expect(result.isSuccess, isFalse);
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -448,7 +452,10 @@ void main() {
           id: 'samsung-1',
           displayName: 'Samsung TV (Enriched)',
           brand: TvBrand.samsung,
-          capabilities: {DeviceCapability.keyCommands, DeviceCapability.textInput},
+          capabilities: {
+            DeviceCapability.keyCommands,
+            DeviceCapability.textInput,
+          },
           modelIdentifier: 'UN65',
         );
         final coordinator = _makeCoordinator(
@@ -497,7 +504,9 @@ void main() {
   group('pairSelectedDevice — non-PIN failure', () {
     test('returns failure result when preparePairing fails', () async {
       final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Connection refused'),
+        preparePairingResult: CommandDispatchResult.failure(
+          'Connection refused',
+        ),
       );
 
       final result = await coordinator.pairSelectedDevice(
@@ -530,7 +539,9 @@ void main() {
     test('does not save device on failure', () async {
       final repo = _StubDeviceRepository();
       final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Connection refused'),
+        preparePairingResult: CommandDispatchResult.failure(
+          'Connection refused',
+        ),
         deviceRepository: repo,
       );
 
@@ -543,22 +554,27 @@ void main() {
       expect(repo.saveDeviceCallCount, 0);
     });
 
-    test('does not record last-used or last-successful-at on failure', () async {
-      final repo = _StubDeviceRepository();
-      final coordinator = _makeCoordinator(
-        preparePairingResult: CommandDispatchResult.failure('Connection refused'),
-        deviceRepository: repo,
-      );
+    test(
+      'does not record last-used or last-successful-at on failure',
+      () async {
+        final repo = _StubDeviceRepository();
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.failure(
+            'Connection refused',
+          ),
+          deviceRepository: repo,
+        );
 
-      await coordinator.pairSelectedDevice(
-        device: nonPinDevice,
-        promptPin: (_, _) async => '1234',
-        onPinRejected: (_) {},
-      );
+        await coordinator.pairSelectedDevice(
+          device: nonPinDevice,
+          promptPin: (_, _) async => '1234',
+          onPinRejected: (_) {},
+        );
 
-      expect(repo.setLastUsedDeviceCallCount, 0);
-      expect(repo.setLastSuccessfulPairingAtCallCount, 0);
-    });
+        expect(repo.setLastUsedDeviceCallCount, 0);
+        expect(repo.setLastSuccessfulPairingAtCallCount, 0);
+      },
+    );
 
     test(
       'does not persist manualIpToSave on failure even when provided',
@@ -728,29 +744,26 @@ void main() {
       },
     );
 
-    test(
-      'invokes onPinRejected once per rejected submit attempt',
-      () async {
-        final coordinator = _makeCoordinator(
-          preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
-          submitPairingResults: [
-            CommandDispatchResult.failure('Wrong 1'),
-            CommandDispatchResult.failure('Wrong 2'),
-            CommandDispatchResult.failure('Wrong 3'),
-            CommandDispatchResult.success('OK'),
-          ],
-        );
+    test('invokes onPinRejected once per rejected submit attempt', () async {
+      final coordinator = _makeCoordinator(
+        preparePairingResult: CommandDispatchResult.pinRequired('Needs PIN'),
+        submitPairingResults: [
+          CommandDispatchResult.failure('Wrong 1'),
+          CommandDispatchResult.failure('Wrong 2'),
+          CommandDispatchResult.failure('Wrong 3'),
+          CommandDispatchResult.success('OK'),
+        ],
+      );
 
-        final rejections = <String>[];
-        await coordinator.pairSelectedDevice(
-          device: pinPairingDevice,
-          promptPin: (_, _) async => '1234',
-          onPinRejected: rejections.add,
-        );
+      final rejections = <String>[];
+      await coordinator.pairSelectedDevice(
+        device: pinPairingDevice,
+        promptPin: (_, _) async => '1234',
+        onPinRejected: rejections.add,
+      );
 
-        expect(rejections, ['Wrong 1', 'Wrong 2', 'Wrong 3']);
-      },
-    );
+      expect(rejections, ['Wrong 1', 'Wrong 2', 'Wrong 3']);
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -758,21 +771,23 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('cancelPairing', () {
-    test('delegates to commandService.cancelPairing with the same device',
-        () async {
-      final commandService = _StubCommandService(
-        preparePairingResult: CommandDispatchResult.success('OK'),
-      );
-      final coordinator = PairingPageCoordinator(
-        commandService: commandService,
-        deviceRepository: _StubDeviceRepository(),
-      );
+    test(
+      'delegates to commandService.cancelPairing with the same device',
+      () async {
+        final commandService = _StubCommandService(
+          preparePairingResult: CommandDispatchResult.success('OK'),
+        );
+        final coordinator = PairingPageCoordinator(
+          commandService: commandService,
+          deviceRepository: _StubDeviceRepository(),
+        );
 
-      await coordinator.cancelPairing(device: pinPairingDevice);
+        await coordinator.cancelPairing(device: pinPairingDevice);
 
-      expect(commandService.cancelPairingCallCount, 1);
-      expect(commandService.lastCancelledDevice, same(pinPairingDevice));
-    });
+        expect(commandService.cancelPairingCallCount, 1);
+        expect(commandService.lastCancelledDevice, same(pinPairingDevice));
+      },
+    );
   });
 }
 

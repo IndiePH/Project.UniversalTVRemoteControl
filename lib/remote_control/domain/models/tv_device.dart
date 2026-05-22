@@ -27,15 +27,14 @@ class TvDevice {
     Set<DeviceCapability>? capabilities,
     String? protocolVariant,
     String? modelIdentifier,
-  }) =>
-      TvDevice(
-        id: id,
-        displayName: displayName ?? this.displayName,
-        brand: brand,
-        capabilities: capabilities ?? this.capabilities,
-        protocolVariant: protocolVariant ?? this.protocolVariant,
-        modelIdentifier: modelIdentifier ?? this.modelIdentifier,
-      );
+  }) => TvDevice(
+    id: id,
+    displayName: displayName ?? this.displayName,
+    brand: brand,
+    capabilities: capabilities ?? this.capabilities,
+    protocolVariant: protocolVariant ?? this.protocolVariant,
+    modelIdentifier: modelIdentifier ?? this.modelIdentifier,
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -53,15 +52,18 @@ class TvDevice {
       final brand = TvBrand.values.firstWhere((b) => b.name == json['brand']);
       final protocolVariant =
           json['protocolVariant'] as String? ?? defaultProtocolVariant;
-      final (effectiveBrand, effectiveVariant) = switch ((brand, protocolVariant)) {
+      final (effectiveBrand, effectiveVariant) = switch ((
+        brand,
+        protocolVariant,
+      )) {
         (TvBrand.tcl, TclProtocolVariants.roku) => (
-            TvBrand.roku,
-            defaultProtocolVariant,
-          ),
+          TvBrand.roku,
+          defaultProtocolVariant,
+        ),
         (TvBrand.tcl, TclProtocolVariants.googleTv) => (
-            TvBrand.androidTv,
-            defaultProtocolVariant,
-          ),
+          TvBrand.androidTv,
+          defaultProtocolVariant,
+        ),
         _ => (brand, protocolVariant),
       };
       final modelIdentifier = json['modelIdentifier'] as String?;
@@ -77,9 +79,11 @@ class TvDevice {
           })
           .nonNulls
           .toSet();
-      final capabilities =
-          parsed.isEmpty
-          ? const TvCapabilities().capabilitiesFor(effectiveBrand, effectiveVariant)
+      final capabilities = parsed.isEmpty
+          ? const TvCapabilities().capabilitiesFor(
+              effectiveBrand,
+              effectiveVariant,
+            )
           : parsed;
       return TvDevice(
         id: id,

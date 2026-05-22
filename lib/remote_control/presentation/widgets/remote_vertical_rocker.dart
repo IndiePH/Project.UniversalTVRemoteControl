@@ -86,9 +86,9 @@ class _RockerTapArea extends StatelessWidget {
           child: Center(
             child: Text(
               label,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ),

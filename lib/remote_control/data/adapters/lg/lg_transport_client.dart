@@ -3,7 +3,8 @@ import 'package:one_remote/remote_control/data/adapters/transport_event_source.d
 
 enum LgRegistrationState { connecting, registered, failed }
 
-abstract class LgTransportClient implements TransportClient, TransportEventSource {
+abstract class LgTransportClient
+    implements TransportClient, TransportEventSource {
   Future<void> connect({required String deviceId});
 
   /// First-time pairing only. Triggers the TV on-screen prompt and waits for approval.

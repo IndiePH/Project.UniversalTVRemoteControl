@@ -22,9 +22,11 @@ class RemoteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final background =
-        backgroundColor ?? (isPrimary ? colorScheme.primary : colorScheme.surface);
+        backgroundColor ??
+        (isPrimary ? colorScheme.primary : colorScheme.surface);
     final foreground =
-        foregroundColor ?? (isPrimary ? colorScheme.onPrimary : colorScheme.onSurface);
+        foregroundColor ??
+        (isPrimary ? colorScheme.onPrimary : colorScheme.onSurface);
     final buttonChild = icon == null
         ? Text(label)
         : Row(

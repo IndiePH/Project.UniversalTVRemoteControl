@@ -12,7 +12,8 @@ final class DiscoveredDeviceSupport {
       (TvBrand.samsung, _) || (TvBrand.lg, _) => DeviceSupportTier.full,
       (TvBrand.hisense, _) => DeviceSupportTier.limited,
       (TvBrand.roku, _) => DeviceSupportTier.limited,
-      (TvBrand.tcl, TclProtocolVariants.legacyWifi) => DeviceSupportTier.limited,
+      (TvBrand.tcl, TclProtocolVariants.legacyWifi) =>
+        DeviceSupportTier.limited,
       (TvBrand.androidTv, _) => DeviceSupportTier.experimental,
       (TvBrand.tcl, _) => DeviceSupportTier.experimental,
     };
@@ -34,5 +35,4 @@ final class DiscoveredDeviceSupport {
     TvBrand.androidTv => 4,
     TvBrand.tcl => 5,
   };
-
 }

@@ -51,73 +51,64 @@ void main() {
     await service.dispose();
   });
 
-  test('applyLastKnownStatusFromCache restores entitled before store refresh', () async {
-    final cache = SharedPrefsProEntitlementCache();
-    await cache.writeStatus(ProEntitlementStatus.entitled);
-    final repository = _StubProEntitlementRepository(
+  test(
+    'applyLastKnownStatusFromCache restores entitled before store refresh',
+    () async {
+      final cache = SharedPrefsProEntitlementCache();
+      await cache.writeStatus(ProEntitlementStatus.entitled);
+      final repository = _StubProEntitlementRepository(
+        isAvailableValue: true,
+        onRefresh: () async {},
+      );
+      final service = ProEntitlementService(
+        repository: repository,
+        cache: cache,
+      );
+
+      await service.applyLastKnownStatusFromCache();
+
+      expect(service.statusNotifier.value, ProEntitlementStatus.entitled);
+      await service.dispose();
+    },
+  );
+
+  test('debug toggle pro survives refreshFromStore in debug builds', () async {
+    late _StubProEntitlementRepository repository;
+    repository = _StubProEntitlementRepository(
       isAvailableValue: true,
-      onRefresh: () async {},
+      onRefresh: () async {
+        repository.emit(ProEntitlementStatus.notEntitled);
+      },
     );
-    final service = ProEntitlementService(
-      repository: repository,
-      cache: cache,
-    );
+    final cache = SharedPrefsProEntitlementCache();
+    final service = ProEntitlementService(repository: repository, cache: cache);
 
-    await service.applyLastKnownStatusFromCache();
+    await service.debugToggleEntitlement();
+    expect(service.isPro, isTrue);
 
-    expect(service.statusNotifier.value, ProEntitlementStatus.entitled);
+    await service.refreshFromStore(isDebugBuild: true);
+
+    expect(service.isPro, isTrue);
     await service.dispose();
   });
 
-  test(
-    'debug toggle pro survives refreshFromStore in debug builds',
-    () async {
-      late _StubProEntitlementRepository repository;
-      repository = _StubProEntitlementRepository(
-        isAvailableValue: true,
-        onRefresh: () async {
-          repository.emit(ProEntitlementStatus.notEntitled);
-        },
-      );
-      final cache = SharedPrefsProEntitlementCache();
-      final service = ProEntitlementService(
-        repository: repository,
-        cache: cache,
-      );
+  test('refreshFromStore clears debug pro when not in debug build', () async {
+    late _StubProEntitlementRepository repository;
+    repository = _StubProEntitlementRepository(
+      isAvailableValue: true,
+      onRefresh: () async {
+        repository.emit(ProEntitlementStatus.notEntitled);
+      },
+    );
+    final cache = SharedPrefsProEntitlementCache();
+    final service = ProEntitlementService(repository: repository, cache: cache);
 
-      await service.debugToggleEntitlement();
-      expect(service.isPro, isTrue);
+    await service.debugToggleEntitlement();
+    await service.refreshFromStore(isDebugBuild: false);
 
-      await service.refreshFromStore(isDebugBuild: true);
-
-      expect(service.isPro, isTrue);
-      await service.dispose();
-    },
-  );
-
-  test(
-    'refreshFromStore clears debug pro when not in debug build',
-    () async {
-      late _StubProEntitlementRepository repository;
-      repository = _StubProEntitlementRepository(
-        isAvailableValue: true,
-        onRefresh: () async {
-          repository.emit(ProEntitlementStatus.notEntitled);
-        },
-      );
-      final cache = SharedPrefsProEntitlementCache();
-      final service = ProEntitlementService(
-        repository: repository,
-        cache: cache,
-      );
-
-      await service.debugToggleEntitlement();
-      await service.refreshFromStore(isDebugBuild: false);
-
-      expect(service.isPro, isFalse);
-      await service.dispose();
-    },
-  );
+    expect(service.isPro, isFalse);
+    await service.dispose();
+  });
 
   test(
     'restorePurchases keeps notEntitled when no restored purchase',

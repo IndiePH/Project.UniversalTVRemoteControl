@@ -17,10 +17,7 @@ final class AppDiagnosticsRecorder {
   static const int _maxRecentEvents = 30;
   final List<String> _recentEvents = [];
 
-  void recordDiscoveryAttempt({
-    required int deviceCount,
-    Object? error,
-  }) {
+  void recordDiscoveryAttempt({required int deviceCount, Object? error}) {
     discoveryAttempts++;
     if (error != null) {
       discoveryErrors++;
@@ -46,10 +43,7 @@ final class AppDiagnosticsRecorder {
     _addEvent('pairing $phase ${outcome.name} (${brand.name})');
   }
 
-  void recordPairingSession({
-    required TvBrand brand,
-    required bool success,
-  }) {
+  void recordPairingSession({required TvBrand brand, required bool success}) {
     if (success) {
       pairingSessionsSucceeded++;
       _addEvent('pairing session ok (${brand.name})');
@@ -84,8 +78,8 @@ final class AppDiagnosticsRecorder {
     buffer.writeln('  empty: $discoveryEmpty');
     buffer.writeln('  errors: $discoveryErrors');
     if (discoveryAttempts > 0) {
-      final successRate =
-          (discoveryWithDevices / discoveryAttempts * 100).toStringAsFixed(1);
+      final successRate = (discoveryWithDevices / discoveryAttempts * 100)
+          .toStringAsFixed(1);
       buffer.writeln('  success rate (found TV): $successRate%');
     }
     buffer.writeln();

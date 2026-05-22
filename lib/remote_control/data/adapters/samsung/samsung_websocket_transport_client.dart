@@ -293,10 +293,7 @@ class SamsungWebSocketTransportClient
       'params': <String, dynamic>{
         'event': 'ed.apps.launch',
         'to': 'host',
-        'data': <String, dynamic>{
-          'appId': appId,
-          'action_type': actionType,
-        },
+        'data': <String, dynamic>{'appId': appId, 'action_type': actionType},
       },
     });
     _logging.logOutbound(deviceId, payload);

@@ -37,7 +37,12 @@ final class SamsungKeyMapper extends CommandKeyMap {
     RemoteCommand.back: ['KEY_RETURN'],
     RemoteCommand.home: ['KEY_HOME'],
     // Keep menu first, then try common settings/option aliases.
-    RemoteCommand.menu: ['KEY_MENU', 'KEY_SETTINGS', 'KEY_SETTING', 'KEY_OPTION'],
+    RemoteCommand.menu: [
+      'KEY_MENU',
+      'KEY_SETTINGS',
+      'KEY_SETTING',
+      'KEY_OPTION',
+    ],
   };
 
   @override

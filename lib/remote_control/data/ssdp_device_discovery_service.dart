@@ -101,7 +101,9 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
                 displayName:
                     '${candidate.brand.displayName} TV (${candidate.ip})',
                 brand: candidate.brand,
-                capabilities: const TvCapabilities().capabilitiesFor(candidate.brand),
+                capabilities: const TvCapabilities().capabilitiesFor(
+                  candidate.brand,
+                ),
               ),
             )
             .toList()

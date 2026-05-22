@@ -25,7 +25,9 @@ class RemoteHomeDeviceSwitcherSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final hasLockedDevices = devices.any((device) => device.id != activeDeviceId);
+    final hasLockedDevices = devices.any(
+      (device) => device.id != activeDeviceId,
+    );
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,

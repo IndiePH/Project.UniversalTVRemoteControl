@@ -42,8 +42,10 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
   final void Function(RemoteCommand command) onSendCommand;
   final VoidCallback onSearchInputPressed;
   final VoidCallback onDisabledInteraction;
+
   /// Debug-only: tap target immediately right of the power button (grid `[1,0]`).
   final VoidCallback? onInterstitialTestPressed;
+
   /// Debug-only: tap target immediately below the power button (grid `[0,1]`).
   final VoidCallback? onProToggleTestPressed;
   final bool proToggleTestIsPro;
@@ -270,7 +272,8 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     final height = (item.height * cellSize) + ((item.height - 1) * gridGap);
     final inset = cellSize * kRemoteLayoutCellInsetRatio;
     final innerHeight = math.max(1.0, height - inset * 2);
-    final glyphSize = math.min(math.max(1.0, width - inset * 2), innerHeight) *
+    final glyphSize =
+        math.min(math.max(1.0, width - inset * 2), innerHeight) *
         kRemotePlayPauseGlyphSizeRatio;
     return SizedBox(
       width: width,
@@ -311,7 +314,10 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
                     size: glyphSize + kRemotePlayPausePlayGlyphBoost,
                   ),
                   SizedBox(
-                    width: math.max(1, glyphSize * kRemotePlayPauseGlyphGapRatio),
+                    width: math.max(
+                      1,
+                      glyphSize * kRemotePlayPauseGlyphGapRatio,
+                    ),
                   ),
                   Icon(
                     Icons.pause,
@@ -453,9 +459,9 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     }
     return ColorFiltered(
       colorFilter: ColorFilter.mode(
-        AppTheme.colorsOf(context).remoteDisabledControlTint.withValues(
-          alpha: 0.42,
-        ),
+        AppTheme.colorsOf(
+          context,
+        ).remoteDisabledControlTint.withValues(alpha: 0.42),
         BlendMode.modulate,
       ),
       child: Opacity(opacity: 0.58, child: child),

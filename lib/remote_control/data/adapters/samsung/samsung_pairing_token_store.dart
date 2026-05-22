@@ -36,13 +36,12 @@ class SamsungPairingTokenStore {
   bool hasNonEmptyToken(String host) =>
       (_tokenByHost[host] ?? '').trim().isNotEmpty;
 
-  String trimmedTokenForHost(String host) =>
-      _tokenByHost[host]?.trim() ?? '';
+  String trimmedTokenForHost(String host) => _tokenByHost[host]?.trim() ?? '';
 
   void registerPendingApproval(String host, Completer<void> completer) {
-    _pendingPairingByHost.putIfAbsent(host, () => <Completer<void>>{}).add(
-          completer,
-        );
+    _pendingPairingByHost
+        .putIfAbsent(host, () => <Completer<void>>{})
+        .add(completer);
   }
 
   void cancelPendingApprovals(String host) {

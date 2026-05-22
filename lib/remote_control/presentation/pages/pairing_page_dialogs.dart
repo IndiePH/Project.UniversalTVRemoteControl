@@ -71,12 +71,14 @@ final class PairingPageDialogs {
         String? validatePin(AppLocalizations l10n) {
           final value = controller.text.trim();
           return switch (pinFormat) {
-            PinFormat.sixCharHex => RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)
-                ? null
-                : l10n.pairingPinErrorInvalidHex,
-            PinFormat.fourDigitNumeric => RegExp(r'^\d{4}$').hasMatch(value)
-                ? null
-                : l10n.pairingPinErrorInvalid,
+            PinFormat.sixCharHex =>
+              RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)
+                  ? null
+                  : l10n.pairingPinErrorInvalidHex,
+            PinFormat.fourDigitNumeric =>
+              RegExp(r'^\d{4}$').hasMatch(value)
+                  ? null
+                  : l10n.pairingPinErrorInvalid,
           };
         }
 
@@ -172,7 +174,11 @@ final class PairingPageDialogs {
                   size: 48,
                   color: Theme.of(context).colorScheme.error,
                 ),
-          title: Text(isSuccess ? l10n.pairingOutcomeSuccessTitle : l10n.pairingOutcomeFailureTitle),
+          title: Text(
+            isSuccess
+                ? l10n.pairingOutcomeSuccessTitle
+                : l10n.pairingOutcomeFailureTitle,
+          ),
           content: Text(
             isSuccess
                 ? l10n.pairingOutcomeSuccessBody(deviceName)
@@ -225,7 +231,8 @@ final class PairingPageDialogs {
                 ),
                 textInputAction: TextInputAction.done,
                 onChanged: (_) {
-                  if (inputError != null) setDialogState(() => inputError = null);
+                  if (inputError != null)
+                    setDialogState(() => inputError = null);
                 },
                 onSubmitted: (_) => submit(setDialogState, l10n),
               ),
@@ -302,16 +309,34 @@ final class PairingPageDialogs {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _InfoRow(label: l10n.pairingDeviceInfoLabelName, value: device.displayName),
-              _InfoRow(label: l10n.pairingDeviceInfoLabelBrand, value: device.brand.displayName),
+              _InfoRow(
+                label: l10n.pairingDeviceInfoLabelName,
+                value: device.displayName,
+              ),
+              _InfoRow(
+                label: l10n.pairingDeviceInfoLabelBrand,
+                value: device.brand.displayName,
+              ),
               if (device.modelIdentifier != null)
-                _InfoRow(label: l10n.pairingDeviceInfoLabelModel, value: device.modelIdentifier!),
+                _InfoRow(
+                  label: l10n.pairingDeviceInfoLabelModel,
+                  value: device.modelIdentifier!,
+                ),
               if (device.protocolVariant != TvDevice.defaultProtocolVariant)
-                _InfoRow(label: l10n.pairingDeviceInfoLabelVariant, value: device.protocolVariant),
+                _InfoRow(
+                  label: l10n.pairingDeviceInfoLabelVariant,
+                  value: device.protocolVariant,
+                ),
               if (pairedAtLabel != null)
-                _InfoRow(label: l10n.pairingDeviceInfoLabelPairedOn, value: pairedAtLabel),
+                _InfoRow(
+                  label: l10n.pairingDeviceInfoLabelPairedOn,
+                  value: pairedAtLabel,
+                ),
               if (lastKnownIp != null)
-                _InfoRow(label: l10n.pairingDeviceInfoLabelLastIp, value: lastKnownIp),
+                _InfoRow(
+                  label: l10n.pairingDeviceInfoLabelLastIp,
+                  value: lastKnownIp,
+                ),
             ],
           ),
           actions: [
@@ -344,8 +369,8 @@ class _InfoRow extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
+                color: Theme.of(context).colorScheme.outline,
+              ),
             ),
           ),
           Expanded(child: Text(value)),

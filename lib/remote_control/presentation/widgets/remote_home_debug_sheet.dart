@@ -26,10 +26,7 @@ class RemoteHomeDebugSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Debug',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Debug', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             if (showTransportToggle) ...[
               SwitchListTile(

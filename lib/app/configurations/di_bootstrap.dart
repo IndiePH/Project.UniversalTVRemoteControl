@@ -16,8 +16,9 @@ import 'package:one_remote/remote_control/configurations/remote_control_di_confi
 final class DiBootstrap {
   DiBootstrap._();
 
-  static const bool _compileUseFakeTransports =
-      bool.fromEnvironment('USE_FAKE_TRANSPORTS');
+  static const bool _compileUseFakeTransports = bool.fromEnvironment(
+    'USE_FAKE_TRANSPORTS',
+  );
 
   static Future<List<IDiConfig>> _configsFor(AppEnvironment env) async {
     final stored = await TransportDebugSettings.readUseFakeTransportsOverride();

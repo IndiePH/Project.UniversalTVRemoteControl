@@ -2,10 +2,15 @@ import 'package:one_remote/remote_control/application/result.dart';
 import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
-enum CommandOutcome { success, unsupported, failure, compatibility, pinRequired }
+enum CommandOutcome {
+  success,
+  unsupported,
+  failure,
+  compatibility,
+  pinRequired,
+}
 
 class CommandDispatchResult extends Result {
-
   CommandDispatchResult.success(String message, {this.device})
     : pinFormat = PinFormat.fourDigitNumeric,
       super(outcome: CommandOutcome.success.name, message: message);
@@ -18,7 +23,11 @@ class CommandDispatchResult extends Result {
   CommandDispatchResult.failure(String message, {Object? exception})
     : device = null,
       pinFormat = PinFormat.fourDigitNumeric,
-      super(outcome: CommandOutcome.failure.name, message: message, exception: exception);
+      super(
+        outcome: CommandOutcome.failure.name,
+        message: message,
+        exception: exception,
+      );
 
   CommandDispatchResult.compatibility(String message)
     : device = null,

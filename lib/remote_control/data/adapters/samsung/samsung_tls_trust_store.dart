@@ -23,7 +23,8 @@ final class SamsungTlsTrustStore {
   static const String _prefsPrefix = 'samsung_wss_tofu_v1_';
 
   final Map<String, Set<String>> _pinsByHostPort = <String, Set<String>>{};
-  final Map<String, Set<String>> _pendingPinsByHostPort = <String, Set<String>>{};
+  final Map<String, Set<String>> _pendingPinsByHostPort =
+      <String, Set<String>>{};
   Future<void>? _ready;
 
   Future<void> ensureLoaded() => _ready ??= _loadFromPrefs();

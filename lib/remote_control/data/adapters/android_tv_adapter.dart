@@ -48,8 +48,7 @@ class AndroidTvAdapter implements TvBrandAdapter {
   Future<void> submitPairingCode({
     required TvDevice device,
     required String pinCode,
-  }) =>
-      _transportClient.submitPairingCode(deviceId: device.id, code: pinCode);
+  }) => _transportClient.submitPairingCode(deviceId: device.id, code: pinCode);
 
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) =>
@@ -64,10 +63,11 @@ class AndroidTvAdapter implements TvBrandAdapter {
       _transportClient.cancelPairing(device.id);
 
   static const Map<RemoteCommand, String> _appLinks = {
-    RemoteCommand.netflix:    'market://launch?id=com.netflix.ninja',
-    RemoteCommand.primeVideo: 'market://launch?id=com.amazon.avod.thirdpartyclient',
+    RemoteCommand.netflix: 'market://launch?id=com.netflix.ninja',
+    RemoteCommand.primeVideo:
+        'market://launch?id=com.amazon.avod.thirdpartyclient',
     RemoteCommand.disneyPlus: 'market://launch?id=com.disney.disneyplus',
-    RemoteCommand.youtube:    'market://launch?id=com.google.android.youtube.tv',
+    RemoteCommand.youtube: 'market://launch?id=com.google.android.youtube.tv',
   };
 
   @override
@@ -91,7 +91,10 @@ class AndroidTvAdapter implements TvBrandAdapter {
   }
 
   @override
-  Future<void> sendText({required TvDevice device, required String text}) async {
+  Future<void> sendText({
+    required TvDevice device,
+    required String text,
+  }) async {
     await _transportClient.connect(deviceId: device.id);
     await _transportClient.sendText(deviceId: device.id, text: text);
   }

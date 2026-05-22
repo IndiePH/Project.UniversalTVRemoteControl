@@ -84,10 +84,12 @@ class RemoteHomeStatusPanel extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: blurWhenPairFocus(_DeviceNameHeader(
-                      deviceName: deviceName,
-                      onOpenDeviceSwitcher: onOpenDeviceSwitcher,
-                    )),
+                    child: blurWhenPairFocus(
+                      _DeviceNameHeader(
+                        deviceName: deviceName,
+                        onOpenDeviceSwitcher: onOpenDeviceSwitcher,
+                      ),
+                    ),
                   ),
                   _PairButton(
                     isActive: hasActiveDevice,
@@ -122,7 +124,9 @@ class RemoteHomeStatusPanel extends StatelessWidget {
               if (overlayOnChild) ...[
                 IgnorePointer(
                   child: Container(
-                    color: appColors.pairingModalBarrier.withValues(alpha: 0.45),
+                    color: appColors.pairingModalBarrier.withValues(
+                      alpha: 0.45,
+                    ),
                   ),
                 ),
               ],

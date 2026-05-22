@@ -40,6 +40,40 @@ Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — 
   - `--dart-define=FEEDBACK_WEBHOOK_TOKEN=...`
   - Operator setup: `references/feedback-collection-setup.md`
 
+## CI and local quality checks
+
+GitHub Actions workflow [`.github/workflows/flutter_ci.yml`](.github/workflows/flutter_ci.yml) runs on pushes and pull requests to `main`, `master`, and `develop`:
+
+1. `dart format --output=none --set-exit-if-changed .` - fails when formatting drifts
+2. `flutter analyze --fatal-infos` - static analysis / lints
+3. `flutter test` - unit and widget tests
+
+Reproduce locally:
+
+```bash
+flutter pub get
+dart format --output=none --set-exit-if-changed .
+flutter analyze --fatal-infos
+flutter test
+```
+
+## Build profiles and flavors (intentional gaps)
+
+| Layer | Debug | Release / store |
+| --- | --- | --- |
+| Flutter build mode | `kDebugMode` (default `flutter run`) | `kReleaseMode` (`flutter build apk --release`, etc.) |
+| App DI environment | `AppEnvironment.debug` via `AppBuildConfig.environmentForMain()` | `AppEnvironment.production` |
+| Android Gradle | `buildTypes.debug` (default) | `buildTypes.release` (debug signing placeholder until release keystore) |
+| iOS Xcode | Debug configuration | Release configuration |
+
+**Not implemented yet (by design):**
+
+- Gradle **product flavors** (e.g. `dev` / `staging` / `prod`) - configuration uses `--dart-define` and in-app debug toggles instead; see **Current Runtime Modes** above.
+- `AppEnvironment.development` - enum value reserved; `AppBuildConfig.developmentFlavorReserved` documents the hook until a flavor or dart-define wires it.
+- **Profile** builds (`flutter run --profile`) use production DI today; profile-specific hooks can attach to `AppBuildProfile.profile` in `lib/app/configurations/app_build_config.dart`.
+
+Lint rules: `analysis_options.yaml` includes `package:flutter_lints/flutter.yaml`.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

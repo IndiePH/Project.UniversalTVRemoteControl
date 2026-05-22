@@ -46,7 +46,8 @@ void main() {
 
     test('serial field matches required LG RSA-SHA256 value', () {
       final msg = buildLgRegisterPayload();
-      final signed = msg['payload']['manifest']['signed'] as Map<String, dynamic>;
+      final signed =
+          msg['payload']['manifest']['signed'] as Map<String, dynamic>;
       expect(signed['serial'], '2f930e2d2cfe083771f68e4fe7bb07');
     });
 

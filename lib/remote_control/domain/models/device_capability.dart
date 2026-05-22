@@ -1,6 +1,1 @@
-enum DeviceCapability {
-  keyCommands,
-  textInput,
-  powerControl,
-  pinPairing,
-}
+enum DeviceCapability { keyCommands, textInput, powerControl, pinPairing }

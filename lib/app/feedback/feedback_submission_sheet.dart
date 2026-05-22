@@ -5,15 +5,13 @@ import 'package:one_remote/l10n/app_localizations.dart';
 
 /// In-app feedback form: category, message, and send action.
 class FeedbackSubmissionSheet extends StatefulWidget {
-  const FeedbackSubmissionSheet({
-    super.key,
-    required this.onSubmit,
-  });
+  const FeedbackSubmissionSheet({super.key, required this.onSubmit});
 
   final Future<FeedbackSheetSubmitOutcome> Function({
     required String message,
     required String category,
-  }) onSubmit;
+  })
+  onSubmit;
 
   @override
   State<FeedbackSubmissionSheet> createState() =>
@@ -75,9 +73,7 @@ class _FeedbackSubmissionSheetState extends State<FeedbackSubmissionSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

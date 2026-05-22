@@ -694,8 +694,8 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   Future<void> _showFeedbackSheet() async {
     final l10n = AppLocalizations.of(context)!;
     final submissionService = GetIt.instance<FeedbackSubmissionService>();
-    final packageInfo =
-        await GetIt.instance<AppPackageInfoSource>().getPackageInfo();
+    final packageInfo = await GetIt.instance<AppPackageInfoSource>()
+        .getPackageInfo();
     if (!mounted) {
       return;
     }

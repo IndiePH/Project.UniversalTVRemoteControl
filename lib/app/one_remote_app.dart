@@ -30,32 +30,33 @@ class OneRemoteApp extends StatelessWidget {
       valueListenable: sl<ValueNotifier<Locale>>(),
       builder: (context, locale, child) =>
           ValueListenableBuilder<AppThemePreference>(
-        valueListenable: themeController.preferenceNotifier,
-        builder: (context, themePreference, child) => MaterialApp(
-          locale: locale,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
-          builder: (context, child) {
-            AppLocalizedStrings.update(AppLocalizations.of(context)!);
-            return child!;
-          },
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme(),
-          darkTheme: AppTheme.darkTheme(),
-          themeMode: themePreference.themeMode,
-          home: RemoteHomePage(
-            appEnvironment: sl<AppEnvironment>(),
-            interstitialAdController: sl<InterstitialAdController>(),
-            commandService: sl<RemoteCommandService>(),
-            deviceRepository: sl<DeviceRepository>(),
-            discoveryService: sl<DeviceDiscoveryService>(),
-            layoutRepository: sl<LayoutRepository>(),
-            proEntitlementService: sl<ProEntitlementService>(),
-            transportLogReaderProvider: sl<TransportLogReaderProvider>(),
+            valueListenable: themeController.preferenceNotifier,
+            builder: (context, themePreference, child) => MaterialApp(
+              locale: locale,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              onGenerateTitle: (context) =>
+                  AppLocalizations.of(context)!.appTitle,
+              builder: (context, child) {
+                AppLocalizedStrings.update(AppLocalizations.of(context)!);
+                return child!;
+              },
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme(),
+              darkTheme: AppTheme.darkTheme(),
+              themeMode: themePreference.themeMode,
+              home: RemoteHomePage(
+                appEnvironment: sl<AppEnvironment>(),
+                interstitialAdController: sl<InterstitialAdController>(),
+                commandService: sl<RemoteCommandService>(),
+                deviceRepository: sl<DeviceRepository>(),
+                discoveryService: sl<DeviceDiscoveryService>(),
+                layoutRepository: sl<LayoutRepository>(),
+                proEntitlementService: sl<ProEntitlementService>(),
+                transportLogReaderProvider: sl<TransportLogReaderProvider>(),
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 }
