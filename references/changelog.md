@@ -81,6 +81,8 @@ Keep entries short and append new updates at the top.
   (unauthorized frame, token completion, cancel cleanup).
 
 ### Changed
+- Multi-device management (**TVREMOTE-19**): Jira **Done** and `implementation_tasks.md`
+  aligned with Task 2.3 shipped scope (save/rename/remove, switcher, last-used).
 - Default Apps Script feedback webhook rotated in `FeedbackConfig` (deployment
   `AKfycbyYdrlh8oVk1BwA2w5xa6JGW0kPwGSRaSElpqmClz2VyfhPpEX3rRvT3oTPbcS8w4HTWQ`);
   `references/feedback-collection-setup.md` documents 11-column ingest, FILTER
