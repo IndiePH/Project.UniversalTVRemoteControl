@@ -23,8 +23,13 @@ Keep entries short and append new updates at the top.
   scenarios A–C (first-time approval, token reuse, rejection/timeout recovery),
   code-under-test map, outcome table, and follow-up template in
   `references/samsung_validation_matrix.md`.
+- Telemetry/diagnostics C1 (**TVREMOTE-29**): `AppDiagnosticsRecorder`
+  (discovery/pairing/command counters + recent events); DI decorators;
+  `DiagnosticsSummaryPanel` + copy diagnostics report in debug settings;
+  pairing session + unhandled-error hooks.
 
 ### Verification
+- Telemetry/diagnostics C1 (**TVREMOTE-29**): `flutter test test/lib/app/diagnostics/app_diagnostics_recorder_test.dart` — 1 test passed (2026-05-22).
 - Hisense Android SSDP physical validation (**TVREMOTE-7**): Hisense TV —
   SSDP scan, manual-IP pair, PIN flow, keys, reconnect **pass** (2026-05-22)
   in `references/hisense_validation_matrix.md` known-good matrix; fallback
@@ -42,10 +47,20 @@ Keep entries short and append new updates at the top.
   table documents intentional Gradle product-flavor gaps.
 
 ### Changed
+- Samsung approval timeout/rejection regression tests (**TVREMOTE-13**): repo AC
+  met; Jira **Done** (2026-05-22); `implementation_tasks.md` Jira block aligned.
+- Telemetry/diagnostics (**TVREMOTE-29**): Task C1 shipped in repo;
+  `implementation_tasks.md` Jira block + Cross-Cutting Task C1 aligned (Jira
+  close-out still **In Progress**).
 - `AdConsentCoordinator.isPrivacyOptionsRequired` uses timeout + fallback when the
   Mobile Ads plugin is absent so the settings sheet is not blocked in widget tests.
 
+### Changed
+- Layout-focused tests (**TVREMOTE-20**): repo AC met; Jira **Done** (2026-05-22); `implementation_tasks.md` Jira block aligned.
+
 ### Verification (automated)
+- `flutter test test/lib/remote_control/presentation/widgets/remote_layout_drop_resolver_test.dart test/lib/remote_control/data/shared_prefs_layout_repository_test.dart test/lib/remote_control/presentation/widgets/remote_layout_grid_constraints_test.dart test/lib/remote_control/presentation/widgets/remote_layout_editor_widget_test.dart` passed (**TVREMOTE-20**; 16 tests; 2026-05-22 impl-start re-verify).
+- `flutter test test/lib/remote_control/data/adapters/samsung_test_lane_test.dart test/lib/remote_control/data/adapters/samsung/samsung_pairing_token_store_test.dart` passed (**TVREMOTE-13**; 21 tests; 2026-05-22 re-verify).
 - `flutter test test/lib/remote_control/data/ssdp_brand_inference_test.dart` passed
   (**TVREMOTE-7**; 8 tests; 2026-05-22).
 - `dart format --output=none --set-exit-if-changed .`, `flutter analyze --fatal-infos`,
@@ -104,7 +119,7 @@ Keep entries short and append new updates at the top.
 - `flutter test test/lib/remote_control/presentation/widgets/remote_layout_drop_resolver_test.dart test/lib/remote_control/data/shared_prefs_layout_repository_test.dart test/lib/remote_control/presentation/widgets/remote_layout_grid_constraints_test.dart test/lib/remote_control/presentation/widgets/remote_layout_editor_widget_test.dart` passed (**TVREMOTE-20**; 16 tests).
 - `flutter test test/widget_test.dart --name "switches active TV"` passed.
 - `flutter test test/lib/remote_control/data/ssdp_brand_inference_test.dart test/lib/remote_control/data/discovery_result_merger_test.dart` passed (**TVREMOTE-18**).
-- `flutter test test/lib/remote_control/data/adapters/samsung_test_lane_test.dart test/lib/remote_control/data/adapters/samsung/samsung_pairing_token_store_test.dart` passed (**TVREMOTE-13**; 19 tests).
+- `flutter test test/lib/remote_control/data/adapters/samsung_test_lane_test.dart test/lib/remote_control/data/adapters/samsung/samsung_pairing_token_store_test.dart` passed (**TVREMOTE-13**; 21 tests).
 
 ## 2026-05-20
 

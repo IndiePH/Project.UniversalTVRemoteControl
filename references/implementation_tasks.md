@@ -14,7 +14,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-37** — Per-brand TV adapter and transport **testing** epic (Samsung / LG / Hisense lanes today; **To Do** in Jira).
 - **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring), plus transport-abstraction **TVREMOTE-52** / **TVREMOTE-53** (**Done** in Jira — shared marker + event adoption shipped in repo). **TVREMOTE-38** — Samsung adapter refinement (**In Progress** in Jira; C1 shipped in repo — Status Tracker). **TVREMOTE-40** — Hisense adapter refinement (**In Progress** in Jira; C1 shipped in repo — Status Tracker). **TVREMOTE-48** — Hisense protocol-level pairing verification (**Done** in Jira; merged into **TVREMOTE-40**). **TVREMOTE-7** — Hisense Android SSDP re-validation (**In Progress** in Jira; physical validation **pass** on Hisense TV 2026-05-22 — `references/hisense_validation_matrix.md`; repo AC met). **TVREMOTE-14** and **TVREMOTE-18** are parented under TVREMOTE-36.
 - **TVREMOTE-14** — Samsung approval variants on physical devices (**Done** in Jira; runbook + outcome table in `references/samsung_validation_matrix.md`; scenarios A–C **pass** on Samsung TV 2026-05-22; Samsung connect info in settings/debug sheets for model/firmware capture).
-- **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung; **In Progress**), **TVREMOTE-50** (LG; **Done** in Jira), **TVREMOTE-51** (Hisense; **In Progress**); **TVREMOTE-13** is parented under TVREMOTE-37 (Samsung approval timeout/rejection + recovery regression tests shipped in `samsung_test_lane_test.dart` and `samsung_pairing_token_store_test.dart`; **In Progress** in Jira). Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
+- **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung; **In Progress**), **TVREMOTE-50** (LG; **Done** in Jira), **TVREMOTE-51** (Hisense; **In Progress**). **TVREMOTE-13** — Samsung approval timeout/rejection + recovery regression tests (**Done** in Jira; parent **TVREMOTE-37**): `samsung_test_lane_test.dart`, `samsung_pairing_token_store_test.dart` (21 tests; 2026-05-22). Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
 - **TVREMOTE-12** — Pairing success/failure path tests (**In Progress** in Jira; coordinator coverage shipped in `pairing_page_coordinator_test.dart`; parent **TVREMOTE-2**).
 - Umbrella issues superseded by this split (historical, **Done** in Jira): **TVREMOTE-25**, **TVREMOTE-21**, **TVREMOTE-9**, **TVREMOTE-10**, **TVREMOTE-16**.
 - **TVREMOTE-63** — Bottom banner + interstitial AdMob scaffold; UMP/ATT consent gating in app code (**Done**; production ad IDs + store-listing privacy URL still **TVREMOTE-26**).
@@ -23,13 +23,13 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-68** — In-app user feedback: settings sheet + Apps Script webhook (**Done** in Jira; parent **TVREMOTE-2**).
 - **TVREMOTE-69** — Production feedback webhook token + privacy-policy disclosure (**To Do** in Jira; parent **TVREMOTE-2**).
 - **TVREMOTE-26** — Legal/compliance release gate (**In Progress** in Jira): ATT/UMP + in-app privacy link scaffold landed; app feedback **TVREMOTE-68** Done; release ops **TVREMOTE-69** pending; live policy URL and device validation pending.
-- **TVREMOTE-29** — Telemetry/diagnostics recorder + settings export (**In Progress**; C1 acceptance met in repo).
+- **TVREMOTE-29** — Telemetry/diagnostics recorder + settings export (Task C1 **shipped** in repo; **In Progress** in Jira): `AppDiagnosticsRecorder`, discovery/command decorators, `DiagnosticsSummaryPanel` + copy report in debug settings; `app_diagnostics_recorder_test.dart` verified 2026-05-22.
 - **TVREMOTE-28** — Interaction polish: press-scale + haptic on remote controls (**In Progress**).
 - **TVREMOTE-41** — Samsung IME watch stream no eager `connect`; probe path explicit (**In Progress** in Jira).
 - **TVREMOTE-42** — LG IME watch stream no eager `connect`; probe path explicit (**Done** in Jira, 2026-05-20).
 - **TVREMOTE-19** — Multi-device save/switch/edit/remove (Task 2.3): pairing save/rename/remove + last-used persistence; remote-home `RemoteHomeDeviceSwitcherSheet` (Pro switch, free-tier lock); pairing manage path (**Done** in Jira, 2026-05-22; shipped in repo).
 - **TVREMOTE-18** — Discovery brand identification + pairing routing (**In Progress** in Jira; Task 2.2 C1 shipped in repo — SSDP fingerprint module, IP-level merge with brand priority, limited/experimental support notes on discovery list).
-- **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (**In Progress** in Jira; C1 shipped in repo).
+- **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (four test files, 16 tests; **Done** in Jira, 2026-05-22).
 - **TVREMOTE-70** — TCL legacy Wi-Fi variant resolution: exact transport model marker, registry catch-all, capabilities, pairing constant (**Done** in Jira; parent **TVREMOTE-36**). Physical validation still **experimental** — `references/tcl_validation_matrix.md`.
 - **TVREMOTE-31** — Milestone 0 / Task 0.2: CI quality baseline (`flutter_ci.yml`: format, analyze, test on PRs); `AppBuildConfig` + README build-profile/flavor gap notes; Gradle flavor placeholder comments (**Done** in Jira; parent **TVREMOTE-5**).
 - **TVREMOTE-11** — Milestone 1 / Task 1.6: vertical-slice widget/integration coverage — pair→remote→command, remove-flow regressions, discovery failure/empty-rescan, returning last-used launch, command-dispatch failure (**Done** in Jira; shipped in `test/widget_test.dart`).
@@ -127,6 +127,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Free-tier interstitial ad scaffold (`InterstitialAdController`, engagement policy, Pro + consent gating; **TVREMOTE-63** / **TVREMOTE-66**)
   - [x] Ad consent bootstrap (`AdConsentCoordinator`: UMP + iOS ATT before `MobileAds.initialize()`; **TVREMOTE-26** partial)
   - [x] Settings sheet: platform store-account hints, privacy-policy link, UMP privacy-options when required, diagnostics summary + copy report, in-app feedback (category + message → webhook) (**TVREMOTE-29** / **TVREMOTE-66** / **TVREMOTE-68**)
+  - [x] Telemetry/diagnostics (**TVREMOTE-29**): `AppDiagnosticsRecorder` + discovery/command decorators; `DiagnosticsSummaryPanel` + copy diagnostics report in debug settings; pairing session + unhandled-error recording; `app_diagnostics_recorder_test.dart`
   - [x] In-app user feedback (**TVREMOTE-68**): `FeedbackSubmissionSheet` from settings; `HttpFeedbackSubmissionService` POST JSON via `FeedbackConfig`; `AppPackageInfoSource` for `appVersion`; tests in `test/lib/app/feedback/` and `test/lib/app/package_info/` (see `references/feedback-collection-setup.md`, `references/compliance-and-release-requirements.md` §1.5; release token/policy **TVREMOTE-69**)
   - [x] Remote interaction polish: `RemotePressFeedback` + command haptics on grid/d-pad/rockers (**TVREMOTE-28**)
   - [x] Multi-device management (**TVREMOTE-19**): save/rename/remove on pairing; `setLastUsedDevice` on pair, saved-device tap, and switcher; `RemoteHomeDeviceSwitcherSheet` + header affordance (Pro switch, free-tier lock); `FreeTierSavedDeviceCleanup`
@@ -217,7 +218,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] saved-device remove/last-used fallback paths
   - [x] vertical-slice widget/integration edge cases (`TVREMOTE-11`): discovery failure, empty-rescan recovery, returning last-used launch, command failure surfacing
 - [ ] Implement missing per-brand text-input transports and re-enable capability flags after validation
-- [x] Add focused widget tests for (**TVREMOTE-20**):
+- [x] Add focused widget tests for (**TVREMOTE-20**; re-verified 2026-05-22):
   - [x] drag/drop swap behavior (including multi-cell items and resolver rejection vs accept paths) — `remote_layout_drop_resolver_test.dart`
   - [x] layout persistence and default reset behavior — `shared_prefs_layout_repository_test.dart`, `remote_layout_editor_widget_test.dart` (reset callback)
   - [x] `5x9` default layout occupancy constraints (no overlaps) — `remote_layout_grid_constraints_test.dart`
@@ -368,7 +369,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 
 ## Cross-Cutting Tasks (Do in parallel)
 
-### Task C1 - Telemetry and diagnostics
+### Task C1 - Telemetry and diagnostics (**TVREMOTE-29** shipped in repo)
 - [x] Track discovery success/failure rates (`AppDiagnosticsRecorder` + discovery decorator; debug settings summary).
 - [x] Track pairing and command error categories (pairing session + dispatch outcome counters by brand/outcome).
 - [x] Add internal debug view/log export for troubleshooting (settings debug section: `DiagnosticsSummaryPanel`, copy diagnostics report; existing transport log copy retained).
