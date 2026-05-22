@@ -27,7 +27,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-28** — Interaction polish: press-scale + haptic on remote controls (**In Progress**).
 - **TVREMOTE-41** — Samsung IME watch stream no eager `connect`; probe path explicit (**In Progress** in Jira).
 - **TVREMOTE-42** — LG IME watch stream no eager `connect`; probe path explicit (**Done** in Jira, 2026-05-20).
-- **TVREMOTE-19** — Multi-device save/switch/edit/remove: pairing save/rename/remove + last-used persistence; remote-home device switcher sheet for quick active-TV change (**To Do** in Jira; C1 switcher + `setLastUsedDevice` shipped in repo).
+- **TVREMOTE-19** — Multi-device save/switch/edit/remove (Task 2.3): pairing save/rename/remove + last-used persistence; remote-home `RemoteHomeDeviceSwitcherSheet` (Pro switch, free-tier lock); pairing manage path (**Done** in Jira, 2026-05-22; shipped in repo).
 - **TVREMOTE-18** — Discovery brand identification + pairing routing (**In Progress** in Jira; Task 2.2 C1 shipped in repo — SSDP fingerprint module, IP-level merge with brand priority, limited/experimental support notes on discovery list).
 - **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (**In Progress** in Jira; C1 shipped in repo).
 - **TVREMOTE-70** — TCL legacy Wi-Fi variant resolution: exact transport model marker, registry catch-all, capabilities, pairing constant (**Done** in Jira; parent **TVREMOTE-36**). Physical validation still **experimental** — `references/tcl_validation_matrix.md`.
@@ -129,7 +129,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Settings sheet: platform store-account hints, privacy-policy link, UMP privacy-options when required, diagnostics summary + copy report, in-app feedback (category + message → webhook) (**TVREMOTE-29** / **TVREMOTE-66** / **TVREMOTE-68**)
   - [x] In-app user feedback (**TVREMOTE-68**): `FeedbackSubmissionSheet` from settings; `HttpFeedbackSubmissionService` POST JSON via `FeedbackConfig`; `AppPackageInfoSource` for `appVersion`; tests in `test/lib/app/feedback/` and `test/lib/app/package_info/` (see `references/feedback-collection-setup.md`, `references/compliance-and-release-requirements.md` §1.5; release token/policy **TVREMOTE-69**)
   - [x] Remote interaction polish: `RemotePressFeedback` + command haptics on grid/d-pad/rockers (**TVREMOTE-28**)
-  - [x] Multi-device quick switch on remote home (**TVREMOTE-19** partial): `RemoteHomeDeviceSwitcherSheet` + header affordance; `setLastUsedDevice` on saved-device select from pairing and switcher
+  - [x] Multi-device management (**TVREMOTE-19**): save/rename/remove on pairing; `setLastUsedDevice` on pair, saved-device tap, and switcher; `RemoteHomeDeviceSwitcherSheet` + header affordance (Pro switch, free-tier lock); `FreeTierSavedDeviceCleanup`
   - [x] Samsung/LG `watchRemoteTextInputReady` — no adapter-side `connect()`; use `probeRemoteTextInputReady` for explicit probe (**TVREMOTE-41**, **TVREMOTE-42**)
     - [x] new `lib/app/ads/` module (`AdConfig`, `BottomBannerAd`, `BottomBannerAdPlacement`) using `google_mobile_ads ^8.0.0`; env-aware unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` with Google's test IDs as fallback
     - [x] `MobileAds.initialize()` runs only on Android/iOS; non-mobile/`kIsWeb` paths skip the overlay entirely so layout/tests are unaffected
