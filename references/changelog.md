@@ -49,14 +49,12 @@ Keep entries short and append new updates at the top.
 ### Changed
 - Samsung approval timeout/rejection regression tests (**TVREMOTE-13**): repo AC
   met; Jira **Done** (2026-05-22); `implementation_tasks.md` Jira block aligned.
-- Telemetry/diagnostics (**TVREMOTE-29**): Task C1 shipped in repo;
-  `implementation_tasks.md` Jira block + Cross-Cutting Task C1 aligned (Jira
-  close-out still **In Progress**).
+- Telemetry/diagnostics (**TVREMOTE-29**): Task C1 shipped in repo; Jira **Done**
+  (2026-05-22); `implementation_tasks.md` Jira block + Cross-Cutting Task C1 aligned.
+- Layout-focused tests (**TVREMOTE-20**): repo AC met; Jira **Done** (2026-05-22);
+  `implementation_tasks.md` Jira block aligned.
 - `AdConsentCoordinator.isPrivacyOptionsRequired` uses timeout + fallback when the
   Mobile Ads plugin is absent so the settings sheet is not blocked in widget tests.
-
-### Changed
-- Layout-focused tests (**TVREMOTE-20**): repo AC met; Jira **Done** (2026-05-22); `implementation_tasks.md` Jira block aligned.
 
 ### Verification (automated)
 - `flutter test test/lib/remote_control/presentation/widgets/remote_layout_drop_resolver_test.dart test/lib/remote_control/data/shared_prefs_layout_repository_test.dart test/lib/remote_control/presentation/widgets/remote_layout_grid_constraints_test.dart test/lib/remote_control/presentation/widgets/remote_layout_editor_widget_test.dart` passed (**TVREMOTE-20**; 16 tests; 2026-05-22 impl-start re-verify).
