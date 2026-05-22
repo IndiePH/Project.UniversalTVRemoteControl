@@ -49,6 +49,7 @@ Keep entries short and append new updates at the top.
   table documents intentional Gradle product-flavor gaps.
 
 ### Changed
+- Flutter CI (**TVREMOTE-31**): `flutter_ci.yml` adds `qualify` job that skips format/analyze/test when push/PR diff is only under `references/`; `develop` branch triggers restored; README documents skip rule (`ddc1a82`).
 - Samsung approval timeout/rejection regression tests (**TVREMOTE-13**): repo AC
   met; Jira **Done** (2026-05-22); `implementation_tasks.md` Jira block aligned.
 - Telemetry/diagnostics (**TVREMOTE-29**): Task C1 shipped in repo; Jira **Done**

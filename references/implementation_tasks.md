@@ -46,7 +46,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Established layered structure (`presentation` / `application` / `data` / `domain`)
   - [x] Added extensible brand adapter contracts and router-based dispatch
 - [x] Milestone 0 / Task 0.2 (`TVREMOTE-31`):
-  - [x] GitHub Actions CI: `dart format --set-exit-if-changed`, `flutter analyze --fatal-infos`, `flutter test` on PRs to `main` / `master` / `develop` (`.github/workflows/flutter_ci.yml`)
+  - [x] GitHub Actions CI: `dart format --set-exit-if-changed`, `flutter analyze --fatal-infos`, `flutter test` on PRs to `main` / `master` / `develop` (`.github/workflows/flutter_ci.yml`; `qualify` skips when diff is only `references/`)
   - [x] Repo-wide `dart format` baseline applied so the format gate passes
   - [x] `AppBuildConfig` / `AppBuildProfile` centralize debug vs release → `AppEnvironment`; `main.dart` uses `environmentForMain()`
   - [x] README documents CI commands, intentional Gradle product-flavor gap, and `AppEnvironment.development` reservation
