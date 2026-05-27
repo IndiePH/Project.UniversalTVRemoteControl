@@ -26,7 +26,7 @@ class AdConfig {
         isProduction
             ? const String.fromEnvironment(
                 'ADMOB_BANNER_ANDROID',
-                defaultValue: _androidTestBannerAdUnitId,
+                defaultValue: _productionAndroidBannerAdUnitId,
               )
             : _androidTestBannerAdUnitId,
       TargetPlatform.iOS =>
@@ -51,7 +51,7 @@ class AdConfig {
         isProduction
             ? const String.fromEnvironment(
                 'ADMOB_INTERSTITIAL_ANDROID',
-                defaultValue: _androidTestInterstitialAdUnitId,
+                defaultValue: _productionAndroidInterstitialAdUnitId,
               )
             : _androidTestInterstitialAdUnitId,
       TargetPlatform.iOS =>
@@ -64,6 +64,11 @@ class AdConfig {
       _ => null,
     };
   }
+
+  static const String _productionAndroidBannerAdUnitId =
+      'ca-app-pub-4297882562709937/6229056524';
+  static const String _productionAndroidInterstitialAdUnitId =
+      'ca-app-pub-4297882562709937/6720011119';
 
   static const String _androidTestBannerAdUnitId =
       'ca-app-pub-3940256099942544/6300978111';

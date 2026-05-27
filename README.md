@@ -63,7 +63,7 @@ flutter test
 | --- | --- | --- |
 | Flutter build mode | `kDebugMode` (default `flutter run`) | `kReleaseMode` (`flutter build apk --release`, etc.) |
 | App DI environment | `AppEnvironment.debug` via `AppBuildConfig.environmentForMain()` | `AppEnvironment.production` |
-| Android Gradle | `buildTypes.debug` (default) | `buildTypes.release` (debug signing placeholder until release keystore) |
+| Android Gradle | `buildTypes.debug` (default) | `buildTypes.release` signed via `android/key.properties` (falls back to debug if missing) |
 | iOS Xcode | Debug configuration | Release configuration |
 
 **Not implemented yet (by design):**

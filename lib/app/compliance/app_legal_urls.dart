@@ -4,10 +4,11 @@ class AppLegalUrls {
 
   /// Live privacy policy URL for store listings and in-app link.
   ///
-  /// Set via `--dart-define=PRIVACY_POLICY_URL=https://...` on release builds.
+  /// Override with `--dart-define=PRIVACY_POLICY_URL=https://...` if needed.
   static const String privacyPolicyUrl = String.fromEnvironment(
     'PRIVACY_POLICY_URL',
-    defaultValue: '',
+    defaultValue:
+        'https://yoxent.github.io/legal-docs/one-remote/privacy-policy.html',
   );
 
   static bool get hasPrivacyPolicyUrl => privacyPolicyUrl.trim().isNotEmpty;

@@ -8,7 +8,7 @@
 PRODUCT_NAME = OneRemote
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.xentwil.oneRemote
+PRODUCT_BUNDLE_IDENTIFIER = com.vorithstudio.smarttvremote
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.xentwil. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.vorithstudio. All rights reserved.

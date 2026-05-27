@@ -1,4 +1,4 @@
-package com.xentwil.one_remote
+package com.vorithstudio.smarttvremote
 
 import io.flutter.embedding.android.FlutterActivity
 
