@@ -68,8 +68,7 @@ class RemoteSetActive extends $pb.GeneratedMessage {
   static RemoteSetActive create() => RemoteSetActive._();
   @override
   RemoteSetActive createEmptyInstance() => create();
-  static $pb.PbList<RemoteSetActive> createRepeated() =>
-      $pb.PbList<RemoteSetActive>();
+  static List<RemoteSetActive> createRepeated() => <RemoteSetActive>[];
   static RemoteSetActive? _defaultInstance;
   static RemoteSetActive getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteSetActive>(create);
@@ -146,8 +145,7 @@ class RemoteKeyInject extends $pb.GeneratedMessage {
   static RemoteKeyInject create() => RemoteKeyInject._();
   @override
   RemoteKeyInject createEmptyInstance() => create();
-  static $pb.PbList<RemoteKeyInject> createRepeated() =>
-      $pb.PbList<RemoteKeyInject>();
+  static List<RemoteKeyInject> createRepeated() => <RemoteKeyInject>[];
   static RemoteKeyInject? _defaultInstance;
   static RemoteKeyInject getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteKeyInject>(create);
@@ -202,8 +200,7 @@ class RemotePingRequest extends $pb.GeneratedMessage {
   static RemotePingRequest create() => RemotePingRequest._();
   @override
   RemotePingRequest createEmptyInstance() => create();
-  static $pb.PbList<RemotePingRequest> createRepeated() =>
-      $pb.PbList<RemotePingRequest>();
+  static List<RemotePingRequest> createRepeated() => <RemotePingRequest>[];
   static RemotePingRequest? _defaultInstance;
   static RemotePingRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemotePingRequest>(create);
@@ -255,8 +252,7 @@ class RemotePingResponse extends $pb.GeneratedMessage {
   static RemotePingResponse create() => RemotePingResponse._();
   @override
   RemotePingResponse createEmptyInstance() => create();
-  static $pb.PbList<RemotePingResponse> createRepeated() =>
-      $pb.PbList<RemotePingResponse>();
+  static List<RemotePingResponse> createRepeated() => <RemotePingResponse>[];
   static RemotePingResponse? _defaultInstance;
   static RemotePingResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemotePingResponse>(create);
@@ -307,8 +303,7 @@ class RemoteImeObject extends $pb.GeneratedMessage {
   static RemoteImeObject create() => RemoteImeObject._();
   @override
   RemoteImeObject createEmptyInstance() => create();
-  static $pb.PbList<RemoteImeObject> createRepeated() =>
-      $pb.PbList<RemoteImeObject>();
+  static List<RemoteImeObject> createRepeated() => <RemoteImeObject>[];
   static RemoteImeObject? _defaultInstance;
   static RemoteImeObject getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteImeObject>(create);
@@ -373,8 +368,7 @@ class RemoteEditInfo extends $pb.GeneratedMessage {
   static RemoteEditInfo create() => RemoteEditInfo._();
   @override
   RemoteEditInfo createEmptyInstance() => create();
-  static $pb.PbList<RemoteEditInfo> createRepeated() =>
-      $pb.PbList<RemoteEditInfo>();
+  static List<RemoteEditInfo> createRepeated() => <RemoteEditInfo>[];
   static RemoteEditInfo? _defaultInstance;
   static RemoteEditInfo getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteEditInfo>(create);
@@ -443,8 +437,7 @@ class RemoteImeBatchEdit extends $pb.GeneratedMessage {
   static RemoteImeBatchEdit create() => RemoteImeBatchEdit._();
   @override
   RemoteImeBatchEdit createEmptyInstance() => create();
-  static $pb.PbList<RemoteImeBatchEdit> createRepeated() =>
-      $pb.PbList<RemoteImeBatchEdit>();
+  static List<RemoteImeBatchEdit> createRepeated() => <RemoteImeBatchEdit>[];
   static RemoteImeBatchEdit? _defaultInstance;
   static RemoteImeBatchEdit getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteImeBatchEdit>(create);
@@ -518,8 +511,8 @@ class RemoteTextFieldStatus extends $pb.GeneratedMessage {
   static RemoteTextFieldStatus create() => RemoteTextFieldStatus._();
   @override
   RemoteTextFieldStatus createEmptyInstance() => create();
-  static $pb.PbList<RemoteTextFieldStatus> createRepeated() =>
-      $pb.PbList<RemoteTextFieldStatus>();
+  static List<RemoteTextFieldStatus> createRepeated() =>
+      <RemoteTextFieldStatus>[];
   static RemoteTextFieldStatus? _defaultInstance;
   static RemoteTextFieldStatus getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteTextFieldStatus>(create);
@@ -602,8 +595,7 @@ class RemoteAppInfo extends $pb.GeneratedMessage {
   static RemoteAppInfo create() => RemoteAppInfo._();
   @override
   RemoteAppInfo createEmptyInstance() => create();
-  static $pb.PbList<RemoteAppInfo> createRepeated() =>
-      $pb.PbList<RemoteAppInfo>();
+  static List<RemoteAppInfo> createRepeated() => <RemoteAppInfo>[];
   static RemoteAppInfo? _defaultInstance;
   static RemoteAppInfo getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteAppInfo>(create);
@@ -665,8 +657,7 @@ class RemoteImeKeyInject extends $pb.GeneratedMessage {
   static RemoteImeKeyInject create() => RemoteImeKeyInject._();
   @override
   RemoteImeKeyInject createEmptyInstance() => create();
-  static $pb.PbList<RemoteImeKeyInject> createRepeated() =>
-      $pb.PbList<RemoteImeKeyInject>();
+  static List<RemoteImeKeyInject> createRepeated() => <RemoteImeKeyInject>[];
   static RemoteImeKeyInject? _defaultInstance;
   static RemoteImeKeyInject getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteImeKeyInject>(create);
@@ -737,8 +728,7 @@ class RemoteDeviceInfo extends $pb.GeneratedMessage {
   static RemoteDeviceInfo create() => RemoteDeviceInfo._();
   @override
   RemoteDeviceInfo createEmptyInstance() => create();
-  static $pb.PbList<RemoteDeviceInfo> createRepeated() =>
-      $pb.PbList<RemoteDeviceInfo>();
+  static List<RemoteDeviceInfo> createRepeated() => <RemoteDeviceInfo>[];
   static RemoteDeviceInfo? _defaultInstance;
   static RemoteDeviceInfo getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteDeviceInfo>(create);
@@ -818,8 +808,7 @@ class RemoteConfigure extends $pb.GeneratedMessage {
   static RemoteConfigure create() => RemoteConfigure._();
   @override
   RemoteConfigure createEmptyInstance() => create();
-  static $pb.PbList<RemoteConfigure> createRepeated() =>
-      $pb.PbList<RemoteConfigure>();
+  static List<RemoteConfigure> createRepeated() => <RemoteConfigure>[];
   static RemoteConfigure? _defaultInstance;
   static RemoteConfigure getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteConfigure>(create);
@@ -874,7 +863,7 @@ class RemoteStart extends $pb.GeneratedMessage {
   static RemoteStart create() => RemoteStart._();
   @override
   RemoteStart createEmptyInstance() => create();
-  static $pb.PbList<RemoteStart> createRepeated() => $pb.PbList<RemoteStart>();
+  static List<RemoteStart> createRepeated() => <RemoteStart>[];
   static RemoteStart? _defaultInstance;
   static RemoteStart getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteStart>(create);
@@ -924,8 +913,8 @@ class RemoteAppLinkLaunchRequest extends $pb.GeneratedMessage {
   static RemoteAppLinkLaunchRequest create() => RemoteAppLinkLaunchRequest._();
   @override
   RemoteAppLinkLaunchRequest createEmptyInstance() => create();
-  static $pb.PbList<RemoteAppLinkLaunchRequest> createRepeated() =>
-      $pb.PbList<RemoteAppLinkLaunchRequest>();
+  static List<RemoteAppLinkLaunchRequest> createRepeated() =>
+      <RemoteAppLinkLaunchRequest>[];
   static RemoteAppLinkLaunchRequest? _defaultInstance;
   static RemoteAppLinkLaunchRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteAppLinkLaunchRequest>(create);
@@ -1044,8 +1033,7 @@ class RemoteMessage extends $pb.GeneratedMessage {
   static RemoteMessage create() => RemoteMessage._();
   @override
   RemoteMessage createEmptyInstance() => create();
-  static $pb.PbList<RemoteMessage> createRepeated() =>
-      $pb.PbList<RemoteMessage>();
+  static List<RemoteMessage> createRepeated() => <RemoteMessage>[];
   static RemoteMessage? _defaultInstance;
   static RemoteMessage getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemoteMessage>(create);
