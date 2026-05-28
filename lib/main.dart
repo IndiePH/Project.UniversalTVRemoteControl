@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:one_remote/app/analytics/analytics_service.dart';
 import 'package:one_remote/app/compliance/ad_consent_coordinator.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/configurations/app_build_config.dart';
@@ -43,8 +46,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
+  await Firebase.initializeApp();
+
   final env = AppBuildConfig.environmentForMain();
   await DiBootstrap.initialize(env);
+  GetIt.instance<AnalyticsService>().setCountryAtStartup(
+    PlatformDispatcher.instance.locale,
+  );
   final proEntitlementService = GetIt.instance<ProEntitlementService>();
   await proEntitlementService.applyLastKnownStatusFromCache();
   await proEntitlementService.refreshFromStore(isDebugBuild: kDebugMode);
@@ -56,6 +64,7 @@ Future<void> main() async {
   }
 
   FlutterError.onError = (FlutterErrorDetails details) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
     _recordUnhandledError(details.exception);
     final errorSource = _errorSource();
     if (errorSource != null) {
@@ -65,10 +74,16 @@ Future<void> main() async {
     }
   };
 
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
   runZonedGuarded(() => runApp(const OneRemoteApp()), (
     Object error,
     StackTrace stack,
   ) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     _recordUnhandledError(error);
     final errorSource = _errorSource();
     if (errorSource != null) {

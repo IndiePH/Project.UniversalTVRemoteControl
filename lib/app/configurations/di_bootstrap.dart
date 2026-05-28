@@ -8,6 +8,7 @@ import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/app_monetization_di_config.dart';
 import 'package:one_remote/app/configurations/feedback_di_config.dart';
 import 'package:one_remote/app/configurations/i_di_config.dart';
+import 'package:one_remote/app/analytics/analytics_service.dart';
 import 'package:one_remote/app/localized_strings.dart';
 import 'package:one_remote/app/theme/app_theme_controller.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
@@ -43,6 +44,7 @@ final class DiBootstrap {
   static Future<void> initialize(AppEnvironment env) async {
     final sl = GetIt.instance;
     sl.registerSingleton<AppEnvironment>(env);
+    sl.registerSingleton<AnalyticsService>(AnalyticsService());
     sl.registerSingleton<ValueNotifier<Locale>>(
       ValueNotifier(PlatformDispatcher.instance.locale),
     );

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "593370932659",
+    "project_id": "oneremote-497701",
+    "storage_bucket": "oneremote-497701.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:593370932659:android:3079ffde3fd79f053a57c6",
+        "android_client_info": {
+          "package_name": "com.vorithstudio.smarttvremote"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDp8L-ip_DqcNeM7FYC54N5IOFYCz_2jU4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

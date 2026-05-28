@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/theme/app_theme_preference.dart';
@@ -28,7 +27,6 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
     required this.diagnosticsRecorder,
     required this.onCopyRuntimeFlagsTemplate,
     required this.onOpenFeedback,
-    required this.onOpenOpenSourceLicenses,
     required this.showPrivacyPolicyLink,
     required this.onOpenPrivacyPolicy,
     required this.showAdPrivacyOptions,
@@ -53,7 +51,6 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   final AppDiagnosticsRecorder diagnosticsRecorder;
   final VoidCallback onCopyRuntimeFlagsTemplate;
   final VoidCallback onOpenFeedback;
-  final VoidCallback onOpenOpenSourceLicenses;
   final bool showPrivacyPolicyLink;
   final VoidCallback onOpenPrivacyPolicy;
   final bool showAdPrivacyOptions;
@@ -64,19 +61,7 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final statusText = switch (entitlementStatus) {
-      ProEntitlementStatus.entitled => l10n.proStatusActive,
-      ProEntitlementStatus.notEntitled => l10n.proStatusNotActive,
-      ProEntitlementStatus.unknown => l10n.proStatusChecking,
-    };
-    final actionsDisabled =
-        !storeAvailable || entitlementStatus == ProEntitlementStatus.unknown;
-    final isEntitled = entitlementStatus == ProEntitlementStatus.entitled;
-    final storeAccountHint = switch (defaultTargetPlatform) {
-      TargetPlatform.android => l10n.proStoreAccountHintGooglePlay,
-      TargetPlatform.iOS => l10n.proStoreAccountHintAppStore,
-      _ => l10n.proStoreAccountHintGooglePlay,
-    };
+    final showLegalSection = showPrivacyPolicyLink || showAdPrivacyOptions;
 
     return SafeArea(
       child: Padding(
@@ -130,37 +115,6 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
               ],
               const SizedBox(height: 16),
               Text(
-                l10n.proSectionTitle,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 6),
-              Text(statusText),
-              const SizedBox(height: 6),
-              Text(
-                storeAccountHint,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 12),
-              if (!isEntitled) ...[
-                FilledButton(
-                  onPressed: actionsDisabled ? null : onUpgradeToPro,
-                  child: Text(l10n.proUpgradeButton),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: actionsDisabled ? null : onRestorePurchases,
-                  child: Text(l10n.proRestoreButton),
-                ),
-              ],
-              if (!storeAvailable) ...[
-                const SizedBox(height: 8),
-                Text(
-                  l10n.proStoreUnavailable,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-              const SizedBox(height: 16),
-              Text(
                 l10n.settingsFeedbackSectionTitle,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
@@ -177,18 +131,12 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
                 onTap: onOpenFeedback,
               ),
               const SizedBox(height: 16),
-              Text(
-                l10n.settingsLegalSectionTitle,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.article_outlined),
-                title: Text(l10n.settingsOpenSourceLicenses),
-                onTap: onOpenOpenSourceLicenses,
-              ),
-              if (showPrivacyPolicyLink || showAdPrivacyOptions) ...[
+              if (showLegalSection) ...[
+                Text(
+                  l10n.settingsLegalSectionTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
                 if (showPrivacyPolicyLink)
                   ListTile(
                     contentPadding: EdgeInsets.zero,

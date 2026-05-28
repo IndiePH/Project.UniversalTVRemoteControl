@@ -20,14 +20,10 @@ class CommandDispatchResult extends Result {
       pinFormat = PinFormat.fourDigitNumeric,
       super(outcome: CommandOutcome.unsupported.name, message: message);
 
-  CommandDispatchResult.failure(String message, {Object? exception})
+  CommandDispatchResult.failure(String message, {super.exception})
     : device = null,
       pinFormat = PinFormat.fourDigitNumeric,
-      super(
-        outcome: CommandOutcome.failure.name,
-        message: message,
-        exception: exception,
-      );
+      super(outcome: CommandOutcome.failure.name, message: message);
 
   CommandDispatchResult.compatibility(String message)
     : device = null,

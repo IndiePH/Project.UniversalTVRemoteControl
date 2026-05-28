@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:one_remote/app/analytics/analytics_service.dart';
 import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
 import 'package:one_remote/app/ads/bottom_banner_ad_placement.dart';
 import 'package:one_remote/app/compliance/ad_consent_coordinator.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/compliance/app_legal_urls.dart';
+import 'package:one_remote/app/compliance/in_app_legal_webview_page.dart';
 import 'package:one_remote/app/compliance/legal_link_launcher.dart';
 import 'package:one_remote/app/feedback/feedback_payload.dart';
 import 'package:one_remote/app/feedback/feedback_submission_result.dart';
@@ -230,24 +232,6 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     widget.interstitialAdController.warmUp(
       showAds: showAds,
       canRequestAds: AdConsentCoordinator.canRequestAds,
-    );
-  }
-
-  Future<void> _toggleProEntitlementForTesting() async {
-    await widget.proEntitlementService.debugToggleEntitlement();
-  }
-
-  Future<void> _triggerInterstitialTestAd() async {
-    const showAds = true;
-    final canRequestAds = AdConsentCoordinator.canRequestAds;
-    widget.interstitialAdController.warmUp(
-      showAds: showAds,
-      canRequestAds: canRequestAds,
-    );
-    await widget.interstitialAdController.showForTesting(
-      context: context,
-      showAds: showAds,
-      canRequestAds: canRequestAds,
     );
   }
 
@@ -680,6 +664,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
 
   Future<void> _purchasePro() async {
     final l10n = AppLocalizations.of(context)!;
+    final sl = GetIt.instance;
+    if (sl.isRegistered<AnalyticsService>()) {
+      unawaited(sl<AnalyticsService>().proPurchaseStart());
+    }
     final started = await widget.proEntitlementService.purchasePro();
     if (!mounted) {
       return;
@@ -751,35 +739,38 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
 
   Future<void> _openPrivacyPolicy(BuildContext sheetContext) async {
     final l10n = AppLocalizations.of(context)!;
-    final opened = await LegalLinkLauncher.openUrl(
-      AppLegalUrls.privacyPolicyUrl,
-    );
+    final url = AppLegalUrls.privacyPolicyUrl;
+
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      if (sheetContext.mounted) {
+        Navigator.pop(sheetContext);
+      }
+      if (!mounted) {
+        return;
+      }
+      final themePreference =
+          GetIt.instance<AppThemeController>().preferenceNotifier.value;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => InAppLegalWebViewPage(
+            url: url,
+            title: l10n.settingsPrivacyPolicy,
+            themePreference: themePreference,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final opened = await LegalLinkLauncher.openUrl(url);
     if (!mounted) {
       return;
     }
     if (!opened) {
       _showToast(l10n.settingsLegalLinkFailed, isError: true);
     }
-  }
-
-  Future<void> _showOpenSourceLicenses(BuildContext sheetContext) async {
-    final l10n = AppLocalizations.of(sheetContext)!;
-    String? versionLabel;
-    try {
-      final packageInfo = await GetIt.instance<AppPackageInfoSource>()
-          .getPackageInfo();
-      versionLabel = packageInfo.versionLabel;
-    } catch (_) {
-      versionLabel = null;
-    }
-    if (!sheetContext.mounted) {
-      return;
-    }
-    showLicensePage(
-      context: sheetContext,
-      applicationName: l10n.appTitle,
-      applicationVersion: versionLabel,
-    );
   }
 
   Future<void> _openAdPrivacyOptions(BuildContext sheetContext) async {
@@ -791,6 +782,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
 
   Future<void> _restorePro() async {
     final l10n = AppLocalizations.of(context)!;
+    final sl = GetIt.instance;
+    if (sl.isRegistered<AnalyticsService>()) {
+      unawaited(sl<AnalyticsService>().proRestoreStart());
+    }
     final started = await widget.proEntitlementService.restorePurchases();
     if (!mounted) {
       return;
@@ -880,8 +875,6 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                             Navigator.pop(sheetContext);
                             unawaited(_showFeedbackSheet());
                           },
-                          onOpenOpenSourceLicenses: () =>
-                              unawaited(_showOpenSourceLicenses(sheetContext)),
                           showPrivacyPolicyLink: showPrivacyPolicyLink,
                           onOpenPrivacyPolicy: () =>
                               unawaited(_openPrivacyPolicy(sheetContext)),
@@ -1245,11 +1238,6 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                             onSearchInputPressed: () =>
                                 unawaited(_onSearchInputKeyboardPressed()),
                             onDisabledInteraction: _onDisabledGridInteraction,
-                            onInterstitialTestPressed: () =>
-                                unawaited(_triggerInterstitialTestAd()),
-                            onProToggleTestPressed: () =>
-                                unawaited(_toggleProEntitlementForTesting()),
-                            proToggleTestIsPro: isPro,
                           ),
                         ),
                 ),

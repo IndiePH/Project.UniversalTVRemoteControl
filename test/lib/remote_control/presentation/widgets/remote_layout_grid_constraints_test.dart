@@ -33,7 +33,8 @@ void main() {
           _fitsGrid(item),
           isTrue,
           reason:
-              '${item.id} footprint exceeds ${kRemoteLayoutGridColumns}x${kRemoteLayoutGridRows}',
+              '${item.id} footprint exceeds $kRemoteLayoutGridColumns'
+              'x$kRemoteLayoutGridRows',
         );
       }
     });

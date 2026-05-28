@@ -28,9 +28,6 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     required this.onSendCommand,
     required this.onSearchInputPressed,
     required this.onDisabledInteraction,
-    this.onInterstitialTestPressed,
-    this.onProToggleTestPressed,
-    this.proToggleTestIsPro = false,
   });
 
   final List<LayoutEditItem> layoutItems;
@@ -42,13 +39,6 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
   final void Function(RemoteCommand command) onSendCommand;
   final VoidCallback onSearchInputPressed;
   final VoidCallback onDisabledInteraction;
-
-  /// Debug-only: tap target immediately right of the power button (grid `[1,0]`).
-  final VoidCallback? onInterstitialTestPressed;
-
-  /// Debug-only: tap target immediately below the power button (grid `[0,1]`).
-  final VoidCallback? onProToggleTestPressed;
-  final bool proToggleTestIsPro;
 
   @override
   Widget build(BuildContext context) {
@@ -87,27 +77,6 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
                             context: context,
                             item: item,
                             cellSize: cellSize,
-                          ),
-                        ),
-                      if (onInterstitialTestPressed != null)
-                        Positioned(
-                          left: cellSize + gridGap,
-                          top: 0,
-                          child: _buildInterstitialTestButton(
-                            context: context,
-                            cellSize: cellSize,
-                            onPressed: onInterstitialTestPressed!,
-                          ),
-                        ),
-                      if (onProToggleTestPressed != null)
-                        Positioned(
-                          left: 0,
-                          top: cellSize + gridGap,
-                          child: _buildProToggleTestButton(
-                            context: context,
-                            cellSize: cellSize,
-                            isPro: proToggleTestIsPro,
-                            onPressed: onProToggleTestPressed!,
                           ),
                         ),
                     ],
@@ -391,62 +360,6 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
                 : onDisabledInteraction,
             topInteractionCommand: RemoteCommand.volumeUp,
             bottomInteractionCommand: RemoteCommand.volumeDown,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProToggleTestButton({
-    required BuildContext context,
-    required double cellSize,
-    required bool isPro,
-    required VoidCallback onPressed,
-  }) {
-    final width = cellSize;
-    final height = cellSize;
-    final appColors = AppTheme.colorsOf(context);
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Padding(
-        padding: EdgeInsets.all(cellSize * kRemoteLayoutCellInsetRatio),
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: RemoteIconCircleButton(
-            label: isPro ? 'PRO' : 'FREE',
-            backgroundColor: isPro ? appColors.remotePowerFill : null,
-            foregroundColor: isPro ? appColors.remoteGlyphOnPower : null,
-            onPressed: onPressed,
-            onPressHaptic: () => RemoteCommandHapticFeedback.playForCategory(
-              RemoteCommandInteractionCategory.system,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInterstitialTestButton({
-    required BuildContext context,
-    required double cellSize,
-    required VoidCallback onPressed,
-  }) {
-    final width = cellSize;
-    final height = cellSize;
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Padding(
-        padding: EdgeInsets.all(cellSize * kRemoteLayoutCellInsetRatio),
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: RemoteIconCircleButton(
-            icon: Icons.ad_units_outlined,
-            onPressed: onPressed,
-            onPressHaptic: () => RemoteCommandHapticFeedback.playForCategory(
-              RemoteCommandInteractionCategory.system,
-            ),
           ),
         ),
       ),

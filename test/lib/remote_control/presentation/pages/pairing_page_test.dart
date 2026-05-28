@@ -1056,9 +1056,8 @@ class _SpyDeviceRepository extends _StubDeviceRepository {
 }
 
 class _MutableSpyDeviceRepository extends _SpyDeviceRepository {
-  _MutableSpyDeviceRepository({required List<TvDevice> savedDevices})
-    : _devices = List<TvDevice>.from(savedDevices),
-      super(savedDevices: savedDevices);
+  _MutableSpyDeviceRepository({required super.savedDevices})
+    : _devices = List<TvDevice>.from(savedDevices);
 
   final List<TvDevice> _devices;
   final List<String> removedDeviceIds = [];

@@ -16,18 +16,18 @@ final class SamsungKeyMapper extends CommandKeyMap {
     RemoteCommand.mute: ['KEY_MUTE'],
     RemoteCommand.input: ['KEY_SOURCE'],
     // App shortcuts launch via Tizen `ed.apps.launch` (physical keys often no-op).
-    RemoteCommand.web: ['${samsungLaunchPrefix}${SamsungTizenAppIds.browser}'],
+    RemoteCommand.web: ['$samsungLaunchPrefix${SamsungTizenAppIds.browser}'],
     RemoteCommand.netflix: [
-      '${samsungLaunchPrefix}${SamsungTizenAppIds.netflix}',
+      '$samsungLaunchPrefix${SamsungTizenAppIds.netflix}',
     ],
     RemoteCommand.primeVideo: [
-      '${samsungLaunchPrefix}${SamsungTizenAppIds.primeVideo}',
+      '$samsungLaunchPrefix${SamsungTizenAppIds.primeVideo}',
     ],
     RemoteCommand.disneyPlus: [
-      '${samsungLaunchPrefix}${SamsungTizenAppIds.disneyPlus}',
+      '$samsungLaunchPrefix${SamsungTizenAppIds.disneyPlus}',
     ],
     RemoteCommand.youtube: [
-      '${samsungLaunchPrefix}${SamsungTizenAppIds.youtube}',
+      '$samsungLaunchPrefix${SamsungTizenAppIds.youtube}',
     ],
     RemoteCommand.dpadUp: ['KEY_UP'],
     RemoteCommand.dpadDown: ['KEY_DOWN'],

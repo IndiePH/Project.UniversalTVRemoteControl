@@ -231,8 +231,9 @@ final class PairingPageDialogs {
                 ),
                 textInputAction: TextInputAction.done,
                 onChanged: (_) {
-                  if (inputError != null)
+                  if (inputError != null) {
                     setDialogState(() => inputError = null);
+                  }
                 },
                 onSubmitted: (_) => submit(setDialogState, l10n),
               ),

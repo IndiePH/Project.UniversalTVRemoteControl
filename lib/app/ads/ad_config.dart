@@ -4,6 +4,11 @@ import 'package:one_remote/app/configurations/app_environment.dart';
 class AdConfig {
   const AdConfig._();
 
+  static const String _productionIosBannerAdUnitId =
+      'ca-app-pub-4297882562709937/4088764292';
+  static const String _productionIosInterstitialAdUnitId =
+      'ca-app-pub-4297882562709937/8401059763';
+
   static bool get supportsMobileAds {
     if (kIsWeb) {
       return false;
@@ -33,7 +38,7 @@ class AdConfig {
         isProduction
             ? const String.fromEnvironment(
                 'ADMOB_BANNER_IOS',
-                defaultValue: _iosTestBannerAdUnitId,
+                defaultValue: _productionIosBannerAdUnitId,
               )
             : _iosTestBannerAdUnitId,
       _ => null,
@@ -58,7 +63,7 @@ class AdConfig {
         isProduction
             ? const String.fromEnvironment(
                 'ADMOB_INTERSTITIAL_IOS',
-                defaultValue: _iosTestInterstitialAdUnitId,
+                defaultValue: _productionIosInterstitialAdUnitId,
               )
             : _iosTestInterstitialAdUnitId,
       _ => null,

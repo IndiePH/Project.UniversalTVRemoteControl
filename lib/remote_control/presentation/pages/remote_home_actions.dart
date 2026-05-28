@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
+import 'package:one_remote/app/analytics/analytics_service.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
@@ -37,6 +38,10 @@ final class RemoteHomeActions {
     required ProEntitlementService proEntitlementService,
     required String? activeDeviceId,
   }) async {
+    final sl = GetIt.instance;
+    if (sl.isRegistered<AnalyticsService>()) {
+      unawaited(sl<AnalyticsService>().pairingStart());
+    }
     final env = GetIt.instance<AppEnvironment>();
     final stored = await TransportDebugSettings.readUseFakeTransportsOverride();
     final useFakeTransports = stored ?? _compileUseFakeTransports;
@@ -45,7 +50,9 @@ final class RemoteHomeActions {
         ? FakeDeviceDiscoveryService()
         : discoveryService;
 
-    return Navigator.of(context).push<TvDevice>(
+    if (!context.mounted) return null;
+
+    final result = await Navigator.of(context).push<TvDevice>(
       MaterialPageRoute(
         builder: (_) => PairingPage(
           commandService: commandService,
@@ -59,6 +66,16 @@ final class RemoteHomeActions {
         ),
       ),
     );
+    if (result == null) {
+      if (sl.isRegistered<AnalyticsService>()) {
+        unawaited(sl<AnalyticsService>().pairingCancel());
+      }
+    } else {
+      if (sl.isRegistered<AnalyticsService>()) {
+        unawaited(sl<AnalyticsService>().pairingSuccess(tvBrand: result.brand.name));
+      }
+    }
+    return result;
   }
 
   static Future<bool> copyLatestTransportLog({

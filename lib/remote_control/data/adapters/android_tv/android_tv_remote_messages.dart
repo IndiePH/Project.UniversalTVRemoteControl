@@ -969,8 +969,9 @@ class RemoteMessage extends $pb.GeneratedMessage {
     if (remoteImeKeyInject != null) r.remoteImeKeyInject = remoteImeKeyInject;
     if (remoteImeBatchEdit != null) r.remoteImeBatchEdit = remoteImeBatchEdit;
     if (remoteStart != null) r.remoteStart = remoteStart;
-    if (remoteAppLinkLaunchRequest != null)
+    if (remoteAppLinkLaunchRequest != null) {
       r.remoteAppLinkLaunchRequest = remoteAppLinkLaunchRequest;
+    }
     return r;
   }
 

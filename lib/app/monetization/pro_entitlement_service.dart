@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 
+import 'package:one_remote/app/analytics/analytics_service.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_repository.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
 import 'package:one_remote/app/monetization/shared_prefs_pro_entitlement_cache.dart';
@@ -116,6 +118,13 @@ final class ProEntitlementService {
       await _cache.writeDebugEntitlementOverride(false);
     }
     await _setResolvedStatus(status);
+
+    final sl = GetIt.instance;
+    if (sl.isRegistered<AnalyticsService>()) {
+      unawaited(
+        sl<AnalyticsService>().proEntitlementChanged(status: status.name),
+      );
+    }
   }
 
   Future<void> _setResolvedStatus(ProEntitlementStatus status) async {
