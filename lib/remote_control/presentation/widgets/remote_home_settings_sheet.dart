@@ -62,6 +62,8 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final showLegalSection = showPrivacyPolicyLink || showAdPrivacyOptions;
+    final isPro = entitlementStatus == ProEntitlementStatus.entitled;
+    final isCheckingPro = entitlementStatus == ProEntitlementStatus.unknown;
 
     return SafeArea(
       child: Padding(
@@ -76,6 +78,38 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
+              Text(
+                l10n.proSectionTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isPro
+                    ? l10n.proStatusActive
+                    : isCheckingPro
+                    ? l10n.proStatusChecking
+                    : l10n.proStatusNotActive,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              if (!storeAvailable) ...[
+                const SizedBox(height: 6),
+                Text(
+                  l10n.proStoreUnavailable,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ] else ...[
+                const SizedBox(height: 10),
+                if (!isPro)
+                  FilledButton(
+                    onPressed: onUpgradeToPro,
+                    child: Text(l10n.proUpgradeButton),
+                  ),
+                TextButton(
+                  onPressed: onRestorePurchases,
+                  child: Text(l10n.proRestoreButton),
+                ),
+              ],
+              const SizedBox(height: 16),
               Text(
                 l10n.settingsAppearanceSectionTitle,
                 style: Theme.of(context).textTheme.titleMedium,

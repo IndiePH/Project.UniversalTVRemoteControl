@@ -171,6 +171,58 @@ void main() {
     expect(find.text('Hisense U7 - Office'), findsOneWidget);
   });
 
+  testWidgets(
+    'fake discovery is gated when runtime command service is not fake-enabled',
+    (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({
+        TransportDebugSettings.keyUseFakeTransports: true,
+      });
+      GetIt.instance.registerSingleton<AppEnvironment>(AppEnvironment.debug);
+      GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
+        DefaultPrePairingStepsRegistry(
+          localizedStrings: FakeLocalizedStrings(),
+        ),
+      );
+      GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
+        DefaultPairingProgressHintRegistry(
+          localizedStrings: FakeLocalizedStrings(),
+        ),
+      );
+      GetIt.instance.registerSingleton<TvReachabilityService>(
+        _StubTvReachabilityService(),
+      );
+      addTearDown(GetIt.instance.reset);
+
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.disconnected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: InMemoryDeviceRepository(),
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Connect TV'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Samsung QLED - Living Room'), findsNothing);
+      expect(find.text('LG OLED - Bedroom'), findsNothing);
+    },
+  );
+
   // Debug-row hit targets sit below the modal viewport in widget tests (scroll/tap TBD).
   testWidgets(
     'copy transport logs keeps debug settings sheet open when no logs exist',

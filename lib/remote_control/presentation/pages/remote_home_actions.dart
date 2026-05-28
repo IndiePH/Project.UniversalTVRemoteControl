@@ -16,6 +16,8 @@ import 'package:one_remote/remote_control/data/fake_device_discovery_service.dar
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
+import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page.dart';
@@ -28,6 +30,16 @@ final class RemoteHomeActions {
   static const bool _compileUseFakeTransports = bool.fromEnvironment(
     'USE_FAKE_TRANSPORTS',
     defaultValue: false,
+  );
+  static const TvDevice _fakeSamsungProbeDevice = TvDevice(
+    id: 'samsung-living-room',
+    displayName: 'Samsung QLED - Living Room',
+    brand: TvBrand.samsung,
+    capabilities: {
+      DeviceCapability.keyCommands,
+      DeviceCapability.textInput,
+      DeviceCapability.powerControl,
+    },
   );
 
   static Future<TvDevice?> openPairing({
@@ -45,8 +57,14 @@ final class RemoteHomeActions {
     final env = GetIt.instance<AppEnvironment>();
     final stored = await TransportDebugSettings.readUseFakeTransportsOverride();
     final useFakeTransports = stored ?? _compileUseFakeTransports;
-    final resolvedDiscoveryService =
+    final fakeTransportAvailable =
         env == AppEnvironment.debug && useFakeTransports
+        ? await _isFakeTransportRuntimeActive(commandService)
+        : false;
+    final resolvedDiscoveryService =
+        env == AppEnvironment.debug &&
+            useFakeTransports &&
+            fakeTransportAvailable
         ? FakeDeviceDiscoveryService()
         : discoveryService;
 
@@ -72,7 +90,9 @@ final class RemoteHomeActions {
       }
     } else {
       if (sl.isRegistered<AnalyticsService>()) {
-        unawaited(sl<AnalyticsService>().pairingSuccess(tvBrand: result.brand.name));
+        unawaited(
+          sl<AnalyticsService>().pairingSuccess(tvBrand: result.brand.name),
+        );
       }
     }
     return result;
@@ -148,5 +168,18 @@ final class RemoteHomeActions {
         );
       },
     );
+  }
+
+  static Future<bool> _isFakeTransportRuntimeActive(
+    RemoteCommandService commandService,
+  ) async {
+    try {
+      final info = await commandService.queryDeviceInfo(
+        device: _fakeSamsungProbeDevice,
+      );
+      return info?.modelIdentifier == 'FAKE-SAMSUNG';
+    } catch (_) {
+      return false;
+    }
   }
 }
