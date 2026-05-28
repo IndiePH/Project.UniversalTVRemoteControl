@@ -95,10 +95,16 @@ Download OneRemote and simplify your Smart TV experience.
 
 ---
 
-## 🔵 Pro Version (One-time purchase)
+## 🔵 Pro Version
 
 ### 💵 Price
-$1.99 USD (~₱99 PHP)
+Target USD pricing (storefronts localize currency automatically):
+- Weekly: **$3.99**
+- Monthly: **$7.99**
+- Yearly: **$24.99**
+- Lifetime: **$14.99**
+
+Rationale: aligned to competitor pricing, with intentionally lower price points to improve conversion.
 
 ---
 
@@ -124,6 +130,8 @@ Avoid:
 - Full-screen ads on launch  
 - Frequent interstitial ads  
 - Ads during pairing process  
+
+**Implementation note:** The app currently includes an interstitial ad scaffold that is gated by consent and engagement policy. If interstitials are not part of the release plan, do not mention them in store copy and keep their pacing conservative (or disable at the environment level).
 
 ---
 
@@ -177,7 +185,7 @@ Enjoy a cleaner, faster, and fully customizable remote experience.
 - Premium themes & colors  
 
 ### CTA
-Unlock for $1.99
+Unlock Pro
 
 ---
 

@@ -63,12 +63,13 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 
 - [ ] All "remove ads" purchases must go through **Apple In-App Purchase** (iOS) and **Google Play Billing** (Android)
 - [ ] Do not use Stripe, PayPal, or any external payment processor for digital goods inside the app
-- [ ] Set up the "remove ads" product as a **non-consumable** IAP in App Store Connect
-- [ ] Set up the "remove ads" product as a **non-consumable** in Google Play Console
+- [ ] Configure the store products for **Pro** (removes ads + unlocks Pro features) in App Store Connect / Google Play Console
+- [ ] Pro may be offered as **subscriptions** and/or a **lifetime** one-time purchase depending on the release plan; the app must only reference product IDs that exist in the store project for that environment
 - [x] Integrate via the `in_app_purchase` Flutter plugin (official) — **TVREMOTE-66**
-- [x] Use one non-consumable product ID on both stores (`one_remote_pro` by default; override with `--dart-define=PRO_PRODUCT_ID=...` per environment)
+- [x] Product IDs are configured in app code and can be overridden per build via `--dart-define=PRO_PRODUCT_ID=...` (see `lib/app/configurations/app_monetization_di_config.dart`)
 - [x] On app launch, call `refreshFromStore()` / restore path and gate banner, interstitial, and layout-editor Pro features by verified entitlement
 - [ ] End-to-end sandbox purchase + restore validated on signed builds (**TVREMOTE-67**)
+- [ ] **Future (iOS):** implement App Store receipt / subscription validation in the backend (Firebase Cloud Functions) to mirror Android receipt validation and support subscription expiry/cancellation correctly.
 
 > Violation of this rule results in app rejection or removal from both stores. This is non-negotiable.
 

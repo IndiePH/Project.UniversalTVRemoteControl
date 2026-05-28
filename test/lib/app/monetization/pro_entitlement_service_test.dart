@@ -166,7 +166,7 @@ final class _StubProEntitlementRepository implements ProEntitlementRepository {
   Future<bool> isAvailable() async => _isAvailableValue;
 
   @override
-  Future<void> purchasePro() => _onPurchase();
+  Future<void> purchasePro({String? productId}) => _onPurchase();
 
   @override
   Future<void> refreshEntitlement() => _onRefresh();

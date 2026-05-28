@@ -43,6 +43,8 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_layout_ite
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_text_entry_sheet.dart';
 import 'package:one_remote/theme/app_theme.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:one_remote/app/configurations/app_monetization_di_config.dart';
 
 /// Main remote screen.
 ///
@@ -72,6 +74,31 @@ class RemoteHomePage extends StatefulWidget {
 
   @override
   State<RemoteHomePage> createState() => _RemoteHomePageState();
+}
+
+final class _ProPlanTile extends StatelessWidget {
+  const _ProPlanTile({
+    required this.title,
+    required this.productId,
+    this.priceLabel,
+  });
+
+  final String title;
+  final String productId;
+  final String? priceLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(title),
+      trailing: Text(
+        priceLabel ?? '',
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+      onTap: () => Navigator.pop(context, productId),
+    );
+  }
 }
 
 class _RemoteHomePageState extends State<RemoteHomePage> {
@@ -668,7 +695,129 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (sl.isRegistered<AnalyticsService>()) {
       unawaited(sl<AnalyticsService>().proPurchaseStart());
     }
-    final started = await widget.proEntitlementService.purchasePro();
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return FutureBuilder<ProductDetailsResponse>(
+          future: InAppPurchase.instance.queryProductDetails(
+            AppMonetizationDiConfig.proProductIds.toSet(),
+          ),
+          builder: (context, snapshot) {
+            final productById = <String, ProductDetails>{};
+            final response = snapshot.data;
+            if (response != null) {
+              for (final p in response.productDetails) {
+                productById[p.id] = p;
+              }
+            }
+            final isLoading =
+                snapshot.connectionState == ConnectionState.waiting;
+
+            bool isAvailable(String id) => productById.containsKey(id);
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      l10n.proSectionTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.proChoosePlanPrompt,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    if (isLoading) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.proPricesLoading,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    if (isAvailable('sub-monthly-autorenew'))
+                      _ProPlanTile(
+                        title: l10n.proPlanMonthlyAutoRenew,
+                        productId: 'sub-monthly-autorenew',
+                        priceLabel:
+                            productById['sub-monthly-autorenew']?.price,
+                      ),
+                    if (isAvailable('sub-monthly-prepaid'))
+                      _ProPlanTile(
+                        title: l10n.proPlanMonthlyPrepaid,
+                        productId: 'sub-monthly-prepaid',
+                        priceLabel: productById['sub-monthly-prepaid']?.price,
+                      ),
+                    if (isAvailable('sub-weekly-autorenew') ||
+                        isAvailable('sub-weekly-prepaid'))
+                      const SizedBox(height: 8),
+                    if (isAvailable('sub-weekly-autorenew'))
+                      _ProPlanTile(
+                        title: l10n.proPlanWeeklyAutoRenew,
+                        productId: 'sub-weekly-autorenew',
+                        priceLabel: productById['sub-weekly-autorenew']?.price,
+                      ),
+                    if (isAvailable('sub-weekly-prepaid'))
+                      _ProPlanTile(
+                        title: l10n.proPlanWeeklyPrepaid,
+                        productId: 'sub-weekly-prepaid',
+                        priceLabel: productById['sub-weekly-prepaid']?.price,
+                      ),
+                    if (isAvailable('sub-annually-autorenew') ||
+                        isAvailable('sub-annually-prepaid'))
+                      const SizedBox(height: 8),
+                    if (isAvailable('sub-annually-autorenew'))
+                      _ProPlanTile(
+                        title: l10n.proPlanAnnualAutoRenew,
+                        productId: 'sub-annually-autorenew',
+                        priceLabel:
+                            productById['sub-annually-autorenew']?.price,
+                      ),
+                    if (isAvailable('sub-annually-prepaid'))
+                      _ProPlanTile(
+                        title: l10n.proPlanAnnualPrepaid,
+                        productId: 'sub-annually-prepaid',
+                        priceLabel:
+                            productById['sub-annually-prepaid']?.price,
+                      ),
+                    if (isAvailable('purchase-lifetime')) ...[
+                      const SizedBox(height: 8),
+                      _ProPlanTile(
+                        title: l10n.proPlanLifetime,
+                        productId: 'purchase-lifetime',
+                        priceLabel: productById['purchase-lifetime']?.price,
+                      ),
+                    ],
+
+                    if (!isLoading && productById.isEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.proPlanUnavailable,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(l10n.uiCancel),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    if (selected == null || selected.trim().isEmpty) {
+      return;
+    }
+    final started = await widget.proEntitlementService.purchaseProduct(selected);
     if (!mounted) {
       return;
     }

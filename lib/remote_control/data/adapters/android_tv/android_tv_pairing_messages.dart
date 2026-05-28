@@ -135,8 +135,7 @@ class OptionsEncoding extends $pb.GeneratedMessage {
   static OptionsEncoding create() => OptionsEncoding._();
   @override
   OptionsEncoding createEmptyInstance() => create();
-  static $pb.PbList<OptionsEncoding> createRepeated() =>
-      $pb.PbList<OptionsEncoding>();
+  static List<OptionsEncoding> createRepeated() => <OptionsEncoding>[];
   static OptionsEncoding? _defaultInstance;
   static OptionsEncoding getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<OptionsEncoding>(create);
@@ -190,8 +189,7 @@ class PairingRequest extends $pb.GeneratedMessage {
   static PairingRequest create() => PairingRequest._();
   @override
   PairingRequest createEmptyInstance() => create();
-  static $pb.PbList<PairingRequest> createRepeated() =>
-      $pb.PbList<PairingRequest>();
+  static List<PairingRequest> createRepeated() => <PairingRequest>[];
   static PairingRequest? _defaultInstance;
   static PairingRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<PairingRequest>(create);
@@ -244,8 +242,7 @@ class PairingRequestAck extends $pb.GeneratedMessage {
   static PairingRequestAck create() => PairingRequestAck._();
   @override
   PairingRequestAck createEmptyInstance() => create();
-  static $pb.PbList<PairingRequestAck> createRepeated() =>
-      $pb.PbList<PairingRequestAck>();
+  static List<PairingRequestAck> createRepeated() => <PairingRequestAck>[];
   static PairingRequestAck? _defaultInstance;
   static PairingRequestAck getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<PairingRequestAck>(create);
@@ -319,7 +316,7 @@ class Options extends $pb.GeneratedMessage {
   static Options create() => Options._();
   @override
   Options createEmptyInstance() => create();
-  static $pb.PbList<Options> createRepeated() => $pb.PbList<Options>();
+  static List<Options> createRepeated() => <Options>[];
   static Options? _defaultInstance;
   static Options getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Options>(create);
@@ -382,8 +379,7 @@ class Configuration extends $pb.GeneratedMessage {
   static Configuration create() => Configuration._();
   @override
   Configuration createEmptyInstance() => create();
-  static $pb.PbList<Configuration> createRepeated() =>
-      $pb.PbList<Configuration>();
+  static List<Configuration> createRepeated() => <Configuration>[];
   static Configuration? _defaultInstance;
   static Configuration getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<Configuration>(create);
@@ -428,8 +424,7 @@ class ConfigurationAck extends $pb.GeneratedMessage {
   static ConfigurationAck create() => ConfigurationAck._();
   @override
   ConfigurationAck createEmptyInstance() => create();
-  static $pb.PbList<ConfigurationAck> createRepeated() =>
-      $pb.PbList<ConfigurationAck>();
+  static List<ConfigurationAck> createRepeated() => <ConfigurationAck>[];
   static ConfigurationAck? _defaultInstance;
   static ConfigurationAck getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ConfigurationAck>(create);
@@ -468,7 +463,7 @@ class Secret extends $pb.GeneratedMessage {
   static Secret create() => Secret._();
   @override
   Secret createEmptyInstance() => create();
-  static $pb.PbList<Secret> createRepeated() => $pb.PbList<Secret>();
+  static List<Secret> createRepeated() => <Secret>[];
   static Secret? _defaultInstance;
   static Secret getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Secret>(create);
@@ -512,7 +507,7 @@ class SecretAck extends $pb.GeneratedMessage {
   static SecretAck create() => SecretAck._();
   @override
   SecretAck createEmptyInstance() => create();
-  static $pb.PbList<SecretAck> createRepeated() => $pb.PbList<SecretAck>();
+  static List<SecretAck> createRepeated() => <SecretAck>[];
   static SecretAck? _defaultInstance;
   static SecretAck getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SecretAck>(create);
@@ -620,8 +615,7 @@ class OuterMessage extends $pb.GeneratedMessage {
   static OuterMessage create() => OuterMessage._();
   @override
   OuterMessage createEmptyInstance() => create();
-  static $pb.PbList<OuterMessage> createRepeated() =>
-      $pb.PbList<OuterMessage>();
+  static List<OuterMessage> createRepeated() => <OuterMessage>[];
   static OuterMessage? _defaultInstance;
   static OuterMessage getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<OuterMessage>(create);

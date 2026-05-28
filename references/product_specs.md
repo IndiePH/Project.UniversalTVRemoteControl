@@ -314,7 +314,11 @@ Brand → Model → Button → IR Code / API Command
     * Automation
     * Custom remotes
 
-**Monetization alignment:** Store policy requires digital goods (including “remove ads” and Pro unlocks) to use **Apple In-App Purchase** and **Google Play Billing** only—no external card/checkout for in-app digital purchases. The product may ship a **non-consumable** one-time Pro purchase (see `references/marketing_strategy.md` for positioning: no ads, custom layouts, premium themes). Broader “Pro” capabilities (voice, automation, custom remotes) remain Post-MVP unless explicitly folded into the same IAP scope in a future revision.
+**Monetization alignment:** Store policy requires digital goods (including “remove ads” and Pro unlocks) to use **Apple In-App Purchase** and **Google Play Billing** only—no external card/checkout for in-app digital purchases.
+
+**Current implementation note:** The app’s Pro purchase flow supports **subscriptions and/or lifetime** purchase depending on which store products are configured for the environment (see `lib/app/configurations/app_monetization_di_config.dart`). Keep marketing promises aligned with what is actually enabled at release time.
+
+Broader “Premium” capabilities (voice, automation, custom remotes) remain Post-MVP unless explicitly folded into the same Pro SKU in a future revision.
 
 ---
 

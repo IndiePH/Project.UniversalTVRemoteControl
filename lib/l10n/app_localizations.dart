@@ -1030,6 +1030,66 @@ abstract class AppLocalizations {
   /// **'Restoring purchases...'**
   String get proRestoreStarted;
 
+  /// No description provided for @proChoosePlanPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a plan'**
+  String get proChoosePlanPrompt;
+
+  /// No description provided for @proPricesLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading prices…'**
+  String get proPricesLoading;
+
+  /// No description provided for @proPlanUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get proPlanUnavailable;
+
+  /// No description provided for @proPlanMonthlyAutoRenew.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly (auto-renew)'**
+  String get proPlanMonthlyAutoRenew;
+
+  /// No description provided for @proPlanMonthlyPrepaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly (prepaid)'**
+  String get proPlanMonthlyPrepaid;
+
+  /// No description provided for @proPlanWeeklyAutoRenew.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly (auto-renew)'**
+  String get proPlanWeeklyAutoRenew;
+
+  /// No description provided for @proPlanWeeklyPrepaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly (prepaid)'**
+  String get proPlanWeeklyPrepaid;
+
+  /// No description provided for @proPlanAnnualAutoRenew.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual (auto-renew)'**
+  String get proPlanAnnualAutoRenew;
+
+  /// No description provided for @proPlanAnnualPrepaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual (prepaid)'**
+  String get proPlanAnnualPrepaid;
+
+  /// No description provided for @proPlanLifetime.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifetime (one-time)'**
+  String get proPlanLifetime;
+
   /// No description provided for @settingsFeedbackSectionTitle.
   ///
   /// In en, this message translates to:

@@ -65,6 +65,10 @@ final class ProEntitlementService {
   }
 
   Future<bool> purchasePro() async {
+    return purchaseProduct(null);
+  }
+
+  Future<bool> purchaseProduct(String? productId) async {
     if (!storeAvailableNotifier.value) {
       await refreshFromStore();
       if (!storeAvailableNotifier.value) {
@@ -73,7 +77,7 @@ final class ProEntitlementService {
     }
     statusNotifier.value = ProEntitlementStatus.unknown;
     try {
-      await _repository.purchasePro();
+      await _repository.purchasePro(productId: productId);
       return true;
     } catch (_) {
       await _setResolvedStatus(ProEntitlementStatus.notEntitled);

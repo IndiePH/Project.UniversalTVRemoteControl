@@ -10,7 +10,7 @@ abstract interface class ProEntitlementRepository {
 
   Future<void> refreshEntitlement();
 
-  Future<void> purchasePro();
+  Future<void> purchasePro({String? productId});
 
   Future<void> restorePurchases();
 

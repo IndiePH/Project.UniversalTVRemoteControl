@@ -28,7 +28,7 @@ final class FakeProEntitlementRepository implements ProEntitlementRepository {
   }
 
   @override
-  Future<void> purchasePro() async {
+  Future<void> purchasePro({String? productId}) async {
     _status = ProEntitlementStatus.entitled;
     _controller.add(_status);
   }

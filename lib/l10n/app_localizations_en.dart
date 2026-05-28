@@ -564,6 +564,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proRestoreStarted => 'Restoring purchases...';
 
   @override
+  String get proChoosePlanPrompt => 'Choose a plan';
+
+  @override
+  String get proPricesLoading => 'Loading prices…';
+
+  @override
+  String get proPlanUnavailable => 'Unavailable';
+
+  @override
+  String get proPlanMonthlyAutoRenew => 'Monthly (auto-renew)';
+
+  @override
+  String get proPlanMonthlyPrepaid => 'Monthly (prepaid)';
+
+  @override
+  String get proPlanWeeklyAutoRenew => 'Weekly (auto-renew)';
+
+  @override
+  String get proPlanWeeklyPrepaid => 'Weekly (prepaid)';
+
+  @override
+  String get proPlanAnnualAutoRenew => 'Annual (auto-renew)';
+
+  @override
+  String get proPlanAnnualPrepaid => 'Annual (prepaid)';
+
+  @override
+  String get proPlanLifetime => 'Lifetime (one-time)';
+
+  @override
   String get settingsFeedbackSectionTitle => 'Feedback';
 
   @override

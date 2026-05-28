@@ -43,6 +43,17 @@ final class DiBootstrap {
 
   static Future<void> initialize(AppEnvironment env) async {
     final sl = GetIt.instance;
+
+    // Tests (and some debug flows) may call initialize multiple times.
+    // If anything was already registered, reset to avoid double-registration.
+    if (sl.isRegistered<AppEnvironment>() ||
+        sl.isRegistered<AnalyticsService>() ||
+        sl.isRegistered<ValueNotifier<Locale>>() ||
+        sl.isRegistered<LocalizedStrings>() ||
+        sl.isRegistered<AppThemeController>()) {
+      await sl.reset(dispose: true);
+    }
+
     sl.registerSingleton<AppEnvironment>(env);
     sl.registerSingleton<AnalyticsService>(AnalyticsService());
     sl.registerSingleton<ValueNotifier<Locale>>(
