@@ -3,6 +3,11 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-28
+
+### Fixed
+- Fake discovery gating: only show fake pairing devices when fake transports are actually active at runtime; add widget coverage for the non-fake runtime case.
+
 ## 2026-05-22
 
 ### Added

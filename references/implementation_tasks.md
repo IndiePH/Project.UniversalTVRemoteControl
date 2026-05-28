@@ -142,7 +142,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Implementation plan: **Brand transport defaults** section (real-by-default policy; do not regress)
   - [x] Dart documentation convention: public types lead with `///` stating purpose/role; add brief `//` or `///` for non-obvious algorithms, protocol steps, platform behavior, and invariants (not line-by-line narration)
   - [x] Debug fake/real transport toggle now applies at runtime for pairing discovery (no app restart required), and debug sheet copy-log flow keeps sheet context visible on empty-log feedback
-  - [x] Debug DI baseline uses real SSDP discovery; fake discovery is selected dynamically only when fake transport mode is enabled
+  - [x] Debug DI baseline uses real SSDP discovery; fake discovery is selected dynamically only when fake transport mode is enabled **and** the runtime command service is fake-enabled (prevents fake devices appearing when fake discovery is toggled but the app is still using real transports)
   - [x] Hisense transport naming normalized to `HisenseMqttTransportClient` and fake client moved under `lib/remote_control/debug/` to match cross-brand conventions
 - [x] TCL legacy Wi-Fi variant resolution (`TVREMOTE-70`):
   - [x] `TclProtocolVariants.isLegacyWifi` + `legacyWifiModelMarker`; legacy TCP/fake transports stamp marker at `queryDeviceInfo`
@@ -173,7 +173,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Added pairing flow regression updates for moved pairing persistence/flow control
   - [x] Added debug/runtime regression coverage:
     - [x] fake transport toggle keeps debug settings sheet open
-    - [x] fake transport mode shows fake discovery devices in pairing list
+    - [x] fake transport mode shows fake discovery devices in pairing list (only when runtime fake transport is active)
     - [x] copy transport logs keeps debug sheet open when no log exists
   - [x] Added pairing success/failure/retry coordinator coverage (`TVREMOTE-12`) in `test/lib/remote_control/presentation/pages/pairing_page_coordinator_test.dart`: non-PIN success persistence + manual-IP save + enriched-device fallback, non-PIN failure no-save invariants + sanitized-message + unsupported→failure, PIN retry depth (3-rejection eventual success, 5-rejection cancel, verbatim PIN forwarding, per-attempt `onPinRejected`), and `cancelPairing` delegation to `RemoteCommandService`
   - [x] Broader scenario tests and network edge-case validation:
