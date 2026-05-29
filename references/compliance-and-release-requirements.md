@@ -66,9 +66,10 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 - [ ] Configure the store products for **Pro** (removes ads + unlocks Pro features) in App Store Connect / Google Play Console
 - [ ] Pro may be offered as **subscriptions** and/or a **lifetime** one-time purchase depending on the release plan; the app must only reference product IDs that exist in the store project for that environment
 - [x] Integrate via the `in_app_purchase` Flutter plugin (official) — **TVREMOTE-66**
-- [x] Product IDs are configured in app code and can be overridden per build via `--dart-define=PRO_PRODUCT_ID=...` (see `lib/app/configurations/app_monetization_di_config.dart`)
-- [x] On app launch, call `refreshFromStore()` / restore path and gate banner, interstitial, and layout-editor Pro features by verified entitlement
-- [ ] End-to-end sandbox purchase + restore validated on signed builds (**TVREMOTE-67**)
+- [x] Product IDs are configured in app code (`ProProductIds` catalog: weekly/monthly/annual/lifetime) and can be overridden per build via `--dart-define=PRO_PRODUCT_ID=...` (see `lib/app/configurations/app_monetization_di_config.dart`)
+- [x] On app launch, call `refreshFromStore()` / restore path and gate banner, interstitial, and layout-editor Pro features by verified entitlement; entitlement refresh on app resume
+- [x] Android server-side receipt validation: Flutter client (`ProReceiptValidationService`) + Firebase callable `verifyProAndroidPurchase` in `functions/` (Play subscriptionsv2 + legacy fallback); operator deploy/configure per `references/goals/goal-pro-receipt-validation-remote-setup.md`
+- [ ] End-to-end sandbox purchase + restore validated on signed builds with live store products and deployed validation function (**TVREMOTE-67**)
 - [ ] **Future (iOS):** implement App Store receipt / subscription validation in the backend (Firebase Cloud Functions) to mirror Android receipt validation and support subscription expiry/cancellation correctly.
 
 > Violation of this rule results in app rejection or removal from both stores. This is non-negotiable.

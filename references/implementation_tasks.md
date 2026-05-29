@@ -18,11 +18,11 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **TVREMOTE-12** — Pairing success/failure path tests (**In Progress** in Jira; coordinator coverage shipped in `pairing_page_coordinator_test.dart`; parent **TVREMOTE-2**).
 - Umbrella issues superseded by this split (historical, **Done** in Jira): **TVREMOTE-25**, **TVREMOTE-21**, **TVREMOTE-9**, **TVREMOTE-10**, **TVREMOTE-16**.
 - **TVREMOTE-63** — Bottom banner + interstitial AdMob scaffold; UMP/ATT consent gating in app code (**Done**; production ad IDs + store-listing privacy URL still **TVREMOTE-26**).
-- **TVREMOTE-66** — Pro (remove ads) IAP: `in_app_purchase`, entitlement service, settings sheet, gates banner + interstitial + layout editor (**In Progress**; E2E blocked by **TVREMOTE-67**).
-- **TVREMOTE-67** — Pro IAP store products + sandbox/device validation (**To Do**; parent **TVREMOTE-2**).
+- **TVREMOTE-66** — Pro (remove ads) IAP: multi-product catalog, entitlement service + Android receipt validation client, upgrade/settings UI, gates banner + interstitial + layout editor (**In Progress**; E2E blocked by **TVREMOTE-67**).
+- **TVREMOTE-67** — Pro IAP store products + sandbox/device validation; Android server-side receipt validation callable shipped in repo (`functions/src/index.ts`); operator deploy still pending per `references/goals/goal-pro-receipt-validation-remote-setup.md` (**To Do** for E2E; parent **TVREMOTE-2**).
 - **TVREMOTE-68** — In-app user feedback: settings sheet + Apps Script webhook (**Done** in Jira; parent **TVREMOTE-2**).
 - **TVREMOTE-69** — Production feedback webhook token + privacy-policy disclosure (**To Do** in Jira; parent **TVREMOTE-2**).
-- **TVREMOTE-26** — Legal/compliance release gate (**In Progress** in Jira): ATT/UMP + in-app privacy link scaffold landed; app feedback **TVREMOTE-68** Done; release ops **TVREMOTE-69** pending; live policy URL and device validation pending.
+- **TVREMOTE-26** — Legal/compliance release gate (**In Progress** in Jira): ATT/UMP + in-app privacy link scaffold landed; in-app legal WebView on mobile; Firebase Analytics/Crashlytics wired; iOS production AdMob IDs in repo; app feedback **TVREMOTE-68** Done; release ops **TVREMOTE-69** pending; live policy URL and device validation pending.
 - **TVREMOTE-29** — Telemetry/diagnostics recorder + settings export (Task C1 **shipped** in repo; **Done** in Jira, 2026-05-22): `AppDiagnosticsRecorder`, discovery/command decorators, `DiagnosticsSummaryPanel` + copy report in debug settings; `app_diagnostics_recorder_test.dart` verified 2026-05-22.
 - **TVREMOTE-28** — Interaction polish: press-scale + haptic on remote controls (**In Progress**).
 - **TVREMOTE-41** — Samsung IME watch stream no eager `connect`; probe path explicit (**In Progress** in Jira).
@@ -192,6 +192,14 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Runbook + fallback-path decision in `references/hisense_validation_matrix.md` (manual IP + `TV_HOST_OVERRIDE`; port-`36669` sweep deferred)
   - [x] SSDP fingerprint unit tests (`ssdp_brand_inference_test.dart` — `hisense` / `vidaa` / `hiview` + `nt` probe)
   - [x] Physical validation on Hisense TV (2026-05-22): SSDP scan, manual-IP pair, PIN flow, keys, reconnect **pass** in known-good matrix
+- [x] Pro monetization expansion (**TVREMOTE-66** / **TVREMOTE-67** app lane, commits `a5259be`–`ab7b395`):
+  - [x] Multi-product catalog (`ProProductIds`: weekly/monthly/annual/lifetime) with localized plan labels and `ProUpgradePage` picker
+  - [x] ProductId-specific purchase/restore across `ProEntitlementService` + store/fake repositories
+  - [x] Android receipt validation client (`ProReceiptValidationService`) + Firebase callable `verifyProAndroidPurchase` in `functions/` (Play subscriptionsv2 + legacy fallback; reinstall token rebind)
+  - [x] Settings sheet Pro status/upgrade/restore with plan or renewal details; entitlement refresh on app resume
+  - [x] Tests in `pro_entitlement_service_test.dart`, `pro_receipt_validation_service_test.dart`, `pro_upgrade_page_test.dart`
+- [x] Firebase Analytics + Crashlytics (commit `bf5d103`): Firebase init + fatal error hooks in `main.dart`; `AnalyticsService` DI with Pro entitlement + startup locale events
+- [x] Android TV protobuf 6 compatibility (`ef8386b`): `PbList.createRepeated` → `List` in Android TV remote/pairing message types
 
 ### In Progress
 - [ ] Milestone 3 / Task 3.1:
@@ -423,7 +431,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [ ] Privacy policy at a live public URL; linked in App Store Connect and Play Console (in-app link scaffold only until URL is live).
   - [x] iOS: App Tracking Transparency integrated in app code; prompt before first ad SDK init (`AdConsentCoordinator`).
   - [x] EU/California: UMP consent integrated in app code before ad load; device/regional validation still required.
-  - [x] Pro: IAP via Apple IAP + Google Play Billing only (`in_app_purchase`) supporting subscriptions and/or lifetime depending on store configuration; override default via `--dart-define=PRO_PRODUCT_ID=...` (see `lib/app/configurations/app_monetization_di_config.dart`).
+  - [x] Pro: IAP via Apple IAP + Google Play Billing only (`in_app_purchase`) supporting multi-product subscriptions + lifetime (`ProProductIds` catalog); override via `--dart-define=PRO_PRODUCT_ID=...` (see `lib/app/configurations/app_monetization_di_config.dart`); Android server-side receipt validation callable in repo (`functions/src/index.ts` — deploy per `references/goals/goal-pro-receipt-validation-remote-setup.md`).
   - [ ] Developer accounts and signing: Apple Developer Program, Google Play developer account, AdMob as needed before ads go live.
   - [ ] Swap **placeholder AdMob ids** for production: replace test `APPLICATION_ID` in `android/app/src/main/AndroidManifest.xml`, test `GADApplicationIdentifier` in `ios/Runner/Info.plist`, and the placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list; provide production unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` / `ADMOB_INTERSTITIAL_ANDROID` / `ADMOB_INTERSTITIAL_IOS` for release builds.
 - [ ] **Physical-device validation:** Do not claim store support for a brand until pairing and core commands are verified on at least one real TV of that brand (complements the brand readiness matrix in `references/product_specs.md`).

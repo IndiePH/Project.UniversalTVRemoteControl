@@ -3,6 +3,23 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-05-30
+
+### Added
+- Firebase Analytics + Crashlytics (`bf5d103`): Firebase init at startup; fatal Flutter/platform errors reported to Crashlytics; `AnalyticsService` in DI with Pro entitlement change events and startup locale signal.
+- Pro multi-plan IAP + Android receipt validation (`a5259be`, `ab7b395`, **TVREMOTE-66** / **TVREMOTE-67** app lane): `ProProductIds` catalog (weekly/monthly/annual/lifetime); `ProUpgradePage` plan picker with localized labels and price fetch; `ProReceiptValidationService` + Firebase callable `verifyProAndroidPurchase` in `functions/`; Play subscriptionsv2 validation with legacy fallback and reinstall token rebind; restore purchase outcomes; settings Pro status/plan/renewal details; entitlement refresh on app resume.
+- Monetization tests expanded: `pro_entitlement_service_test.dart`, `pro_receipt_validation_service_test.dart`, `pro_upgrade_page_test.dart`.
+
+### Changed
+- Legal links prefer in-app WebView on mobile (`InAppLegalWebviewPage`, `LegalLinkLauncher`).
+- iOS AdMob production app/ad unit IDs in `Info.plist` (`bf5d103`).
+- Android release builds fail when signing keystore is missing (avoids debug-signed release artifacts).
+- App version bumps for billing rollout (`1.0.1+3`, `1.3.0+10`).
+
+### Fixed
+- Android TV protobuf 6: replace `PbList.createRepeated` with `List` in Android TV remote/pairing message types (`ef8386b`).
+- Functions repo hygiene: stop tracking `functions/node_modules`; ignore `functions/.env` while keeping `.env.example` committable (`5b26a78`).
+
 ## 2026-05-28
 
 ### Fixed
