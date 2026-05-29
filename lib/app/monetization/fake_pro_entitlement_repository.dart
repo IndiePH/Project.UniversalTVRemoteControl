@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:in_app_purchase/in_app_purchase.dart';
+
 import 'package:one_remote/app/monetization/pro_entitlement_repository.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
 
@@ -20,6 +22,12 @@ final class FakeProEntitlementRepository implements ProEntitlementRepository {
   Stream<ProEntitlementStatus> get entitlementStream => _controller.stream;
 
   @override
+  String? get activeProductId => null;
+
+  @override
+  DateTime? get subscriptionExpiresAt => null;
+
+  @override
   Future<bool> isAvailable() async => _isAvailable;
 
   @override
@@ -28,10 +36,13 @@ final class FakeProEntitlementRepository implements ProEntitlementRepository {
   }
 
   @override
-  Future<void> purchasePro({String? productId}) async {
+  Future<void> purchasePro({String? productId, ProductDetails? productDetails}) async {
     _status = ProEntitlementStatus.entitled;
     _controller.add(_status);
   }
+
+  @override
+  Future<List<ProductDetails>> queryProProductDetails() async => const [];
 
   @override
   Future<void> restorePurchases() async {

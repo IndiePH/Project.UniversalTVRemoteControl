@@ -20,6 +20,8 @@ import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/message_handler.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
+import 'package:one_remote/app/monetization/pro_upgrade_page.dart';
+import 'package:one_remote/app/monetization/restore_purchases_outcome.dart';
 import 'package:one_remote/app/theme/app_theme_controller.dart';
 import 'package:one_remote/app/theme/app_theme_preference.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
@@ -31,7 +33,9 @@ import 'package:one_remote/remote_control/domain/domain.dart'
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
     as remote_connection;
 import 'package:one_remote/remote_control/presentation/pages/remote_home_actions.dart';
+import 'package:one_remote/remote_control/presentation/pages/remote_home_status_kind.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_keyboard_availability.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_home_page_metrics.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_home_app_bar_actions.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_home_remote_grid.dart';
@@ -43,8 +47,6 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_layout_ite
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_text_entry_sheet.dart';
 import 'package:one_remote/theme/app_theme.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:one_remote/app/configurations/app_monetization_di_config.dart';
 
 /// Main remote screen.
 ///
@@ -76,43 +78,17 @@ class RemoteHomePage extends StatefulWidget {
   State<RemoteHomePage> createState() => _RemoteHomePageState();
 }
 
-final class _ProPlanTile extends StatelessWidget {
-  const _ProPlanTile({
-    required this.title,
-    required this.productId,
-    this.priceLabel,
-  });
-
-  final String title;
-  final String productId;
-  final String? priceLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(title),
-      trailing: Text(
-        priceLabel ?? '',
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
-      onTap: () => Navigator.pop(context, productId),
-    );
-  }
-}
-
-class _RemoteHomePageState extends State<RemoteHomePage> {
+class _RemoteHomePageState extends State<RemoteHomePage>
+    with WidgetsBindingObserver {
   static const bool _compileUseFakeTransports = bool.fromEnvironment(
     'USE_FAKE_TRANSPORTS',
     defaultValue: false,
   );
-  static const String _keyboardUnavailableMessage =
-      RemoteKeyboardAvailability.unavailableMessage;
-
   final TextEditingController _textController = TextEditingController();
   final List<LayoutEditItem> _layoutItems = buildInitialRemoteLayoutItems();
   TvDevice? _activeDevice;
-  String _status = 'Connect a TV to begin';
+  RemoteHomeStatusKind _statusKind = RemoteHomeStatusKind.connectTvToBegin;
+  String? _statusCustomMessage;
   bool _isLayoutEditMode = false;
   StreamSubscription<bool>? _remoteTextReadySub;
   StreamSubscription<remote_connection.ConnectionState>? _connectionStateSub;
@@ -127,10 +103,31 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   Timer? _pairButtonHintResetTimer;
   OverlayEntry? _toastOverlayEntry;
   Timer? _toastOverlayTimer;
+  ProEntitlementStatus _lastKnownProStatus = ProEntitlementStatus.unknown;
+  bool _suppressProActivatedToast = false;
+
+  void _applyStatusKind(RemoteHomeStatusKind kind) {
+    _statusKind = kind;
+    _statusCustomMessage = null;
+  }
+
+  void _applyStatusMessage(String message) {
+    _statusCustomMessage = message;
+  }
+
+  String _statusLine(AppLocalizations l10n) {
+    final custom = _statusCustomMessage;
+    if (custom != null) {
+      return custom;
+    }
+    return _statusKind.localize(l10n);
+  }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _lastKnownProStatus = widget.proEntitlementService.statusNotifier.value;
     widget.proEntitlementService.statusNotifier.addListener(
       _handleProEntitlementChanged,
     );
@@ -158,6 +155,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.proEntitlementService.statusNotifier.removeListener(
       _handleProEntitlementChanged,
     );
@@ -171,14 +169,37 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshProEntitlementOnResume());
+    }
+  }
+
+  Future<void> _refreshProEntitlementOnResume() async {
+    await widget.proEntitlementService.refreshFromStore(
+      isDebugBuild: widget.appEnvironment == AppEnvironment.debug,
+    );
+  }
+
   bool get _isResolvedFreeTier =>
       widget.proEntitlementService.statusNotifier.value ==
       ProEntitlementStatus.notEntitled;
 
   void _handleProEntitlementChanged() {
+    final current = widget.proEntitlementService.statusNotifier.value;
+    final becamePro =
+        _lastKnownProStatus != ProEntitlementStatus.entitled &&
+        current == ProEntitlementStatus.entitled;
+    _lastKnownProStatus = current;
+
     _syncInterstitialWarmUp();
     if (!mounted) {
       return;
+    }
+    if (becamePro && !_suppressProActivatedToast) {
+      final l10n = AppLocalizations.of(context)!;
+      _showToast(l10n.proActivated);
     }
     if (!widget.proEntitlementService.isPro && _isLayoutEditMode) {
       setState(() => _isLayoutEditMode = false);
@@ -225,7 +246,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (lastUsed == null) {
       setState(() {
         _activeDevice = null;
-        _status = 'Connect a TV to begin';
+        _applyStatusKind(RemoteHomeStatusKind.connectTvToBegin);
         _isLayoutEditMode = false;
       });
       _subscribeRemoteTextReady(null);
@@ -310,12 +331,12 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
               return;
             }
             if (state == remote_connection.ConnectionState.connected &&
-                _status == 'Disconnected') {
-              _status = 'Ready';
+                _statusKind == RemoteHomeStatusKind.transportIdle) {
+              _applyStatusKind(RemoteHomeStatusKind.ready);
             } else if (state ==
                     remote_connection.ConnectionState.disconnected &&
-                _status == 'Ready') {
-              _status = 'Disconnected';
+                _statusKind == RemoteHomeStatusKind.ready) {
+              _applyStatusKind(RemoteHomeStatusKind.transportIdle);
             }
           });
         });
@@ -337,7 +358,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     }
     setState(() {
       _activeDevice = lastUsed;
-      _status = 'Ready';
+      _applyStatusKind(RemoteHomeStatusKind.ready);
     });
     _subscribeRemoteTextReady(lastUsed);
     _subscribeConnectionState(lastUsed);
@@ -347,10 +368,11 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   Future<bool> _send(RemoteCommand command) async {
     final device = _activeDevice;
     if (device == null) {
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
-        _status = 'No device selected.';
+        _applyStatusKind(RemoteHomeStatusKind.noDeviceSelected);
       });
-      _showToast('No device selected.', isError: true);
+      _showToast(l10n.remoteStatusNoDeviceSelected, isError: true);
       return false;
     }
     final result = await widget.commandService.sendCommand(
@@ -362,7 +384,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     }
     final message = MessageHandler.sanitize(result);
     setState(() {
-      _status = message;
+      _applyStatusMessage(message);
     });
     if (!result.isSuccess) {
       _showToast(message, isError: true);
@@ -392,17 +414,19 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     final device = _activeDevice;
     final text = _textController.text.trim();
     if (device == null) {
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
-        _status = 'No device selected.';
+        _applyStatusKind(RemoteHomeStatusKind.noDeviceSelected);
       });
-      _showToast('No device selected.', isError: true);
+      _showToast(l10n.remoteStatusNoDeviceSelected, isError: true);
       return;
     }
     if (text.isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
-        _status = 'Enter text before sending.';
+        _applyStatusKind(RemoteHomeStatusKind.enterTextBeforeSending);
       });
-      _showToast('Enter text before sending.', isError: true);
+      _showToast(l10n.remoteStatusEnterTextBeforeSending, isError: true);
       return;
     }
     final availability = RemoteKeyboardAvailability.evaluate(
@@ -428,7 +452,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     }
     final message = MessageHandler.sanitize(result);
     setState(() {
-      _status = message;
+      _applyStatusMessage(message);
       if (result.isSuccess) {
         _textController.clear();
       }
@@ -455,7 +479,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
             message,
             style: TextStyle(color: colorScheme.onTertiaryContainer),
           ),
-          duration: const Duration(seconds: 8),
+          duration: RemoteHomePageMetrics.textCompatibilitySnackBarDuration,
           backgroundColor: colorScheme.tertiaryContainer,
         ),
       );
@@ -475,7 +499,12 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         child: Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              RemoteHomePageMetrics.toastHorizontalInset,
+              0,
+              RemoteHomePageMetrics.toastHorizontalInset,
+              RemoteHomePageMetrics.toastBottomInset,
+            ),
             child: Material(
               color: Colors.transparent,
               child: DecoratedBox(
@@ -483,12 +512,14 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                   color: isError
                       ? colorScheme.error
                       : colorScheme.inverseSurface,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(
+                    RemoteHomePageMetrics.toastBorderRadius,
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
+                    horizontal: RemoteHomePageMetrics.toastHorizontalPadding,
+                    vertical: RemoteHomePageMetrics.toastVerticalPadding,
                   ),
                   child: Text(
                     message,
@@ -506,7 +537,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       ),
     );
     overlay.insert(_toastOverlayEntry!);
-    _toastOverlayTimer = Timer(const Duration(seconds: 4), () {
+    _toastOverlayTimer = Timer(RemoteHomePageMetrics.toastOverlayDuration, () {
+      if (!mounted) {
+        return;
+      }
       _toastOverlayEntry?.remove();
       _toastOverlayEntry = null;
     });
@@ -515,7 +549,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   Future<void> _activateDevice(TvDevice device) async {
     setState(() {
       _activeDevice = device;
-      _status = 'Ready';
+      _applyStatusKind(RemoteHomeStatusKind.ready);
       _showPairingHint = false;
       _pairButtonBlinkOn = false;
     });
@@ -527,11 +561,13 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   void _showProDeviceSwitchLockedMessage() {
     final l10n = AppLocalizations.of(context)!;
     _showToast(l10n.proDeviceSwitchLockedMessage, isError: false);
+    unawaited(_openProUpgradePage());
   }
 
   void _showProLayoutLockedMessage() {
     final l10n = AppLocalizations.of(context)!;
     _showToast(l10n.proLayoutLockedTooltip, isError: false);
+    unawaited(_openProUpgradePage());
   }
 
   bool _canSwitchToPairedDevice(TvDevice device) {
@@ -582,6 +618,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
           canSwitchDevices: canSwitchDevices,
           onDeviceSelected: (device) {
             if (!_canSwitchToPairedDevice(device)) {
+              Navigator.pop(sheetContext);
               _showProDeviceSwitchLockedMessage();
               return;
             }
@@ -594,7 +631,10 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
               await _activateDevice(device);
             }());
           },
-          onSwitchBlocked: _showProDeviceSwitchLockedMessage,
+          onSwitchBlocked: () {
+            Navigator.pop(sheetContext);
+            _showProDeviceSwitchLockedMessage();
+          },
           onManageDevices: () {
             Navigator.pop(sheetContext);
             unawaited(_openPairing());
@@ -628,7 +668,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (device == null) {
       setState(() {
         _activeDevice = null;
-        _status = 'Connect a TV to begin';
+        _applyStatusKind(RemoteHomeStatusKind.connectTvToBegin);
         _isLayoutEditMode = false;
       });
       _subscribeRemoteTextReady(null);
@@ -671,11 +711,12 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (!mounted) {
       return didCopy;
     }
+    final l10n = AppLocalizations.of(context)!;
     if (!didCopy) {
-      _showToast('No transport log found yet.', isError: true);
+      _showToast(l10n.settingsTransportLogNotFound, isError: true);
       return false;
     }
-    _showToast('Copied transport log to clipboard.');
+    _showToast(l10n.settingsTransportLogCopied);
     return true;
   }
 
@@ -686,139 +727,28 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (!mounted) {
       return;
     }
-    _showToast('Copied runtime flags template to clipboard.');
+    final l10n = AppLocalizations.of(context)!;
+    _showToast(l10n.settingsRuntimeFlagsTemplateCopied);
   }
 
-  Future<void> _purchasePro() async {
+  Future<void> _openProUpgradePage({
+    BuildContext? dialogContext,
+    bool useRootNavigator = true,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
     final sl = GetIt.instance;
     if (sl.isRegistered<AnalyticsService>()) {
       unawaited(sl<AnalyticsService>().proPurchaseStart());
     }
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) {
-        return FutureBuilder<ProductDetailsResponse>(
-          future: InAppPurchase.instance.queryProductDetails(
-            AppMonetizationDiConfig.proProductIds.toSet(),
-          ),
-          builder: (context, snapshot) {
-            final productById = <String, ProductDetails>{};
-            final response = snapshot.data;
-            if (response != null) {
-              for (final p in response.productDetails) {
-                productById[p.id] = p;
-              }
-            }
-            final isLoading =
-                snapshot.connectionState == ConnectionState.waiting;
-
-            bool isAvailable(String id) => productById.containsKey(id);
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      l10n.proSectionTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.proChoosePlanPrompt,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    if (isLoading) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        l10n.proPricesLoading,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    if (isAvailable('sub-monthly-autorenew'))
-                      _ProPlanTile(
-                        title: l10n.proPlanMonthlyAutoRenew,
-                        productId: 'sub-monthly-autorenew',
-                        priceLabel:
-                            productById['sub-monthly-autorenew']?.price,
-                      ),
-                    if (isAvailable('sub-monthly-prepaid'))
-                      _ProPlanTile(
-                        title: l10n.proPlanMonthlyPrepaid,
-                        productId: 'sub-monthly-prepaid',
-                        priceLabel: productById['sub-monthly-prepaid']?.price,
-                      ),
-                    if (isAvailable('sub-weekly-autorenew') ||
-                        isAvailable('sub-weekly-prepaid'))
-                      const SizedBox(height: 8),
-                    if (isAvailable('sub-weekly-autorenew'))
-                      _ProPlanTile(
-                        title: l10n.proPlanWeeklyAutoRenew,
-                        productId: 'sub-weekly-autorenew',
-                        priceLabel: productById['sub-weekly-autorenew']?.price,
-                      ),
-                    if (isAvailable('sub-weekly-prepaid'))
-                      _ProPlanTile(
-                        title: l10n.proPlanWeeklyPrepaid,
-                        productId: 'sub-weekly-prepaid',
-                        priceLabel: productById['sub-weekly-prepaid']?.price,
-                      ),
-                    if (isAvailable('sub-annually-autorenew') ||
-                        isAvailable('sub-annually-prepaid'))
-                      const SizedBox(height: 8),
-                    if (isAvailable('sub-annually-autorenew'))
-                      _ProPlanTile(
-                        title: l10n.proPlanAnnualAutoRenew,
-                        productId: 'sub-annually-autorenew',
-                        priceLabel:
-                            productById['sub-annually-autorenew']?.price,
-                      ),
-                    if (isAvailable('sub-annually-prepaid'))
-                      _ProPlanTile(
-                        title: l10n.proPlanAnnualPrepaid,
-                        productId: 'sub-annually-prepaid',
-                        priceLabel:
-                            productById['sub-annually-prepaid']?.price,
-                      ),
-                    if (isAvailable('purchase-lifetime')) ...[
-                      const SizedBox(height: 8),
-                      _ProPlanTile(
-                        title: l10n.proPlanLifetime,
-                        productId: 'purchase-lifetime',
-                        priceLabel: productById['purchase-lifetime']?.price,
-                      ),
-                    ],
-
-                    if (!isLoading && productById.isEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.proPlanUnavailable,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(l10n.uiCancel),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+    final started = await ProUpgradePage.show(
+      context: dialogContext ?? context,
+      useRootNavigator: useRootNavigator,
+      loadProducts: widget.proEntitlementService.loadProProducts,
+      onPurchase: widget.proEntitlementService.purchaseProductDetails,
+      onRestorePurchases: _restorePro,
+      showRestorePurchases: !widget.proEntitlementService.isPro,
     );
-    if (selected == null || selected.trim().isEmpty) {
-      return;
-    }
-    final started = await widget.proEntitlementService.purchaseProduct(selected);
-    if (!mounted) {
+    if (!mounted || started == null) {
       return;
     }
     if (started) {
@@ -935,14 +865,23 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     if (sl.isRegistered<AnalyticsService>()) {
       unawaited(sl<AnalyticsService>().proRestoreStart());
     }
-    final started = await widget.proEntitlementService.restorePurchases();
+    _suppressProActivatedToast = true;
+    final outcome = await widget.proEntitlementService.restorePurchases();
+    _suppressProActivatedToast = false;
     if (!mounted) {
       return;
     }
-    if (started) {
-      _showToast(l10n.proRestoreStarted);
-    } else {
-      _showToast(l10n.proStoreUnavailable, isError: true);
+    switch (outcome) {
+      case RestorePurchasesOutcome.storeUnavailable:
+        _showToast(l10n.proStoreUnavailable, isError: true);
+      case RestorePurchasesOutcome.alreadyActive:
+        _showToast(l10n.proRestoreAlreadyActive);
+      case RestorePurchasesOutcome.restored:
+        _showToast(l10n.proRestoreSuccess);
+      case RestorePurchasesOutcome.noPurchasesFound:
+        _showToast(l10n.proRestoreNoPurchases, isError: true);
+      case RestorePurchasesOutcome.failed:
+        _showToast(l10n.proRestoreFailed, isError: true);
     }
   }
 
@@ -970,66 +909,89 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
             return ValueListenableBuilder<ProEntitlementStatus>(
               valueListenable: proService.statusNotifier,
               builder: (context, status, child) {
-                return ValueListenableBuilder<bool>(
-                  valueListenable: proService.storeAvailableNotifier,
-                  builder: (context, storeAvailable, child) {
-                    return ValueListenableBuilder<AppThemePreference>(
-                      valueListenable: themeController.preferenceNotifier,
-                      builder: (context, themePreference, child) {
-                        return RemoteHomeSettingsSheet(
-                          entitlementStatus: status,
-                          storeAvailable: storeAvailable,
-                          themePreference: themePreference,
-                          onThemePreferenceChanged: (value) =>
-                              unawaited(themeController.setPreference(value)),
-                          onUpgradeToPro: () => unawaited(_purchasePro()),
-                          onRestorePurchases: () => unawaited(_restorePro()),
-                          showDebugSection: showDebugSection,
-                          activeDevice: _activeDevice,
-                          queryDeviceInfo:
-                              widget.commandService.queryDeviceInfo,
-                          diagnosticsRecorder:
-                              GetIt.instance<AppDiagnosticsRecorder>(),
-                          showTransportToggle: isDebug,
-                          useFakeTransports: pendingFake,
-                          onUseFakeTransportsChanged: (value) async {
-                            await TransportDebugSettings.writeUseFakeTransports(
-                              value,
+                return ValueListenableBuilder<String?>(
+                  valueListenable: proService.activeProductIdNotifier,
+                  builder: (context, activeProductId, child) {
+                    return ValueListenableBuilder<DateTime?>(
+                      valueListenable: proService.subscriptionExpiresAtNotifier,
+                      builder: (context, subscriptionExpiresAt, child) {
+                        return ValueListenableBuilder<bool>(
+                          valueListenable: proService.storeAvailableNotifier,
+                          builder: (context, storeAvailable, child) {
+                            return ValueListenableBuilder<AppThemePreference>(
+                              valueListenable: themeController.preferenceNotifier,
+                              builder: (context, themePreference, child) {
+                                return RemoteHomeSettingsSheet(
+                                  entitlementStatus: status,
+                                  activeProductId: activeProductId,
+                                  subscriptionExpiresAt: subscriptionExpiresAt,
+                                  hasLifetimePro: proService.hasLifetimePro,
+                                  storeAvailable: storeAvailable,
+                                  themePreference: themePreference,
+                                  onThemePreferenceChanged: (value) => unawaited(
+                                    themeController.setPreference(value),
+                                  ),
+                                  onUpgradeToPro: () => unawaited(
+                                    _openProUpgradePage(
+                                      dialogContext: sheetContext,
+                                      useRootNavigator: false,
+                                    ),
+                                  ),
+                                  onRestorePurchases: () =>
+                                      unawaited(_restorePro()),
+                                  showDebugSection: showDebugSection,
+                                  activeDevice: _activeDevice,
+                                  queryDeviceInfo:
+                                      widget.commandService.queryDeviceInfo,
+                                  diagnosticsRecorder:
+                                      GetIt.instance<AppDiagnosticsRecorder>(),
+                                  showTransportToggle: isDebug,
+                                  useFakeTransports: pendingFake,
+                                  onUseFakeTransportsChanged: (value) async {
+                                    await TransportDebugSettings.writeUseFakeTransports(
+                                      value,
+                                    );
+                                    setModalState(() {
+                                      pendingFake = value;
+                                    });
+                                  },
+                                  onCopyTransportLogs: () {
+                                unawaited(() async {
+                                  final didCopy =
+                                      await _copyLatestTransportLog();
+                                  if (didCopy && sheetContext.mounted) {
+                                    Navigator.pop(sheetContext);
+                                  }
+                                }());
+                              },
+                              onCopyDiagnosticsReport: () {
+                                unawaited(() async {
+                                  final didCopy =
+                                      await _copyDiagnosticsReport();
+                                  if (didCopy && sheetContext.mounted) {
+                                    Navigator.pop(sheetContext);
+                                  }
+                                }());
+                              },
+                              onCopyRuntimeFlagsTemplate: () {
+                                Navigator.pop(sheetContext);
+                                unawaited(_copyRuntimeFlagsTemplate());
+                              },
+                              onOpenFeedback: () {
+                                Navigator.pop(sheetContext);
+                                unawaited(_showFeedbackSheet());
+                              },
+                              showPrivacyPolicyLink: showPrivacyPolicyLink,
+                              onOpenPrivacyPolicy: () =>
+                                  unawaited(_openPrivacyPolicy(sheetContext)),
+                              showAdPrivacyOptions: showAdPrivacyOptions,
+                              onOpenAdPrivacyOptions: () => unawaited(
+                                _openAdPrivacyOptions(sheetContext),
+                              ),
+                                );
+                              },
                             );
-                            setModalState(() {
-                              pendingFake = value;
-                            });
                           },
-                          onCopyTransportLogs: () {
-                            unawaited(() async {
-                              final didCopy = await _copyLatestTransportLog();
-                              if (didCopy && sheetContext.mounted) {
-                                Navigator.pop(sheetContext);
-                              }
-                            }());
-                          },
-                          onCopyDiagnosticsReport: () {
-                            unawaited(() async {
-                              final didCopy = await _copyDiagnosticsReport();
-                              if (didCopy && sheetContext.mounted) {
-                                Navigator.pop(sheetContext);
-                              }
-                            }());
-                          },
-                          onCopyRuntimeFlagsTemplate: () {
-                            Navigator.pop(sheetContext);
-                            unawaited(_copyRuntimeFlagsTemplate());
-                          },
-                          onOpenFeedback: () {
-                            Navigator.pop(sheetContext);
-                            unawaited(_showFeedbackSheet());
-                          },
-                          showPrivacyPolicyLink: showPrivacyPolicyLink,
-                          onOpenPrivacyPolicy: () =>
-                              unawaited(_openPrivacyPolicy(sheetContext)),
-                          showAdPrivacyOptions: showAdPrivacyOptions,
-                          onOpenAdPrivacyOptions: () =>
-                              unawaited(_openAdPrivacyOptions(sheetContext)),
                         );
                       },
                     );
@@ -1136,7 +1098,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       return;
     }
     setState(() {});
-    _showToast('Layout reset to defaults.');
+    _showToast(AppLocalizations.of(context)!.layoutEditorResetSuccess);
     await _persistLayoutForActiveDevice();
   }
 
@@ -1195,38 +1157,43 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
       return;
     }
     setState(() {
-      _status = 'Pair a TV first.';
+      _applyStatusKind(RemoteHomeStatusKind.pairTvFirst);
       _showPairingHint = true;
       _pairButtonBlinkOn = true;
     });
     _pairButtonBlinkTimer?.cancel();
-    _pairButtonBlinkTimer = Timer.periodic(const Duration(milliseconds: 700), (
-      _,
-    ) {
-      if (!mounted || !_showPairingHint) {
-        _pairButtonBlinkTimer?.cancel();
-        return;
-      }
-      setState(() {
-        _pairButtonBlinkOn = !_pairButtonBlinkOn;
-      });
-    });
+    _pairButtonBlinkTimer = Timer.periodic(
+      RemoteHomePageMetrics.pairButtonBlinkInterval,
+      (_) {
+        if (!mounted || !_showPairingHint) {
+          _pairButtonBlinkTimer?.cancel();
+          return;
+        }
+        setState(() {
+          _pairButtonBlinkOn = !_pairButtonBlinkOn;
+        });
+      },
+    );
     _pairButtonHintResetTimer?.cancel();
-    _pairButtonHintResetTimer = Timer(const Duration(seconds: 7), () {
-      if (!mounted || _activeDevice != null) {
-        return;
-      }
-      _clearPairingHint();
-    });
+    _pairButtonHintResetTimer = Timer(
+      RemoteHomePageMetrics.pairButtonHintResetDelay,
+      () {
+        if (!mounted || _activeDevice != null) {
+          return;
+        }
+        _clearPairingHint();
+      },
+    );
   }
 
   Future<void> _onSearchInputKeyboardPressed() async {
     final device = _activeDevice;
     if (device == null) {
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
-        _status = 'No device selected.';
+        _applyStatusKind(RemoteHomeStatusKind.noDeviceSelected);
       });
-      _showToast('No device selected.', isError: true);
+      _showToast(l10n.remoteStatusNoDeviceSelected, isError: true);
       return;
     }
     final remoteTextInputReady = await widget.commandService
@@ -1258,8 +1225,9 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     required String action,
     required RemoteKeyboardAvailability availability,
   }) {
-    setState(() => _status = _keyboardUnavailableMessage);
-    _showToast(_keyboardUnavailableMessage, isError: true);
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _applyStatusKind(RemoteHomeStatusKind.keyboardUnavailable));
+    _showToast(l10n.remoteKeyboardUnavailable, isError: true);
     debugPrint(availability.toDebugLog(action: action, deviceId: device.id));
   }
 
@@ -1348,7 +1316,9 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
             children: [
               SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(
+                    RemoteHomePageMetrics.bodyPadding,
+                  ),
                   child: _isLayoutEditMode
                       ? RemoteLayoutEditor(
                           layoutItems: _layoutItems,
@@ -1361,7 +1331,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                         )
                       : RemoteHomeStatusPanel(
                           deviceName: deviceName,
-                          status: _status,
+                          status: _statusLine(AppLocalizations.of(context)!),
                           connectionState: _connectionState,
                           onOpenPairing: _openPairing,
                           onOpenDeviceSwitcher: _hasAnyPairedDevice

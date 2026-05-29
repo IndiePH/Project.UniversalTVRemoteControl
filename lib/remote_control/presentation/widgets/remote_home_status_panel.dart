@@ -4,6 +4,7 @@ import 'package:one_remote/remote_control/domain/models/connection_state.dart'
     as remote_connection;
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_button_metrics.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_header_metrics.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_home_status_panel_metrics.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_pairing_hint_metrics.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
@@ -67,7 +68,7 @@ class RemoteHomeStatusPanel extends StatelessWidget {
         return child;
       }
       return AnimatedOpacity(
-        opacity: 0.34,
+        opacity: RemoteHomeStatusPanelMetrics.pairingHintBlurOpacity,
         duration: kRemotePairingHintFadeDuration,
         child: child,
       );
@@ -103,14 +104,22 @@ class RemoteHomeStatusPanel extends StatelessWidget {
               blurWhenPairFocus(
                 Row(
                   children: [
-                    Icon(Icons.circle, size: 10, color: connectionColor),
-                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.circle,
+                      size: RemoteHomeStatusPanelMetrics.connectionDotSize,
+                      color: connectionColor,
+                    ),
+                    const SizedBox(
+                      width: RemoteHomeStatusPanelMetrics.connectionRowSpacing,
+                    ),
                     Text(statusLabel),
                   ],
                 ),
               ),
               if (status.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(
+                  height: RemoteHomeStatusPanelMetrics.statusLineSpacing,
+                ),
                 blurWhenPairFocus(Text(status)),
               ],
             ],
@@ -163,11 +172,15 @@ class _DeviceNameHeader extends StatelessWidget {
       message: l10n.remoteSwitchDeviceTooltip,
       child: InkWell(
         onTap: onOpenDeviceSwitcher,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(
+          RemoteHomeStatusPanelMetrics.deviceSwitcherInkWellRadius,
+        ),
         child: Row(
           children: [
             Flexible(fit: FlexFit.loose, child: title),
-            const SizedBox(width: 4),
+            const SizedBox(
+              width: RemoteHomeStatusPanelMetrics.deviceSwitcherDropdownSpacing,
+            ),
             Icon(
               Icons.arrow_drop_down,
               color: Theme.of(context).colorScheme.onSurface,
@@ -210,11 +223,13 @@ class _PairButton extends StatelessWidget {
     return Tooltip(
       message: AppLocalizations.of(context)!.connectTvTooltip,
       child: AnimatedScale(
-        scale: highlighted && blinkOn ? 1.08 : 1,
-        duration: const Duration(milliseconds: 420),
+        scale: highlighted && blinkOn
+            ? RemoteHomeStatusPanelMetrics.pairButtonHighlightedScale
+            : 1,
+        duration: RemoteHomeStatusPanelMetrics.pairButtonAnimationDuration,
         curve: Curves.easeInOut,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 420),
+          duration: RemoteHomeStatusPanelMetrics.pairButtonAnimationDuration,
           curve: Curves.easeInOut,
           // No padding here: BoxShadow extends outside the box without
           // affecting layout, so the glow ring renders without inflating the

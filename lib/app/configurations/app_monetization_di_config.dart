@@ -10,30 +10,22 @@ import 'package:one_remote/app/monetization/fake_pro_entitlement_repository.dart
 import 'package:one_remote/app/monetization/pro_entitlement_repository.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/app/monetization/pro_receipt_validation_service.dart';
+import 'package:one_remote/app/monetization/pro_product_ids.dart';
 import 'package:one_remote/app/monetization/shared_prefs_pro_entitlement_cache.dart';
 import 'package:one_remote/app/monetization/store_pro_entitlement_repository.dart';
 
 final class AppMonetizationDiConfig implements IDiConfig {
   const AppMonetizationDiConfig();
 
-  static const List<String> proProductIds = <String>[
-    // Default (monthly)
-    'sub-monthly-autorenew',
-    // Subscription options
-    'sub-weekly-autorenew',
-    'sub-weekly-prepaid',
-    'sub-monthly-prepaid',
-    'sub-annually-autorenew',
-    'sub-annually-prepaid',
-    // One-time
-    'purchase-lifetime',
-  ];
+  static const String lifetimeProductId = ProProductIds.lifetime;
+
+  static const List<String> proProductIds = ProProductIds.catalog;
 
   static const String _defaultProductId = String.fromEnvironment(
     'PRO_PRODUCT_ID',
-    // Legacy: previously 'one_remote_pro'. Google Play now uses explicit
-    // subscription and lifetime product IDs.
-    defaultValue: 'sub-monthly-autorenew',
+    // Legacy: previously 'one_remote_pro'. Google Play uses explicit product IDs
+    // for subscriptions and one-time purchases.
+    defaultValue: 'sub_monthly',
   );
 
   @override

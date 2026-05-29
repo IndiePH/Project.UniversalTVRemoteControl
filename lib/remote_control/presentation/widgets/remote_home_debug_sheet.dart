@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/remote_control/presentation/widgets/tv_device_debug_info_panel.dart';
@@ -27,6 +28,7 @@ class RemoteHomeDebugSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -34,7 +36,10 @@ class RemoteHomeDebugSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Debug', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              l10n.settingsDebugSectionTitle,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 8),
             if (queryDeviceInfo != null) ...[
               TvDeviceDebugInfoPanel(
@@ -46,15 +51,15 @@ class RemoteHomeDebugSheet extends StatelessWidget {
             if (showTransportToggle) ...[
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Use fake transports'),
+                title: Text(l10n.settingsUseFakeTransportsTitle),
                 subtitle: SizedBox(
                   height: 40,
                   child: Align(
                     alignment: Alignment.topLeft,
                     child: Text(
                       useFakeTransports
-                          ? 'Using fake discovery and fake transport clients.'
-                          : 'Using real discovery and real transport clients.',
+                          ? l10n.settingsUseFakeTransportsEnabled
+                          : l10n.settingsUseFakeTransportsDisabled,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -68,14 +73,14 @@ class RemoteHomeDebugSheet extends StatelessWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.copy),
-              title: const Text('Copy transport logs'),
+              title: Text(l10n.settingsCopyTransportLogs),
               onTap: onCopyTransportLogs,
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.tune),
-              title: const Text('Copy runtime flags template'),
-              subtitle: const Text('Paste and fill dart-define values.'),
+              title: Text(l10n.settingsCopyRuntimeFlagsTemplate),
+              subtitle: Text(l10n.settingsCopyRuntimeFlagsTemplateSubtitle),
               onTap: onCopyRuntimeFlagsTemplate,
             ),
           ],

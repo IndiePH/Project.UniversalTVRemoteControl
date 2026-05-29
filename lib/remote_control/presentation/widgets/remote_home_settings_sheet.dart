@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
+import 'package:one_remote/app/monetization/pro_plan_label.dart';
 import 'package:one_remote/app/theme/app_theme_preference.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
@@ -13,6 +15,9 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   const RemoteHomeSettingsSheet({
     super.key,
     required this.entitlementStatus,
+    required this.activeProductId,
+    required this.subscriptionExpiresAt,
+    required this.hasLifetimePro,
     required this.storeAvailable,
     required this.onUpgradeToPro,
     required this.onRestorePurchases,
@@ -36,6 +41,9 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   });
 
   final ProEntitlementStatus entitlementStatus;
+  final String? activeProductId;
+  final DateTime? subscriptionExpiresAt;
+  final bool hasLifetimePro;
   final bool storeAvailable;
   final VoidCallback onUpgradeToPro;
   final VoidCallback onRestorePurchases;
@@ -79,16 +87,18 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                l10n.proSectionTitle,
+                _proTitleLine(l10n, isPro: isPro, activeProductId: activeProductId),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 6),
               Text(
-                isPro
-                    ? l10n.proStatusActive
-                    : isCheckingPro
-                    ? l10n.proStatusChecking
-                    : l10n.proStatusNotActive,
+                _proStatusLine(
+                  l10n,
+                  isPro: isPro,
+                  isCheckingPro: isCheckingPro,
+                  hasLifetimePro: hasLifetimePro,
+                  subscriptionExpiresAt: subscriptionExpiresAt,
+                ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               if (!storeAvailable) ...[
@@ -99,15 +109,22 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
                 ),
               ] else ...[
                 const SizedBox(height: 10),
-                if (!isPro)
+                if (!isPro || hasLifetimePro)
                   FilledButton(
-                    onPressed: onUpgradeToPro,
-                    child: Text(l10n.proUpgradeButton),
+                    onPressed: isPro ? null : onUpgradeToPro,
+                    child: Text(
+                      hasLifetimePro
+                          ? l10n.proLifetimeOwnedButton
+                          : l10n.proUpgradeButton,
+                    ),
                   ),
-                TextButton(
-                  onPressed: onRestorePurchases,
-                  child: Text(l10n.proRestoreButton),
-                ),
+                if (!isPro) ...[
+                  const SizedBox(height: 8),
+                  FilledButton(
+                    onPressed: onRestorePurchases,
+                    child: Text(l10n.proRestoreButton),
+                  ),
+                ],
               ],
               const SizedBox(height: 16),
               Text(
@@ -247,5 +264,38 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static String _proTitleLine(
+    AppLocalizations l10n, {
+    required bool isPro,
+    required String? activeProductId,
+  }) {
+    if (isPro && activeProductId != null) {
+      return '${l10n.proSectionTitle} - ${proPlanLabelForProductId(l10n, activeProductId)}';
+    }
+    return l10n.proSectionTitle;
+  }
+
+  static String _proStatusLine(
+    AppLocalizations l10n, {
+    required bool isPro,
+    required bool isCheckingPro,
+    required bool hasLifetimePro,
+    required DateTime? subscriptionExpiresAt,
+  }) {
+    if (isCheckingPro) {
+      return l10n.proStatusChecking;
+    }
+    if (!isPro) {
+      return l10n.proStatusNotActive;
+    }
+    if (hasLifetimePro || subscriptionExpiresAt == null) {
+      return l10n.proStatusActive;
+    }
+    final formattedDate = DateFormat.yMd().format(
+      subscriptionExpiresAt.toLocal(),
+    );
+    return l10n.proStatusActiveRenewsOn(formattedDate);
   }
 }

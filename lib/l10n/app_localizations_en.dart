@@ -45,6 +45,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionStateDisconnected => 'Disconnected';
 
   @override
+  String get remoteStatusConnectTvToBegin => 'Connect a TV to begin';
+
+  @override
+  String get remoteStatusReady => 'Ready';
+
+  @override
+  String get remoteStatusTransportIdle => 'Disconnected';
+
+  @override
+  String get remoteStatusNoDeviceSelected => 'No device selected.';
+
+  @override
+  String get remoteStatusEnterTextBeforeSending => 'Enter text before sending.';
+
+  @override
+  String get remoteStatusPairTvFirst => 'Pair a TV first.';
+
+  @override
+  String get remoteKeyboardUnavailable =>
+      'Remote keyboard can\'t be used on this screen or with this TV.';
+
+  @override
   String get connectTvTooltip => 'Connect TV';
 
   @override
@@ -80,6 +102,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get layoutEditorResetButton => 'Reset Layout';
+
+  @override
+  String get layoutEditorResetSuccess => 'Layout reset to defaults.';
 
   @override
   String get layoutEditorInstruction =>
@@ -480,6 +505,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsCopyTransportLogs => 'Copy transport logs';
 
   @override
+  String get settingsTransportLogNotFound => 'No transport log found yet.';
+
+  @override
+  String get settingsTransportLogCopied => 'Copied transport log to clipboard.';
+
+  @override
+  String get settingsRuntimeFlagsTemplateCopied =>
+      'Copied runtime flags template to clipboard.';
+
+  @override
   String get settingsDiagnosticsSummaryTitle => 'Session diagnostics';
 
   @override
@@ -534,6 +569,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proStatusActive => 'Active';
 
   @override
+  String proStatusActiveRenewsOn(String date) {
+    return 'Active - renews on $date';
+  }
+
+  @override
   String get proStatusNotActive => 'Pro is not active.';
 
   @override
@@ -551,6 +591,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proUpgradeButton => 'Upgrade to Pro';
 
   @override
+  String get proLifetimeOwnedButton => 'Lifetime Pro owned';
+
+  @override
   String get proRestoreButton => 'Restore purchases';
 
   @override
@@ -561,7 +604,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proPurchaseStarted => 'Purchase flow started.';
 
   @override
-  String get proRestoreStarted => 'Restoring purchases...';
+  String get proActivated => 'Pro is now active.';
+
+  @override
+  String get proRestoreSuccess => 'Pro restored successfully.';
+
+  @override
+  String get proRestoreAlreadyActive =>
+      'Pro is already active on this account.';
+
+  @override
+  String get proRestoreNoPurchases =>
+      'No active Pro purchase found for this store account.';
+
+  @override
+  String get proRestoreFailed =>
+      'Could not restore purchases. Try again in a moment.';
 
   @override
   String get proChoosePlanPrompt => 'Choose a plan';

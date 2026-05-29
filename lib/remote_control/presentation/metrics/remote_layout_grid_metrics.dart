@@ -12,3 +12,6 @@ const int kRemoteLayoutGridRows = 9;
 
 /// Pixel gap between grid cells on the home remote and in the layout editor.
 const double kRemoteLayoutGridGap = 6;
+
+/// Opacity applied to the remote grid when no TV is selected.
+const double kRemoteHomeDisabledGridOpacity = 0.58;

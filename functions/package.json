@@ -9,6 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "build:watch": "tsc -w -p tsconfig.json",
     "lint": "node -e \"console.log('no lint configured')\"",
+    "test": "npm run build && node --test \"test/**/*.test.js\"",
     "serve": "firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
   },

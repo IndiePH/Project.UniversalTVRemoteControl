@@ -11,9 +11,6 @@ final class RemoteKeyboardAvailability {
     this.unavailableReason,
   });
 
-  static const String unavailableMessage =
-      "Remote keyboard can't be used on this screen or with this TV.";
-
   final bool isAvailable;
   final RemoteKeyboardUnavailableReason? unavailableReason;
 

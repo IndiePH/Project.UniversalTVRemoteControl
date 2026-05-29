@@ -9,6 +9,7 @@ import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.
 import 'package:one_remote/remote_control/presentation/widgets/remote_circular_dpad.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_icon_circle_button.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_button_metrics.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_layout_grid_metrics.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_grid_geometry.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_pairing_hint_metrics.dart';
@@ -377,7 +378,7 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
         ).remoteDisabledControlTint.withValues(alpha: 0.42),
         BlendMode.modulate,
       ),
-      child: Opacity(opacity: 0.58, child: child),
+      child: Opacity(opacity: kRemoteHomeDisabledGridOpacity, child: child),
     );
   }
 

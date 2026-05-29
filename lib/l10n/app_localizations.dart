@@ -166,6 +166,48 @@ abstract class AppLocalizations {
   /// **'Disconnected'**
   String get connectionStateDisconnected;
 
+  /// No description provided for @remoteStatusConnectTvToBegin.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a TV to begin'**
+  String get remoteStatusConnectTvToBegin;
+
+  /// No description provided for @remoteStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get remoteStatusReady;
+
+  /// No description provided for @remoteStatusTransportIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnected'**
+  String get remoteStatusTransportIdle;
+
+  /// No description provided for @remoteStatusNoDeviceSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No device selected.'**
+  String get remoteStatusNoDeviceSelected;
+
+  /// No description provided for @remoteStatusEnterTextBeforeSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter text before sending.'**
+  String get remoteStatusEnterTextBeforeSending;
+
+  /// No description provided for @remoteStatusPairTvFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a TV first.'**
+  String get remoteStatusPairTvFirst;
+
+  /// No description provided for @remoteKeyboardUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote keyboard can\'t be used on this screen or with this TV.'**
+  String get remoteKeyboardUnavailable;
+
   /// No description provided for @connectTvTooltip.
   ///
   /// In en, this message translates to:
@@ -237,6 +279,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset Layout'**
   String get layoutEditorResetButton;
+
+  /// No description provided for @layoutEditorResetSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Layout reset to defaults.'**
+  String get layoutEditorResetSuccess;
 
   /// No description provided for @layoutEditorInstruction.
   ///
@@ -892,6 +940,24 @@ abstract class AppLocalizations {
   /// **'Copy transport logs'**
   String get settingsCopyTransportLogs;
 
+  /// No description provided for @settingsTransportLogNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No transport log found yet.'**
+  String get settingsTransportLogNotFound;
+
+  /// No description provided for @settingsTransportLogCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied transport log to clipboard.'**
+  String get settingsTransportLogCopied;
+
+  /// No description provided for @settingsRuntimeFlagsTemplateCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied runtime flags template to clipboard.'**
+  String get settingsRuntimeFlagsTemplateCopied;
+
   /// No description provided for @settingsDiagnosticsSummaryTitle.
   ///
   /// In en, this message translates to:
@@ -976,6 +1042,12 @@ abstract class AppLocalizations {
   /// **'Active'**
   String get proStatusActive;
 
+  /// No description provided for @proStatusActiveRenewsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Active - renews on {date}'**
+  String proStatusActiveRenewsOn(String date);
+
   /// No description provided for @proStatusNotActive.
   ///
   /// In en, this message translates to:
@@ -1006,6 +1078,12 @@ abstract class AppLocalizations {
   /// **'Upgrade to Pro'**
   String get proUpgradeButton;
 
+  /// No description provided for @proLifetimeOwnedButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifetime Pro owned'**
+  String get proLifetimeOwnedButton;
+
   /// No description provided for @proRestoreButton.
   ///
   /// In en, this message translates to:
@@ -1024,11 +1102,35 @@ abstract class AppLocalizations {
   /// **'Purchase flow started.'**
   String get proPurchaseStarted;
 
-  /// No description provided for @proRestoreStarted.
+  /// No description provided for @proActivated.
   ///
   /// In en, this message translates to:
-  /// **'Restoring purchases...'**
-  String get proRestoreStarted;
+  /// **'Pro is now active.'**
+  String get proActivated;
+
+  /// No description provided for @proRestoreSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro restored successfully.'**
+  String get proRestoreSuccess;
+
+  /// No description provided for @proRestoreAlreadyActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro is already active on this account.'**
+  String get proRestoreAlreadyActive;
+
+  /// No description provided for @proRestoreNoPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'No active Pro purchase found for this store account.'**
+  String get proRestoreNoPurchases;
+
+  /// No description provided for @proRestoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not restore purchases. Try again in a moment.'**
+  String get proRestoreFailed;
 
   /// No description provided for @proChoosePlanPrompt.
   ///
