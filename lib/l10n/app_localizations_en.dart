@@ -697,6 +697,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackSendFailed => 'Could not send feedback. Try again later.';
 
   @override
+  String get settingsAboutSectionTitle => 'About';
+
+  @override
+  String get settingsAppVersionLabel => 'App version';
+
+  @override
   String get settingsLegalSectionTitle => 'Legal';
 
   @override

@@ -31,20 +31,36 @@ final class AdRemoteConfigService {
       return;
     }
 
+    final remoteConfig = FirebaseRemoteConfig.instance;
     try {
-      final remoteConfig = FirebaseRemoteConfig.instance;
       await remoteConfig.setConfigSettings(
         RemoteConfigSettings(
           fetchTimeout: const Duration(seconds: 10),
+          // Short interval so a published flip propagates on the next cold
+          // start. Defaults aren't persisted across launches, so set them
+          // each run before reading.
           minimumFetchInterval: kDebugMode
               ? Duration.zero
-              : const Duration(hours: 1),
+              : const Duration(minutes: 1),
         ),
       );
       await remoteConfig.setDefaults({
         testAdsEnabledKey: defaultTestAdsEnabled,
       });
+    } catch (_) {
+      // Remote Config could not be configured at all; stay on the safe default.
+      _testAdsEnabled = defaultTestAdsEnabled;
+      return;
+    }
+
+    try {
       await remoteConfig.fetchAndActivate();
+    } catch (_) {
+      // Offline/timeout/throttle: keep the last activated value (read below)
+      // instead of forcing test ads back on.
+    }
+
+    try {
       _testAdsEnabled = remoteConfig.getBool(testAdsEnabledKey);
     } catch (_) {
       _testAdsEnabled = defaultTestAdsEnabled;

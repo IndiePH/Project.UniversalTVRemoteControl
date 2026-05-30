@@ -386,6 +386,9 @@
   "feedbackNotConfigured": "Feedback is not configured on this build.",
   "feedbackSendFailed": "Could not send feedback. Try again later.",
 
+  "settingsAboutSectionTitle": "About",
+  "settingsAppVersionLabel": "App version",
+
   "settingsLegalSectionTitle": "Legal",
   "settingsOpenSourceLicenses": "Open source licenses",
   "settingsPrivacyPolicy": "Privacy policy",

@@ -893,6 +893,8 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     var pendingFake = stored ?? _compileUseFakeTransports;
     final showAdPrivacyOptions =
         await AdConsentCoordinator.isPrivacyOptionsRequired();
+    final packageInfo =
+        await GetIt.instance<AppPackageInfoSource>().getPackageInfo();
     if (!mounted) {
       return;
     }
@@ -989,6 +991,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
                               onOpenAdPrivacyOptions: () => unawaited(
                                 _openAdPrivacyOptions(sheetContext),
                               ),
+                              appVersionLabel: packageInfo.versionLabel,
                                 );
                               },
                             );

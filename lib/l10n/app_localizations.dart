@@ -1276,6 +1276,18 @@ abstract class AppLocalizations {
   /// **'Could not send feedback. Try again later.'**
   String get feedbackSendFailed;
 
+  /// No description provided for @settingsAboutSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settingsAboutSectionTitle;
+
+  /// No description provided for @settingsAppVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'App version'**
+  String get settingsAppVersionLabel;
+
   /// No description provided for @settingsLegalSectionTitle.
   ///
   /// In en, this message translates to:

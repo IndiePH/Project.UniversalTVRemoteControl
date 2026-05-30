@@ -38,6 +38,7 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
     required this.onOpenAdPrivacyOptions,
     required this.themePreference,
     required this.onThemePreferenceChanged,
+    required this.appVersionLabel,
   });
 
   final ProEntitlementStatus entitlementStatus;
@@ -65,6 +66,7 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   final VoidCallback onOpenAdPrivacyOptions;
   final AppThemePreference themePreference;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
+  final String appVersionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -203,6 +205,18 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
                     onTap: onOpenAdPrivacyOptions,
                   ),
               ],
+              const SizedBox(height: 16),
+              Text(
+                l10n.settingsAboutSectionTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.info_outline),
+                title: Text(l10n.settingsAppVersionLabel),
+                subtitle: Text(appVersionLabel),
+              ),
               if (showDebugSection) ...[
                 const SizedBox(height: 16),
                 Text(
