@@ -6,6 +6,7 @@ Keep entries short and append new updates at the top.
 ## 2026-05-30
 
 ### Added
+- Settings About section (`05aca51`, **TVREMOTE-26**): remote-home settings sheet shows installed app version via `AppPackageInfoSource.versionLabel` (`settingsAboutSectionTitle` / `settingsAppVersionLabel` l10n).
 - Firebase Remote Config ad toggle (`4af3cdc`, **TVREMOTE-63** / **TVREMOTE-26**): `AdRemoteConfigService` reads `test_ads_enabled` to switch banner and interstitial **ad unit IDs** at runtime; production AdMob **app IDs** wired at build time (Android manifest placeholder via `build.gradle.kts`, `AdConfig` constants); `firebase_remote_config` dependency; `test/lib/app/ads/ad_config_test.dart`.
 - Android edge-to-edge (`4af3cdc`, **TVREMOTE-26**): `FlutterFragmentActivity` + `enableEdgeToEdge()`; transparent status/navigation bars in `styles.xml`; `SystemChrome.setEnabledSystemUIMode(edgeToEdge)` in `main.dart`; `AppTheme` system overlay icon brightness for SDK 35 Play Console compliance.
 - Firebase Analytics + Crashlytics (`bf5d103`): Firebase init at startup; fatal Flutter/platform errors reported to Crashlytics; `AnalyticsService` in DI with Pro entitlement change events and startup locale signal.
@@ -13,6 +14,9 @@ Keep entries short and append new updates at the top.
 - Monetization tests expanded: `pro_entitlement_service_test.dart`, `pro_receipt_validation_service_test.dart`, `pro_upgrade_page_test.dart`.
 
 ### Changed
+- `AdRemoteConfigService` resilience (`05aca51`, **TVREMOTE-63**): split Remote Config settings/defaults from fetch; on fetch failure keep last activated `test_ads_enabled` instead of reverting to test ads; release `minimumFetchInterval` shortened to 1 minute so published toggles apply on next cold start.
+- Android Gradle Kotlin DSL (`05aca51`): drop explicit `kotlin-android` plugin; use built-in `kotlin { compilerOptions { jvmTarget = JVM_17 } }` block.
+- App version `1.3.2+13` (`05aca51`).
 - `AdConfig.shouldUseTestAds`: debug builds always use Google test ad units; release follows Remote Config `test_ads_enabled` (fail-safe default `true`); live unit IDs still overridable via `--dart-define=ADMOB_*`.
 - `DiBootstrap.initialize` fetches Remote Config at startup when mobile ads are supported; `AdRemoteConfigService` registered in GetIt and preserved across `OneRemoteApp.restart()`.
 - Legal links prefer in-app WebView on mobile (`InAppLegalWebviewPage`, `LegalLinkLauncher`).
