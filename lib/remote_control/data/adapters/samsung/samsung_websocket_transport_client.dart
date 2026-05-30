@@ -41,7 +41,7 @@ class SamsungWebSocketTransportClient
   );
 
   SamsungWebSocketTransportClient({
-    required String Function(String deviceId) hostResolver,
+    required this._hostResolver,
     this.clientName = 'OneRemote',
     this.connectTimeout = const Duration(seconds: 8),
     this.handshakeTimeout = const Duration(seconds: 30),
@@ -49,8 +49,7 @@ class SamsungWebSocketTransportClient
     SamsungTransportLogging? transportLogging,
     SamsungPairingTokenStore? pairingTokenStore,
     SamsungRemoteTextSession? remoteTextSession,
-  }) : _hostResolver = hostResolver,
-       _logging = transportLogging ?? SamsungTransportLogging(),
+  }) : _logging = transportLogging ?? SamsungTransportLogging(),
        _pairing = pairingTokenStore ?? SamsungPairingTokenStore(),
        _text = remoteTextSession ?? SamsungRemoteTextSession();
 

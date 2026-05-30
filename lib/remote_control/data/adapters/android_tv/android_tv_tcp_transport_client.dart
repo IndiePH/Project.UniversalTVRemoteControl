@@ -38,13 +38,11 @@ class AndroidTvTcpTransportClient
   static const int _remoteClientFeatures = 1 | 2 | 4 | 8 | 32 | 64 | 512;
 
   AndroidTvTcpTransportClient({
-    required String Function(String deviceId) hostResolver,
-    required AndroidTvCertificateStore certStore,
-    AndroidTvHandshakeTracer? tracer,
+    required this._hostResolver,
+    required this._certStore,
+    this._tracer,
     this.connectTimeout = const Duration(seconds: 8),
-  }) : _hostResolver = hostResolver,
-       _certStore = certStore,
-       _tracer = tracer;
+  });
 
   final String Function(String deviceId) _hostResolver;
   final AndroidTvCertificateStore _certStore;

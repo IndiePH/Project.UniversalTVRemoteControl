@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/analytics/analytics_service.dart';
 import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
+import 'package:one_remote/app/ads/ad_remote_config_service.dart';
 import 'package:one_remote/app/ads/bottom_banner_ad_placement.dart';
 import 'package:one_remote/app/compliance/ad_consent_coordinator.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
@@ -1265,8 +1266,10 @@ class _RemoteHomePageState extends State<RemoteHomePage>
         final showLayoutLockedOnPress =
             !canToggleLayout && _activeDevice != null && !isPro;
         final showAds = proStatus == ProEntitlementStatus.notEntitled;
+        final adRemoteConfig = GetIt.instance<AdRemoteConfigService>();
         final adOverlay = BottomBannerAdPlacement.buildOverlay(
           appEnvironment: widget.appEnvironment,
+          testAdsEnabled: adRemoteConfig.testAdsEnabled,
           showAds: showAds,
         );
 

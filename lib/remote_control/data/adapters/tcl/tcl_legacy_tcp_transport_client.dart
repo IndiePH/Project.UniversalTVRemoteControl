@@ -15,9 +15,8 @@ class TclLegacyTcpTransportClient
   TclLegacyTcpTransportClient({
     String Function(String deviceId)? hostResolver,
     this.port = 4123,
-    Duration timeout = const Duration(seconds: 4),
-  }) : _hostResolver = hostResolver ?? _defaultHostResolver,
-       _timeout = timeout;
+    this._timeout = const Duration(seconds: 4),
+  }) : _hostResolver = hostResolver ?? _defaultHostResolver;
 
   final String Function(String deviceId) _hostResolver;
   final int port;

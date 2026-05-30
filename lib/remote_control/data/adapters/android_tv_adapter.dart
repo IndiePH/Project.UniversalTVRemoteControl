@@ -12,10 +12,9 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class AndroidTvAdapter implements TvBrandAdapter {
   AndroidTvAdapter({
-    required AndroidTvTransportClient transportClient,
+    required this._transportClient,
     CommandKeyMap? keyMap,
-  }) : _transportClient = transportClient,
-       _keyMap = keyMap ?? const AndroidTvKeyMapper();
+  }) : _keyMap = keyMap ?? const AndroidTvKeyMapper();
 
   @override
   TvBrand get brand => TvBrand.androidTv;

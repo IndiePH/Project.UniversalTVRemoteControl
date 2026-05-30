@@ -10,8 +10,8 @@ abstract interface class PairingProgressHintRegistry {
 class DefaultPairingProgressHintRegistry
     implements PairingProgressHintRegistry {
   DefaultPairingProgressHintRegistry({
-    required LocalizedStrings localizedStrings,
-  }) : _localizedStrings = localizedStrings;
+    required this._localizedStrings,
+  });
 
   final LocalizedStrings _localizedStrings;
 

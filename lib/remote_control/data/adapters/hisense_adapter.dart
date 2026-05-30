@@ -12,10 +12,9 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class HisenseAdapter implements TvBrandAdapter {
   HisenseAdapter({
-    required HisenseTransportClient transportClient,
+    required this._transportClient,
     CommandKeyMap? keyMap,
-  }) : _transportClient = transportClient,
-       _keyMap = keyMap ?? const HisenseKeyMapper();
+  }) : _keyMap = keyMap ?? const HisenseKeyMapper();
 
   @override
   TvBrand get brand => TvBrand.hisense;

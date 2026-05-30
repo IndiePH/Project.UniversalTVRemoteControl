@@ -4,7 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 /// Loads [AppPackageInfo] via [PackageInfo.fromPlatform].
 final class PackageInfoPlusSource implements AppPackageInfoSource {
-  PackageInfoPlusSource({AppPackageInfo? cached}) : _cached = cached;
+  PackageInfoPlusSource({this._cached});
 
   AppPackageInfo? _cached;
 

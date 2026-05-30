@@ -13,9 +13,8 @@ class RokuHttpTransportClient
     implements RokuTransportClient {
   RokuHttpTransportClient({
     String Function(String deviceId)? hostResolver,
-    Duration requestTimeout = const Duration(seconds: 4),
-  }) : _hostResolver = hostResolver ?? _defaultHostResolver,
-       _requestTimeout = requestTimeout;
+    this._requestTimeout = const Duration(seconds: 4),
+  }) : _hostResolver = hostResolver ?? _defaultHostResolver;
 
   final String Function(String deviceId) _hostResolver;
   final Duration _requestTimeout;

@@ -9,6 +9,8 @@ import 'package:one_remote/app/configurations/app_monetization_di_config.dart';
 import 'package:one_remote/app/configurations/feedback_di_config.dart';
 import 'package:one_remote/app/configurations/i_di_config.dart';
 import 'package:one_remote/app/analytics/analytics_service.dart';
+import 'package:one_remote/app/ads/ad_config.dart';
+import 'package:one_remote/app/ads/ad_remote_config_service.dart';
 import 'package:one_remote/app/localized_strings.dart';
 import 'package:one_remote/app/theme/app_theme_controller.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
@@ -41,7 +43,10 @@ final class DiBootstrap {
     };
   }
 
-  static Future<void> initialize(AppEnvironment env) async {
+  static Future<void> initialize(
+    AppEnvironment env, {
+    AdRemoteConfigService? adRemoteConfig,
+  }) async {
     final sl = GetIt.instance;
 
     // Tests (and some debug flows) may call initialize multiple times.
@@ -54,7 +59,14 @@ final class DiBootstrap {
       await sl.reset(dispose: true);
     }
 
+    final resolvedAdRemoteConfig =
+        adRemoteConfig ?? AdRemoteConfigService.withDefaults();
+    if (adRemoteConfig == null && AdConfig.supportsMobileAds) {
+      await resolvedAdRemoteConfig.fetchAndActivate();
+    }
+
     sl.registerSingleton<AppEnvironment>(env);
+    sl.registerSingleton<AdRemoteConfigService>(resolvedAdRemoteConfig);
     sl.registerSingleton<AnalyticsService>(AnalyticsService());
     sl.registerSingleton<ValueNotifier<Locale>>(
       ValueNotifier(PlatformDispatcher.instance.locale),

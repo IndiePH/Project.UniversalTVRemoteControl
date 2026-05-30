@@ -1,18 +1,20 @@
 import 'package:flutter/widgets.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:one_remote/app/ads/ad_config.dart';
+import 'package:one_remote/app/ads/ad_remote_config_service.dart';
 import 'package:one_remote/app/ads/interstitial_ad_policy.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 
 /// Coordinates loading and showing interstitial ads using [InterstitialAdPolicy].
 class InterstitialAdController {
   InterstitialAdController({
-    required AppEnvironment appEnvironment,
-    required InterstitialAdPolicy policy,
-  }) : _appEnvironment = appEnvironment,
-       _policy = policy;
+    required this._appEnvironment,
+    required this._adRemoteConfig,
+    required this._policy,
+  });
 
   final AppEnvironment _appEnvironment;
+  final AdRemoteConfigService _adRemoteConfig;
   final InterstitialAdPolicy _policy;
 
   InterstitialAd? _interstitialAd;
@@ -120,7 +122,10 @@ class InterstitialAdController {
     if (_isLoading || _interstitialAd != null) {
       return;
     }
-    final adUnitId = AdConfig.interstitialAdUnitId(_appEnvironment);
+    final adUnitId = AdConfig.interstitialAdUnitId(
+      environment: _appEnvironment,
+      testAdsEnabled: _adRemoteConfig.testAdsEnabled,
+    );
     if (adUnitId == null) {
       return;
     }

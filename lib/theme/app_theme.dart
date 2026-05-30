@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Shared semantic colors used by the OneRemote UI.
 final class AppColors extends ThemeExtension<AppColors> {
@@ -223,6 +224,10 @@ final class AppTheme {
       Brightness.light => const Color(0xFFE8EAEF),
       Brightness.dark => const Color(0xFF111216),
     };
+    final statusBarIconBrightness = switch (brightness) {
+      Brightness.light => Brightness.dark,
+      Brightness.dark => Brightness.light,
+    };
     return ThemeData(
       brightness: brightness,
       colorScheme: ColorScheme.fromSeed(
@@ -231,6 +236,12 @@ final class AppTheme {
       ),
       useMaterial3: true,
       scaffoldBackgroundColor: scaffoldBackgroundColor,
+      appBarTheme: AppBarTheme(
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarIconBrightness: statusBarIconBrightness,
+          systemNavigationBarIconBrightness: statusBarIconBrightness,
+        ),
+      ),
       extensions: <ThemeExtension<dynamic>>[appColors],
     );
   }

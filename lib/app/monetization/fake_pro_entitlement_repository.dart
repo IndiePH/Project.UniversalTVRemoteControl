@@ -9,9 +9,8 @@ import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
 final class FakeProEntitlementRepository implements ProEntitlementRepository {
   FakeProEntitlementRepository({
     ProEntitlementStatus initialStatus = ProEntitlementStatus.notEntitled,
-    bool isAvailable = true,
-  }) : _status = initialStatus,
-       _isAvailable = isAvailable;
+    this._isAvailable = true,
+  }) : _status = initialStatus;
 
   final StreamController<ProEntitlementStatus> _controller =
       StreamController<ProEntitlementStatus>.broadcast();

@@ -6,6 +6,7 @@ void main() {
   test('does not build overlay when ads are disabled by Pro', () {
     final overlay = BottomBannerAdPlacement.buildOverlay(
       appEnvironment: AppEnvironment.production,
+      testAdsEnabled: false,
       showAds: false,
     );
 
@@ -15,6 +16,7 @@ void main() {
   test('does not build overlay when regulatory consent blocks ads', () {
     final overlay = BottomBannerAdPlacement.buildOverlay(
       appEnvironment: AppEnvironment.production,
+      testAdsEnabled: false,
       showAds: true,
     );
 

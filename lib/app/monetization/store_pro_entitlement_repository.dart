@@ -18,15 +18,13 @@ final class StoreProEntitlementRepository implements ProEntitlementRepository {
     InAppPurchase? inAppPurchase,
     required String defaultProductId,
     List<String>? productIds,
-    Duration restoreWait = const Duration(seconds: 2),
-    ProReceiptValidationService? receiptValidationService,
+    this._restoreWait = const Duration(seconds: 2),
+    this._receiptValidationService,
   }) : _inAppPurchase = inAppPurchase ?? InAppPurchase.instance,
        _defaultProductId = defaultProductId,
        _productIds = (productIds == null || productIds.isEmpty)
            ? <String>[defaultProductId]
-           : <String>{...productIds, defaultProductId}.toList(growable: false),
-       _restoreWait = restoreWait,
-       _receiptValidationService = receiptValidationService {
+           : <String>{...productIds, defaultProductId}.toList(growable: false) {
     _purchaseSubscription = _inAppPurchase.purchaseStream.listen(
       _onPurchaseUpdates,
       onError: (error, stackTrace) =>

@@ -15,10 +15,9 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   SamsungAdapter({
-    required SamsungTransportClient transportClient,
+    required this._transportClient,
     CommandKeyMap? keyMapper,
-  }) : _transportClient = transportClient,
-       _keyMapper = keyMapper ?? const SamsungKeyMapper();
+  }) : _keyMapper = keyMapper ?? const SamsungKeyMapper();
 
   @override
   TvBrand get brand => TvBrand.samsung;

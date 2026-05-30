@@ -110,7 +110,8 @@ final class _ProUpgradePageState extends State<ProUpgradePage> {
   @override
   void initState() {
     super.initState();
-    _productsFuture = widget.loadProducts();
+    // Defer store refresh so entitlement notifiers are not updated during dialog build.
+    _productsFuture = Future(() => widget.loadProducts());
   }
 
   Future<void> _startPurchase(ProductDetails product) async {
@@ -185,7 +186,7 @@ final class _ProUpgradePageState extends State<ProUpgradePage> {
               return ListView.separated(
                 shrinkWrap: true,
                 itemCount: plans.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final plan = plans[index];
                   return ListTile(

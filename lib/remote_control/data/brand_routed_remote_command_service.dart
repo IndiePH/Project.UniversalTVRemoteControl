@@ -13,11 +13,9 @@ class BrandRoutedRemoteCommandService
     implements RemoteCommandService, TransportLogReaderProvider {
   BrandRoutedRemoteCommandService({
     required List<TvBrandAdapter> adapters,
-    required VariantResolutionRegistry variantRegistry,
-    required LocalizedStrings localizedStrings,
-  }) : _adapters = {for (final a in adapters) (a.brand, a.protocolVariant): a},
-       _variantRegistry = variantRegistry,
-       _localizedStrings = localizedStrings;
+    required this._variantRegistry,
+    required this._localizedStrings,
+  }) : _adapters = {for (final a in adapters) (a.brand, a.protocolVariant): a};
 
   final Map<(TvBrand, String), TvBrandAdapter> _adapters;
   final VariantResolutionRegistry _variantRegistry;

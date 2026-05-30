@@ -12,10 +12,9 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class TclGoogleTvAdapter implements TvBrandAdapter {
   TclGoogleTvAdapter({
-    required AndroidTvTransportClient transportClient,
+    required this._transportClient,
     CommandKeyMap? keyMap,
-  }) : _transportClient = transportClient,
-       _keyMap = keyMap ?? const AndroidTvKeyMapper();
+  }) : _keyMap = keyMap ?? const AndroidTvKeyMapper();
 
   final AndroidTvTransportClient _transportClient;
   final CommandKeyMap _keyMap;

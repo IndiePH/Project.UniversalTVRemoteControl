@@ -10,12 +10,16 @@ class BottomBannerAdPlacement {
 
   static Widget? buildOverlay({
     required AppEnvironment appEnvironment,
+    required bool testAdsEnabled,
     required bool showAds,
   }) {
     if (!showAds || !AdConsentCoordinator.canRequestAds) {
       return null;
     }
-    final adUnitId = AdConfig.bannerAdUnitId(appEnvironment);
+    final adUnitId = AdConfig.bannerAdUnitId(
+      environment: appEnvironment,
+      testAdsEnabled: testAdsEnabled,
+    );
     if (adUnitId == null) {
       return null;
     }

@@ -842,11 +842,10 @@ class _PinRequiredHisenseAdapter extends _RecordingAdapter {
 class _RecordingAdapter implements TvBrandAdapter {
   _RecordingAdapter({
     required this.brand,
-    bool supportsTextInput = true,
+    this._supportsTextInput = true,
     Set<RemoteCommand>? supportedCommands,
     Stream<bool>? textInputReadyStream,
-  }) : _supportsTextInput = supportsTextInput,
-       _supportedCommands = supportedCommands ?? RemoteCommand.values.toSet(),
+  }) : _supportedCommands = supportedCommands ?? RemoteCommand.values.toSet(),
        _textInputReadyStream = textInputReadyStream ?? const Stream.empty();
 
   @override
@@ -1014,11 +1013,9 @@ class _InfoReturningAdapter extends _RecordingAdapter {
 class _VariantRecordingAdapter extends _RecordingAdapter {
   _VariantRecordingAdapter({
     required super.brand,
-    required String variant,
-    required TvDeviceInfo info,
-  }) : _variant = variant,
-       _info = info,
-       super();
+    required this._variant,
+    required this._info,
+  }) : super();
 
   final String _variant;
   final TvDeviceInfo _info;

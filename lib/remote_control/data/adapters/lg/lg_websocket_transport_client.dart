@@ -40,11 +40,10 @@ class LgWebSocketTransportClient
   static const int _plainPort = 3000;
 
   LgWebSocketTransportClient({
-    required String Function(String deviceId) hostResolver,
+    required this._hostResolver,
     this.connectTimeout = const Duration(seconds: 8),
-    LgPairingKeyStore? keyStore,
-  }) : _hostResolver = hostResolver,
-       _keyStore = keyStore;
+    this._keyStore,
+  });
 
   final String Function(String deviceId) _hostResolver;
   final Duration connectTimeout;

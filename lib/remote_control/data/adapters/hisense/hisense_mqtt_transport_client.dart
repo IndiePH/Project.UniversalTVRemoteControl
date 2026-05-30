@@ -19,12 +19,12 @@ class HisenseMqttTransportClient
     with TransportEventEmitterMixin
     implements HisenseTransportClient {
   HisenseMqttTransportClient({
-    required String Function(String deviceId) hostResolver,
+    required this._hostResolver,
     String mqttClientId = const String.fromEnvironment(
       'HISENSE_MQTT_CLIENT_ID',
       defaultValue: 'OneRemote',
     ),
-    bool usePlaintextMqtt = const bool.fromEnvironment(
+    this._usePlaintextMqtt = const bool.fromEnvironment(
       'HISENSE_MQTT_PLAINTEXT',
       defaultValue: false,
     ),
@@ -34,11 +34,9 @@ class HisenseMqttTransportClient
     ),
     int brokerPort = 36669,
     this.connectTimeoutSeconds = 12,
-  }) : _hostResolver = hostResolver,
-       _mqttTopicClientSegment = mqttClientId.trim().isEmpty
+  }) : _mqttTopicClientSegment = mqttClientId.trim().isEmpty
            ? 'OneRemote'
            : mqttClientId.trim(),
-       _usePlaintextMqtt = usePlaintextMqtt,
        _textTopic = textTopic.trim(),
        _brokerPort = brokerPort > 0 ? brokerPort : 36669;
 

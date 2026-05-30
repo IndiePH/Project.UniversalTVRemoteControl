@@ -6,10 +6,9 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 final class DiagnosticsRecordingDeviceDiscoveryService
     implements DeviceDiscoveryService {
   const DiagnosticsRecordingDeviceDiscoveryService({
-    required DeviceDiscoveryService delegate,
-    required AppDiagnosticsRecorder recorder,
-  }) : _delegate = delegate,
-       _recorder = recorder;
+    required this._delegate,
+    required this._recorder,
+  });
 
   final DeviceDiscoveryService _delegate;
   final AppDiagnosticsRecorder _recorder;

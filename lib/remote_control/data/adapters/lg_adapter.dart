@@ -11,9 +11,8 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class LgAdapter implements TvBrandAdapter {
-  LgAdapter({required LgTransportClient transportClient, CommandKeyMap? keyMap})
-    : _transportClient = transportClient,
-      _keyMap = keyMap ?? const LgKeyMapper();
+  LgAdapter({required this._transportClient, CommandKeyMap? keyMap})
+    : _keyMap = keyMap ?? const LgKeyMapper();
 
   @override
   TvBrand get brand => TvBrand.lg;

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get_it/get_it.dart';
 
+import 'package:one_remote/app/ads/ad_remote_config_service.dart';
 import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
 import 'package:one_remote/app/ads/interstitial_ad_policy.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
@@ -50,6 +51,7 @@ final class AppMonetizationDiConfig implements IDiConfig {
     );
     final interstitialController = InterstitialAdController(
       appEnvironment: env,
+      adRemoteConfig: sl<AdRemoteConfigService>(),
       policy: interstitialPolicy,
     );
 

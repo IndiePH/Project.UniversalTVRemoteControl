@@ -247,13 +247,11 @@ void main() {
 
 final class _StubProEntitlementRepository implements ProEntitlementRepository {
   _StubProEntitlementRepository({
-    required bool isAvailableValue,
-    required Future<void> Function() onRefresh,
+    required this._isAvailableValue,
+    required this._onRefresh,
     Future<void> Function()? onPurchase,
     Future<void> Function()? onRestore,
-  }) : _isAvailableValue = isAvailableValue,
-       _onRefresh = onRefresh,
-       _onPurchase = onPurchase ?? (() async {}),
+  }) : _onPurchase = onPurchase ?? (() async {}),
        _onRestore = onRestore ?? (() async {});
 
   final bool _isAvailableValue;

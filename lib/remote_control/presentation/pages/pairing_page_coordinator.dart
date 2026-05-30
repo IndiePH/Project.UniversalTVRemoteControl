@@ -9,12 +9,10 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 /// Coordinates pairing and persistence steps for `PairingPage`.
 class PairingPageCoordinator {
   const PairingPageCoordinator({
-    required RemoteCommandService commandService,
-    required DeviceRepository deviceRepository,
-    AppDiagnosticsRecorder? diagnosticsRecorder,
-  }) : _commandService = commandService,
-       _deviceRepository = deviceRepository,
-       _diagnosticsRecorder = diagnosticsRecorder;
+    required this._commandService,
+    required this._deviceRepository,
+    this._diagnosticsRecorder,
+  });
 
   final RemoteCommandService _commandService;
   final DeviceRepository _deviceRepository;

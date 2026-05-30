@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
+import 'package:one_remote/app/ads/ad_remote_config_service.dart';
 import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
 import 'package:one_remote/app/ads/interstitial_ad_policy.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
@@ -94,6 +95,25 @@ Future<void> _scrollSettingsSheetTo(WidgetTester tester, Finder target) async {
   );
 }
 
+void _registerRemoteHomePageGetIt({
+  AppEnvironment environment = AppEnvironment.debug,
+}) {
+  final sl = GetIt.instance;
+  sl.registerSingleton<AppEnvironment>(environment);
+  sl.registerSingleton<AdRemoteConfigService>(
+    AdRemoteConfigService.withDefaults(),
+  );
+  sl.registerSingleton<PrePairingStepsRegistry>(
+    DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
+  );
+  sl.registerSingleton<PairingProgressHintRegistry>(
+    DefaultPairingProgressHintRegistry(
+      localizedStrings: FakeLocalizedStrings(),
+    ),
+  );
+  sl.registerSingleton<TvReachabilityService>(_StubTvReachabilityService());
+}
+
 void main() {
   test('menu defaults to the former pair grid position', () {
     final menuDefinition = kRemoteLayoutItemDefinitionById['menu']!;
@@ -107,7 +127,7 @@ void main() {
 
   testWidgets('renders remote home page shell', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
-    DiBootstrap.initialize(AppEnvironment.debug);
+    await DiBootstrap.initialize(AppEnvironment.debug);
     addTearDown(GetIt.instance.reset);
 
     await tester.pumpWidget(const OneRemoteApp());
@@ -177,20 +197,7 @@ void main() {
       SharedPreferences.setMockInitialValues({
         TransportDebugSettings.keyUseFakeTransports: true,
       });
-      GetIt.instance.registerSingleton<AppEnvironment>(AppEnvironment.debug);
-      GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
-        DefaultPrePairingStepsRegistry(
-          localizedStrings: FakeLocalizedStrings(),
-        ),
-      );
-      GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
-        DefaultPairingProgressHintRegistry(
-          localizedStrings: FakeLocalizedStrings(),
-        ),
-      );
-      GetIt.instance.registerSingleton<TvReachabilityService>(
-        _StubTvReachabilityService(),
-      );
+      _registerRemoteHomePageGetIt();
       addTearDown(GetIt.instance.reset);
 
       final commandService = _ConnectionStateStubCommandService(
@@ -254,7 +261,7 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    DiBootstrap.initialize(AppEnvironment.debug);
+    await DiBootstrap.initialize(AppEnvironment.debug);
     addTearDown(GetIt.instance.reset);
 
     await tester.pumpWidget(const OneRemoteApp());
@@ -270,6 +277,9 @@ void main() {
   testWidgets(
     'keeps grid disabled while reconnecting and re-enables on connected',
     (WidgetTester tester) async {
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
       final repository = InMemoryDeviceRepository();
       const activeDevice = TvDevice(
         id: 'samsung-living-room',
@@ -331,18 +341,7 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    GetIt.instance.registerSingleton<AppEnvironment>(AppEnvironment.debug);
-    GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
-      DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
-    );
-    GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
-      DefaultPairingProgressHintRegistry(
-        localizedStrings: FakeLocalizedStrings(),
-      ),
-    );
-    GetIt.instance.registerSingleton<TvReachabilityService>(
-      _StubTvReachabilityService(),
-    );
+    _registerRemoteHomePageGetIt();
     addTearDown(GetIt.instance.reset);
 
     final commandService = BrandRoutedRemoteCommandService(
@@ -406,6 +405,9 @@ void main() {
   testWidgets('switches active TV from remote home device switcher', (
     WidgetTester tester,
   ) async {
+    _registerRemoteHomePageGetIt();
+    addTearDown(GetIt.instance.reset);
+
     final repository = InMemoryDeviceRepository();
     const livingRoom = TvDevice(
       id: 'samsung-living-room',
@@ -460,6 +462,9 @@ void main() {
   testWidgets('places active paired TV first in pro device switcher', (
     WidgetTester tester,
   ) async {
+    _registerRemoteHomePageGetIt();
+    addTearDown(GetIt.instance.reset);
+
     final repository = InMemoryDeviceRepository();
     const livingRoom = TvDevice(
       id: 'samsung-living-room',
@@ -517,6 +522,9 @@ void main() {
   testWidgets('free tier shows device switcher but cannot switch TVs', (
     WidgetTester tester,
   ) async {
+    _registerRemoteHomePageGetIt();
+    addTearDown(GetIt.instance.reset);
+
     final repository = InMemoryDeviceRepository();
     const livingRoom = TvDevice(
       id: 'samsung-living-room',
@@ -568,14 +576,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(await repository.getLastUsedDevice(), livingRoom);
-    expect(find.text('Your TVs'), findsOneWidget);
-    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+    expect(find.text('Your TVs'), findsNothing);
+    expect(find.text('Choose a plan'), findsOneWidget);
   });
 
   testWidgets(
     'downgrading to free tier refreshes Your TVs list to active device only',
     (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
       final repository = InMemoryDeviceRepository();
       const livingRoom = TvDevice(
         id: 'samsung-living-room',
@@ -638,18 +649,7 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    GetIt.instance.registerSingleton<AppEnvironment>(AppEnvironment.debug);
-    GetIt.instance.registerSingleton<PrePairingStepsRegistry>(
-      DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
-    );
-    GetIt.instance.registerSingleton<PairingProgressHintRegistry>(
-      DefaultPairingProgressHintRegistry(
-        localizedStrings: FakeLocalizedStrings(),
-      ),
-    );
-    GetIt.instance.registerSingleton<TvReachabilityService>(
-      _StubTvReachabilityService(),
-    );
+    _registerRemoteHomePageGetIt();
     addTearDown(GetIt.instance.reset);
 
     final repository = InMemoryDeviceRepository();
@@ -889,6 +889,9 @@ void main() {
   testWidgets('restores last-used TV on launch and sends command', (
     WidgetTester tester,
   ) async {
+    _registerRemoteHomePageGetIt();
+    addTearDown(GetIt.instance.reset);
+
     final repository = InMemoryDeviceRepository();
     const savedTv = TvDevice(
       id: 'samsung-living-room',
@@ -935,6 +938,9 @@ void main() {
   testWidgets('surfaces command dispatch failure on remote grid', (
     WidgetTester tester,
   ) async {
+    _registerRemoteHomePageGetIt();
+    addTearDown(GetIt.instance.reset);
+
     final repository = InMemoryDeviceRepository();
     const savedTv = TvDevice(
       id: 'samsung-living-room',
@@ -1155,6 +1161,7 @@ ProEntitlementService _buildFreeProService() {
 InterstitialAdController _buildInterstitialAdController() {
   return InterstitialAdController(
     appEnvironment: AppEnvironment.debug,
+    adRemoteConfig: AdRemoteConfigService.withDefaults(),
     policy: InterstitialAdPolicy(
       minSuccessfulActionsBetweenAds: 100,
       minIntervalBetweenAds: const Duration(hours: 1),
@@ -1166,11 +1173,9 @@ InterstitialAdController _buildInterstitialAdController() {
 class _ConnectionStateStubCommandService implements RemoteCommandService {
   _ConnectionStateStubCommandService({
     required remote_connection.ConnectionState initialState,
-    List<TvDevice>? recordUnpairTo,
-    CommandDispatchResult? sendCommandResult,
+    this._recordUnpairTo,
+    this._sendCommandResult,
   }) : _state = initialState,
-       _recordUnpairTo = recordUnpairTo,
-       _sendCommandResult = sendCommandResult,
        _controller =
            StreamController<remote_connection.ConnectionState>.broadcast(
              onListen: () {},

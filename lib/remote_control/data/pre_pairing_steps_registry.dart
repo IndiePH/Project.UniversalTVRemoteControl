@@ -8,8 +8,7 @@ abstract interface class PrePairingStepsRegistry {
 }
 
 class DefaultPrePairingStepsRegistry implements PrePairingStepsRegistry {
-  DefaultPrePairingStepsRegistry({required LocalizedStrings localizedStrings})
-    : _localizedStrings = localizedStrings;
+  DefaultPrePairingStepsRegistry({required this._localizedStrings});
 
   final LocalizedStrings _localizedStrings;
 

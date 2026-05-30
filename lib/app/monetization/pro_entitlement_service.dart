@@ -14,10 +14,9 @@ import 'package:one_remote/app/monetization/shared_prefs_pro_entitlement_cache.d
 /// Application service exposing Pro entitlement for UI and feature gates.
 final class ProEntitlementService {
   ProEntitlementService({
-    required ProEntitlementRepository repository,
-    required SharedPrefsProEntitlementCache cache,
-  }) : _repository = repository,
-       _cache = cache {
+    required this._repository,
+    required this._cache,
+  }) {
     _subscription = _repository.entitlementStream.listen(_onRepositoryStatus);
   }
 

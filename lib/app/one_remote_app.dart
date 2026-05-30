@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/app_localized_strings.dart';
+import 'package:one_remote/app/ads/ad_remote_config_service.dart';
 import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
@@ -16,9 +17,13 @@ class OneRemoteApp extends StatelessWidget {
   const OneRemoteApp({super.key});
 
   static Future<void> restart() async {
-    final env = GetIt.instance<AppEnvironment>();
-    await GetIt.instance.reset();
-    await DiBootstrap.initialize(env);
+    final sl = GetIt.instance;
+    final env = sl<AppEnvironment>();
+    final adRemoteConfig = sl.isRegistered<AdRemoteConfigService>()
+        ? sl<AdRemoteConfigService>()
+        : null;
+    await sl.reset();
+    await DiBootstrap.initialize(env, adRemoteConfig: adRemoteConfig);
     runApp(OneRemoteApp(key: UniqueKey()));
   }
 

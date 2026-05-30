@@ -10,10 +10,9 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 final class DiagnosticsRecordingRemoteCommandService
     implements RemoteCommandService {
   const DiagnosticsRecordingRemoteCommandService({
-    required RemoteCommandService delegate,
-    required AppDiagnosticsRecorder recorder,
-  }) : _delegate = delegate,
-       _recorder = recorder;
+    required this._delegate,
+    required this._recorder,
+  });
 
   final RemoteCommandService _delegate;
   final AppDiagnosticsRecorder _recorder;
