@@ -6,17 +6,22 @@ Keep entries short and append new updates at the top.
 ## 2026-05-30
 
 ### Added
+- Firebase Remote Config ad toggle (`4af3cdc`, **TVREMOTE-63** / **TVREMOTE-26**): `AdRemoteConfigService` reads `test_ads_enabled` to switch banner and interstitial **ad unit IDs** at runtime; production AdMob **app IDs** wired at build time (Android manifest placeholder via `build.gradle.kts`, `AdConfig` constants); `firebase_remote_config` dependency; `test/lib/app/ads/ad_config_test.dart`.
+- Android edge-to-edge (`4af3cdc`, **TVREMOTE-26**): `FlutterFragmentActivity` + `enableEdgeToEdge()`; transparent status/navigation bars in `styles.xml`; `SystemChrome.setEnabledSystemUIMode(edgeToEdge)` in `main.dart`; `AppTheme` system overlay icon brightness for SDK 35 Play Console compliance.
 - Firebase Analytics + Crashlytics (`bf5d103`): Firebase init at startup; fatal Flutter/platform errors reported to Crashlytics; `AnalyticsService` in DI with Pro entitlement change events and startup locale signal.
 - Pro multi-plan IAP + Android receipt validation (`a5259be`, `ab7b395`, **TVREMOTE-66** / **TVREMOTE-67** app lane): `ProProductIds` catalog (weekly/monthly/annual/lifetime); `ProUpgradePage` plan picker with localized labels and price fetch; `ProReceiptValidationService` + Firebase callable `verifyProAndroidPurchase` in `functions/`; Play subscriptionsv2 validation with legacy fallback and reinstall token rebind; restore purchase outcomes; settings Pro status/plan/renewal details; entitlement refresh on app resume.
 - Monetization tests expanded: `pro_entitlement_service_test.dart`, `pro_receipt_validation_service_test.dart`, `pro_upgrade_page_test.dart`.
 
 ### Changed
+- `AdConfig.shouldUseTestAds`: debug builds always use Google test ad units; release follows Remote Config `test_ads_enabled` (fail-safe default `true`); live unit IDs still overridable via `--dart-define=ADMOB_*`.
+- `DiBootstrap.initialize` fetches Remote Config at startup when mobile ads are supported; `AdRemoteConfigService` registered in GetIt and preserved across `OneRemoteApp.restart()`.
 - Legal links prefer in-app WebView on mobile (`InAppLegalWebviewPage`, `LegalLinkLauncher`).
-- iOS AdMob production app/ad unit IDs in `Info.plist` (`bf5d103`).
+- iOS AdMob production app/ad unit IDs in `Info.plist` (`bf5d103`); Android production AdMob app ID via manifest placeholder (`4af3cdc`).
 - Android release builds fail when signing keystore is missing (avoids debug-signed release artifacts).
 - App version bumps for billing rollout (`1.0.1+3`, `1.3.0+10`).
 
 ### Fixed
+- Pro upgrade page defers `loadProducts()` to the next microtask so entitlement notifiers are not updated during dialog build (`4af3cdc`, **TVREMOTE-66**).
 - Android TV protobuf 6: replace `PbList.createRepeated` with `List` in Android TV remote/pairing message types (`ef8386b`).
 - Functions repo hygiene: stop tracking `functions/node_modules`; ignore `functions/.env` while keeping `.env.example` committable (`5b26a78`).
 

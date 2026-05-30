@@ -17,12 +17,12 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung; **In Progress**), **TVREMOTE-50** (LG; **Done** in Jira), **TVREMOTE-51** (Hisense; **In Progress**). **TVREMOTE-13** — Samsung approval timeout/rejection + recovery regression tests (**Done** in Jira; parent **TVREMOTE-37**): `samsung_test_lane_test.dart`, `samsung_pairing_token_store_test.dart` (21 tests; 2026-05-22). Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
 - **TVREMOTE-12** — Pairing success/failure path tests (**In Progress** in Jira; coordinator coverage shipped in `pairing_page_coordinator_test.dart`; parent **TVREMOTE-2**).
 - Umbrella issues superseded by this split (historical, **Done** in Jira): **TVREMOTE-25**, **TVREMOTE-21**, **TVREMOTE-9**, **TVREMOTE-10**, **TVREMOTE-16**.
-- **TVREMOTE-63** — Bottom banner + interstitial AdMob scaffold; UMP/ATT consent gating in app code (**Done**; production ad IDs + store-listing privacy URL still **TVREMOTE-26**).
+- **TVREMOTE-63** — Bottom banner + interstitial AdMob scaffold; UMP/ATT consent gating in app code (**Done**; Firebase Remote Config `test_ads_enabled` runtime ad-unit toggle shipped `4af3cdc`; production app IDs at build time on Android + iOS; full SKAdNetwork list + store-listing privacy URL still **TVREMOTE-26**).
 - **TVREMOTE-66** — Pro (remove ads) IAP: multi-product catalog, entitlement service + Android receipt validation client, upgrade/settings UI, gates banner + interstitial + layout editor (**In Progress**; E2E blocked by **TVREMOTE-67**).
 - **TVREMOTE-67** — Pro IAP store products + sandbox/device validation; Android server-side receipt validation callable shipped in repo (`functions/src/index.ts`); operator deploy still pending per `references/goals/goal-pro-receipt-validation-remote-setup.md` (**To Do** for E2E; parent **TVREMOTE-2**).
 - **TVREMOTE-68** — In-app user feedback: settings sheet + Apps Script webhook (**Done** in Jira; parent **TVREMOTE-2**).
 - **TVREMOTE-69** — Production feedback webhook token + privacy-policy disclosure (**To Do** in Jira; parent **TVREMOTE-2**).
-- **TVREMOTE-26** — Legal/compliance release gate (**In Progress** in Jira): ATT/UMP + in-app privacy link scaffold landed; in-app legal WebView on mobile; Firebase Analytics/Crashlytics wired; iOS production AdMob IDs in repo; app feedback **TVREMOTE-68** Done; release ops **TVREMOTE-69** pending; live policy URL and device validation pending.
+- **TVREMOTE-26** — Legal/compliance release gate (**In Progress** in Jira): ATT/UMP + in-app privacy link scaffold landed; in-app legal WebView on mobile; Firebase Analytics/Crashlytics wired; production AdMob app IDs at build time (iOS `Info.plist`, Android manifest placeholder `4af3cdc`); Firebase Remote Config `test_ads_enabled` for runtime test vs live ad units; Android edge-to-edge for SDK 35 (`4af3cdc`); app feedback **TVREMOTE-68** Done; release ops **TVREMOTE-69** pending; live policy URL, full SKAdNetwork list, and device validation pending.
 - **TVREMOTE-29** — Telemetry/diagnostics recorder + settings export (Task C1 **shipped** in repo; **Done** in Jira, 2026-05-22): `AppDiagnosticsRecorder`, discovery/command decorators, `DiagnosticsSummaryPanel` + copy report in debug settings; `app_diagnostics_recorder_test.dart` verified 2026-05-22.
 - **TVREMOTE-28** — Interaction polish: press-scale + haptic on remote controls (**In Progress**).
 - **TVREMOTE-41** — Samsung IME watch stream no eager `connect`; probe path explicit (**In Progress** in Jira).
@@ -135,7 +135,8 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Samsung/LG `watchRemoteTextInputReady` — no adapter-side `connect()`; use `probeRemoteTextInputReady` for explicit probe (**TVREMOTE-41**, **TVREMOTE-42**)
     - [x] new `lib/app/ads/` module (`AdConfig`, `BottomBannerAd`, `BottomBannerAdPlacement`) using `google_mobile_ads ^8.0.0`; env-aware unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` with Google's test IDs as fallback
     - [x] `MobileAds.initialize()` runs only on Android/iOS; non-mobile/`kIsWeb` paths skip the overlay entirely so layout/tests are unaffected
-    - [x] `AndroidManifest.xml` + `Info.plist` carry **test** `GADApplicationIdentifier` / AdMob `APPLICATION_ID` plus a placeholder `SKAdNetworkItems` entry — these **must be swapped for the production AdMob app id and the full network-supplied SKAdNetwork list before release**
+    - [x] Production AdMob app IDs at build time: Android `${admobAppId}` manifest placeholder (`build.gradle.kts`); iOS `GADApplicationIdentifier` in `Info.plist`; runtime test vs live **ad unit** IDs via Firebase Remote Config `test_ads_enabled` + `AdConfig.shouldUseTestAds` (`4af3cdc`)
+    - [x] Placeholder `SKAdNetworkItems` entry in `Info.plist` — **must be replaced with the full network-supplied SKAdNetwork list before iOS release**
     - [x] Remote `AppBar` tightened (`toolbarHeight: 50`) with thin outline dividers; `RemoteHomePage.body` switched to `Stack(fit: StackFit.expand)` so `BottomBannerAdPlacement` overlays bottom-aligned without resizing the grid
 - [x] Developer ergonomics:
   - [x] README "Current Runtime Modes": default **real** Samsung + Hisense transports for APK/physical-TV testing; fake transports opt-in via dart-define; host overrides documented; Samsung log tag `samsung_transport` (see README)
@@ -200,6 +201,13 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Tests in `pro_entitlement_service_test.dart`, `pro_receipt_validation_service_test.dart`, `pro_upgrade_page_test.dart`
 - [x] Firebase Analytics + Crashlytics (commit `bf5d103`): Firebase init + fatal error hooks in `main.dart`; `AnalyticsService` DI with Pro entitlement + startup locale events
 - [x] Android TV protobuf 6 compatibility (`ef8386b`): `PbList.createRepeated` → `List` in Android TV remote/pairing message types
+- [x] AdMob runtime test/live toggle + Android edge-to-edge (`4af3cdc`, **TVREMOTE-63** / **TVREMOTE-26**):
+  - [x] `AdRemoteConfigService` — Firebase Remote Config `test_ads_enabled`; fail-safe default prefers test ad units
+  - [x] `AdConfig.shouldUseTestAds` — debug always test; release follows Remote Config; banner/interstitial unit IDs wired through `BottomBannerAdPlacement` and `InterstitialAdController`
+  - [x] Production AdMob app ID constants; Android manifest placeholder; DI fetch at bootstrap
+  - [x] Android edge-to-edge: `FlutterFragmentActivity`, `enableEdgeToEdge()`, transparent system bars, `AppTheme` overlay styling
+  - [x] Tests: `test/lib/app/ads/ad_config_test.dart`; widget tests register `AdRemoteConfigService`
+- [x] Pro upgrade dialog stability (`4af3cdc`, **TVREMOTE-66**): defer `loadProducts()` to avoid entitlement notifier updates during build
 
 ### In Progress
 - [ ] Milestone 3 / Task 3.1:
@@ -433,7 +441,9 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] EU/California: UMP consent integrated in app code before ad load; device/regional validation still required.
   - [x] Pro: IAP via Apple IAP + Google Play Billing only (`in_app_purchase`) supporting multi-product subscriptions + lifetime (`ProProductIds` catalog); override via `--dart-define=PRO_PRODUCT_ID=...` (see `lib/app/configurations/app_monetization_di_config.dart`); Android server-side receipt validation callable in repo (`functions/src/index.ts` — deploy per `references/goals/goal-pro-receipt-validation-remote-setup.md`).
   - [ ] Developer accounts and signing: Apple Developer Program, Google Play developer account, AdMob as needed before ads go live.
-  - [ ] Swap **placeholder AdMob ids** for production: replace test `APPLICATION_ID` in `android/app/src/main/AndroidManifest.xml`, test `GADApplicationIdentifier` in `ios/Runner/Info.plist`, and the placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list; provide production unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` / `ADMOB_INTERSTITIAL_ANDROID` / `ADMOB_INTERSTITIAL_IOS` for release builds.
+  - [x] Production AdMob **app IDs** at build time (`4af3cdc`): Android `${admobAppId}` placeholder; iOS `GADApplicationIdentifier` in `Info.plist`.
+  - [ ] Replace placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list before iOS release.
+  - [ ] Flip Firebase Remote Config `test_ads_enabled` to `false` (and/or confirm `--dart-define=ADMOB_*` overrides) before serving live ad units in production.
 - [ ] **Physical-device validation:** Do not claim store support for a brand until pairing and core commands are verified on at least one real TV of that brand (complements the brand readiness matrix in `references/product_specs.md`).
 - [ ] **Deferred code-quality/security follow-ups** from the April 2026 lib review (no code until individually confirmed): `references/goal-oneremote-lib-review.md`.
 
