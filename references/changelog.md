@@ -5,6 +5,9 @@ Keep entries short and append new updates at the top.
 
 ## 2026-06-04
 
+### Fixed
+- Firebase Functions `predeploy` path expansion (`4846b70`, **TVREMOTE-67**): `firebase.json` uses portable `$RESOURCE_DIR` so Firebase CLI expands the functions directory on deploy hosts (replaces Windows `%RESOURCE_DIR%`).
+
 ### Changed
 - Firebase Functions Pro validation layout (`b65f094`, **TVREMOTE-67**): modular `functions/src/` tree (`handlers/verify-pro-android-purchase.ts`, `android/play-verification.ts`, `pro/catalog.ts`, `entitlement/persist-pro-android.ts`, etc.); `functions/lib/` gitignored; `firebase.json` `predeploy` builds TypeScript before deploy; operator guide updated in `references/goals/goal-pro-receipt-validation-remote-setup.md`.
 
