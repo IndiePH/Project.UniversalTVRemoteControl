@@ -65,6 +65,26 @@ void main() {
     );
   });
 
+  test('blocks while user-input presentation is blocked', () {
+    final policy = InterstitialAdPolicy(
+      minSuccessfulActionsBetweenAds: 1,
+      minIntervalBetweenAds: Duration.zero,
+      sessionImpressionCap: 2,
+      now: DateTime.now,
+    )..recordSuccessfulAction();
+
+    expect(
+      policy.canShow(
+        showAds: true,
+        canRequestAds: true,
+        isLayoutEditMode: false,
+        isModalOpen: false,
+        isPresentationBlocked: true,
+      ),
+      isFalse,
+    );
+  });
+
   test('blocks while layout edit mode or modal state is active', () {
     final policy = InterstitialAdPolicy(
       minSuccessfulActionsBetweenAds: 1,

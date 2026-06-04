@@ -20,6 +20,25 @@ class InterstitialAdController {
   InterstitialAd? _interstitialAd;
   bool _isLoading = false;
   bool _isShowing = false;
+  int _presentationBlockDepth = 0;
+
+  /// Whether a user-input overlay (PIN dialog, text keyboard, feedback) is open.
+  ///
+  /// Interstitials must not show while blocked — including late async show attempts
+  /// after a remote command incremented the engagement counter.
+  bool get isPresentationBlocked => _presentationBlockDepth > 0;
+
+  /// Prevents [maybeShow] and [_showLoadedAd] while a user-input session is active.
+  void acquirePresentationBlock() {
+    _presentationBlockDepth += 1;
+  }
+
+  /// Releases one [acquirePresentationBlock]; mismatched release is ignored.
+  void releasePresentationBlock() {
+    if (_presentationBlockDepth > 0) {
+      _presentationBlockDepth -= 1;
+    }
+  }
 
   void dispose() {
     _interstitialAd?.dispose();
@@ -52,7 +71,7 @@ class InterstitialAdController {
     required bool isLayoutEditMode,
     required bool isModalOpen,
   }) async {
-    if (_isShowing) {
+    if (_isShowing || isPresentationBlocked) {
       return;
     }
     if (!_policy.canShow(
@@ -60,6 +79,7 @@ class InterstitialAdController {
       canRequestAds: canRequestAds,
       isLayoutEditMode: isLayoutEditMode,
       isModalOpen: isModalOpen,
+      isPresentationBlocked: isPresentationBlocked,
     )) {
       return;
     }
@@ -75,7 +95,7 @@ class InterstitialAdController {
     required bool showAds,
     required bool canRequestAds,
   }) async {
-    if (_isShowing || !showAds || !canRequestAds) {
+    if (_isShowing || !showAds || !canRequestAds || isPresentationBlocked) {
       return;
     }
     await _showLoadedAd(context, recordPolicyOnShow: false);
@@ -85,6 +105,10 @@ class InterstitialAdController {
     BuildContext context, {
     bool recordPolicyOnShow = true,
   }) async {
+    if (isPresentationBlocked) {
+      return;
+    }
+
     final ad = _interstitialAd;
     if (ad == null) {
       _preloadIfNeeded();

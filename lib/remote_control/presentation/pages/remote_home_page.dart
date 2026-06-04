@@ -284,6 +284,18 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     );
   }
 
+  /// Holds interstitial presentation off while PIN/keyboard/feedback UI is open.
+  Future<T> _withInterstitialPresentationBlocked<T>(
+    Future<T> Function() action,
+  ) async {
+    widget.interstitialAdController.acquirePresentationBlock();
+    try {
+      return await action();
+    } finally {
+      widget.interstitialAdController.releasePresentationBlock();
+    }
+  }
+
   void _subscribeRemoteTextReady(TvDevice? device) {
     _remoteTextReadySub?.cancel();
     _remoteTextReadySub = null;
@@ -769,44 +781,46 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     }
     final platform = defaultTargetPlatform.name;
 
-    final sent = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return FeedbackSubmissionSheet(
-          onSubmit: ({required message, required category}) async {
-            final result = await submissionService.submit(
-              FeedbackPayload(
-                message: message,
-                category: category,
-                platform: platform,
-                appVersion: packageInfo.versionLabel,
-                submittedAtUtc: DateTime.now().toUtc(),
-              ),
-            );
-            if (!mounted) {
-              return FeedbackSheetSubmitOutcome.failed;
-            }
-            if (result.isSuccess) {
-              return FeedbackSheetSubmitOutcome.success;
-            }
-            switch (result.outcome) {
-              case FeedbackSubmissionOutcome.emptyMessage:
-                _showToast(l10n.feedbackMessageTooShort, isError: true);
-                return FeedbackSheetSubmitOutcome.empty;
-              case FeedbackSubmissionOutcome.notConfigured:
-                _showToast(l10n.feedbackNotConfigured, isError: true);
-                return FeedbackSheetSubmitOutcome.notConfigured;
-              case FeedbackSubmissionOutcome.networkError:
-                _showToast(l10n.feedbackSendFailed, isError: true);
+    final sent = await _withInterstitialPresentationBlocked(
+      () => showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (sheetContext) {
+          return FeedbackSubmissionSheet(
+            onSubmit: ({required message, required category}) async {
+              final result = await submissionService.submit(
+                FeedbackPayload(
+                  message: message,
+                  category: category,
+                  platform: platform,
+                  appVersion: packageInfo.versionLabel,
+                  submittedAtUtc: DateTime.now().toUtc(),
+                ),
+              );
+              if (!mounted) {
                 return FeedbackSheetSubmitOutcome.failed;
-              case FeedbackSubmissionOutcome.success:
+              }
+              if (result.isSuccess) {
                 return FeedbackSheetSubmitOutcome.success;
-            }
-          },
-        );
-      },
+              }
+              switch (result.outcome) {
+                case FeedbackSubmissionOutcome.emptyMessage:
+                  _showToast(l10n.feedbackMessageTooShort, isError: true);
+                  return FeedbackSheetSubmitOutcome.empty;
+                case FeedbackSubmissionOutcome.notConfigured:
+                  _showToast(l10n.feedbackNotConfigured, isError: true);
+                  return FeedbackSheetSubmitOutcome.notConfigured;
+                case FeedbackSubmissionOutcome.networkError:
+                  _showToast(l10n.feedbackSendFailed, isError: true);
+                  return FeedbackSheetSubmitOutcome.failed;
+                case FeedbackSubmissionOutcome.success:
+                  return FeedbackSheetSubmitOutcome.success;
+              }
+            },
+          );
+        },
+      ),
     );
 
     if (!mounted) {
@@ -1200,28 +1214,30 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       _showToast(l10n.remoteStatusNoDeviceSelected, isError: true);
       return;
     }
-    final remoteTextInputReady = await widget.commandService
-        .checkRemoteTextInputReady(device: device);
-    if (!mounted) {
-      return;
-    }
-    if (_remoteTextInputReady != remoteTextInputReady) {
-      setState(() => _remoteTextInputReady = remoteTextInputReady);
-    }
-    final availability = RemoteKeyboardAvailability.evaluate(
-      device: device,
-      remoteTextInputReady: remoteTextInputReady,
-      requireImeReady: true,
-    );
-    if (!availability.isAvailable) {
-      _reportKeyboardUnavailable(
+    await _withInterstitialPresentationBlocked(() async {
+      final remoteTextInputReady = await widget.commandService
+          .checkRemoteTextInputReady(device: device);
+      if (!mounted) {
+        return;
+      }
+      if (_remoteTextInputReady != remoteTextInputReady) {
+        setState(() => _remoteTextInputReady = remoteTextInputReady);
+      }
+      final availability = RemoteKeyboardAvailability.evaluate(
         device: device,
-        action: 'press',
-        availability: availability,
+        remoteTextInputReady: remoteTextInputReady,
+        requireImeReady: true,
       );
-      return;
-    }
-    _openTextEntrySheet();
+      if (!availability.isAvailable) {
+        _reportKeyboardUnavailable(
+          device: device,
+          action: 'press',
+          availability: availability,
+        );
+        return;
+      }
+      await _openTextEntrySheet();
+    });
   }
 
   void _reportKeyboardUnavailable({
@@ -1235,11 +1251,11 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     debugPrint(availability.toDebugLog(action: action, deviceId: device.id));
   }
 
-  void _openTextEntrySheet() {
+  Future<void> _openTextEntrySheet() async {
     if (_activeDevice == null) {
       return;
     }
-    showModalBottomSheet<void>(
+    await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,

@@ -34,11 +34,12 @@ class InterstitialAdPolicy {
     required bool canRequestAds,
     required bool isLayoutEditMode,
     required bool isModalOpen,
+    bool isPresentationBlocked = false,
   }) {
     if (!showAds || !canRequestAds) {
       return false;
     }
-    if (isLayoutEditMode || isModalOpen) {
+    if (isPresentationBlocked || isLayoutEditMode || isModalOpen) {
       return false;
     }
     if (_sessionImpressions >= sessionImpressionCap) {

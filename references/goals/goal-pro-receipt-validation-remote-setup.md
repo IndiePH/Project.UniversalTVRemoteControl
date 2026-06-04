@@ -105,10 +105,11 @@ Firebase loads `functions/.env.<projectId>` on deploy for 2nd gen functions.
 ```powershell
 cd functions
 npm install
-npm run build
 cd ..
 npx firebase-tools@latest deploy --only functions
 ```
+
+`firebase.json` runs `npm run build` in `functions/` via `predeploy` before upload. For local emulator or `npm test`, run `npm run build` in `functions/` after changing `src/`.
 
 Expected deploy output includes:
 
@@ -216,10 +217,11 @@ npx firebase-tools@latest use --add oneremote-497701
 
 cd functions
 npm install
-npm run build
 cd ..
 npx firebase-tools@latest deploy --only functions
 ```
+
+Deploy runs `npm run build` via `firebase.json` `predeploy`.
 
 Then complete **Play Console API access** (section 3) and **device test** (section 8).
 
@@ -248,4 +250,4 @@ Protect Firebase backends (callable, Firestore) from scripted abuse and fake cli
 
 ## Why Node.js 20?
 
-Only for the `functions/` backend — `npm install`, `npm run build` (TypeScript), `npm test`, and `firebase deploy --only functions`. The Flutter app uses Dart only; it does not require Node on the developer machine except when working on Cloud Functions.
+Only for the `functions/` backend — `npm install`, `npm test` (builds TypeScript), and `firebase deploy --only functions` (also builds via `predeploy`). Run `npm run build` locally when using the emulator or after editing `src/` without deploying. The Flutter app uses Dart only; it does not require Node on the developer machine except when working on Cloud Functions.

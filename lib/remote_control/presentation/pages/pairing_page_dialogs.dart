@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
+import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -60,16 +62,19 @@ final class PairingPageDialogs {
     required BuildContext context,
     required String pairingMessage,
     PinFormat pinFormat = PinFormat.fourDigitNumeric,
-  }) {
-    final controller = TextEditingController();
-    return showDialog<String>(
+  }) async {
+    final interstitial = _interstitialControllerOrNull();
+    interstitial?.acquirePresentationBlock();
+    final pinController = TextEditingController();
+    try {
+      return await showDialog<String>(
       context: context,
       barrierDismissible: false,
       builder: (context) {
         String? inputError;
 
         String? validatePin(AppLocalizations l10n) {
-          final value = controller.text.trim();
+          final value = pinController.text.trim();
           return switch (pinFormat) {
             PinFormat.sixCharHex =>
               RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)
@@ -88,7 +93,7 @@ final class PairingPageDialogs {
             setDialogState(() => inputError = error);
             return;
           }
-          Navigator.of(context).pop(controller.text.trim().toUpperCase());
+          Navigator.of(context).pop(pinController.text.trim().toUpperCase());
         }
 
         return StatefulBuilder(
@@ -109,7 +114,7 @@ final class PairingPageDialogs {
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: controller,
+                    controller: pinController,
                     keyboardType: isHex
                         ? TextInputType.visiblePassword
                         : TextInputType.number,
@@ -149,6 +154,17 @@ final class PairingPageDialogs {
         );
       },
     );
+    } finally {
+      interstitial?.releasePresentationBlock();
+    }
+  }
+
+  static InterstitialAdController? _interstitialControllerOrNull() {
+    final sl = GetIt.instance;
+    if (!sl.isRegistered<InterstitialAdController>()) {
+      return null;
+    }
+    return sl<InterstitialAdController>();
   }
 
   static Future<void> showPairingOutcome({
