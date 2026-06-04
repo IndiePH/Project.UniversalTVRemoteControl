@@ -15,6 +15,9 @@ import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
 import 'package:one_remote/app/ads/interstitial_ad_policy.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
+import 'package:one_remote/app/package_info/app_package_info.dart';
+import 'package:one_remote/app/package_info/app_package_info_source.dart';
+import 'package:one_remote/app/package_info/package_info_plus_source.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/app/monetization/fake_pro_entitlement_repository.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
@@ -63,8 +66,22 @@ void _useTallTestSurface(WidgetTester tester) {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
+/// Avoids [PackageInfo.fromPlatform] in widget tests (no platform channel).
+Future<void> _stubPackageInfoForWidgetTests() async {
+  final sl = GetIt.instance;
+  if (sl.isRegistered<AppPackageInfoSource>()) {
+    await sl.unregister<AppPackageInfoSource>();
+  }
+  sl.registerLazySingleton<AppPackageInfoSource>(
+    () => PackageInfoPlusSource(
+      cached: const AppPackageInfo(version: '1.0.0-test', buildNumber: '1'),
+    ),
+  );
+}
+
 Future<void> _openSettingsSheet(WidgetTester tester) async {
-  final settingsButton = find.byIcon(Icons.settings_outlined);
+  await _stubPackageInfoForWidgetTests();
+  final settingsButton = find.byTooltip('Settings');
   await tester.ensureVisible(settingsButton);
   await tester.tap(settingsButton);
   for (var i = 0; i < 30; i++) {
@@ -77,22 +94,12 @@ Future<void> _openSettingsSheet(WidgetTester tester) async {
 }
 
 Future<void> _scrollSettingsSheetTo(WidgetTester tester, Finder target) async {
-  final scrollable = find.byType(SingleChildScrollView);
-  for (var attempt = 0; attempt < 24; attempt++) {
-    if (target.evaluate().isEmpty) {
-      break;
-    }
-    final top = tester.getTopLeft(target);
-    if (top.dy >= 0 && top.dy < 2200) {
-      return;
-    }
-    await tester.drag(scrollable, const Offset(0, -180));
-    await tester.pump();
+  if (target.evaluate().isEmpty) {
+    return;
   }
-  await tester.scrollUntilVisible(
-    target,
-    kRemoteWidgetTestScrollUntilVisibleDelta,
-  );
+  // Scroll the settings sheet's ancestor Scrollable, not a off-screen drag point.
+  await tester.ensureVisible(target);
+  await tester.pump();
 }
 
 void _registerRemoteHomePageGetIt({
