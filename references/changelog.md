@@ -3,6 +3,14 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-06-04
+
+### Changed
+- Firebase Functions Pro validation layout (`b65f094`, **TVREMOTE-67**): modular `functions/src/` tree (`handlers/verify-pro-android-purchase.ts`, `android/play-verification.ts`, `pro/catalog.ts`, `entitlement/persist-pro-android.ts`, etc.); `functions/lib/` gitignored; `firebase.json` `predeploy` builds TypeScript before deploy; operator guide updated in `references/goals/goal-pro-receipt-validation-remote-setup.md`.
+
+### Fixed
+- Interstitial ads no longer cover user-input overlays (`b65f094`, **TVREMOTE-63** / **TVREMOTE-66**): presentation-block depth on `InterstitialAdController` during Hisense PIN dialog, remote keyboard sheet, and feedback sheet; policy `canShow` respects `isPresentationBlocked`; tests in `interstitial_ad_controller_test.dart` and `interstitial_ad_policy_test.dart`.
+
 ## 2026-05-30
 
 ### Added
