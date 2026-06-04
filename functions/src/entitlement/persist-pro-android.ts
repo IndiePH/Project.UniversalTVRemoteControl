@@ -2,7 +2,7 @@ import * as admin from 'firebase-admin';
 import { logger } from 'firebase-functions';
 import { assertTokenOwner, sha256Hex } from '../pro/helpers.js';
 
-export type PersistProAndroidEntitlementParams = {
+type PersistProAndroidEntitlementParams = {
   uid: string;
   purchaseToken: string;
   resolvedProductId: string;

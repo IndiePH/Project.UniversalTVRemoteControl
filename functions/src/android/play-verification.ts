@@ -103,7 +103,7 @@ async function verifyAndroidSubscriptionPurchase(params: {
   };
 }
 
-export type PlayVerificationResult = {
+type PlayVerificationResult = {
   entitled: boolean;
   expiresAtEpochMs: number | null;
   resolvedProductId: string;

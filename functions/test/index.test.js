@@ -2,13 +2,15 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  productIdFromSubscriptionV2,
+  subscriptionEntitlementFromV2,
+} = require('../lib/android/subscription-v2.js');
+const {
   assertProProductIdAllowed,
   assertTokenOwner,
   proProductKindFor,
-  productIdFromSubscriptionV2,
   sha256Hex,
-  subscriptionEntitlementFromV2,
-} = require('../lib/index.js');
+} = require('../lib/pro/helpers.js');
 
 describe('Pro receipt validation helpers', () => {
   it('allows configured Pro products and classifies subscriptions', () => {

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "functions/src/index.ts",
+    "functions/test/**/*.test.js"
+  ],
+  "ignorePatterns": ["build/**", ".dart_tool/**", "functions/lib/**"]
+}

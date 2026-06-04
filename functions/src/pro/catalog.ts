@@ -1,4 +1,4 @@
-export const PRO_CATALOG = [
+const PRO_CATALOG = [
   'sub_weekly',
   'sub_monthly',
   'sub_annually',
