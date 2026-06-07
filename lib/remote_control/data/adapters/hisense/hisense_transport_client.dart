@@ -40,7 +40,8 @@ abstract class HisenseTransportClient
   Future<void> probe(String host);
 
   /// Disconnects, clears in-memory authorization state, and stops connectivity
-  /// polling for [deviceId]. Hisense MQTT has no persistent client credential
+  /// polling for [deviceId]. Clears persisted per-host PIN authorization via
+  /// [HisensePairingAuthStore]. Hisense MQTT has no separate token credential;
   /// to wipe; this exists so the next pair attempt re-enters the PIN gate
   /// within the same app session instead of resuming a cached auth.
   Future<void> clearPairing({required String deviceId});

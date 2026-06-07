@@ -8,6 +8,7 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:one_remote/remote_control/application/pin_required_exception.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/data/adapters/adapter_device_info_log_gate.dart';
+import 'package:one_remote/remote_control/data/adapters/hisense/hisense_pairing_auth_store.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
@@ -20,6 +21,7 @@ class HisenseMqttTransportClient
     implements HisenseTransportClient {
   HisenseMqttTransportClient({
     required this._hostResolver,
+    required HisensePairingAuthStore pairingAuthStore,
     String mqttClientId = const String.fromEnvironment(
       'HISENSE_MQTT_CLIENT_ID',
       defaultValue: 'OneRemote',
@@ -38,7 +40,8 @@ class HisenseMqttTransportClient
            ? 'OneRemote'
            : mqttClientId.trim(),
        _textTopic = textTopic.trim(),
-       _brokerPort = brokerPort > 0 ? brokerPort : 36669;
+       _brokerPort = brokerPort > 0 ? brokerPort : 36669,
+       _pairingAuth = pairingAuthStore;
 
   static const String _username = 'hisenseservice';
   static const String _password = 'multimqttservice';
@@ -49,6 +52,7 @@ class HisenseMqttTransportClient
   final String _textTopic;
   final int _brokerPort;
   final int connectTimeoutSeconds;
+  final HisensePairingAuthStore _pairingAuth;
 
   final Map<String, MqttServerClient> _mqttByDeviceId =
       <String, MqttServerClient>{};
@@ -82,6 +86,10 @@ class HisenseMqttTransportClient
     _emitConnectionState(deviceId, ConnectionState.connecting);
     try {
       await _ensureConnected(deviceId);
+      final host = _hostResolver(deviceId).trim();
+      if (host.isNotEmpty && await _pairingAuth.isHostPaired(host)) {
+        _authorizedDeviceIds.add(deviceId);
+      }
       if (!_authorizedDeviceIds.contains(deviceId)) {
         throw const PinRequiredException(
           'Hisense pairing requires a 4-digit code shown on TV. Enter it to continue.',
@@ -123,6 +131,10 @@ class HisenseMqttTransportClient
     final payload = jsonEncode({'authNum': int.parse(cleaned)});
     _publishString(client, _authTopic(), payload);
     _authorizedDeviceIds.add(deviceId);
+    final host = _hostResolver(deviceId).trim();
+    if (host.isNotEmpty) {
+      await _pairingAuth.markHostPaired(host);
+    }
     emitTransportEvent(
       TransportEvent(
         transport: 'hisense',
@@ -370,6 +382,10 @@ class HisenseMqttTransportClient
     _connectivityPollTimers.remove(deviceId)?.cancel();
     _authorizedDeviceIds.remove(deviceId);
     _reconnectInFlight.remove(deviceId);
+    final host = _hostResolver(deviceId).trim();
+    if (host.isNotEmpty) {
+      await _pairingAuth.clearHost(host);
+    }
     final client = _mqttByDeviceId.remove(deviceId);
     try {
       client?.disconnect();

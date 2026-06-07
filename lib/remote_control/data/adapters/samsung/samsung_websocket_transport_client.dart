@@ -47,10 +47,10 @@ class SamsungWebSocketTransportClient
     this.handshakeTimeout = const Duration(seconds: 30),
     this.keyDelay = const Duration(milliseconds: 200),
     SamsungTransportLogging? transportLogging,
-    SamsungPairingTokenStore? pairingTokenStore,
+    required SamsungPairingTokenStore pairingTokenStore,
     SamsungRemoteTextSession? remoteTextSession,
   }) : _logging = transportLogging ?? SamsungTransportLogging(),
-       _pairing = pairingTokenStore ?? SamsungPairingTokenStore(),
+       _pairing = pairingTokenStore,
        _text = remoteTextSession ?? SamsungRemoteTextSession();
 
   final String Function(String deviceId) _hostResolver;
@@ -111,6 +111,7 @@ class SamsungWebSocketTransportClient
     if (host.isEmpty) {
       throw StateError('Samsung host resolver returned an empty host.');
     }
+    await _pairing.ensureHostLoaded(host);
     final secureToken = _pairing.tokenForHost(host);
     final encodedName = base64Encode(utf8.encode(clientName));
     _emitConnectionState(deviceId, ConnectionState.connecting);
@@ -165,7 +166,7 @@ class SamsungWebSocketTransportClient
         }
         await _resetConnection(deviceId);
         if (SamsungTransportAuthorization.isAuthorizationError(error)) {
-          _pairing.clearTokenForHost(host);
+          await _pairing.clearTokenForHost(host);
         }
         _emitConnectionState(deviceId, ConnectionState.error);
       }
@@ -190,6 +191,7 @@ class SamsungWebSocketTransportClient
     final deadline = DateTime.now().add(approvalTimeout);
 
     await SamsungTlsTrustStore.instance.ensureLoaded();
+    await _pairing.ensureHostLoaded(host);
     final hasStoredToken = _pairing.hasNonEmptyToken(host);
     if (!hasStoredToken) {
       await SamsungTlsTrustStore.instance.clearEndpoint(host, _tlsPort);

@@ -16,8 +16,10 @@ import 'package:one_remote/remote_control/debug/fake_roku_transport_client.dart'
 import 'package:one_remote/remote_control/debug/fake_tcl_legacy_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/hisense/hisense_pairing_auth_store.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_mqtt_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_pairing_token_store.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_pairing_key_store.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_transport_client.dart';
@@ -79,8 +81,12 @@ final class RemoteControlDiConfig implements IDiConfig {
       ),
     );
     sl.registerSingleton<LgPairingKeyStore>(LgPairingKeyStore());
+    sl.registerSingleton<SamsungPairingTokenStore>(SamsungPairingTokenStore());
     sl.registerSingleton<SamsungTransportClient>(
-      SamsungWebSocketTransportClient(hostResolver: _resolveHost),
+      SamsungWebSocketTransportClient(
+        hostResolver: _resolveHost,
+        pairingTokenStore: sl<SamsungPairingTokenStore>(),
+      ),
     );
     sl.registerSingleton<LgTransportClient>(
       LgWebSocketTransportClient(
@@ -88,8 +94,12 @@ final class RemoteControlDiConfig implements IDiConfig {
         keyStore: sl<LgPairingKeyStore>(),
       ),
     );
+    sl.registerSingleton<HisensePairingAuthStore>(HisensePairingAuthStore());
     sl.registerSingleton<HisenseTransportClient>(
-      HisenseMqttTransportClient(hostResolver: _resolveHost),
+      HisenseMqttTransportClient(
+        hostResolver: _resolveHost,
+        pairingAuthStore: sl<HisensePairingAuthStore>(),
+      ),
     );
     sl.registerSingleton<AndroidTvCertificateStore>(
       AndroidTvCertificateStore(),

@@ -49,10 +49,8 @@ class HisenseAdapter implements TvBrandAdapter {
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {
-    // Hisense MQTT has no persistent client credential to wipe (PIN auth is
-    // per-session in-memory). clearPairing resets the in-session authorized
-    // flag so the next pair attempt re-enters the PIN gate instead of
-    // resuming a cached auth.
+    // Clears persisted per-host PIN authorization so the next pair attempt
+    // re-enters the PIN gate.
     await _transportClient.clearPairing(deviceId: device.id);
   }
 

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
+import 'package:one_remote/remote_control/data/persistence/host_scoped_secret_persistence.dart';
+import 'package:one_remote/remote_control/data/persistence/secure_host_scoped_secret_persistence.dart';
 
 /// Outcome of inspecting an inbound JSON frame for pairing / token fields.
 enum SamsungPairingFrameOutcome {
@@ -16,46 +18,76 @@ enum SamsungPairingFrameOutcome {
 
 /// Host-keyed pairing token and in-flight TV-approval waiters.
 ///
-/// Does not own sockets; the transport client resets connections when
-/// [handleDecoded] returns [SamsungPairingFrameOutcome.unauthorized].
+/// Tokens are cached in memory and persisted locally per host (encrypted on
+/// mobile). Cleared on [clearTokenForHost] / transport [clearPairing].
 class SamsungPairingTokenStore {
+  SamsungPairingTokenStore({HostScopedSecretPersistence? persistence})
+    : _persistence =
+          persistence ??
+          SecureHostScopedSecretPersistence(keyPrefix: 'samsung_remote_token_');
+
+  final HostScopedSecretPersistence _persistence;
   final Map<String, String> _tokenByHost = <String, String>{};
+  final Set<String> _loadedHosts = <String>{};
   final Map<String, Set<Completer<void>>> _pendingPairingByHost =
       <String, Set<Completer<void>>>{};
 
-  String? tokenForHost(String host) => _tokenByHost[host];
-
-  void setTokenForHost(String host, String token) {
-    _tokenByHost[host] = token;
+  /// Loads the persisted token for [host] into the in-memory cache.
+  Future<void> ensureHostLoaded(String host) async {
+    final normalized = _normalizeHost(host);
+    if (_loadedHosts.contains(normalized)) {
+      return;
+    }
+    _loadedHosts.add(normalized);
+    final stored = await _persistence.read(normalized);
+    if (stored != null && stored.trim().isNotEmpty) {
+      _tokenByHost[normalized] = stored.trim();
+    }
   }
 
-  void clearTokenForHost(String host) {
-    _tokenByHost.remove(host);
+  String? tokenForHost(String host) => _tokenByHost[_normalizeHost(host)];
+
+  Future<void> setTokenForHost(String host, String token) async {
+    final normalized = _normalizeHost(host);
+    final trimmed = token.trim();
+    _tokenByHost[normalized] = trimmed;
+    _loadedHosts.add(normalized);
+    await _persistence.write(normalized, trimmed);
+  }
+
+  Future<void> clearTokenForHost(String host) async {
+    final normalized = _normalizeHost(host);
+    _tokenByHost.remove(normalized);
+    _loadedHosts.remove(normalized);
+    await _persistence.delete(normalized);
   }
 
   bool hasNonEmptyToken(String host) =>
-      (_tokenByHost[host] ?? '').trim().isNotEmpty;
+      (_tokenByHost[_normalizeHost(host)] ?? '').trim().isNotEmpty;
 
-  String trimmedTokenForHost(String host) => _tokenByHost[host]?.trim() ?? '';
+  String trimmedTokenForHost(String host) =>
+      _tokenByHost[_normalizeHost(host)]?.trim() ?? '';
 
   void registerPendingApproval(String host, Completer<void> completer) {
+    final normalized = _normalizeHost(host);
     _pendingPairingByHost
-        .putIfAbsent(host, () => <Completer<void>>{})
+        .putIfAbsent(normalized, () => <Completer<void>>{})
         .add(completer);
   }
 
   void cancelPendingApprovals(String host) {
     _failPendingPairingApprovals(
-      host: host,
+      host: _normalizeHost(host),
       error: StateError('Pairing cancelled'),
     );
   }
 
   void unregisterPendingApproval(String host, Completer<void> completer) {
-    final current = _pendingPairingByHost[host];
+    final normalized = _normalizeHost(host);
+    final current = _pendingPairingByHost[normalized];
     current?.remove(completer);
     if (current != null && current.isEmpty) {
-      _pendingPairingByHost.remove(host);
+      _pendingPairingByHost.remove(normalized);
     }
   }
 
@@ -65,12 +97,13 @@ class SamsungPairingTokenStore {
     String host,
     Map<String, dynamic>? decoded,
   ) {
+    final normalized = _normalizeHost(host);
     if (decoded == null) {
       return SamsungPairingFrameOutcome.ignored;
     }
     if (_isUnauthorizedFrame(decoded)) {
       _failPendingPairingApprovals(
-        host: host,
+        host: normalized,
         error: const SamsungTransportAuthorizationException(
           'Samsung TV rejected remote-control authorization.',
         ),
@@ -83,8 +116,11 @@ class SamsungPairingTokenStore {
     }
     final token = data['token'];
     if (token is String && token.trim().isNotEmpty) {
-      _tokenByHost[host] = token.trim();
-      _completePendingPairingApprovals(host);
+      final trimmed = token.trim();
+      _tokenByHost[normalized] = trimmed;
+      _loadedHosts.add(normalized);
+      unawaited(_persistence.write(normalized, trimmed));
+      _completePendingPairingApprovals(normalized);
       return SamsungPairingFrameOutcome.tokenStored;
     }
     return SamsungPairingFrameOutcome.ignored;
@@ -131,4 +167,6 @@ class SamsungPairingTokenStore {
     }
     return false;
   }
+
+  static String _normalizeHost(String host) => host.trim().toLowerCase();
 }
