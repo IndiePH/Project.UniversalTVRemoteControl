@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
     as remote_connection;
+import 'package:one_remote/remote_control/presentation/widgets/connection_state_presentation.dart';
+import 'package:one_remote/remote_control/presentation/widgets/tv_connection_state_indicator.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_button_metrics.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_header_metrics.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_home_status_panel_metrics.dart';
@@ -41,24 +43,11 @@ class RemoteHomeStatusPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final appColors = AppTheme.colorsOf(context);
-    final (connectionLabel, connectionColor) = switch (connectionState) {
-      remote_connection.ConnectionState.connected => (
-        l10n.connectionStateConnected,
-        appColors.remoteActionSuccessFill,
-      ),
-      remote_connection.ConnectionState.connecting => (
-        l10n.connectionStateConnecting,
-        Theme.of(context).colorScheme.secondary,
-      ),
-      remote_connection.ConnectionState.error => (
-        l10n.connectionStateError,
-        Theme.of(context).colorScheme.error,
-      ),
-      remote_connection.ConnectionState.disconnected => (
-        l10n.connectionStateDisconnected,
-        Theme.of(context).colorScheme.error,
-      ),
-    };
+    final presentation = connectionStatePresentation(
+      context: context,
+      state: connectionState,
+    );
+    final connectionLabel = presentation.label;
     final statusLabel = hasAnyPairedDevice
         ? connectionLabel
         : l10n.connectionStateDisconnected;
@@ -104,10 +93,10 @@ class RemoteHomeStatusPanel extends StatelessWidget {
               blurWhenPairFocus(
                 Row(
                   children: [
-                    Icon(
-                      Icons.circle,
-                      size: RemoteHomeStatusPanelMetrics.connectionDotSize,
-                      color: connectionColor,
+                    TvConnectionStateIndicator(
+                      state: connectionState,
+                      style: TvConnectionStateIndicatorStyle.statusDot,
+                      dotSize: RemoteHomeStatusPanelMetrics.connectionDotSize,
                     ),
                     const SizedBox(
                       width: RemoteHomeStatusPanelMetrics.connectionRowSpacing,

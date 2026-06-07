@@ -63,12 +63,14 @@ class RemoteHomePage extends StatefulWidget {
     required this.discoveryService,
     required this.layoutRepository,
     required this.proEntitlementService,
+    required this.connectionStateService,
     this.transportLogReaderProvider = const NoopTransportLogReaderProvider(),
   });
 
   final AppEnvironment appEnvironment;
   final InterstitialAdController interstitialAdController;
   final RemoteCommandService commandService;
+  final TvConnectionStateService connectionStateService;
   final DeviceRepository deviceRepository;
   final DeviceDiscoveryService discoveryService;
   final LayoutRepository layoutRepository;
@@ -184,8 +186,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   }
 
   bool get _isResolvedFreeTier =>
-      widget.proEntitlementService.statusNotifier.value ==
-      ProEntitlementStatus.notEntitled;
+      FreeTierDevicePolicy.isFreeTierFrom(widget.proEntitlementService);
 
   void _handleProEntitlementChanged() {
     final current = widget.proEntitlementService.statusNotifier.value;
@@ -216,18 +217,17 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   }
 
   Future<void> _refreshSavedDevicesForFreeTier() async {
-    var savedDevices = await widget.deviceRepository.getSavedDevices();
-    final removedExtraDevices =
-        await FreeTierSavedDeviceCleanup.removeNonActiveSavedDevices(
-          isFreeTier: _isResolvedFreeTier,
-          activeDeviceId: _activeDevice?.id,
-          savedDevices: savedDevices,
-          commandService: widget.commandService,
-          deviceRepository: widget.deviceRepository,
-        );
-    if (removedExtraDevices) {
-      savedDevices = await widget.deviceRepository.getSavedDevices();
-    }
+    final initialSavedDevices =
+        await widget.deviceRepository.getSavedDevices();
+    final cleanupOutcome = await FreeTierDevicePolicy.cleanupExtraSavedDevices(
+      isFreeTier: _isResolvedFreeTier,
+      activeDeviceId: _activeDevice?.id,
+      savedDevices: initialSavedDevices,
+      commandService: widget.commandService,
+      deviceRepository: widget.deviceRepository,
+    );
+    final savedDevices = cleanupOutcome.savedDevices;
+    final removedExtraDevices = cleanupOutcome.removed;
     if (!mounted) {
       return;
     }
@@ -332,9 +332,9 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       }
       return;
     }
-    _connectionStateSub = widget.commandService
-        .watchConnectionState(device: device)
-        .listen((state) {
+    _connectionStateSub = widget.connectionStateService.watch(device).listen((
+      state,
+    ) {
           if (!mounted) {
             return;
           }
@@ -584,29 +584,18 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   }
 
   bool _canSwitchToPairedDevice(TvDevice device) {
-    if (widget.proEntitlementService.isPro) {
-      return true;
-    }
-    final activeId = _activeDevice?.id;
-    return activeId == null || activeId == device.id;
+    return ProDeviceSwitchPolicy.canSwitchTo(
+      device: device,
+      activeDeviceId: _activeDevice?.id,
+      isPro: widget.proEntitlementService.isPro,
+    );
   }
 
   List<TvDevice> _devicesForSwitcherDisplay(List<TvDevice> savedDevices) {
-    final activeId = _activeDevice?.id;
-    if (activeId == null) {
-      return savedDevices;
-    }
-    final activeIndex = savedDevices.indexWhere(
-      (device) => device.id == activeId,
+    return SavedDeviceDisplayOrdering.activeFirst(
+      savedDevices: savedDevices,
+      activeDeviceId: _activeDevice?.id,
     );
-    if (activeIndex <= 0) {
-      return savedDevices;
-    }
-    return [
-      savedDevices[activeIndex],
-      ...savedDevices.take(activeIndex),
-      ...savedDevices.skip(activeIndex + 1),
-    ];
   }
 
   Future<void> _showDeviceSwitcher() async {
@@ -618,7 +607,10 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     if (!mounted || savedDevices.isEmpty) {
       return;
     }
-    final canSwitchDevices = widget.proEntitlementService.isPro;
+    final canSwitchDevices = ProDeviceSwitchPolicy.canSwitchBetweenSavedDevices(
+      isPro: widget.proEntitlementService.isPro,
+      activeDeviceId: _activeDevice?.id,
+    );
     _deviceSwitcherSheetOpen = true;
     await showModalBottomSheet<void>(
       context: context,
@@ -637,8 +629,13 @@ class _RemoteHomePageState extends State<RemoteHomePage>
             }
             Navigator.pop(sheetContext);
             unawaited(() async {
-              await widget.deviceRepository.setLastUsedDevice(device.id);
-              if (!mounted) {
+              final persisted = await TvDeviceSelection.tryPersistLastUsed(
+                device: device,
+                activeDeviceId: _activeDevice?.id,
+                isPro: widget.proEntitlementService.isPro,
+                deviceRepository: widget.deviceRepository,
+              );
+              if (!persisted || !mounted) {
                 return;
               }
               await _activateDevice(device);

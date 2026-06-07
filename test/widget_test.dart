@@ -29,6 +29,8 @@ import 'package:one_remote/remote_control/application/command_dispatch_result.da
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
+import 'package:one_remote/remote_control/application/tv_connection_state_service.dart';
+import 'package:one_remote/remote_control/data/multiplexed_tv_connection_state_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
@@ -119,7 +121,12 @@ void _registerRemoteHomePageGetIt({
     ),
   );
   sl.registerSingleton<TvReachabilityService>(_StubTvReachabilityService());
+  sl.registerSingleton<TvConnectionStateService>(_StubTvConnectionStateService());
 }
+
+MultiplexedTvConnectionStateService _multiplexedConnectionStateService(
+  RemoteCommandService commandService,
+) => MultiplexedTvConnectionStateService(commandService: commandService);
 
 void main() {
   test('menu defaults to the former pair grid position', () {
@@ -224,6 +231,9 @@ void main() {
             discoveryService: _EmptyDiscoveryService(),
             layoutRepository: _InMemoryLayoutRepository(),
             proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
           ),
         ),
       );
@@ -316,6 +326,9 @@ void main() {
             discoveryService: _EmptyDiscoveryService(),
             layoutRepository: _InMemoryLayoutRepository(),
             proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
           ),
         ),
       );
@@ -373,6 +386,9 @@ void main() {
           discoveryService: _StaticDiscoveryService(),
           layoutRepository: _InMemoryLayoutRepository(),
           proEntitlementService: _buildEntitledProService(),
+          connectionStateService: _multiplexedConnectionStateService(
+            commandService,
+          ),
         ),
       ),
     );
@@ -448,6 +464,9 @@ void main() {
           discoveryService: _EmptyDiscoveryService(),
           layoutRepository: _InMemoryLayoutRepository(),
           proEntitlementService: _buildEntitledProService(),
+          connectionStateService: _multiplexedConnectionStateService(
+            commandService,
+          ),
         ),
       ),
     );
@@ -505,6 +524,9 @@ void main() {
           discoveryService: _EmptyDiscoveryService(),
           layoutRepository: _InMemoryLayoutRepository(),
           proEntitlementService: _buildEntitledProService(),
+          connectionStateService: _multiplexedConnectionStateService(
+            commandService,
+          ),
         ),
       ),
     );
@@ -548,6 +570,10 @@ void main() {
     await repository.saveDevice(livingRoom);
     await repository.saveDevice(bedroom);
     await repository.setLastUsedDevice(livingRoom.id);
+    final commandService = _ConnectionStateStubCommandService(
+      initialState: remote_connection.ConnectionState.connected,
+    );
+    addTearDown(commandService.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -556,13 +582,14 @@ void main() {
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
           interstitialAdController: _buildInterstitialAdController(),
-          commandService: _ConnectionStateStubCommandService(
-            initialState: remote_connection.ConnectionState.connected,
-          ),
+          commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
           layoutRepository: _InMemoryLayoutRepository(),
           proEntitlementService: _buildFreeProService(),
+          connectionStateService: _multiplexedConnectionStateService(
+            commandService,
+          ),
         ),
       ),
     );
@@ -613,6 +640,11 @@ void main() {
 
       final unpairedDevices = <TvDevice>[];
       final proService = _buildEntitledProService();
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.connected,
+        recordUnpairTo: unpairedDevices,
+      );
+      addTearDown(commandService.dispose);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -621,14 +653,14 @@ void main() {
           home: RemoteHomePage(
             appEnvironment: AppEnvironment.debug,
             interstitialAdController: _buildInterstitialAdController(),
-            commandService: _ConnectionStateStubCommandService(
-              initialState: remote_connection.ConnectionState.connected,
-              recordUnpairTo: unpairedDevices,
-            ),
+            commandService: commandService,
             deviceRepository: repository,
             discoveryService: _EmptyDiscoveryService(),
             layoutRepository: _InMemoryLayoutRepository(),
             proEntitlementService: proService,
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
           ),
         ),
       );
@@ -671,6 +703,7 @@ void main() {
     );
     await repository.saveDevice(activeDevice);
     await repository.setLastUsedDevice(activeDevice.id);
+    final commandService = InMemoryRemoteCommandService();
 
     await tester.pumpWidget(
       MaterialApp(
@@ -679,11 +712,14 @@ void main() {
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
           interstitialAdController: _buildInterstitialAdController(),
-          commandService: InMemoryRemoteCommandService(),
+          commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
           layoutRepository: _InMemoryLayoutRepository(),
           proEntitlementService: _buildEntitledProService(),
+          connectionStateService: _multiplexedConnectionStateService(
+            commandService,
+          ),
         ),
       ),
     );
@@ -729,7 +765,7 @@ void main() {
             hintRegistry: DefaultPairingProgressHintRegistry(
               localizedStrings: FakeLocalizedStrings(),
             ),
-            reachabilityService: _StubTvReachabilityService(),
+            connectionStateService: _StubTvConnectionStateService(),
             proEntitlementService: _buildEntitledProService(),
           ),
         ),
@@ -798,7 +834,7 @@ void main() {
             hintRegistry: DefaultPairingProgressHintRegistry(
               localizedStrings: FakeLocalizedStrings(),
             ),
-            reachabilityService: _StubTvReachabilityService(),
+            connectionStateService: _StubTvConnectionStateService(),
             proEntitlementService: _buildEntitledProService(),
             activeDeviceId: 'samsung-living-room',
           ),
@@ -844,7 +880,7 @@ void main() {
           hintRegistry: DefaultPairingProgressHintRegistry(
             localizedStrings: FakeLocalizedStrings(),
           ),
-          reachabilityService: _StubTvReachabilityService(),
+          connectionStateService: _StubTvConnectionStateService(),
           proEntitlementService: _buildEntitledProService(),
         ),
       ),
@@ -874,7 +910,7 @@ void main() {
           hintRegistry: DefaultPairingProgressHintRegistry(
             localizedStrings: FakeLocalizedStrings(),
           ),
-          reachabilityService: _StubTvReachabilityService(),
+          connectionStateService: _StubTvConnectionStateService(),
           proEntitlementService: _buildEntitledProService(),
         ),
       ),
@@ -928,6 +964,9 @@ void main() {
           discoveryService: _EmptyDiscoveryService(),
           layoutRepository: _InMemoryLayoutRepository(),
           proEntitlementService: _buildEntitledProService(),
+          connectionStateService: _multiplexedConnectionStateService(
+            commandService,
+          ),
         ),
       ),
     );
@@ -978,6 +1017,9 @@ void main() {
           discoveryService: _EmptyDiscoveryService(),
           layoutRepository: _InMemoryLayoutRepository(),
           proEntitlementService: _buildEntitledProService(),
+          connectionStateService: _multiplexedConnectionStateService(
+            commandService,
+          ),
         ),
       ),
     );
@@ -1034,7 +1076,7 @@ void main() {
             hintRegistry: DefaultPairingProgressHintRegistry(
               localizedStrings: FakeLocalizedStrings(),
             ),
-            reachabilityService: _StubTvReachabilityService(),
+            connectionStateService: _StubTvConnectionStateService(),
             proEntitlementService: _buildEntitledProService(),
             activeDeviceId: activeDevice.id,
           ),
@@ -1129,6 +1171,18 @@ class _RecoveringDiscoveryService implements DeviceDiscoveryService {
 class _StubTvReachabilityService implements TvReachabilityService {
   @override
   Future<bool> isReachable(TvDevice device) async => false;
+}
+
+class _StubTvConnectionStateService implements TvConnectionStateService {
+  @override
+  remote_connection.ConnectionState stateFor(String deviceId) =>
+      remote_connection.ConnectionState.disconnected;
+
+  @override
+  Stream<remote_connection.ConnectionState> watch(TvDevice device) =>
+      Stream<remote_connection.ConnectionState>.value(
+        remote_connection.ConnectionState.disconnected,
+      );
 }
 
 Color? _pairButtonColor(WidgetTester tester) {

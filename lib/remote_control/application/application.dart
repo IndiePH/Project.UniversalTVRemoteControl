@@ -1,6 +1,10 @@
 export 'command_dispatch_result.dart';
 export 'device_discovery_service.dart';
+export 'free_tier_device_policy.dart';
 export 'free_tier_saved_device_cleanup.dart';
+export 'pro_device_switch_policy.dart';
+export 'saved_device_display_ordering.dart';
+export 'tv_device_selection.dart';
 export 'device_repository.dart';
 export 'layout_repository.dart';
 export 'pin_required_exception.dart';
@@ -12,4 +16,5 @@ export 'transport_log_provider.dart';
 export 'transport_log_reader.dart';
 export 'transport_log_reader_provider.dart';
 export 'tv_brand_adapter.dart';
+export 'tv_connection_state_service.dart';
 export 'tv_reachability_service.dart';

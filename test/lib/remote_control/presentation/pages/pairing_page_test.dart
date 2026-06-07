@@ -7,7 +7,8 @@ import 'package:one_remote/remote_control/application/command_dispatch_result.da
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
-import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
+import 'package:one_remote/remote_control/application/tv_connection_state_service.dart';
+import 'package:one_remote/remote_control/data/multiplexed_tv_connection_state_service.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
@@ -44,7 +45,7 @@ void main() {
     _StubPairingProgressHintRegistry? hintRegistry,
     DeviceRepository? deviceRepository,
     DeviceDiscoveryService? discoveryService,
-    TvReachabilityService? reachabilityService,
+    TvConnectionStateService? connectionStateService,
     ProEntitlementService? proEntitlementService,
     String? activeDeviceId,
   }) {
@@ -57,8 +58,9 @@ void main() {
         deviceRepository: deviceRepository ?? _StubDeviceRepository(),
         stepsRegistry: stepsRegistry ?? _StubPrePairingStepsRegistry(),
         hintRegistry: hintRegistry ?? _StubPairingProgressHintRegistry(),
-        reachabilityService:
-            reachabilityService ?? _StubTvReachabilityService(),
+        connectionStateService:
+            connectionStateService ??
+            _StubTvConnectionStateService(commandService: commandService),
         proEntitlementService: proEntitlementService ?? buildProService(),
         activeDeviceId: activeDeviceId,
       ),
@@ -113,7 +115,13 @@ void main() {
                       deviceRepository: _StubDeviceRepository(),
                       stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
                       hintRegistry: _StubPairingProgressHintRegistry(),
-                      reachabilityService: _StubTvReachabilityService(),
+                      connectionStateService: _StubTvConnectionStateService(
+                        commandService: _StubCommandService(
+                          preparePairingResult: CommandDispatchResult.success(
+                            'OK',
+                          ),
+                        ),
+                      ),
                       proEntitlementService: buildProService(),
                     ),
                   ),
@@ -1073,9 +1081,21 @@ class _MutableSpyDeviceRepository extends _SpyDeviceRepository {
   }
 }
 
-class _StubTvReachabilityService implements TvReachabilityService {
+class _StubTvConnectionStateService implements TvConnectionStateService {
+  _StubTvConnectionStateService({required RemoteCommandService commandService})
+    : _delegate = MultiplexedTvConnectionStateService(
+        commandService: commandService,
+      );
+
+  final MultiplexedTvConnectionStateService _delegate;
+
   @override
-  Future<bool> isReachable(TvDevice device) async => false;
+  remote_connection.ConnectionState stateFor(String deviceId) =>
+      _delegate.stateFor(deviceId);
+
+  @override
+  Stream<remote_connection.ConnectionState> watch(TvDevice device) =>
+      _delegate.watch(device);
 }
 
 class _StubPrePairingStepsRegistry implements PrePairingStepsRegistry {

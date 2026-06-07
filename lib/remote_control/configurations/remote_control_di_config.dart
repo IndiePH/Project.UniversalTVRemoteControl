@@ -143,6 +143,11 @@ final class RemoteControlDiConfig implements IDiConfig {
         recorder: sl<AppDiagnosticsRecorder>(),
       ),
     );
+    sl.registerSingleton<TvConnectionStateService>(
+      MultiplexedTvConnectionStateService(
+        commandService: sl<RemoteCommandService>(),
+      ),
+    );
     sl.registerSingleton<TvReachabilityService>(
       AdapterTvReachabilityService(adapters: adapters),
     );
@@ -210,6 +215,11 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
       DiagnosticsRecordingRemoteCommandService(
         delegate: commandService,
         recorder: sl<AppDiagnosticsRecorder>(),
+      ),
+    );
+    sl.registerSingleton<TvConnectionStateService>(
+      MultiplexedTvConnectionStateService(
+        commandService: sl<RemoteCommandService>(),
       ),
     );
     sl.registerSingleton<TvReachabilityService>(

@@ -4,15 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
-import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
-import 'package:one_remote/remote_control/application/free_tier_saved_device_cleanup.dart';
-import 'package:one_remote/remote_control/application/remote_command_service.dart';
-import 'package:one_remote/remote_control/application/device_discovery_service.dart';
-import 'package:one_remote/remote_control/application/device_repository.dart';
-import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
+import 'package:one_remote/remote_control/application/application.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variants.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -37,7 +32,7 @@ class PairingPage extends StatefulWidget {
     required this.deviceRepository,
     required this.stepsRegistry,
     required this.hintRegistry,
-    required this.reachabilityService,
+    required this.connectionStateService,
     required this.proEntitlementService,
     this.activeDeviceId,
   });
@@ -47,7 +42,7 @@ class PairingPage extends StatefulWidget {
   final DeviceRepository deviceRepository;
   final PrePairingStepsRegistry stepsRegistry;
   final PairingProgressHintRegistry hintRegistry;
-  final TvReachabilityService reachabilityService;
+  final TvConnectionStateService connectionStateService;
   final ProEntitlementService proEntitlementService;
   final String? activeDeviceId;
 
@@ -106,8 +101,7 @@ class _PairingPageState extends State<PairingPage> {
   }
 
   bool get _isResolvedFreeTier =>
-      widget.proEntitlementService.statusNotifier.value ==
-      ProEntitlementStatus.notEntitled;
+      FreeTierDevicePolicy.isFreeTierFrom(widget.proEntitlementService);
 
   Future<void> _loadRecentManualIps() async {
     final ips = await PairingPageData.loadRecentManualIps(
@@ -127,14 +121,14 @@ class _PairingPageState extends State<PairingPage> {
     var metadata = await PairingPageData.loadPairingMetadata(
       widget.deviceRepository,
     );
-    final removedExtraDevices =
-        await FreeTierSavedDeviceCleanup.removeNonActiveSavedDevices(
-          isFreeTier: _isResolvedFreeTier,
-          activeDeviceId: widget.activeDeviceId,
-          savedDevices: metadata.savedDevices,
-          commandService: widget.commandService,
-          deviceRepository: widget.deviceRepository,
-        );
+    final cleanupOutcome = await FreeTierDevicePolicy.cleanupExtraSavedDevices(
+      isFreeTier: _isResolvedFreeTier,
+      activeDeviceId: widget.activeDeviceId,
+      savedDevices: metadata.savedDevices,
+      commandService: widget.commandService,
+      deviceRepository: widget.deviceRepository,
+    );
+    final removedExtraDevices = cleanupOutcome.removed;
     if (removedExtraDevices) {
       metadata = await PairingPageData.loadPairingMetadata(
         widget.deviceRepository,
@@ -203,10 +197,13 @@ class _PairingPageState extends State<PairingPage> {
       );
       return;
     }
-    final activeId = widget.activeDeviceId;
-    if (!widget.proEntitlementService.isPro &&
-        activeId != null &&
-        activeId != device.id) {
+    final persisted = await TvDeviceSelection.tryPersistLastUsed(
+      device: device,
+      activeDeviceId: widget.activeDeviceId,
+      isPro: widget.proEntitlementService.isPro,
+      deviceRepository: widget.deviceRepository,
+    );
+    if (!persisted) {
       if (!mounted) {
         return;
       }
@@ -219,7 +216,6 @@ class _PairingPageState extends State<PairingPage> {
       );
       return;
     }
-    await widget.deviceRepository.setLastUsedDevice(device.id);
     if (!mounted) {
       return;
     }
@@ -252,26 +248,18 @@ class _PairingPageState extends State<PairingPage> {
   }
 
   Future<void> _replaceActivePairedDeviceForFreeTier(TvDevice newDevice) async {
-    if (widget.proEntitlementService.isPro) {
-      return;
+    final replaced =
+        await FreeTierDevicePolicy.replaceActiveDeviceBeforePairingWhenNotPro(
+          isPro: widget.proEntitlementService.isPro,
+          activeDeviceId: widget.activeDeviceId,
+          newDevice: newDevice,
+          savedDevices: _viewState.savedDevices,
+          commandService: widget.commandService,
+          deviceRepository: widget.deviceRepository,
+        );
+    if (replaced) {
+      await _loadPairingMetadata();
     }
-    final activeId = widget.activeDeviceId;
-    if (activeId == null || activeId == newDevice.id) {
-      return;
-    }
-    TvDevice? activeDevice;
-    for (final saved in _viewState.savedDevices) {
-      if (saved.id == activeId) {
-        activeDevice = saved;
-        break;
-      }
-    }
-    if (activeDevice == null) {
-      return;
-    }
-    await widget.commandService.unpairDevice(device: activeDevice);
-    await widget.deviceRepository.removeSavedDevice(activeDevice.id);
-    await _loadPairingMetadata();
   }
 
   Future<void> _pairSelectedDevice({
@@ -536,27 +524,10 @@ class _PairingPageState extends State<PairingPage> {
 
   /// Saved TVs under **Paired** — active TV first, then remaining save order.
   List<TvDevice> _pairedDevicesForDisplay() {
-    final saved = _viewState.savedDevices;
-    if (saved.isEmpty) {
-      return const [];
-    }
-    final activeId = widget.activeDeviceId;
-    final ordered = <TvDevice>[];
-    if (activeId != null) {
-      for (final device in saved) {
-        if (device.id == activeId) {
-          ordered.add(device);
-          break;
-        }
-      }
-    }
-    for (final device in saved) {
-      if (ordered.any((d) => d.id == device.id)) {
-        continue;
-      }
-      ordered.add(device);
-    }
-    return ordered;
+    return SavedDeviceDisplayOrdering.activeFirst(
+      savedDevices: _viewState.savedDevices,
+      activeDeviceId: widget.activeDeviceId,
+    );
   }
 
   Widget _buildPairedDeviceList(List<TvDevice> pairedDevices) {
@@ -589,10 +560,13 @@ class _PairingPageState extends State<PairingPage> {
             device: device,
             pairedAt: _viewState.pairingHistoryByDeviceId[device.id],
             isActive: device.id == activeDeviceId,
-            switchLocked:
-                !isPro && activeDeviceId != null && activeDeviceId != device.id,
+            switchLocked: ProDeviceSwitchPolicy.isSwitchLocked(
+              device: device,
+              activeDeviceId: activeDeviceId,
+              isPro: isPro,
+            ),
             switchLockTooltip: l10n.proDeviceSwitchLockedTooltip,
-            reachabilityService: widget.reachabilityService,
+            connectionStateService: widget.connectionStateService,
             onConfirmDismiss: (_) async {
               await _confirmRemoveSavedDevice(device);
               return false;

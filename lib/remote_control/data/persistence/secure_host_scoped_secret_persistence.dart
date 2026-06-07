@@ -3,18 +3,14 @@ import 'package:one_remote/remote_control/data/persistence/host_scoped_secret_pe
 
 /// Device-encrypted local storage for per-host TV pairing secrets.
 ///
-/// Uses Android EncryptedSharedPreferences / iOS Keychain via
-/// [FlutterSecureStorage]. Data never leaves the device.
+/// Uses platform secure storage (Android KeyStore-backed AES-GCM / iOS Keychain)
+/// via [FlutterSecureStorage]. Data never leaves the device.
 class SecureHostScopedSecretPersistence implements HostScopedSecretPersistence {
   SecureHostScopedSecretPersistence({
     required String keyPrefix,
     FlutterSecureStorage? storage,
   }) : _prefix = keyPrefix,
-       _storage =
-           storage ??
-           const FlutterSecureStorage(
-             aOptions: AndroidOptions(encryptedSharedPreferences: true),
-           );
+       _storage = storage ?? const FlutterSecureStorage();
 
   final String _prefix;
   final FlutterSecureStorage _storage;

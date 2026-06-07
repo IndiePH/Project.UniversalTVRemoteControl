@@ -5,6 +5,7 @@ export 'fake_device_discovery_service.dart';
 export 'in_memory_device_repository.dart';
 export 'in_memory_remote_command_service.dart';
 export 'mdns_device_discovery_service.dart';
+export 'multiplexed_tv_connection_state_service.dart';
 export 'pairing_progress_hint_registry.dart';
 export 'pre_pairing_steps_registry.dart';
 export 'roku_ssdp_discovery_service.dart';
