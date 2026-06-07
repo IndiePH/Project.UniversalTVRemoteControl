@@ -3,6 +3,18 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-06-07
+
+### Added
+- Per-host pairing credential persistence (`54861ee`): `HostScopedSecretPersistence` + `SecureHostScopedSecretPersistence` via `flutter_secure_storage`; Samsung `SamsungPairingTokenStore`, Hisense `HisensePairingAuthStore`, and LG `LgPairingKeyStore` retain tokens across app restarts; tests in `samsung_pairing_token_store_test.dart`, `hisense_pairing_auth_store_test.dart`, `lg_pairing_key_store_test.dart`.
+- Connection state service (`34788d0`, partial **TVREMOTE-24**): `TvConnectionStateService` + `MultiplexedTvConnectionStateService` multiplex one upstream transport stream per device id; `TvConnectionStateIndicator` + `connection_state_presentation.dart` shared labels/icons.
+- Device policy modules (`34788d0`, extends **TVREMOTE-19**): `FreeTierDevicePolicy`, `ProDeviceSwitchPolicy`, `SavedDeviceDisplayOrdering`, `TvDeviceSelection` extracted from `RemoteHomePage` and `PairingPage`; unit tests for each policy plus `multiplexed_tv_connection_state_service_test.dart`.
+
+### Changed
+- Home and pairing paired-TV rows show live transport connection state instead of one-shot TCP reachability probes (`34788d0`).
+- `SecureHostScopedSecretPersistence` uses platform-default `FlutterSecureStorage` (KeyStore AES-GCM / Keychain) instead of legacy `encryptedSharedPreferences` Android option (`34788d0`).
+- Widget and pairing tests register `TvConnectionStateService` stubs / multiplexed delegates (`34788d0`).
+
 ## 2026-06-04
 
 ### Fixed

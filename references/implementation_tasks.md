@@ -212,6 +212,15 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [x] Firebase Functions Pro validation modularization (`b65f094`, **TVREMOTE-67**): split monolithic `functions/src/index.ts` into `handlers/`, `android/`, `pro/`, `entitlement/`, `callable/`; stop tracking `functions/lib/`; `firebase.json` `predeploy` runs `npm run build`; goal doc notes predeploy workflow (`references/goals/goal-pro-receipt-validation-remote-setup.md`)
 - [x] Firebase Functions predeploy path fix (`4846b70`, **TVREMOTE-67**): `firebase.json` `$RESOURCE_DIR` so deploy runners expand the functions directory correctly
 - [x] Interstitial presentation-block gating (`b65f094`, **TVREMOTE-63** / **TVREMOTE-66**): `InterstitialAdController.acquirePresentationBlock` / `releasePresentationBlock` suppresses `maybeShow` and late async show while PIN dialog, remote keyboard sheet, or feedback sheet is open; wired from `PairingPageDialogs` and `RemoteHomePage`; tests in `interstitial_ad_controller_test.dart`, `interstitial_ad_policy_test.dart`
+- [x] Per-host pairing credential persistence across app restarts (`54861ee`, **TVREMOTE-36** child lanes):
+  - [x] `HostScopedSecretPersistence` + `SecureHostScopedSecretPersistence` via `flutter_secure_storage`
+  - [x] Samsung `SamsungPairingTokenStore`, Hisense `HisensePairingAuthStore`, LG `LgPairingKeyStore` migrated to host-scoped secure storage
+  - [x] Tests: `samsung_pairing_token_store_test.dart`, `hisense_pairing_auth_store_test.dart`, `lg_pairing_key_store_test.dart`
+- [x] Connection state + device policy centralization (`34788d0`, partial **TVREMOTE-24**; extends **TVREMOTE-19**):
+  - [x] `TvConnectionStateService` + `MultiplexedTvConnectionStateService` — one upstream transport subscription per device id
+  - [x] Home + pairing use live transport connection state instead of TCP reachability probes (`TvConnectionStateIndicator`, `connection_state_presentation.dart`)
+  - [x] `FreeTierDevicePolicy`, `ProDeviceSwitchPolicy`, `SavedDeviceDisplayOrdering`, `TvDeviceSelection` extracted from `RemoteHomePage` and `PairingPage`
+  - [x] Tests: policy unit tests + `multiplexed_tv_connection_state_service_test.dart`; widget/pairing stubs updated
 
 ### In Progress
 - [ ] Milestone 3 / Task 3.1:
@@ -369,7 +378,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 
 ### Task 2.4 - Improve connection resilience
 - [ ] Add reconnect backoff strategy for temporary network failures.
-- [ ] Surface clear UI states: connecting, connected, disconnected, retrying.
+- [x] Surface clear UI states: connecting, connected, disconnected, retrying (partial — live transport state on home/pairing via `TvConnectionStateService` `34788d0`; reconnect backoff still pending).
 
 ## Milestone 3 - UX Polish and Product Readiness
 
