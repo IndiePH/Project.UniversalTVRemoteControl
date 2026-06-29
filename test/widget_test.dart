@@ -765,7 +765,7 @@ void main() {
             hintRegistry: DefaultPairingProgressHintRegistry(
               localizedStrings: FakeLocalizedStrings(),
             ),
-            connectionStateService: _StubTvConnectionStateService(),
+            reachabilityService: _StubTvReachabilityService(),
             proEntitlementService: _buildEntitledProService(),
           ),
         ),
@@ -834,7 +834,7 @@ void main() {
             hintRegistry: DefaultPairingProgressHintRegistry(
               localizedStrings: FakeLocalizedStrings(),
             ),
-            connectionStateService: _StubTvConnectionStateService(),
+            reachabilityService: _StubTvReachabilityService(),
             proEntitlementService: _buildEntitledProService(),
             activeDeviceId: 'samsung-living-room',
           ),
@@ -880,7 +880,7 @@ void main() {
           hintRegistry: DefaultPairingProgressHintRegistry(
             localizedStrings: FakeLocalizedStrings(),
           ),
-          connectionStateService: _StubTvConnectionStateService(),
+          reachabilityService: _StubTvReachabilityService(),
           proEntitlementService: _buildEntitledProService(),
         ),
       ),
@@ -910,7 +910,7 @@ void main() {
           hintRegistry: DefaultPairingProgressHintRegistry(
             localizedStrings: FakeLocalizedStrings(),
           ),
-          connectionStateService: _StubTvConnectionStateService(),
+          reachabilityService: _StubTvReachabilityService(),
           proEntitlementService: _buildEntitledProService(),
         ),
       ),
@@ -1076,7 +1076,7 @@ void main() {
             hintRegistry: DefaultPairingProgressHintRegistry(
               localizedStrings: FakeLocalizedStrings(),
             ),
-            connectionStateService: _StubTvConnectionStateService(),
+            reachabilityService: _StubTvReachabilityService(),
             proEntitlementService: _buildEntitledProService(),
             activeDeviceId: activeDevice.id,
           ),

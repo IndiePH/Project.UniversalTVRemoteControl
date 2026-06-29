@@ -7,8 +7,7 @@ import 'package:one_remote/remote_control/application/command_dispatch_result.da
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
-import 'package:one_remote/remote_control/application/tv_connection_state_service.dart';
-import 'package:one_remote/remote_control/data/multiplexed_tv_connection_state_service.dart';
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
@@ -45,7 +44,7 @@ void main() {
     _StubPairingProgressHintRegistry? hintRegistry,
     DeviceRepository? deviceRepository,
     DeviceDiscoveryService? discoveryService,
-    TvConnectionStateService? connectionStateService,
+    TvReachabilityService? reachabilityService,
     ProEntitlementService? proEntitlementService,
     String? activeDeviceId,
   }) {
@@ -58,9 +57,8 @@ void main() {
         deviceRepository: deviceRepository ?? _StubDeviceRepository(),
         stepsRegistry: stepsRegistry ?? _StubPrePairingStepsRegistry(),
         hintRegistry: hintRegistry ?? _StubPairingProgressHintRegistry(),
-        connectionStateService:
-            connectionStateService ??
-            _StubTvConnectionStateService(commandService: commandService),
+        reachabilityService:
+            reachabilityService ?? _StubTvReachabilityService(),
         proEntitlementService: proEntitlementService ?? buildProService(),
         activeDeviceId: activeDeviceId,
       ),
@@ -115,13 +113,7 @@ void main() {
                       deviceRepository: _StubDeviceRepository(),
                       stepsRegistry: _StubPrePairingStepsRegistry(steps: null),
                       hintRegistry: _StubPairingProgressHintRegistry(),
-                      connectionStateService: _StubTvConnectionStateService(
-                        commandService: _StubCommandService(
-                          preparePairingResult: CommandDispatchResult.success(
-                            'OK',
-                          ),
-                        ),
-                      ),
+                      reachabilityService: _StubTvReachabilityService(),
                       proEntitlementService: buildProService(),
                     ),
                   ),
@@ -848,6 +840,106 @@ void main() {
       },
     );
   });
+
+  // ---------------------------------------------------------------------------
+  // Connection indicator
+  // ---------------------------------------------------------------------------
+
+  group('connection indicator', () {
+    const savedDevice = TvDevice(
+      id: 'lg-saved',
+      displayName: 'Saved TV',
+      brand: TvBrand.lg,
+      capabilities: {DeviceCapability.keyCommands},
+    );
+
+    testWidgets('shows spinner while reachability probe is pending', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+          reachabilityService: _NeverResolvingReachabilityService(),
+          activeDeviceId: savedDevice.id,
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is CircularProgressIndicator && w.strokeWidth == 1.5,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows wifi icon when device is reachable', (tester) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+          reachabilityService: const _StubTvReachabilityService(reachable: true),
+          activeDeviceId: savedDevice.id,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.wifi), findsOneWidget);
+      expect(find.byIcon(Icons.wifi_off), findsNothing);
+    });
+
+    testWidgets('shows wifi_off when device is unreachable', (tester) async {
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
+          reachabilityService: const _StubTvReachabilityService(reachable: false),
+          activeDeviceId: savedDevice.id,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.wifi_off), findsOneWidget);
+      expect(find.byIcon(Icons.wifi), findsNothing);
+    });
+
+    testWidgets('probes all paired devices including non-active', (
+      tester,
+    ) async {
+      const otherDevice = TvDevice(
+        id: 'samsung-other',
+        displayName: 'Other TV',
+        brand: TvBrand.samsung,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      final spy = _SpyTvReachabilityService();
+      await tester.pumpWidget(
+        buildPage(
+          commandService: _StubCommandService(
+            preparePairingResult: CommandDispatchResult.success('OK'),
+          ),
+          deviceRepository: _StubDeviceRepository(
+            savedDevices: [savedDevice, otherDevice],
+          ),
+          reachabilityService: spy,
+          activeDeviceId: savedDevice.id,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        spy.probedDeviceIds,
+        containsAll([savedDevice.id, otherDevice.id]),
+      );
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1081,21 +1173,25 @@ class _MutableSpyDeviceRepository extends _SpyDeviceRepository {
   }
 }
 
-class _StubTvConnectionStateService implements TvConnectionStateService {
-  _StubTvConnectionStateService({required RemoteCommandService commandService})
-    : _delegate = MultiplexedTvConnectionStateService(
-        commandService: commandService,
-      );
-
-  final MultiplexedTvConnectionStateService _delegate;
-
+class _StubTvReachabilityService implements TvReachabilityService {
+  const _StubTvReachabilityService({this.reachable = false});
+  final bool reachable;
   @override
-  remote_connection.ConnectionState stateFor(String deviceId) =>
-      _delegate.stateFor(deviceId);
+  Future<bool> isReachable(TvDevice device) async => reachable;
+}
 
+class _NeverResolvingReachabilityService implements TvReachabilityService {
   @override
-  Stream<remote_connection.ConnectionState> watch(TvDevice device) =>
-      _delegate.watch(device);
+  Future<bool> isReachable(TvDevice device) => Completer<bool>().future;
+}
+
+class _SpyTvReachabilityService implements TvReachabilityService {
+  final List<String> probedDeviceIds = [];
+  @override
+  Future<bool> isReachable(TvDevice device) async {
+    probedDeviceIds.add(device.id);
+    return false;
+  }
 }
 
 class _StubPrePairingStepsRegistry implements PrePairingStepsRegistry {

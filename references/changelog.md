@@ -3,6 +3,14 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-06-29
+
+### Fixed
+- Select-a-remote connection indicator regression (`34788d0`): `_PairedTvConnectionIndicator` converted back to a `StatefulWidget` driven by `TvReachabilityService.isReachable` (TCP probe, port 6466) instead of a live `TvConnectionStateService` stream. Non-active paired devices no longer hard-code disconnected — all rows probe independently of which device is active on the home page. `PairedTvListItem`, `PairingPage`, and `RemoteHomeActions.openPairing` wired to `TvReachabilityService` (already DI-registered; no new registrations). `scanCount` re-key already re-fires the probe on each FAB scan tap — no additional polling added.
+
+### Verification
+- `flutter test test/lib/remote_control/presentation/pages/pairing_page_test.dart test/widget_test.dart` — 48 tests passed; 4 new tests added in `pairing_page_test.dart` `connection indicator` group (spinner while pending, wifi on reachable, wifi_off on unreachable, all paired devices probed including non-active).
+
 ## 2026-06-07
 
 ### Added
