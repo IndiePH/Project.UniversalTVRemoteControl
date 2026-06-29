@@ -64,6 +64,10 @@ class TclRokuAdapter implements TvBrandAdapter {
       _transportClient.connect(deviceId: device.id);
 
   @override
+  Future<void> connect({required TvDevice device}) =>
+      _transportClient.connect(deviceId: device.id);
+
+  @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) =>
       _transportClient.queryDeviceInfo(deviceId: device.id);
 

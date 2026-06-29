@@ -1014,6 +1014,9 @@ class _StubCommandService implements RemoteCommandService {
   }) => const Stream.empty();
 
   @override
+  Future<void> connect({required TvDevice device}) async {}
+
+  @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
       null;
 }
@@ -1063,6 +1066,9 @@ class _SlowCommandService implements RemoteCommandService {
   Stream<remote_connection.ConnectionState> watchConnectionState({
     required TvDevice device,
   }) => const Stream.empty();
+
+  @override
+  Future<void> connect({required TvDevice device}) async {}
 
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>

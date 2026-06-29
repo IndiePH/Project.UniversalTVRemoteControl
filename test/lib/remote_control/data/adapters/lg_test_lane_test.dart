@@ -355,6 +355,9 @@ class _SubsetLgAdapter implements TvBrandAdapter {
   }) async {}
 
   @override
+  Future<void> connect({required TvDevice device}) async {}
+
+  @override
   Future<void> probeConnection({required TvDevice device}) async {}
 
   @override

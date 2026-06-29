@@ -42,6 +42,8 @@ abstract class RemoteCommandService {
   /// Normalized remote connection state for the selected TV session.
   Stream<ConnectionState> watchConnectionState({required TvDevice device});
 
+  Future<void> connect({required TvDevice device});
+
   /// Cached or probed model/firmware from the active transport (brand-dependent).
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device});
 }

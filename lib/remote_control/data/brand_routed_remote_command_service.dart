@@ -38,6 +38,14 @@ class BrandRoutedRemoteCommandService
   }
 
   @override
+  Future<void> connect({required TvDevice device}) async {
+    await _adapterFor(
+      device.brand,
+      device.protocolVariant,
+    )?.connect(device: device);
+  }
+
+  @override
   Future<CommandDispatchResult> preparePairing({
     required TvDevice device,
   }) async {

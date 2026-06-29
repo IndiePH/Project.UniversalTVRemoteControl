@@ -1319,6 +1319,9 @@ class _ConnectionStateStubCommandService implements RemoteCommandService {
   });
 
   @override
+  Future<void> connect({required TvDevice device}) async {}
+
+  @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
       null;
 }

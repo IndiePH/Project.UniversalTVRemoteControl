@@ -16,6 +16,9 @@ class InMemoryRemoteCommandService implements RemoteCommandService {
   Future<void> cancelPairing({required TvDevice device}) async {}
 
   @override
+  Future<void> connect({required TvDevice device}) async {}
+
+  @override
   Future<CommandDispatchResult> preparePairing({
     required TvDevice device,
   }) async {

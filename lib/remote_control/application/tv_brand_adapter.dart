@@ -5,6 +5,11 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 abstract class TvBrandAdapter {
+  // Default body conventions used below:
+  //   async {}                    — no-op is correct for some brands (optional lifecycle step)
+  //   throw UnsupportedError      — calling without an override is a caller logic error
+  //   null / false / disconnected — "not applicable" sentinel; caller handles gracefully
+
   TvBrand get brand;
 
   String get protocolVariant => TvDevice.defaultProtocolVariant;
@@ -13,6 +18,8 @@ abstract class TvBrandAdapter {
   Set<RemoteCommand> get supportedCommands;
 
   Future<void> preparePairing({required TvDevice device}) async {}
+
+  Future<void> connect({required TvDevice device}) async {}
 
   /// Probes whether the TV is reachable on the network.
   /// Completes normally if reachable; throws if not.

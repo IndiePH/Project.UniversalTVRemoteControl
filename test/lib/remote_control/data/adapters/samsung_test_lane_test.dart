@@ -683,6 +683,9 @@ class _SubsetSamsungAdapter implements TvBrandAdapter {
   }) async {}
 
   @override
+  Future<void> connect({required TvDevice device}) async {}
+
+  @override
   Future<void> probeConnection({required TvDevice device}) async {}
 
   @override
@@ -743,6 +746,9 @@ class _CompatibilitySamsungAdapter implements TvBrandAdapter {
       TextCompatibilityError.samsungScreenNotAcceptingInput,
     );
   }
+
+  @override
+  Future<void> connect({required TvDevice device}) async {}
 
   @override
   Future<void> probeConnection({required TvDevice device}) async {}

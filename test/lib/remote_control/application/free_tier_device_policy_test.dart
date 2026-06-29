@@ -137,6 +137,9 @@ class _RecordingCommandService implements RemoteCommandService {
   Future<void> cancelPairing({required TvDevice device}) async {}
 
   @override
+  Future<void> connect({required TvDevice device}) async {}
+
+  @override
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
     required String pinCode,

@@ -79,6 +79,32 @@ void main() {
     });
   });
 
+  group('brand dispatch — connect', () {
+    test('routes to the matching brand adapter', () async {
+      final samsung = _RecordingAdapter(brand: TvBrand.samsung);
+      final lg = _RecordingAdapter(brand: TvBrand.lg);
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [samsung, lg],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+
+      await service.connect(device: device);
+
+      expect(samsung.connectCallCount, 1);
+      expect(lg.connectCallCount, 0);
+    });
+
+    test('is a no-op when no adapter configured for brand', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+      await expectLater(service.connect(device: device), completes);
+    });
+  });
+
   // 5.2 — Enrichment: preparePairing resolves capabilities + variant via registries
   // and carries the enriched device in result.device.
 
@@ -862,6 +888,7 @@ class _RecordingAdapter implements TvBrandAdapter {
   int submitPairingCodeCallCount = 0;
   int sendCommandCallCount = 0;
   int sendTextCallCount = 0;
+  int connectCallCount = 0;
 
   @override
   bool get supportsTextInput => _supportsTextInput;
@@ -902,6 +929,11 @@ class _RecordingAdapter implements TvBrandAdapter {
     required String text,
   }) async {
     sendTextCallCount++;
+  }
+
+  @override
+  Future<void> connect({required TvDevice device}) async {
+    connectCallCount++;
   }
 
   @override
@@ -967,6 +999,9 @@ class _ThrowingAdapter implements TvBrandAdapter {
   }) async {
     throw StateError('text error');
   }
+
+  @override
+  Future<void> connect({required TvDevice device}) async {}
 
   @override
   Future<void> probeConnection({required TvDevice device}) async {}

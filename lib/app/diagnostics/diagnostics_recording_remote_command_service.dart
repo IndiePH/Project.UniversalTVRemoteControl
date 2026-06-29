@@ -22,6 +22,10 @@ final class DiagnosticsRecordingRemoteCommandService
       _delegate.cancelPairing(device: device);
 
   @override
+  Future<void> connect({required TvDevice device}) =>
+      _delegate.connect(device: device);
+
+  @override
   Future<bool> checkRemoteTextInputReady({required TvDevice device}) =>
       _delegate.checkRemoteTextInputReady(device: device);
 
