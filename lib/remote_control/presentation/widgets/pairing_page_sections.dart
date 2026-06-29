@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
-import 'package:one_remote/remote_control/application/tv_connection_state_service.dart';
-import 'package:one_remote/remote_control/domain/models/connection_state.dart'
-    as remote_connection;
+import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
-import 'package:one_remote/remote_control/presentation/widgets/tv_connection_state_indicator.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_data.dart';
 import 'package:one_remote/theme/app_theme.dart';
 
@@ -125,7 +122,7 @@ class PairedTvListItem extends StatefulWidget {
     required this.isActive,
     required this.switchLocked,
     this.switchLockTooltip,
-    required this.connectionStateService,
+    required this.reachabilityService,
     required this.onConfirmDismiss,
     required this.onRename,
     required this.onInfo,
@@ -137,7 +134,7 @@ class PairedTvListItem extends StatefulWidget {
   final bool isActive;
   final bool switchLocked;
   final String? switchLockTooltip;
-  final TvConnectionStateService connectionStateService;
+  final TvReachabilityService reachabilityService;
   final Future<bool?> Function(DismissDirection) onConfirmDismiss;
   final VoidCallback onRename;
   final VoidCallback onInfo;
@@ -188,8 +185,7 @@ class _PairedTvListItemState extends State<PairedTvListItem> {
           children: [
             _PairedTvConnectionIndicator(
               device: widget.device,
-              isActive: widget.isActive,
-              connectionStateService: widget.connectionStateService,
+              reachabilityService: widget.reachabilityService,
             ),
             IconButton(
               icon: const Icon(Icons.edit_outlined),
@@ -236,38 +232,46 @@ class _PairedTvListItemState extends State<PairedTvListItem> {
   }
 }
 
-class _PairedTvConnectionIndicator extends StatelessWidget {
+class _PairedTvConnectionIndicator extends StatefulWidget {
   const _PairedTvConnectionIndicator({
     required this.device,
-    required this.isActive,
-    required this.connectionStateService,
+    required this.reachabilityService,
   });
 
   final TvDevice device;
-  final bool isActive;
-  final TvConnectionStateService connectionStateService;
+  final TvReachabilityService reachabilityService;
+
+  @override
+  State<_PairedTvConnectionIndicator> createState() =>
+      _PairedTvConnectionIndicatorState();
+}
+
+class _PairedTvConnectionIndicatorState
+    extends State<_PairedTvConnectionIndicator> {
+  late Future<bool> _reachableFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _reachableFuture = widget.reachabilityService.isReachable(widget.device);
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (!isActive) {
-      return TvConnectionStateIndicator(
-        state: remote_connection.ConnectionState.disconnected,
-      );
-    }
-    return StreamBuilder<remote_connection.ConnectionState>(
-      stream: connectionStateService.watch(device),
-      initialData: connectionStateService.stateFor(device.id),
+    return FutureBuilder<bool>(
+      future: _reachableFuture,
       builder: (context, snapshot) {
-        final state =
-            snapshot.data ?? remote_connection.ConnectionState.disconnected;
-        if (state == remote_connection.ConnectionState.connecting) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox(
             width: 16,
             height: 16,
             child: CircularProgressIndicator(strokeWidth: 1.5),
           );
         }
-        return TvConnectionStateIndicator(state: state);
+        final reachable = snapshot.data ?? false;
+        return reachable
+            ? const Icon(Icons.wifi, size: 18, color: Colors.green)
+            : Icon(Icons.wifi_off, size: 18, color: Theme.of(context).disabledColor);
       },
     );
   }

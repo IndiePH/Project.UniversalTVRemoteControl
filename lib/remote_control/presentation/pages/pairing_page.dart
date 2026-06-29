@@ -32,7 +32,7 @@ class PairingPage extends StatefulWidget {
     required this.deviceRepository,
     required this.stepsRegistry,
     required this.hintRegistry,
-    required this.connectionStateService,
+    required this.reachabilityService,
     required this.proEntitlementService,
     this.activeDeviceId,
   });
@@ -42,7 +42,7 @@ class PairingPage extends StatefulWidget {
   final DeviceRepository deviceRepository;
   final PrePairingStepsRegistry stepsRegistry;
   final PairingProgressHintRegistry hintRegistry;
-  final TvConnectionStateService connectionStateService;
+  final TvReachabilityService reachabilityService;
   final ProEntitlementService proEntitlementService;
   final String? activeDeviceId;
 
@@ -566,7 +566,7 @@ class _PairingPageState extends State<PairingPage> {
               isPro: isPro,
             ),
             switchLockTooltip: l10n.proDeviceSwitchLockedTooltip,
-            connectionStateService: widget.connectionStateService,
+            reachabilityService: widget.reachabilityService,
             onConfirmDismiss: (_) async {
               await _confirmRemoveSavedDevice(device);
               return false;

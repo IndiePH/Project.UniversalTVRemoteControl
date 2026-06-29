@@ -106,6 +106,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   Timer? _pairButtonHintResetTimer;
   OverlayEntry? _toastOverlayEntry;
   Timer? _toastOverlayTimer;
+  Timer? _connectionRetryTimer;
   ProEntitlementStatus _lastKnownProStatus = ProEntitlementStatus.unknown;
   bool _suppressProActivatedToast = false;
 
@@ -164,6 +165,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     );
     _remoteTextReadySub?.cancel();
     _connectionStateSub?.cancel();
+    _stopConnectionRetry();
     _pairButtonBlinkTimer?.cancel();
     _pairButtonHintResetTimer?.cancel();
     _toastOverlayTimer?.cancel();
@@ -174,8 +176,15 @@ class _RemoteHomePageState extends State<RemoteHomePage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _stopConnectionRetry();
+    }
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshProEntitlementOnResume());
+      if (_activeDevice != null &&
+          _connectionState != remote_connection.ConnectionState.connected) {
+        _startConnectionRetry(_activeDevice!);
+      }
     }
   }
 
@@ -321,6 +330,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   void _subscribeConnectionState(TvDevice? device) {
     _connectionStateSub?.cancel();
     _connectionStateSub = null;
+    _stopConnectionRetry();
     if (device == null) {
       if (mounted) {
         setState(
@@ -352,7 +362,40 @@ class _RemoteHomePageState extends State<RemoteHomePage>
               _applyStatusKind(RemoteHomeStatusKind.transportIdle);
             }
           });
+          if (state == remote_connection.ConnectionState.error) {
+            _startConnectionRetry(device);
+          } else if (state == remote_connection.ConnectionState.disconnected &&
+              _activeDevice != null) {
+            _startConnectionRetry(device);
+          } else if (state == remote_connection.ConnectionState.connected) {
+            _stopConnectionRetry();
+          }
         });
+    unawaited(widget.commandService.connect(device: device));
+  }
+
+  void _startConnectionRetry(TvDevice device) {
+    if (_connectionRetryTimer?.isActive == true) {
+      return;
+    }
+    _connectionRetryTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_connectionState == remote_connection.ConnectionState.connected) {
+        _stopConnectionRetry();
+        return;
+      }
+      // Skip while another route is on top (e.g. pairing page) — avoids
+      // sending a connect to the active TV while the user is pairing a new one.
+      // Resumes naturally on the next tick once this page is current again.
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) {
+        return;
+      }
+      unawaited(widget.commandService.connect(device: device));
+    });
+  }
+
+  void _stopConnectionRetry() {
+    _connectionRetryTimer?.cancel();
+    _connectionRetryTimer = null;
   }
 
   Future<void> _loadInitialDevice() async {

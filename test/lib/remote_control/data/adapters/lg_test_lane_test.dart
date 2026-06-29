@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/text_compatibility_error.dart';
@@ -308,11 +310,84 @@ void main() {
       expect(values, [false]);
     },
   );
+
+  test(
+    'LG adapter: concurrent connect() and watchConnectionState share one transport connect',
+    () async {
+      final completer = Completer<void>();
+      final transport = _SlowLgTransportClient(completer.future);
+      final adapter = LgAdapter(transportClient: transport);
+
+      adapter.watchConnectionState(lgDevice).listen((_) {});
+      unawaited(adapter.connect(device: lgDevice));
+
+      await Future<void>.microtask(() {});
+      expect(transport.connectCalls, 1);
+
+      completer.complete();
+      await Future<void>.microtask(() {});
+      expect(transport.connectCalls, 1);
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
+
+class _SlowLgTransportClient
+    with TransportEventEmitterMixin
+    implements LgTransportClient {
+  _SlowLgTransportClient(this._connectFuture);
+
+  final Future<void> _connectFuture;
+  int connectCalls = 0;
+
+  @override
+  Future<void> connect({required String deviceId}) async {
+    connectCalls++;
+    await _connectFuture;
+  }
+
+  @override
+  Future<String> requestClientKey({
+    required String deviceId,
+    Duration timeout = const Duration(seconds: 20),
+  }) async => 'key';
+
+  @override
+  Future<void> sendKey({required String deviceId, required String keyCode}) async {}
+
+  @override
+  Future<void> sendText({required String deviceId, required String text}) async {}
+
+  @override
+  Stream<LgRegistrationState> watchRegistrationState(String deviceId) =>
+      Stream<LgRegistrationState>.value(LgRegistrationState.registered);
+
+  @override
+  Stream<bool> watchRemoteTextInputReady(String deviceId) =>
+      Stream<bool>.value(false);
+
+  @override
+  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {}
+
+  @override
+  Future<void> disconnect({required String deviceId}) async {}
+
+  @override
+  void cancelPairing(String deviceId) {}
+
+  @override
+  Future<void> probe(String host) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
+}
 
 class _SubsetLgAdapter implements TvBrandAdapter {
   const _SubsetLgAdapter();
@@ -353,6 +428,9 @@ class _SubsetLgAdapter implements TvBrandAdapter {
     required TvDevice device,
     required RemoteCommand command,
   }) async {}
+
+  @override
+  Future<void> connect({required TvDevice device}) async {}
 
   @override
   Future<void> probeConnection({required TvDevice device}) async {}

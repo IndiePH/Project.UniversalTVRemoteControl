@@ -63,7 +63,7 @@ flutter test
 | --- | --- | --- |
 | Flutter build mode | `kDebugMode` (default `flutter run`) | `kReleaseMode` (`flutter build apk --release`, etc.) |
 | App DI environment | `AppEnvironment.debug` via `AppBuildConfig.environmentForMain()` | `AppEnvironment.production` |
-| Android Gradle | `buildTypes.debug` (default) | `buildTypes.release` signed via `android/key.properties` (falls back to debug if missing) |
+| Android Gradle | `buildTypes.debug` (default) | `buildTypes.release` signed via `android/key.properties` (release Gradle tasks fail explicitly if missing; debug builds unaffected) |
 | iOS Xcode | Debug configuration | Release configuration |
 
 **Not implemented yet (by design):**
@@ -71,6 +71,33 @@ flutter test
 - Gradle **product flavors** (e.g. `dev` / `staging` / `prod`) - configuration uses `--dart-define` and in-app debug toggles instead; see **Current Runtime Modes** above.
 - `AppEnvironment.development` - enum value reserved; `AppBuildConfig.developmentFlavorReserved` documents the hook until a flavor or dart-define wires it.
 - **Profile** builds (`flutter run --profile`) use production DI today; profile-specific hooks can attach to `AppBuildProfile.profile` in `lib/app/configurations/app_build_config.dart`.
+
+### Building APKs for local testing
+
+**Debug APK** — no signing required, suitable for sideloading and device testing:
+
+```
+flutter build apk --debug
+```
+
+Output: `build/app/outputs/flutter-apk/app-debug.apk`
+
+**Release APK** — requires `android/key.properties`:
+
+```
+flutter build apk --release
+```
+
+`android/key.properties` is gitignored. Create it before running a release build:
+
+```
+storePassword=<your-password>
+keyPassword=<your-key-password>
+keyAlias=<your-alias>
+storeFile=<path-to-your.jks>
+```
+
+When `key.properties` is present, `signingConfigs.release` is applied to the release build type. When it is absent, the signing config is skipped and `gradle.taskGraph.whenReady` throws an explicit error if `assembleRelease` or `bundleRelease` is in the task graph — debug builds are unaffected.
 
 Lint rules: `analysis_options.yaml` includes `package:flutter_lints/flutter.yaml`.
 

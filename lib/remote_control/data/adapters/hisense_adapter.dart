@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_key_mapper.dart';
@@ -34,6 +36,7 @@ class HisenseAdapter implements TvBrandAdapter {
 
   final HisenseTransportClient _transportClient;
   final CommandKeyMap _keyMap;
+  final Map<String, Future<void>> _connectInFlight = {};
   static const bool _isTextInputEnabled = bool.fromEnvironment(
     'HISENSE_ENABLE_TEXT_INPUT',
     defaultValue: false,
@@ -60,6 +63,18 @@ class HisenseAdapter implements TvBrandAdapter {
   @override
   Future<void> preparePairing({required TvDevice device}) async {
     await _transportClient.connect(deviceId: device.id);
+  }
+
+  @override
+  Future<void> connect({required TvDevice device}) {
+    return _connectInFlight.putIfAbsent(
+      device.id,
+      () {
+        final f = _transportClient.connect(deviceId: device.id);
+        unawaited(f.whenComplete(() => _connectInFlight.remove(device.id)));
+        return f;
+      },
+    );
   }
 
   @override
@@ -115,7 +130,7 @@ class HisenseAdapter implements TvBrandAdapter {
   @override
   Stream<ConnectionState> watchConnectionState(TvDevice device) async* {
     try {
-      await _transportClient.connect(deviceId: device.id);
+      await connect(device: device);
     } catch (_) {
       yield ConnectionState.error;
       return;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_transport_client.dart';
@@ -263,11 +265,79 @@ void main() {
       );
     },
   );
+
+  test(
+    'Hisense adapter: concurrent connect() and watchConnectionState share one transport connect',
+    () async {
+      final completer = Completer<void>();
+      final transport = _SlowHisenseTransportClient(completer.future);
+      final adapter = HisenseAdapter(transportClient: transport);
+
+      adapter.watchConnectionState(hisenseDevice).listen((_) {});
+      unawaited(adapter.connect(device: hisenseDevice));
+
+      await Future<void>.microtask(() {});
+      expect(transport.connectCalls, 1);
+
+      completer.complete();
+      await Future<void>.microtask(() {});
+      expect(transport.connectCalls, 1);
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
+
+class _SlowHisenseTransportClient
+    with TransportEventEmitterMixin
+    implements HisenseTransportClient {
+  _SlowHisenseTransportClient(this._connectFuture);
+
+  final Future<void> _connectFuture;
+  int connectCalls = 0;
+
+  @override
+  Future<void> connect({required String deviceId}) async {
+    connectCalls++;
+    await _connectFuture;
+  }
+
+  @override
+  Future<void> submitAuthenticationCode({
+    required String deviceId,
+    required String fourDigitPin,
+  }) async {}
+
+  @override
+  Future<void> sendKey({required String deviceId, required String keyName}) async {}
+
+  @override
+  Future<void> launchVidaaApp({
+    required String deviceId,
+    required String displayName,
+    required String url,
+    int urlType = 37,
+    int storeType = 0,
+  }) async {}
+
+  @override
+  Future<void> sendText({required String deviceId, required String text}) async {}
+
+  @override
+  Future<void> probe(String host) async {}
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {}
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
+
+  @override
+  Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
+}
 
 class _SpyHisenseTransportClient
     with TransportEventEmitterMixin

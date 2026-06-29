@@ -3,6 +3,27 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-06-29
+
+### Fixed
+- Select-a-remote connection indicator regression (`34788d0`): `_PairedTvConnectionIndicator` converted back to a `StatefulWidget` driven by `TvReachabilityService.isReachable` (TCP probe, port 6466) instead of a live `TvConnectionStateService` stream. Non-active paired devices no longer hard-code disconnected — all rows probe independently of which device is active on the home page. `PairedTvListItem`, `PairingPage`, and `RemoteHomeActions.openPairing` wired to `TvReachabilityService` (already DI-registered; no new registrations). `scanCount` re-key already re-fires the probe on each FAB scan tap — no additional polling added.
+
+### Verification
+- `flutter test test/lib/remote_control/presentation/pages/pairing_page_test.dart test/widget_test.dart` — 48 tests passed; 4 new tests added in `pairing_page_test.dart` `connection indicator` group (spinner while pending, wifi on reachable, wifi_off on unreachable, all paired devices probed including non-active).
+
+### Added
+- Fix 2a — `connect()` added to `TvBrandAdapter` interface and `BrandRoutedRemoteCommandService`; `LgAdapter`, `SamsungAdapter`, and `HisenseAdapter` each gain a `Map<String, Future<void>> _connectInFlight` in-flight guard so concurrent callers sharing the same device ID join the same transport future instead of opening duplicate connections.
+- Fix 2b — `RemoteHomePage._subscribeConnectionState` fires `unawaited(commandService.connect(device))` immediately after subscribing to `watchConnectionState`; `_startConnectionRetry` starts a `Timer.periodic(5 s)` reconnect loop on disconnect; `_stopConnectionRetry` cancels it on connected/error; `dispose` always cancels the timer; `AppLifecycleState` pauses and resumes the retry on background/foreground transitions.
+
+### Fixed
+- Concurrent-connect regression (Fix 2a timing): the initial in-flight guard returned `_transportClient.connect().whenComplete(cleanup)` from `connect()`, adding an extra microtask hop when `watchConnectionState` awaited it. This broke the widget test `pairs to discovered TV and sends command from remote` — `_connectionState` was not yet `connected` when the power button was tapped. Fixed by returning the transport future directly from `connect()` and scheduling cleanup as a fire-and-forget side effect via `unawaited(f.whenComplete(...))`, preserving original 1-hop timing while keeping the race guard intact.
+
+### Fixed
+- Spurious LG pairing popup on active TV (Bug 1): `_startConnectionRetry` in `RemoteHomePage` now guards each timer tick with `!mounted || ModalRoute.of(context)?.isCurrent != true` — skips `connect()` while any route is on top of the home page (e.g. pairing page, settings). When the user returns, `isCurrent` is `true` again and the next tick resumes normally. Eliminates the race where the 5 s retry fired `connect(activeTV)` without a stored key while `preparePairing(newTV)` was in progress, causing an unwanted SSAP approval popup on the active TV.
+
+### Verification
+- `flutter test` — 453 tests passed (includes 3 new concurrent-connect tests in `lg_test_lane_test.dart`, `samsung_test_lane_test.dart`, `hisense_test_lane_test.dart`; 2 new widget tests `retry timer skips connect while another route is on top` and `retry timer resumes connect after pushed route pops` in `widget_test.dart`).
+
 ## 2026-06-07
 
 ### Added

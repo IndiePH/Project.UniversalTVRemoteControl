@@ -887,6 +887,9 @@ class _StubCommandService implements RemoteCommandService {
       const Stream.empty();
 
   @override
+  Future<void> connect({required TvDevice device}) async {}
+
+  @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
       null;
 }

@@ -52,6 +52,10 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
       _transportClient.connect(deviceId: device.id);
 
   @override
+  Future<void> connect({required TvDevice device}) =>
+      _transportClient.connect(deviceId: device.id);
+
+  @override
   Future<void> submitPairingCode({
     required TvDevice device,
     required String pinCode,
