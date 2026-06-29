@@ -11,6 +11,16 @@ Keep entries short and append new updates at the top.
 ### Verification
 - `flutter test test/lib/remote_control/presentation/pages/pairing_page_test.dart test/widget_test.dart` — 48 tests passed; 4 new tests added in `pairing_page_test.dart` `connection indicator` group (spinner while pending, wifi on reachable, wifi_off on unreachable, all paired devices probed including non-active).
 
+### Added
+- Fix 2a — `connect()` added to `TvBrandAdapter` interface and `BrandRoutedRemoteCommandService`; `LgAdapter`, `SamsungAdapter`, and `HisenseAdapter` each gain a `Map<String, Future<void>> _connectInFlight` in-flight guard so concurrent callers sharing the same device ID join the same transport future instead of opening duplicate connections.
+- Fix 2b — `RemoteHomePage._subscribeConnectionState` fires `unawaited(commandService.connect(device))` immediately after subscribing to `watchConnectionState`; `_startConnectionRetry` starts a `Timer.periodic(5 s)` reconnect loop on disconnect; `_stopConnectionRetry` cancels it on connected/error; `dispose` always cancels the timer; `AppLifecycleState` pauses and resumes the retry on background/foreground transitions.
+
+### Fixed
+- Concurrent-connect regression (Fix 2a timing): the initial in-flight guard returned `_transportClient.connect().whenComplete(cleanup)` from `connect()`, adding an extra microtask hop when `watchConnectionState` awaited it. This broke the widget test `pairs to discovered TV and sends command from remote` — `_connectionState` was not yet `connected` when the power button was tapped. Fixed by returning the transport future directly from `connect()` and scheduling cleanup as a fire-and-forget side effect via `unawaited(f.whenComplete(...))`, preserving original 1-hop timing while keeping the race guard intact.
+
+### Verification
+- `flutter test` — 451 tests passed (includes 3 new concurrent-connect tests in `lg_test_lane_test.dart`, `samsung_test_lane_test.dart`, `hisense_test_lane_test.dart`).
+
 ## 2026-06-07
 
 ### Added

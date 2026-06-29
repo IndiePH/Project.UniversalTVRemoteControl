@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:one_remote/remote_control/application/transport_log_provider.dart';
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
@@ -51,6 +53,7 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
 
   final SamsungTransportClient _transportClient;
   final CommandKeyMap _keyMapper;
+  final Map<String, Future<void>> _connectInFlight = {};
 
   static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
 
@@ -80,8 +83,16 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   }
 
   @override
-  Future<void> connect({required TvDevice device}) =>
-      _transportClient.connect(deviceId: device.id);
+  Future<void> connect({required TvDevice device}) {
+    return _connectInFlight.putIfAbsent(
+      device.id,
+      () {
+        final f = _transportClient.connect(deviceId: device.id);
+        unawaited(f.whenComplete(() => _connectInFlight.remove(device.id)));
+        return f;
+      },
+    );
+  }
 
   @override
   Future<void> submitPairingCode({
@@ -133,7 +144,7 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   @override
   Stream<ConnectionState> watchConnectionState(TvDevice device) async* {
     try {
-      await _transportClient.connect(deviceId: device.id);
+      await connect(device: device);
     } catch (_) {
       yield ConnectionState.error;
       return;

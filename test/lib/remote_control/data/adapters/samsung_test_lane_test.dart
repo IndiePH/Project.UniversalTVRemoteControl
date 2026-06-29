@@ -359,6 +359,25 @@ void main() {
       expect(transport.probeRemoteTextInputReadyCalls, 1);
     },
   );
+
+  test(
+    'Samsung adapter: concurrent connect() and watchConnectionState share one transport connect',
+    () async {
+      final completer = Completer<void>();
+      final transport = _SlowSamsungTransportClient(completer.future);
+      final adapter = SamsungAdapter(transportClient: transport);
+
+      adapter.watchConnectionState(samsungDevice).listen((_) {});
+      unawaited(adapter.connect(device: samsungDevice));
+
+      await Future<void>.microtask(() {});
+      expect(transport.connectCalls, 1);
+
+      completer.complete();
+      await Future<void>.microtask(() {});
+      expect(transport.connectCalls, 1);
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -448,6 +467,61 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
     clearPairingCalls += 1;
     clearPairingDeviceIds.add(deviceId);
   }
+}
+
+class _SlowSamsungTransportClient implements SamsungTransportClient {
+  _SlowSamsungTransportClient(this._connectFuture);
+
+  final Future<void> _connectFuture;
+  int connectCalls = 0;
+
+  @override
+  Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
+
+  @override
+  Future<void> connect({required String deviceId}) async {
+    connectCalls++;
+    await _connectFuture;
+  }
+
+  @override
+  Future<void> requestPairingApproval({
+    required String deviceId,
+    required String triggerKeyCode,
+    Duration approvalTimeout = const Duration(seconds: 45),
+  }) async {}
+
+  @override
+  Future<void> sendKey({required String deviceId, required String keyCode}) async {}
+
+  @override
+  Future<void> sendText({required String deviceId, required String text}) async {}
+
+  @override
+  Stream<bool> watchRemoteTextInputReady(String deviceId) =>
+      Stream<bool>.value(false);
+
+  @override
+  Future<bool> probeRemoteTextInputReady({
+    required String deviceId,
+    Duration timeout = const Duration(milliseconds: 750),
+  }) async => false;
+
+  @override
+  Stream<ConnectionState> watchConnectionState(String deviceId) =>
+      Stream<ConnectionState>.value(ConnectionState.connected);
+
+  @override
+  Future<void> probe(String host) async {}
+
+  @override
+  TvDeviceInfo? getCachedDeviceInfo(String deviceId) => null;
+
+  @override
+  void cancelPairing(String deviceId) {}
+
+  @override
+  Future<void> clearPairing({required String deviceId}) async {}
 }
 
 class _TimeoutSamsungTransportClient implements SamsungTransportClient {

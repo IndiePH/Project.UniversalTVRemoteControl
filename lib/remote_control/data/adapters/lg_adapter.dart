@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_key_mapper.dart';
@@ -28,6 +30,7 @@ class LgAdapter implements TvBrandAdapter {
 
   final LgTransportClient _transportClient;
   final CommandKeyMap _keyMap;
+  final Map<String, Future<void>> _connectInFlight = {};
 
   static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
 
@@ -44,8 +47,16 @@ class LgAdapter implements TvBrandAdapter {
   }
 
   @override
-  Future<void> connect({required TvDevice device}) =>
-      _transportClient.connect(deviceId: device.id);
+  Future<void> connect({required TvDevice device}) {
+    return _connectInFlight.putIfAbsent(
+      device.id,
+      () {
+        final f = _transportClient.connect(deviceId: device.id);
+        unawaited(f.whenComplete(() => _connectInFlight.remove(device.id)));
+        return f;
+      },
+    );
+  }
 
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async {
@@ -117,7 +128,7 @@ class LgAdapter implements TvBrandAdapter {
   @override
   Stream<ConnectionState> watchConnectionState(TvDevice device) async* {
     try {
-      await _transportClient.connect(deviceId: device.id);
+      await connect(device: device);
     } catch (_) {
       yield ConnectionState.error;
       return;

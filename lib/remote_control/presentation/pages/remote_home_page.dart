@@ -383,6 +383,12 @@ class _RemoteHomePageState extends State<RemoteHomePage>
         _stopConnectionRetry();
         return;
       }
+      // Skip while another route is on top (e.g. pairing page) — avoids
+      // sending a connect to the active TV while the user is pairing a new one.
+      // Resumes naturally on the next tick once this page is current again.
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) {
+        return;
+      }
       unawaited(widget.commandService.connect(device: device));
     });
   }
