@@ -357,6 +357,222 @@ void main() {
     },
   );
 
+  testWidgets(
+    'calls connect once on cold start with a paired device',
+    (WidgetTester tester) async {
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'android-1',
+        displayName: 'Android TV',
+        brand: TvBrand.androidTv,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.disconnected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(commandService.connectCallCount, 1);
+    },
+  );
+
+  testWidgets(
+    'starts retry on error state; stops retry on connected state',
+    (WidgetTester tester) async {
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'android-1',
+        displayName: 'Android TV',
+        brand: TvBrand.androidTv,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.disconnected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(commandService.connectCallCount, 1);
+
+      commandService.emitConnectionState(
+        remote_connection.ConnectionState.error,
+      );
+      await tester.pump();
+
+      await tester.pump(const Duration(seconds: 5));
+      expect(commandService.connectCallCount, 2);
+
+      commandService.emitConnectionState(
+        remote_connection.ConnectionState.connected,
+      );
+      await tester.pump();
+
+      final countAfterConnected = commandService.connectCallCount;
+      await tester.pump(const Duration(seconds: 5));
+      expect(commandService.connectCallCount, countAfterConnected);
+    },
+  );
+
+  testWidgets(
+    'dispose cancels retry timer',
+    (WidgetTester tester) async {
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'android-1',
+        displayName: 'Android TV',
+        brand: TvBrand.androidTv,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.disconnected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      commandService.emitConnectionState(
+        remote_connection.ConnectionState.error,
+      );
+      await tester.pump();
+
+      await tester.pumpWidget(const SizedBox());
+      final countAtDispose = commandService.connectCallCount;
+      await tester.pump(const Duration(seconds: 5));
+      expect(commandService.connectCallCount, countAtDispose);
+    },
+  );
+
+  testWidgets(
+    'paused stops retry; resumed with disconnected state restarts retry',
+    (WidgetTester tester) async {
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'android-1',
+        displayName: 'Android TV',
+        brand: TvBrand.androidTv,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.disconnected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      commandService.emitConnectionState(
+        remote_connection.ConnectionState.error,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5));
+      final countAfterRetry = commandService.connectCallCount;
+      expect(countAfterRetry, greaterThan(1));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5));
+      expect(commandService.connectCallCount, countAfterRetry);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5));
+      expect(commandService.connectCallCount, greaterThan(countAfterRetry));
+    },
+  );
+
   testWidgets('pairs to discovered TV and sends command from remote', (
     WidgetTester tester,
   ) async {
@@ -1318,8 +1534,12 @@ class _ConnectionStateStubCommandService implements RemoteCommandService {
     multi.onCancel = () => sub.cancel();
   });
 
+  int connectCallCount = 0;
+
   @override
-  Future<void> connect({required TvDevice device}) async {}
+  Future<void> connect({required TvDevice device}) async {
+    connectCallCount++;
+  }
 
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
