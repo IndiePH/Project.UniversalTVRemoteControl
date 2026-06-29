@@ -18,8 +18,11 @@ Keep entries short and append new updates at the top.
 ### Fixed
 - Concurrent-connect regression (Fix 2a timing): the initial in-flight guard returned `_transportClient.connect().whenComplete(cleanup)` from `connect()`, adding an extra microtask hop when `watchConnectionState` awaited it. This broke the widget test `pairs to discovered TV and sends command from remote` — `_connectionState` was not yet `connected` when the power button was tapped. Fixed by returning the transport future directly from `connect()` and scheduling cleanup as a fire-and-forget side effect via `unawaited(f.whenComplete(...))`, preserving original 1-hop timing while keeping the race guard intact.
 
+### Fixed
+- Spurious LG pairing popup on active TV (Bug 1): `_startConnectionRetry` in `RemoteHomePage` now guards each timer tick with `!mounted || ModalRoute.of(context)?.isCurrent != true` — skips `connect()` while any route is on top of the home page (e.g. pairing page, settings). When the user returns, `isCurrent` is `true` again and the next tick resumes normally. Eliminates the race where the 5 s retry fired `connect(activeTV)` without a stored key while `preparePairing(newTV)` was in progress, causing an unwanted SSAP approval popup on the active TV.
+
 ### Verification
-- `flutter test` — 451 tests passed (includes 3 new concurrent-connect tests in `lg_test_lane_test.dart`, `samsung_test_lane_test.dart`, `hisense_test_lane_test.dart`).
+- `flutter test` — 453 tests passed (includes 3 new concurrent-connect tests in `lg_test_lane_test.dart`, `samsung_test_lane_test.dart`, `hisense_test_lane_test.dart`; 2 new widget tests `retry timer skips connect while another route is on top` and `retry timer resumes connect after pushed route pops` in `widget_test.dart`).
 
 ## 2026-06-07
 

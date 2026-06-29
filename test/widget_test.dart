@@ -573,6 +573,147 @@ void main() {
     },
   );
 
+  testWidgets(
+    'retry timer skips connect while another route is on top',
+    (WidgetTester tester) async {
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'android-1',
+        displayName: 'Android TV',
+        brand: TvBrand.androidTv,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.disconnected,
+      );
+      addTearDown(commandService.dispose);
+
+      final navigatorKey = GlobalKey<NavigatorState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Drive the home page into error state so the retry timer starts.
+      commandService.emitConnectionState(
+        remote_connection.ConnectionState.error,
+      );
+      await tester.pump();
+
+      // Confirm the timer fires normally while the home page is the current route.
+      await tester.pump(const Duration(seconds: 5));
+      final countBeforePush = commandService.connectCallCount;
+      expect(countBeforePush, greaterThan(1));
+
+      // Push a new route on top (simulates any overlaid page, e.g. pairing).
+      unawaited(
+        navigatorKey.currentState!.push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: SizedBox()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Timer must NOT call connect while another route is current.
+      await tester.pump(const Duration(seconds: 5));
+      expect(commandService.connectCallCount, countBeforePush);
+    },
+  );
+
+  testWidgets(
+    'retry timer resumes connect after pushed route pops',
+    (WidgetTester tester) async {
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'android-1',
+        displayName: 'Android TV',
+        brand: TvBrand.androidTv,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.disconnected,
+      );
+      addTearDown(commandService.dispose);
+
+      final navigatorKey = GlobalKey<NavigatorState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Drive the home page into error state so the retry timer starts.
+      commandService.emitConnectionState(
+        remote_connection.ConnectionState.error,
+      );
+      await tester.pump();
+
+      // Push a route on top and verify the timer is suppressed.
+      unawaited(
+        navigatorKey.currentState!.push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: SizedBox()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 5));
+      final countWhilePushed = commandService.connectCallCount;
+
+      // Pop back to home — home page is the current route again.
+      navigatorKey.currentState!.pop();
+      await tester.pumpAndSettle();
+
+      // Timer must resume and call connect on the next tick.
+      await tester.pump(const Duration(seconds: 5));
+      expect(commandService.connectCallCount, greaterThan(countWhilePushed));
+    },
+  );
+
   testWidgets('pairs to discovered TV and sends command from remote', (
     WidgetTester tester,
   ) async {
