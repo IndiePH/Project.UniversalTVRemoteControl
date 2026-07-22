@@ -99,6 +99,8 @@ storeFile=<path-to-your.jks>
 
 When `key.properties` is present, `signingConfigs.release` is applied to the release build type. When it is absent, the signing config is skipped and `gradle.taskGraph.whenReady` throws an explicit error if `assembleRelease` or `bundleRelease` is in the task graph — debug builds are unaffected.
 
+**Android / Kotlin incremental (cross-drive):** `android/gradle.properties` sets `kotlin.incremental=false` to avoid Kotlin incremental cache failures when the Flutter project and Pub cache live on different drives (for example project on `E:` and Pub cache on `C:`). Re-enable only if both trees share a drive and incremental builds are reliable again.
+
 Lint rules: `analysis_options.yaml` includes `package:flutter_lints/flutter.yaml`.
 
 ## Getting Started

@@ -24,6 +24,9 @@ Keep entries short and append new updates at the top.
 ### Verification
 - `flutter test` — 453 tests passed (includes 3 new concurrent-connect tests in `lg_test_lane_test.dart`, `samsung_test_lane_test.dart`, `hisense_test_lane_test.dart`; 2 new widget tests `retry timer skips connect while another route is on top` and `retry timer resumes connect after pushed route pops` in `widget_test.dart`).
 
+### Changed
+- Android Gradle: `kotlin.incremental=false` in `android/gradle.properties` (documented in README Building APKs) to avoid Kotlin incremental cache failures when the project and Pub cache are on different drives.
+
 ## 2026-06-07
 
 ### Added
@@ -32,7 +35,7 @@ Keep entries short and append new updates at the top.
 - Device policy modules (`34788d0`, extends **TVREMOTE-19**): `FreeTierDevicePolicy`, `ProDeviceSwitchPolicy`, `SavedDeviceDisplayOrdering`, `TvDeviceSelection` extracted from `RemoteHomePage` and `PairingPage`; unit tests for each policy plus `multiplexed_tv_connection_state_service_test.dart`.
 
 ### Changed
-- Home and pairing paired-TV rows show live transport connection state instead of one-shot TCP reachability probes (`34788d0`).
+- Home paired-TV / active-device UI used live transport connection state instead of one-shot TCP reachability probes (`34788d0`). **Superseded for select-a-remote / pairing-list rows** by the 2026-06-29 reachability-indicator fix (`e1af1b9`): those rows probe via `TvReachabilityService` again; home active connection remains on `TvConnectionStateService`.
 - `SecureHostScopedSecretPersistence` uses platform-default `FlutterSecureStorage` (KeyStore AES-GCM / Keychain) instead of legacy `encryptedSharedPreferences` Android option (`34788d0`).
 - Widget and pairing tests register `TvConnectionStateService` stubs / multiplexed delegates (`34788d0`).
 

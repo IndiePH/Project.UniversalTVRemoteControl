@@ -218,9 +218,14 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Tests: `samsung_pairing_token_store_test.dart`, `hisense_pairing_auth_store_test.dart`, `lg_pairing_key_store_test.dart`
 - [x] Connection state + device policy centralization (`34788d0`, partial **TVREMOTE-24**; extends **TVREMOTE-19**):
   - [x] `TvConnectionStateService` + `MultiplexedTvConnectionStateService` — one upstream transport subscription per device id
-  - [x] Home + pairing use live transport connection state instead of TCP reachability probes (`TvConnectionStateIndicator`, `connection_state_presentation.dart`)
+  - [x] Home active-device UI uses live transport connection state (`TvConnectionStateIndicator`, `connection_state_presentation.dart`); select-a-remote / pairing-list rows use `TvReachabilityService` TCP probes again (`e1af1b9`)
   - [x] `FreeTierDevicePolicy`, `ProDeviceSwitchPolicy`, `SavedDeviceDisplayOrdering`, `TvDeviceSelection` extracted from `RemoteHomePage` and `PairingPage`
   - [x] Tests: policy unit tests + `multiplexed_tv_connection_state_service_test.dart`; widget/pairing stubs updated
+- [x] Home reconnect + concurrent-connect hardening (`e1af1b9`, Fix/remote connection and indicators #16):
+  - [x] `connect()` on `TvBrandAdapter` / `BrandRoutedRemoteCommandService`; LG/Samsung/Hisense `_connectInFlight` joins concurrent callers per device id (transport future returned directly; cleanup via `unawaited(f.whenComplete(...))`)
+  - [x] `RemoteHomePage` fires `connect()` on connection-state subscribe; `Timer.periodic(5 s)` reconnect on disconnect/error; lifecycle pause/resume; dispose cancels timer
+  - [x] Retry skips when `!mounted` or home route is not current (avoids spurious LG SSAP popup while pairing another TV)
+  - [x] Tests: concurrent-connect lanes in `lg_test_lane_test.dart` / `samsung_test_lane_test.dart` / `hisense_test_lane_test.dart`; pairing indicator group + retry route-guard coverage in `pairing_page_test.dart` / `widget_test.dart` (`flutter test` — 453 passed)
 
 ### In Progress
 - [ ] Milestone 3 / Task 3.1:
@@ -377,8 +382,8 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [x] Add edit/remove device operations (pairing screen rename + swipe-to-remove with active-device confirmation).
 
 ### Task 2.4 - Improve connection resilience
-- [ ] Add reconnect backoff strategy for temporary network failures.
-- [x] Surface clear UI states: connecting, connected, disconnected, retrying (partial — live transport state on home/pairing via `TvConnectionStateService` `34788d0`; reconnect backoff still pending).
+- [ ] Add reconnect backoff strategy for temporary network failures (fixed 5 s home retry shipped in `e1af1b9`; true backoff still pending).
+- [x] Surface clear UI states: connecting, connected, disconnected, retrying (home active device via `TvConnectionStateService` `34788d0`; pairing-list reachability probes + home 5 s reconnect / route guard `e1af1b9`; exponential backoff still pending).
 
 ## Milestone 3 - UX Polish and Product Readiness
 
