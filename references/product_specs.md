@@ -104,7 +104,7 @@ MVP implementation priority (current baseline)—same **platform** stance as §1
 #### Remote Customization
 
 * Settings access on remote screen toggles an in-place layout editor
-* Grid-based layout customization (`5x9`) with drag-and-drop repositioning
+* Grid-based layout customization (`5x8`) with drag-and-drop repositioning (bottom row reserved for the banner ad overlay)
 * When a drop overlaps another control, the editor attempts a **swap**: the dragged control lands at the dropped cell; the displaced control is placed using **footprint-aware** rules (validation footprints: d-pad `3x3`, channel/volume rockers `1x3`, others from control size) so unrelated controls are not overlapped. If no valid placement exists, the drop is **rejected**
 * Multi-cell control support:
     * D-pad occupies `3x3`
@@ -314,7 +314,11 @@ Brand → Model → Button → IR Code / API Command
     * Automation
     * Custom remotes
 
-**Monetization alignment:** Store policy requires digital goods (including “remove ads” and Pro unlocks) to use **Apple In-App Purchase** and **Google Play Billing** only—no external card/checkout for in-app digital purchases. The product may ship a **non-consumable** one-time Pro purchase (see `references/marketing_strategy.md` for positioning: no ads, custom layouts, premium themes). Broader “Pro” capabilities (voice, automation, custom remotes) remain Post-MVP unless explicitly folded into the same IAP scope in a future revision.
+**Monetization alignment:** Store policy requires digital goods (including “remove ads” and Pro unlocks) to use **Apple In-App Purchase** and **Google Play Billing** only—no external card/checkout for in-app digital purchases.
+
+**Current implementation note:** The app’s Pro purchase flow supports **subscriptions and/or lifetime** purchase depending on which store products are configured for the environment (see `lib/app/configurations/app_monetization_di_config.dart`). Keep marketing promises aligned with what is actually enabled at release time.
+
+Broader “Premium” capabilities (voice, automation, custom remotes) remain Post-MVP unless explicitly folded into the same Pro SKU in a future revision.
 
 ---
 
@@ -372,6 +376,7 @@ Lean **product** scope (platform/release: §1):
     * Manual pairing
     * Save and auto-reconnect last used device
     * Settings access with per-device editable grid layout persistence
+    * In-app user feedback in settings (category + message; HTTPS webhook to operator Sheet — see `references/compliance-and-release-requirements.md` §1.5)
 
 Explicitly out of **initial lean** milestone:
 

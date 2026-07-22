@@ -1,0 +1,108 @@
+name: Flutter CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+
+concurrency:
+  group: flutter-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    name: check if CI should run
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.gate.outputs.should_run }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide skip (references-only diff)
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          should_run=true
+          reason=""
+
+          changed=()
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            while IFS= read -r line; do
+              [[ -n "$line" ]] && changed+=("$line")
+            done < <(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)
+          else
+            before="${{ github.event.before }}"
+            if [[ "$before" == "0000000000000000000000000000000000000000" ]]; then
+              if git rev-parse HEAD~1 >/dev/null 2>&1; then
+                while IFS= read -r line; do
+                  [[ -n "$line" ]] && changed+=("$line")
+                done < <(git diff --name-only HEAD~1 HEAD)
+              fi
+            else
+              while IFS= read -r line; do
+                [[ -n "$line" ]] && changed+=("$line")
+              done < <(git diff --name-only "$before" "${{ github.sha }}")
+            fi
+          fi
+
+          if [[ ${#changed[@]} -gt 0 ]]; then
+            only_refs=true
+            for f in "${changed[@]}"; do
+              if [[ "$f" != references/* ]]; then
+                only_refs=false
+                break
+              fi
+            done
+            if [[ "$only_refs" == "true" ]]; then
+              should_run=false
+              reason="diff is only under references/"
+            fi
+          fi
+
+          if [[ "$should_run" == "true" ]]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "Running CI"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping CI: $reason"
+          fi
+
+  quality:
+    name: format, analyze, test
+    needs: qualify
+    if: needs.qualify.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze --fatal-infos
+
+      - name: Test
+        run: flutter test

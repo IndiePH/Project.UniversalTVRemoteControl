@@ -6,7 +6,7 @@
 
 ## 1. Project Overview
 
-Flutter app for Android and iOS; **Android and iOS compatible**; **release** timelines may differ. Monetization: free + ads; optional one-time purchase to remove ads. Scope: Wi‑Fi control of multiple TV brands (IR/legacy: §3.2; detail `references/product_specs.md`).
+Flutter app for Android and iOS; **Android and iOS compatible**; **release** timelines may differ. Monetization: free + ads; Pro via in-app purchases (subscriptions and/or lifetime depending on the release environment). Scope: Wi‑Fi control of multiple TV brands (IR/legacy: §3.2; detail `references/product_specs.md`).
 
 ---
 
@@ -94,7 +94,7 @@ IR / hubs: `references/product_specs.md` (iOS has no phone IR; LAN IR hub = Post
 ### 4.1 Model
 
 - **Free tier:** App is free to download and use, with non-intrusive ads shown.
-- **Paid tier:** One-time in-app purchase permanently removes all ads ("non-consumable" purchase type).
+- **Pro tier:** In-app purchase removes ads and unlocks Pro features. Current implementation supports **subscriptions and/or lifetime** purchase depending on which store products are configured for the environment.
 
 **Detail:** Pro vs roadmap “Premium” (`references/product_specs.md` §7, `references/marketing_strategy.md`). IAP: platform billing only—§4.2.
 
@@ -109,8 +109,9 @@ IR / hubs: `references/product_specs.md` (iOS has no phone IR; LAN IR hub = Post
 | **iOS** | Apple In-App Purchase | App Store Connect (developer portal) |
 | **Android** | Google Play Billing | Google Play Console |
 
-Set up the "remove ads" product as a **non-consumable** in-app purchase on both platforms — this
-means it is purchased once and applied permanently to that user's account.
+Configure Pro products in App Store Connect / Google Play Console to match what the app offers for
+that release. Pro may be offered as subscriptions and/or a lifetime one-time purchase; the app must
+only reference product IDs that exist for that environment.
 
 ### 4.3 Revenue Share
 
@@ -119,10 +120,10 @@ means it is purchased once and applied permanently to that user's account.
 | Standard | 30% | 30% |
 | Small developer program | 15% (under $1M/year revenue) | 15% (first $1M/year) |
 
-**Example:** A $2.99 "remove ads" purchase nets you approximately $2.09–$2.54 after platform fees,
-depending on which tier applies.
+**Example (USD, illustrative):** A $7.99 monthly Pro subscription nets you approximately $5.59–$6.79
+after platform fees (15–30%), depending on which tier applies.
 
-**See also:** `references/product_specs.md` §8; `references/marketing_strategy.md` §3 (**$1.99** Pro price).
+**See also:** `references/product_specs.md` §8; `references/marketing_strategy.md` §3 (current target prices).
 
 ---
 
@@ -224,4 +225,4 @@ Severity/likelihood view for planning. **Checklist:** `references/compliance-and
 - [x] Will IR / legacy TV support be included at launch or deferred? — **Answered:** Deferred Post-MVP. (`references/product_specs.md`)
 - [x] Who is building the app? — **Answered:** Two-person team, both using coding agents (one workflow centered on **Cursor**, one on **Claude**). **Person A (Cursor):** UI + **Samsung** + **Hisense** brand code. **Person B (Claude):** **reference docs** + **LG** brand code. Detail: **Team & work split** in `references/implementation_tasks.md`. **Merge conflicts** on shared files remain a managed risk.
 - [x] What is the target launch date? — **Answered:** **End of May 2026**; earlier ship date if the product is ready sooner. (`references/implementation_tasks.md` Planning Notes)
-- [x] What price point is planned for the "remove ads" purchase? — **Answered:** $1.99 USD. (`references/marketing_strategy.md`)
+- [x] What price point is planned for Pro? — **Answered:** Pricing varies by plan (subscription and/or lifetime). (`references/marketing_strategy.md`)

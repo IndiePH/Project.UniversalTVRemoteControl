@@ -10,22 +10,48 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 
 - **TVREMOTE-1** — Workspace hygiene: stabilize repo against generated/transient noise (root `__pycache__/` ignore, `.gitignore`/`generated_plugins.cmake` verification); narrative and acceptance notes live under **Status Tracker → Completed** (`Workspace hygiene baseline`).
 - **TVREMOTE-8** — Saved-device remove/last-used fallback test coverage completed (`test/widget_test.dart`); tracks `Next Up → Expand tests → saved-device remove/last-used fallback paths`.
-- **TVREMOTE-36** — Per-brand TV adapters and transports (**implementation** epic; structured for additional OEMs later).
-- **TVREMOTE-37** — Per-brand TV adapter and transport **testing** epic (Samsung / LG / Hisense lanes today).
-- **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring), plus transport-abstraction follow-ups **TVREMOTE-52** (shared marker + required event source) and **TVREMOTE-53** (event adoption in Samsung/Hisense real+fake clients). **TVREMOTE-7**, **TVREMOTE-14**, and **TVREMOTE-18** are parented under TVREMOTE-36.
-- **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung), **TVREMOTE-50** (LG), **TVREMOTE-51** (Hisense); **TVREMOTE-13** is parented under TVREMOTE-37. Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
+- **TVREMOTE-36** — Per-brand TV adapters and transports (**implementation** epic; **To Do** in Jira; structured for additional OEMs later).
+- **TVREMOTE-37** — Per-brand TV adapter and transport **testing** epic (Samsung / LG / Hisense lanes today; **To Do** in Jira).
+- **Implementation** tasks under TVREMOTE-36 include **TVREMOTE-38**–**TVREMOTE-48** (refine adapters, text-input, physical validation, LG/Hisense pairing wiring), plus transport-abstraction **TVREMOTE-52** / **TVREMOTE-53** (**Done** in Jira — shared marker + event adoption shipped in repo). **TVREMOTE-38** — Samsung adapter refinement (**In Progress** in Jira; C1 shipped in repo — Status Tracker). **TVREMOTE-40** — Hisense adapter refinement (**In Progress** in Jira; C1 shipped in repo — Status Tracker). **TVREMOTE-48** — Hisense protocol-level pairing verification (**Done** in Jira; merged into **TVREMOTE-40**). **TVREMOTE-7** — Hisense Android SSDP re-validation (**In Progress** in Jira; physical validation **pass** on Hisense TV 2026-05-22 — `references/hisense_validation_matrix.md`; repo AC met). **TVREMOTE-14** and **TVREMOTE-18** are parented under TVREMOTE-36.
+- **TVREMOTE-14** — Samsung approval variants on physical devices (**Done** in Jira; runbook + outcome table in `references/samsung_validation_matrix.md`; scenarios A–C **pass** on Samsung TV 2026-05-22; Samsung connect info in settings/debug sheets for model/firmware capture).
+- **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung; **In Progress**), **TVREMOTE-50** (LG; **Done** in Jira), **TVREMOTE-51** (Hisense; **In Progress**). **TVREMOTE-13** — Samsung approval timeout/rejection + recovery regression tests (**Done** in Jira; parent **TVREMOTE-37**): `samsung_test_lane_test.dart`, `samsung_pairing_token_store_test.dart` (21 tests; 2026-05-22). Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
+- **TVREMOTE-12** — Pairing success/failure path tests (**In Progress** in Jira; coordinator coverage shipped in `pairing_page_coordinator_test.dart`; parent **TVREMOTE-2**).
 - Umbrella issues superseded by this split (historical, **Done** in Jira): **TVREMOTE-25**, **TVREMOTE-21**, **TVREMOTE-9**, **TVREMOTE-10**, **TVREMOTE-16**.
+- **TVREMOTE-63** — Bottom banner + interstitial AdMob scaffold; UMP/ATT consent gating in app code (**Done**; Firebase Remote Config `test_ads_enabled` runtime ad-unit toggle shipped `4af3cdc`; resilient fetch + 1-minute release interval `05aca51`; production app IDs at build time on Android + iOS; full SKAdNetwork list + store-listing privacy URL still **TVREMOTE-26**).
+- **TVREMOTE-66** — Pro (remove ads) IAP: multi-product catalog, entitlement service + Android receipt validation client, upgrade/settings UI, gates banner + interstitial + layout editor (**In Progress**; E2E blocked by **TVREMOTE-67**).
+- **TVREMOTE-67** — Pro IAP store products + sandbox/device validation; Android server-side receipt validation callable shipped in repo (`functions/src/handlers/verify-pro-android-purchase.ts` + `functions/src/android/` / `functions/src/pro/` modules; thin `functions/src/index.ts`); `functions/lib/` gitignored; Firebase `predeploy` build (`b65f094`); portable `$RESOURCE_DIR` in `firebase.json` (`4846b70`); operator deploy still pending per `references/goals/goal-pro-receipt-validation-remote-setup.md` (**To Do** for E2E; parent **TVREMOTE-2**).
+- **TVREMOTE-68** — In-app user feedback: settings sheet + Apps Script webhook (**Done** in Jira; parent **TVREMOTE-2**).
+- **TVREMOTE-69** — Production feedback webhook token + privacy-policy disclosure (**To Do** in Jira; parent **TVREMOTE-2**).
+- **TVREMOTE-26** — Legal/compliance release gate (**In Progress** in Jira): ATT/UMP + in-app privacy link scaffold landed; in-app legal WebView on mobile; Firebase Analytics/Crashlytics wired; production AdMob app IDs at build time (iOS `Info.plist`, Android manifest placeholder `4af3cdc`); Firebase Remote Config `test_ads_enabled` for runtime test vs live ad units (resilient fetch `05aca51`); Android edge-to-edge for SDK 35 (`4af3cdc`); settings About section with installed app version (`05aca51`); app feedback **TVREMOTE-68** Done; release ops **TVREMOTE-69** pending; live policy URL, full SKAdNetwork list, and device validation pending.
+- **TVREMOTE-29** — Telemetry/diagnostics recorder + settings export (Task C1 **shipped** in repo; **Done** in Jira, 2026-05-22): `AppDiagnosticsRecorder`, discovery/command decorators, `DiagnosticsSummaryPanel` + copy report in debug settings; `app_diagnostics_recorder_test.dart` verified 2026-05-22.
+- **TVREMOTE-28** — Interaction polish: press-scale + haptic on remote controls (**In Progress**).
+- **TVREMOTE-41** — Samsung IME watch stream no eager `connect`; probe path explicit (**In Progress** in Jira).
+- **TVREMOTE-42** — LG IME watch stream no eager `connect`; probe path explicit (**Done** in Jira, 2026-05-20).
+- **TVREMOTE-19** — Multi-device save/switch/edit/remove (Task 2.3): pairing save/rename/remove + last-used persistence; remote-home `RemoteHomeDeviceSwitcherSheet` (Pro switch, free-tier lock); pairing manage path (**Done** in Jira, 2026-05-22; shipped in repo).
+- **TVREMOTE-18** — Discovery brand identification + pairing routing (**In Progress** in Jira; Task 2.2 C1 shipped in repo — SSDP fingerprint module, IP-level merge with brand priority, limited/experimental support notes on discovery list).
+- **TVREMOTE-20** — Layout-focused tests: `RemoteLayoutDropResolver` accept/reject/swap unit coverage, `SharedPrefsLayoutRepository` persistence, default `5x9` occupancy constraints, `RemoteLayoutEditor` reset widget test (four test files, 16 tests; **Done** in Jira, 2026-05-22).
+- **TVREMOTE-70** — TCL legacy Wi-Fi variant resolution: exact transport model marker, registry catch-all, capabilities, pairing constant (**Done** in Jira; parent **TVREMOTE-36**). Physical validation still **experimental** — `references/tcl_validation_matrix.md`.
+- **TVREMOTE-32** — Third-party license scan + attribution (**Done** in Jira, 2026-05-22): direct `pubspec.yaml` deps audited in `references/third_party_licenses.md`; no GPL/AGPL direct runtime deps; Settings → Legal → **Open source licenses** (`showLicensePage`). Manufacturer API ToS + Prime/Disney streaming trademarks still pending (not copyleft blockers).
+- **TVREMOTE-31** — Milestone 0 / Task 0.2: CI quality baseline (`flutter_ci.yml`: format, analyze, test on PRs); `AppBuildConfig` + README build-profile/flavor gap notes; Gradle flavor placeholder comments (**Done** in Jira; parent **TVREMOTE-5**).
+- **TVREMOTE-11** — Milestone 1 / Task 1.6: vertical-slice widget/integration coverage — pair→remote→command, remove-flow regressions, discovery failure/empty-rescan, returning last-used launch, command-dispatch failure (**Done** in Jira; shipped in `test/widget_test.dart`).
 
 ## Status Tracker (Current)
 
 ### Completed
 - [x] Workspace hygiene baseline (`TVREMOTE-1`):
   - [x] Verified generated/transient artifacts are excluded by repo/platform `.gitignore` rules (`.dart_tool/`, `build/`, platform `Flutter/ephemeral`, plugin registrants, local gradle/IDE outputs)
-  - [x] Added root `__pycache__/` ignore to prevent incidental `.cursor` Python cache churn
+  - [x] Added root `__pycache__/` ignore to prevent incidental Python cache churn
   - [x] Verified tracked generated plugin glue files remain intentional and clean (`linux/flutter/generated_plugins.cmake`, `windows/flutter/generated_plugins.cmake` show no diff)
 - [x] Milestone 0 / Task 0.1:
   - [x] Established layered structure (`presentation` / `application` / `data` / `domain`)
   - [x] Added extensible brand adapter contracts and router-based dispatch
+- [x] Milestone 0 / Task 0.2 (`TVREMOTE-31`):
+  - [x] GitHub Actions CI: `dart format --set-exit-if-changed`, `flutter analyze --fatal-infos`, `flutter test` on PRs to `main` / `master` / `develop` (`.github/workflows/flutter_ci.yml`; `qualify` skips when diff is only `references/`)
+  - [x] Repo-wide `dart format` baseline applied so the format gate passes
+  - [x] `AppBuildConfig` / `AppBuildProfile` centralize debug vs release → `AppEnvironment`; `main.dart` uses `environmentForMain()`
+  - [x] README documents CI commands, intentional Gradle product-flavor gap, and `AppEnvironment.development` reservation
+  - [x] `AdConsentCoordinator.isPrivacyOptionsRequired` timeout + fallback so settings sheet opens under widget tests (simulated Android / no Mobile Ads plugin)
+  - [x] Widget tests: fake-transport discovery via prefs; one copy-transport sheet test skipped pending modal scroll/hit-test harness
 - [x] Milestone 0 / Task 0.3:
   - [x] Added core entities and contracts:
     - [x] `TvDevice`, `TvBrand`, `RemoteCommand`, `DeviceCapability`, `ConnectionState`
@@ -36,6 +62,10 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [x] text input field + send action
     - [x] search/keyboard layout control stays interactable when unpaired or when remote text is unavailable: same `No device selected.` toast as other keys when there is no active device; unsupported text input or IME-not-ready uses shared `_keyboardUnavailableMessage` ("Remote keyboard can't be used on this screen or with this TV.") for toast and status row, with `debugPrint` lines tagged `keyboard press:` / `keyboard send:` plus reason and `device.id`
   - [x] Added responsive sizing fixes for control cluster
+  - [x] Unpaired interaction guidance pass:
+    - [x] remote grid controls are visually disabled/tinted when no active TV is selected
+    - [x] tapping disabled controls updates status with `Pair a TV first.` guidance
+    - [x] pair/connect button receives temporary blink/highlight cue to drive pairing-first flow
 - [x] Milestone 1 / Task 1.4 (partial):
   - [x] Implemented command pipeline with brand-specific routing
   - [x] Added adapter capability checks (`supportedCommands`, `supportsTextInput`)
@@ -82,6 +112,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Restored channel/volume rocker controls and aligned play/pause visual as compact `1x1` control (left play icon + right pause icon)
   - [x] Added directional visual padding tuning for d-pad arrows (up/down/left/right)
   - [x] Increased editable/control grid from `5x8` to `5x9`
+  - [x] Lowered editable/control grid from `5x9` to `5x8` to reserve stable bottom-of-screen real estate for the banner ad overlay (no body resize on IME open)
   - [x] Updated default control coordinates for the latest baseline layout
   - [x] Layout editor: toggling edit mode no longer overwrites `_status` (status row is not shown while editing); layout reset uses a snackbar for visible confirmation
   - [x] Layout editor drag/drop resolution extracted to `RemoteLayoutDropResolver` (`remote_layout_drop_resolver.dart`) so the editor widget stays UI-focused
@@ -92,17 +123,48 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] SRP decomposition (layout editor): `RemoteLayoutEditor` delegates grid geometry to `RemoteLayoutEditorGridGeometry`, background lines to `RemoteLayoutEditGridPainter`, cell previews to `RemoteLayoutEditorItemPreview`, and drag/drop session state to `RemoteLayoutEditorDragSession` (see SRP checklist)
   - [x] Presentation theming: remote/pairing/layout-editor widgets under `presentation/` no longer use ad-hoc `Colors.*` / hex for remote chrome; values live on `AppColors` (`remoteGlyphOnRemote`, `remotePowerFill`, `remoteActionSuccess*`, `layoutEditorDrop*`, `pairingModalBarrier`, `pairingBusyOnCard`, etc.) with dark-theme literals aligned to prior behavior
   - [x] **SRP Refactor Checklist (Tracked)** is fully complete (all items checked)
+  - [x] Presentation metrics consolidation: `lib/remote_control/presentation/metrics/` now owns header height (`remote_layout_header_metrics.dart`), header/in-grid button geometry + play/pause pill ratios (`remote_layout_button_metrics.dart`), and the cross-fade duration shared by the pairing-hint switcher and status-panel blur overlay (`remote_pairing_hint_metrics.dart`); shared `RemoteHeaderIconButton` widget keeps the home-view pair button and editor reset button visually identical
+  - [x] Remote home bottom banner ad integrated (free-tier monetization scaffold; production AdMob unit IDs still pending — see `references/marketing_strategy.md`):
+  - [x] Free-tier interstitial ad scaffold (`InterstitialAdController`, engagement policy, Pro + consent gating; **TVREMOTE-63** / **TVREMOTE-66**)
+  - [x] Ad consent bootstrap (`AdConsentCoordinator`: UMP + iOS ATT before `MobileAds.initialize()`; **TVREMOTE-26** partial)
+  - [x] Settings sheet: platform store-account hints, privacy-policy link, UMP privacy-options when required, About section with installed app version (`05aca51`, **TVREMOTE-26**), diagnostics summary + copy report, in-app feedback (category + message → webhook) (**TVREMOTE-29** / **TVREMOTE-66** / **TVREMOTE-68**)
+  - [x] Telemetry/diagnostics (**TVREMOTE-29**): `AppDiagnosticsRecorder` + discovery/command decorators; `DiagnosticsSummaryPanel` + copy diagnostics report in debug settings; pairing session + unhandled-error recording; `app_diagnostics_recorder_test.dart`
+  - [x] In-app user feedback (**TVREMOTE-68**): `FeedbackSubmissionSheet` from settings; `HttpFeedbackSubmissionService` POST JSON via `FeedbackConfig`; `AppPackageInfoSource` for `appVersion`; tests in `test/lib/app/feedback/` and `test/lib/app/package_info/` (see `references/feedback-collection-setup.md`, `references/compliance-and-release-requirements.md` §1.5; release token/policy **TVREMOTE-69**)
+  - [x] Remote interaction polish: `RemotePressFeedback` + command haptics on grid/d-pad/rockers (**TVREMOTE-28**)
+  - [x] Multi-device management (**TVREMOTE-19**): save/rename/remove on pairing; `setLastUsedDevice` on pair, saved-device tap, and switcher; `RemoteHomeDeviceSwitcherSheet` + header affordance (Pro switch, free-tier lock); `FreeTierSavedDeviceCleanup`
+  - [x] Samsung/LG `watchRemoteTextInputReady` — no adapter-side `connect()`; use `probeRemoteTextInputReady` for explicit probe (**TVREMOTE-41**, **TVREMOTE-42**)
+    - [x] new `lib/app/ads/` module (`AdConfig`, `BottomBannerAd`, `BottomBannerAdPlacement`) using `google_mobile_ads ^8.0.0`; env-aware unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` with Google's test IDs as fallback
+    - [x] `MobileAds.initialize()` runs only on Android/iOS; non-mobile/`kIsWeb` paths skip the overlay entirely so layout/tests are unaffected
+    - [x] Production AdMob app IDs at build time: Android `${admobAppId}` manifest placeholder (`build.gradle.kts`); iOS `GADApplicationIdentifier` in `Info.plist`; runtime test vs live **ad unit** IDs via Firebase Remote Config `test_ads_enabled` + `AdConfig.shouldUseTestAds` (`4af3cdc`)
+    - [x] Placeholder `SKAdNetworkItems` entry in `Info.plist` — **must be replaced with the full network-supplied SKAdNetwork list before iOS release**
+    - [x] Remote `AppBar` tightened (`toolbarHeight: 50`) with thin outline dividers; `RemoteHomePage.body` switched to `Stack(fit: StackFit.expand)` so `BottomBannerAdPlacement` overlays bottom-aligned without resizing the grid
 - [x] Developer ergonomics:
   - [x] README "Current Runtime Modes": default **real** Samsung + Hisense transports for APK/physical-TV testing; fake transports opt-in via dart-define; host overrides documented; Samsung log tag `samsung_transport` (see README)
   - [x] Implementation plan: **Brand transport defaults** section (real-by-default policy; do not regress)
   - [x] Dart documentation convention: public types lead with `///` stating purpose/role; add brief `//` or `///` for non-obvious algorithms, protocol steps, platform behavior, and invariants (not line-by-line narration)
+  - [x] Debug fake/real transport toggle now applies at runtime for pairing discovery (no app restart required), and debug sheet copy-log flow keeps sheet context visible on empty-log feedback
+  - [x] Debug DI baseline uses real SSDP discovery; fake discovery is selected dynamically only when fake transport mode is enabled **and** the runtime command service is fake-enabled (prevents fake devices appearing when fake discovery is toggled but the app is still using real transports)
+  - [x] Hisense transport naming normalized to `HisenseMqttTransportClient` and fake client moved under `lib/remote_control/debug/` to match cross-brand conventions
+- [x] TCL legacy Wi-Fi variant resolution (`TVREMOTE-70`):
+  - [x] `TclProtocolVariants.isLegacyWifi` + `legacyWifiModelMarker`; legacy TCP/fake transports stamp marker at `queryDeviceInfo`
+  - [x] `DefaultVariantResolutionRegistry` — exact marker entry + TCL catch-all → `tcl_legacy_wifi`; pairing manual-add uses `TclProtocolVariants.legacyWifi`
+  - [x] `TvCapabilities` — `keyCommands` + `powerControl` for `(TvBrand.tcl, TvDevice.defaultProtocolVariant)`
+  - [x] Unit tests in `test/lib/remote_control/data/variant_resolution_registry_test.dart` (4 tests)
+- [x] Milestone 1 / Task 1.1 — Samsung adapter refinement (`TVREMOTE-38`):
+  - [x] `SamsungTransportClient.clearPairing(deviceId:)`; WebSocket implementation disconnects, clears in-memory host token, drops cached `ms.channel.connect` info, clears TLS endpoint pins for the host; fake transport mirrors. `SamsungAdapter.unpairDevice` delegates so removing a saved device re-enters TV approval on the next pair.
+  - [x] `SamsungKeyMapper` back command publishes `KEY_RETURN` then `KEY_BACK` (firmware-tolerant alias order; `sendCommand` already loops all aliases).
+  - [x] Test coverage: spy transports gain `clearPairing` stubs; `samsung_test_lane_test.dart` asserts adapter `unpairDevice` → transport `clearPairing` and back alias order; `samsung_key_mapper_test.dart` updated.
+- [x] Milestone 2 / Task 2.1 — Hisense adapter refinement (`TVREMOTE-40`):
+  - [x] Real MQTT transport forwards the TV-shown 4-digit PIN verbatim (no more hard-coded `1234`); fake transport keeps the dev shortcut so offline/lab runs still pair without a real TV. PIN-rejected recovery still flows through the existing PIN-retry pairing UI.
+  - [x] `_pollConnectivity` attempts one non-overlapping `_ensureConnected` for previously authorized devices when the broker is detected down, instead of waiting for the next user action. Unauthorized devices keep the lazy-reconnect path.
+  - [x] New `HisenseTransportClient.clearPairing(deviceId:)`; MQTT implementation disconnects, drops in-memory auth, cancels the poll timer, resets the device-info log gate; fake transport mirrors. `HisenseAdapter.unpairDevice` delegates, so unpairing re-enters the PIN gate on the next pair attempt.
+  - [x] `HisenseAdapter.sendCommand` publishes every alias from `HisenseKeyMapper.keyCodesFor(command)` (e.g. `KEY_RETURNS` / `KEY_RETURN` / `KEY_BACK`) — firmware-variant tolerance for fire-and-forget VIDAA `sendkey`.
+  - [x] Test coverage: spy transports gain `clearPairing` stubs; new assertions for adapter `unpairDevice` → transport `clearPairing` and the `back` command publishing all three aliases in order.
 - [x] Milestone 1 / Task 1.1 (discovery hardening):
   - [x] Android APK SSDP: acquire Wi‑Fi **multicast lock** for the scan window (`flutter_multicast_lock`); manifest already declared `CHANGE_WIFI_MULTICAST_STATE` / `ACCESS_WIFI_STATE` / `INTERNET` — runtime lock was the missing piece for reliable multicast receive
   - [x] Hisense-oriented SSDP tuning: extra M-SEARCH `urn:schemas-upnp-org:device:MediaServer:1`, include `NT` in fingerprint probe, match `hiview` where firmware omits `hisense`/`vidaa` in headers
   - [x] Note: community Hisense MQTT docs (e.g. mqtt-hisensetv) assume **manual IP** + port `36669`; SSDP remains best-effort for VIDAA/DLNA fingerprints
-
-### In Progress
-- [ ] Milestone 1 / Task 1.6:
+- [x] Milestone 1 / Task 1.6 (`TVREMOTE-11`):
   - [x] Basic widget test coverage is in place
   - [x] Added full-loop widget pass:
     - [x] pair to newly discovered TV
@@ -110,14 +172,62 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [x] send command via remote control
   - [x] Added active-device remove confirmation regression coverage (`REMOVE` path)
   - [x] Added pairing flow regression updates for moved pairing persistence/flow control
-  - [ ] Broader scenario tests and network edge-case validation pending
-- [ ] Milestone 1 / Task 1.1:
-  - [ ] Broaden physical-device validation for Samsung approval/pairing variants:
-    - [ ] first-time approval
-    - [ ] previously approved token reuse
-    - [ ] rejection/timeout recovery UX
-    - [x] Added Samsung physical validation matrix scaffold (`references/samsung_validation_matrix.md`) for model/firmware test runs (`TVREMOTE-49`)
-  - [ ] Re-validate **Hisense discovery on Android APK** after multicast-lock change (empty scan vs AP isolation vs SSDP headers); consider optional fallback discovery (e.g. guided manual IP / `TV_HOST_OVERRIDE`, future port `36669` sweep) if SSDP still misses hardware
+  - [x] Added debug/runtime regression coverage:
+    - [x] fake transport toggle keeps debug settings sheet open
+    - [x] fake transport mode shows fake discovery devices in pairing list (only when runtime fake transport is active)
+    - [x] copy transport logs keeps debug sheet open when no log exists
+  - [x] Added pairing success/failure/retry coordinator coverage (`TVREMOTE-12`) in `test/lib/remote_control/presentation/pages/pairing_page_coordinator_test.dart`: non-PIN success persistence + manual-IP save + enriched-device fallback, non-PIN failure no-save invariants + sanitized-message + unsupported→failure, PIN retry depth (3-rejection eventual success, 5-rejection cancel, verbatim PIN forwarding, per-attempt `onPinRejected`), and `cancelPairing` delegation to `RemoteCommandService`
+  - [x] Broader scenario tests and network edge-case validation:
+    - [x] Discovery scan failure surfaces `pairingDiscoveryFailed` and clears loading state
+    - [x] Empty discovery shows `pairingNoDevicesFound`; manual rescan recovers devices
+    - [x] Returning flow: last-used TV restored on `RemoteHomePage` launch with connected stub; command send succeeds
+    - [x] Command dispatch failure surfaces error status/toast without success message
+- [x] Milestone 1 / Task 1.1 — Samsung approval variants on physical devices (`TVREMOTE-14`):
+  - [x] Added Samsung physical validation matrix scaffold (`references/samsung_validation_matrix.md`) for model/firmware test runs (`TVREMOTE-49`)
+  - [x] Added approval-variant runbook, code-under-test map, outcome table, and follow-up template (2026-05-22)
+  - [x] Physical validation — scenario A first-time approval: **pass** (Samsung TV, 2026-05-22)
+  - [x] Physical validation — scenario B token reuse: **pass** (Samsung TV, 2026-05-22)
+  - [x] Physical validation — scenario C rejection/timeout recovery UX: **pass** (Samsung TV, 2026-05-22; unit paths in `TVREMOTE-13`)
+  - [x] Samsung `ms.channel.connect` device info cached and shown in settings/debug via `queryDeviceInfo` + `TvDeviceDebugInfoPanel` (2026-05-22)
+- [x] Milestone 1 / Task 1.1 — Hisense Android SSDP re-validation (`TVREMOTE-7`):
+  - [x] Runbook + fallback-path decision in `references/hisense_validation_matrix.md` (manual IP + `TV_HOST_OVERRIDE`; port-`36669` sweep deferred)
+  - [x] SSDP fingerprint unit tests (`ssdp_brand_inference_test.dart` — `hisense` / `vidaa` / `hiview` + `nt` probe)
+  - [x] Physical validation on Hisense TV (2026-05-22): SSDP scan, manual-IP pair, PIN flow, keys, reconnect **pass** in known-good matrix
+- [x] Pro monetization expansion (**TVREMOTE-66** / **TVREMOTE-67** app lane, commits `a5259be`–`ab7b395`):
+  - [x] Multi-product catalog (`ProProductIds`: weekly/monthly/annual/lifetime) with localized plan labels and `ProUpgradePage` picker
+  - [x] ProductId-specific purchase/restore across `ProEntitlementService` + store/fake repositories
+  - [x] Android receipt validation client (`ProReceiptValidationService`) + Firebase callable `verifyProAndroidPurchase` in `functions/` (Play subscriptionsv2 + legacy fallback; reinstall token rebind)
+  - [x] Settings sheet Pro status/upgrade/restore with plan or renewal details; entitlement refresh on app resume
+  - [x] Tests in `pro_entitlement_service_test.dart`, `pro_receipt_validation_service_test.dart`, `pro_upgrade_page_test.dart`
+- [x] Firebase Analytics + Crashlytics (commit `bf5d103`): Firebase init + fatal error hooks in `main.dart`; `AnalyticsService` DI with Pro entitlement + startup locale events
+- [x] Android TV protobuf 6 compatibility (`ef8386b`): `PbList.createRepeated` → `List` in Android TV remote/pairing message types
+- [x] AdMob runtime test/live toggle + Android edge-to-edge (`4af3cdc` / `05aca51`, **TVREMOTE-63** / **TVREMOTE-26**):
+  - [x] `AdRemoteConfigService` — Firebase Remote Config `test_ads_enabled`; fail-safe default prefers test ad units; split settings/defaults from fetch; fetch failures keep last activated value; release `minimumFetchInterval` 1 minute (`05aca51`)
+  - [x] `AdConfig.shouldUseTestAds` — debug always test; release follows Remote Config; banner/interstitial unit IDs wired through `BottomBannerAdPlacement` and `InterstitialAdController`
+  - [x] Production AdMob app ID constants; Android manifest placeholder; DI fetch at bootstrap
+  - [x] Android edge-to-edge: `FlutterFragmentActivity`, `enableEdgeToEdge()`, transparent system bars, `AppTheme` overlay styling
+  - [x] Android Gradle Kotlin DSL migration — built-in `kotlin` compiler options block (`05aca51`)
+  - [x] Tests: `test/lib/app/ads/ad_config_test.dart`; widget tests register `AdRemoteConfigService`
+- [x] Pro upgrade dialog stability (`4af3cdc`, **TVREMOTE-66**): defer `loadProducts()` to avoid entitlement notifier updates during build
+- [x] Firebase Functions Pro validation modularization (`b65f094`, **TVREMOTE-67**): split monolithic `functions/src/index.ts` into `handlers/`, `android/`, `pro/`, `entitlement/`, `callable/`; stop tracking `functions/lib/`; `firebase.json` `predeploy` runs `npm run build`; goal doc notes predeploy workflow (`references/goals/goal-pro-receipt-validation-remote-setup.md`)
+- [x] Firebase Functions predeploy path fix (`4846b70`, **TVREMOTE-67**): `firebase.json` `$RESOURCE_DIR` so deploy runners expand the functions directory correctly
+- [x] Interstitial presentation-block gating (`b65f094`, **TVREMOTE-63** / **TVREMOTE-66**): `InterstitialAdController.acquirePresentationBlock` / `releasePresentationBlock` suppresses `maybeShow` and late async show while PIN dialog, remote keyboard sheet, or feedback sheet is open; wired from `PairingPageDialogs` and `RemoteHomePage`; tests in `interstitial_ad_controller_test.dart`, `interstitial_ad_policy_test.dart`
+- [x] Per-host pairing credential persistence across app restarts (`54861ee`, **TVREMOTE-36** child lanes):
+  - [x] `HostScopedSecretPersistence` + `SecureHostScopedSecretPersistence` via `flutter_secure_storage`
+  - [x] Samsung `SamsungPairingTokenStore`, Hisense `HisensePairingAuthStore`, LG `LgPairingKeyStore` migrated to host-scoped secure storage
+  - [x] Tests: `samsung_pairing_token_store_test.dart`, `hisense_pairing_auth_store_test.dart`, `lg_pairing_key_store_test.dart`
+- [x] Connection state + device policy centralization (`34788d0`, partial **TVREMOTE-24**; extends **TVREMOTE-19**):
+  - [x] `TvConnectionStateService` + `MultiplexedTvConnectionStateService` — one upstream transport subscription per device id
+  - [x] Home active-device UI uses live transport connection state (`TvConnectionStateIndicator`, `connection_state_presentation.dart`); select-a-remote / pairing-list rows use `TvReachabilityService` TCP probes again (`e1af1b9`)
+  - [x] `FreeTierDevicePolicy`, `ProDeviceSwitchPolicy`, `SavedDeviceDisplayOrdering`, `TvDeviceSelection` extracted from `RemoteHomePage` and `PairingPage`
+  - [x] Tests: policy unit tests + `multiplexed_tv_connection_state_service_test.dart`; widget/pairing stubs updated
+- [x] Home reconnect + concurrent-connect hardening (`e1af1b9`, Fix/remote connection and indicators #16):
+  - [x] `connect()` on `TvBrandAdapter` / `BrandRoutedRemoteCommandService`; LG/Samsung/Hisense `_connectInFlight` joins concurrent callers per device id (transport future returned directly; cleanup via `unawaited(f.whenComplete(...))`)
+  - [x] `RemoteHomePage` fires `connect()` on connection-state subscribe; `Timer.periodic(5 s)` reconnect on disconnect/error; lifecycle pause/resume; dispose cancels timer
+  - [x] Retry skips when `!mounted` or home route is not current (avoids spurious LG SSAP popup while pairing another TV)
+  - [x] Tests: concurrent-connect lanes in `lg_test_lane_test.dart` / `samsung_test_lane_test.dart` / `hisense_test_lane_test.dart`; pairing indicator group + retry route-guard coverage in `pairing_page_test.dart` / `widget_test.dart` (`flutter test` — 453 passed)
+
+### In Progress
 - [ ] Milestone 3 / Task 3.1:
   - [ ] Continue usability polish for edit mode visual affordances and small-screen readability
 
@@ -137,15 +247,16 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [ ] confirm SSDP scan finds expected TVs on common home routers (multicast + client isolation)
 - [ ] Connect pairing output to real protocol handshake/verification per non-Samsung brands
 - [ ] Expand tests:
-  - [ ] pairing success/failure paths
-  - [ ] Samsung approval timeout/rejection handling paths
+  - [x] pairing success/failure paths (`TVREMOTE-12`): coordinator unit coverage in `test/lib/remote_control/presentation/pages/pairing_page_coordinator_test.dart` for non-PIN success (persistence, manual-IP save, enriched-device fallback), non-PIN failure (no-save invariants, sanitized message, unsupported→failure), PIN retry depth (3-rejection success, 5-rejection cancel, verbatim PIN forwarding, per-attempt `onPinRejected`), and `cancelPairing` delegation
+  - [x] Samsung approval timeout/rejection handling paths (`TVREMOTE-13`): service-lane failures preserve `TimeoutException` / `SamsungTransportAuthorizationException` messaging; retry-after-failure + `cancelPairing` delegation; token-store unauthorized/cancel/recovery unit tests
   - [ ] adapter capability unsupported flows
   - [x] saved-device remove/last-used fallback paths
+  - [x] vertical-slice widget/integration edge cases (`TVREMOTE-11`): discovery failure, empty-rescan recovery, returning last-used launch, command failure surfacing
 - [ ] Implement missing per-brand text-input transports and re-enable capability flags after validation
-- [ ] Add focused widget tests for:
-  - [ ] drag/drop swap behavior (including multi-cell items and resolver rejection vs accept paths)
-  - [ ] layout persistence and default reset behavior
-  - [ ] `5x9` default layout occupancy constraints (no overlaps)
+- [x] Add focused widget tests for (**TVREMOTE-20**; re-verified 2026-05-22):
+  - [x] drag/drop swap behavior (including multi-cell items and resolver rejection vs accept paths) — `remote_layout_drop_resolver_test.dart`
+  - [x] layout persistence and default reset behavior — `shared_prefs_layout_repository_test.dart`, `remote_layout_editor_widget_test.dart` (reset callback)
+  - [x] `5x9` default layout occupancy constraints (no overlaps) — `remote_layout_grid_constraints_test.dart`
 
 ## Planning Notes
 
@@ -199,9 +310,9 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] Document extension points for adding new TV protocols.
 
 ### Task 0.2 - Setup environment and quality baseline
-- [ ] Confirm Flutter project settings and lint/test configuration.
-- [ ] Add CI checks for format, analyze, and tests.
-- [ ] Add app flavor/config placeholders for debug and release.
+- [x] Confirm Flutter project settings and lint/test configuration (`analysis_options.yaml` → `flutter_lints`).
+- [x] Add CI checks for format, analyze, and tests (`.github/workflows/flutter_ci.yml`).
+- [x] Add app flavor/config placeholders for debug and release (`AppBuildConfig`; README + Gradle comments; no Gradle `productFlavors` yet).
 
 ### Task 0.3 - Define shared domain models
 - [ ] Create core entities:
@@ -261,18 +372,18 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] Add protocol-specific error handling and reconnection behavior.
 
 ### Task 2.2 - Upgrade discovery and device type identification
-- [ ] Distinguish supported device brands in discovery results.
-- [ ] Route pairing flow to the correct protocol adapter.
-- [ ] Add explicit "limited support" messaging for partially supported models/protocols.
+- [x] Distinguish supported device brands in discovery results (`ssdp_brand_inference.dart`, Roku SSDP hint; `DiscoveryResultMerger` prefers Samsung/LG/Hisense over Android TV/Roku for the same IP; list sorted full → limited → experimental).
+- [x] Route pairing flow to the correct protocol adapter (unchanged `BrandRoutedRemoteCommandService` `(brand, protocolVariant)` routing; discovery merge avoids duplicate IPs with conflicting brands).
+- [x] Add explicit "limited support" messaging for partially supported models/protocols (`DiscoveredDeviceSupport` tiers + pairing discovery subtitles for Hisense/Roku/experimental brands).
 
 ### Task 2.3 - Implement multi-device management
-- [ ] Save multiple TVs.
-- [ ] Add device switcher and last-used device tracking.
-- [ ] Add edit/remove device operations.
+- [x] Save multiple TVs (pairing persistence + saved-device list).
+- [x] Add device switcher and last-used device tracking (remote-home switcher sheet; `setLastUsedDevice` on switch paths).
+- [x] Add edit/remove device operations (pairing screen rename + swipe-to-remove with active-device confirmation).
 
 ### Task 2.4 - Improve connection resilience
-- [ ] Add reconnect backoff strategy for temporary network failures.
-- [ ] Surface clear UI states: connecting, connected, disconnected, retrying.
+- [ ] Add reconnect backoff strategy for temporary network failures (fixed 5 s home retry shipped in `e1af1b9`; true backoff still pending).
+- [x] Surface clear UI states: connecting, connected, disconnected, retrying (home active device via `TvConnectionStateService` `34788d0`; pairing-list reachability probes + home 5 s reconnect / route guard `e1af1b9`; exponential backoff still pending).
 
 ## Milestone 3 - UX Polish and Product Readiness
 
@@ -293,10 +404,10 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 
 ## Cross-Cutting Tasks (Do in parallel)
 
-### Task C1 - Telemetry and diagnostics
-- [ ] Track discovery success/failure rates.
-- [ ] Track pairing and command error categories.
-- [ ] Add internal debug view/log export for troubleshooting.
+### Task C1 - Telemetry and diagnostics (**TVREMOTE-29** shipped in repo)
+- [x] Track discovery success/failure rates (`AppDiagnosticsRecorder` + discovery decorator; debug settings summary).
+- [x] Track pairing and command error categories (pairing session + dispatch outcome counters by brand/outcome).
+- [x] Add internal debug view/log export for troubleshooting (settings debug section: `DiagnosticsSummaryPanel`, copy diagnostics report; existing transport log copy retained).
 
 ### Task C2 - Testing strategy
 - [ ] Unit tests for domain and command routing.
@@ -338,16 +449,19 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 
 ## Final Release Gate (Legal & Compliance)
 
-- [ ] Run a legal/license pass for any adopted external protocol references or copied logic before release.
-- [ ] Confirm third-party notices/attributions and license text obligations are satisfied in-app/repository.
-- [ ] Record final go/no-go license status in `references/third_party_licenses.md`.
-- [ ] Block release if any unresolved copyleft or attribution obligations remain.
+- [x] Run a legal/license pass for any adopted external protocol references or copied logic before release (**TVREMOTE-32**, 2026-05-22 — `references/third_party_licenses.md` protocol + dependency audit).
+- [x] Confirm third-party notices/attributions and license text obligations are satisfied in-app/repository (**TVREMOTE-32** — Settings → Legal → Open source licenses; tracker doc updated).
+- [x] Record final go/no-go license status in `references/third_party_licenses.md` (**TVREMOTE-32** — OSS **Go**; manufacturer ToS + streaming trademarks conditional).
+- [x] No unresolved **copyleft** obligations in direct runtime dependencies (**TVREMOTE-32**); manufacturer API ToS and brand marks remain separate gates (**TVREMOTE-26** / compliance §2.1).
 - [ ] **Store submission blockers** (expanded checklist: `references/compliance-and-release-requirements.md`):
-  - [ ] Privacy policy at a live public URL; linked in App Store Connect and Play Console.
-  - [ ] iOS: App Tracking Transparency integrated; prompt before first ad load.
-  - [ ] EU/California: consent (for example UMP via `google_mobile_ads`) before ads where required.
-  - [ ] Pro / remove-ads: **non-consumable** IAP via Apple IAP + Google Play Billing only (`in_app_purchase`).
+  - [ ] Privacy policy at a live public URL; linked in App Store Connect and Play Console (in-app link scaffold only until URL is live).
+  - [x] iOS: App Tracking Transparency integrated in app code; prompt before first ad SDK init (`AdConsentCoordinator`).
+  - [x] EU/California: UMP consent integrated in app code before ad load; device/regional validation still required.
+  - [x] Pro: IAP via Apple IAP + Google Play Billing only (`in_app_purchase`) supporting multi-product subscriptions + lifetime (`ProProductIds` catalog); override via `--dart-define=PRO_PRODUCT_ID=...` (see `lib/app/configurations/app_monetization_di_config.dart`); Android server-side receipt validation callable in repo (`functions/src/index.ts` — deploy per `references/goals/goal-pro-receipt-validation-remote-setup.md`).
   - [ ] Developer accounts and signing: Apple Developer Program, Google Play developer account, AdMob as needed before ads go live.
+  - [x] Production AdMob **app IDs** at build time (`4af3cdc`): Android `${admobAppId}` placeholder; iOS `GADApplicationIdentifier` in `Info.plist`.
+  - [ ] Replace placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list before iOS release.
+  - [ ] Flip Firebase Remote Config `test_ads_enabled` to `false` (and/or confirm `--dart-define=ADMOB_*` overrides) before serving live ad units in production.
 - [ ] **Physical-device validation:** Do not claim store support for a brand until pairing and core commands are verified on at least one real TV of that brand (complements the brand readiness matrix in `references/product_specs.md`).
 - [ ] **Deferred code-quality/security follow-ups** from the April 2026 lib review (no code until individually confirmed): `references/goal-oneremote-lib-review.md`.
 

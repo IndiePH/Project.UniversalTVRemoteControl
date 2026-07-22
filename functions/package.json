@@ -1,0 +1,25 @@
+{
+  "name": "one-remote-functions",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -w -p tsconfig.json",
+    "lint": "node -e \"console.log('no lint configured')\"",
+    "test": "npm run build && node --test \"test/**/*.test.js\"",
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.1",
+    "firebase-functions": "^6.4.0",
+    "googleapis": "^140.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
+

@@ -35,6 +35,73 @@ Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — 
 - Samsung text-input capability exposure gate (keep disabled until physical validation):
   - default is OFF (Samsung device capability set excludes text input; adapter reports `supportsTextInput=false`)
   - enable only for validation runs with `--dart-define=SAMSUNG_ENABLE_TEXT_INPUT=true`
+- In-app feedback webhook (default Apps Script URL in `FeedbackConfig`; optional overrides):
+  - `--dart-define=FEEDBACK_WEBHOOK_URL=https://...`
+  - `--dart-define=FEEDBACK_WEBHOOK_TOKEN=...`
+  - Operator setup: `references/feedback-collection-setup.md`
+
+## CI and local quality checks
+
+GitHub Actions workflow [`.github/workflows/flutter_ci.yml`](.github/workflows/flutter_ci.yml) runs on pushes and pull requests to `main`, `master`, and `develop`. CI is **skipped** when the commit/PR diff touches **only** paths under `references/` (any commit subject, e.g. `docs(references): …` or `chore: tweak docs in references`). If `lib/`, `test/`, or any path outside `references/` changes, CI runs.
+
+1. `dart format --output=none --set-exit-if-changed .` - fails when formatting drifts
+2. `flutter analyze --fatal-infos` - static analysis / lints
+3. `flutter test` - unit and widget tests
+
+Reproduce locally:
+
+```bash
+flutter pub get
+dart format --output=none --set-exit-if-changed .
+flutter analyze --fatal-infos
+flutter test
+```
+
+## Build profiles and flavors (intentional gaps)
+
+| Layer | Debug | Release / store |
+| --- | --- | --- |
+| Flutter build mode | `kDebugMode` (default `flutter run`) | `kReleaseMode` (`flutter build apk --release`, etc.) |
+| App DI environment | `AppEnvironment.debug` via `AppBuildConfig.environmentForMain()` | `AppEnvironment.production` |
+| Android Gradle | `buildTypes.debug` (default) | `buildTypes.release` signed via `android/key.properties` (release Gradle tasks fail explicitly if missing; debug builds unaffected) |
+| iOS Xcode | Debug configuration | Release configuration |
+
+**Not implemented yet (by design):**
+
+- Gradle **product flavors** (e.g. `dev` / `staging` / `prod`) - configuration uses `--dart-define` and in-app debug toggles instead; see **Current Runtime Modes** above.
+- `AppEnvironment.development` - enum value reserved; `AppBuildConfig.developmentFlavorReserved` documents the hook until a flavor or dart-define wires it.
+- **Profile** builds (`flutter run --profile`) use production DI today; profile-specific hooks can attach to `AppBuildProfile.profile` in `lib/app/configurations/app_build_config.dart`.
+
+### Building APKs for local testing
+
+**Debug APK** — no signing required, suitable for sideloading and device testing:
+
+```
+flutter build apk --debug
+```
+
+Output: `build/app/outputs/flutter-apk/app-debug.apk`
+
+**Release APK** — requires `android/key.properties`:
+
+```
+flutter build apk --release
+```
+
+`android/key.properties` is gitignored. Create it before running a release build:
+
+```
+storePassword=<your-password>
+keyPassword=<your-key-password>
+keyAlias=<your-alias>
+storeFile=<path-to-your.jks>
+```
+
+When `key.properties` is present, `signingConfigs.release` is applied to the release build type. When it is absent, the signing config is skipped and `gradle.taskGraph.whenReady` throws an explicit error if `assembleRelease` or `bundleRelease` is in the task graph — debug builds are unaffected.
+
+**Android / Kotlin incremental (cross-drive):** `android/gradle.properties` sets `kotlin.incremental=false` to avoid Kotlin incremental cache failures when the Flutter project and Pub cache live on different drives (for example project on `E:` and Pub cache on `C:`). Re-enable only if both trees share a drive and incremental builds are reliable again.
+
+Lint rules: `analysis_options.yaml` includes `package:flutter_lints/flutter.yaml`.
 
 ## Getting Started
 

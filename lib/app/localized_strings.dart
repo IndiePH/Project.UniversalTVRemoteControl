@@ -1,0 +1,31 @@
+abstract interface class LocalizedStrings {
+  String pairingNoAdapter(String brandName);
+  String pairingApproved(String deviceName);
+  String pairingFailed(String deviceName);
+  String pairingCodeAccepted(String deviceName);
+  String pairingCodeSubmitFailed(String deviceName);
+  String get pairingLgProgressHint;
+  String get pairingSamsungProgressHint;
+  String get pairingHisenseProgressHint;
+  String get pairingLgPreStep0;
+  String get pairingLgPreStep1;
+  String get pairingSamsungPreStep0;
+  String get pairingSamsungPreStep1;
+  String get pairingAndroidTvProgressHint;
+  String get pairingAndroidTvPreStep0;
+  String get pairingAndroidTvPreStep1;
+  String get pairingRokuProgressHint;
+  String get pairingRokuPreStep0;
+  String get pairingRokuPreStep1;
+  String get pairingTclLegacyProgressHint;
+  String get pairingTclLegacyPreStep0;
+  String get pairingTclLegacyPreStep1;
+  String remoteCommandUnsupported(String commandName, String brandName);
+  String remoteCommandSent(String commandName);
+  String remoteCommandFailed(String deviceName);
+  String remoteTextInputUnsupported(String brandName);
+  String remoteTextSent(String text);
+  String remoteTextFailed(String deviceName);
+  String get remoteTextLgImeFocusRequired;
+  String get remoteTextSamsungCompatibilityError;
+}
