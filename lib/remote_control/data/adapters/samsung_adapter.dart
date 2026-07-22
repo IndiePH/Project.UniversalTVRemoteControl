@@ -16,10 +16,8 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
-  SamsungAdapter({
-    required this._transportClient,
-    CommandKeyMap? keyMapper,
-  }) : _keyMapper = keyMapper ?? const SamsungKeyMapper();
+  SamsungAdapter({required this._transportClient, CommandKeyMap? keyMapper})
+    : _keyMapper = keyMapper ?? const SamsungKeyMapper();
 
   @override
   TvBrand get brand => TvBrand.samsung;
@@ -84,14 +82,11 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
 
   @override
   Future<void> connect({required TvDevice device}) {
-    return _connectInFlight.putIfAbsent(
-      device.id,
-      () {
-        final f = _transportClient.connect(deviceId: device.id);
-        unawaited(f.whenComplete(() => _connectInFlight.remove(device.id)));
-        return f;
-      },
-    );
+    return _connectInFlight.putIfAbsent(device.id, () {
+      final f = _transportClient.connect(deviceId: device.id);
+      unawaited(f.whenComplete(() => _connectInFlight.remove(device.id)));
+      return f;
+    });
   }
 
   @override

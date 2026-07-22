@@ -48,15 +48,11 @@ final class AnalyticsService {
     return analytics.logEvent(name: name, parameters: merged);
   }
 
-  Future<void> pairingStart() => logEvent(
-    'pairing_start',
-    includeStartupCountry: false,
-  );
+  Future<void> pairingStart() =>
+      logEvent('pairing_start', includeStartupCountry: false);
 
-  Future<void> pairingCancel() => logEvent(
-    'pairing_cancel',
-    includeStartupCountry: false,
-  );
+  Future<void> pairingCancel() =>
+      logEvent('pairing_cancel', includeStartupCountry: false);
 
   Future<void> pairingSuccess({required String tvBrand}) => logEvent(
     'pairing_success',
@@ -68,9 +64,6 @@ final class AnalyticsService {
 
   Future<void> proRestoreStart() => logEvent('pro_restore_start');
 
-  Future<void> proEntitlementChanged({required String status}) => logEvent(
-    'pro_entitlement_changed',
-    parameters: {'status': status},
-  );
+  Future<void> proEntitlementChanged({required String status}) =>
+      logEvent('pro_entitlement_changed', parameters: {'status': status});
 }
-

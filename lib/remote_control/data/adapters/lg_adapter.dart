@@ -48,14 +48,11 @@ class LgAdapter implements TvBrandAdapter {
 
   @override
   Future<void> connect({required TvDevice device}) {
-    return _connectInFlight.putIfAbsent(
-      device.id,
-      () {
-        final f = _transportClient.connect(deviceId: device.id);
-        unawaited(f.whenComplete(() => _connectInFlight.remove(device.id)));
-        return f;
-      },
-    );
+    return _connectInFlight.putIfAbsent(device.id, () {
+      final f = _transportClient.connect(deviceId: device.id);
+      unawaited(f.whenComplete(() => _connectInFlight.remove(device.id)));
+      return f;
+    });
   }
 
   @override

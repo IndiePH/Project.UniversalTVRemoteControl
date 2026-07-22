@@ -14,8 +14,7 @@ const double _maxDialogHeightFraction = 0.55;
 
 int _proPlanSortKey(ProductDetails product) {
   final productIndex = ProProductIds.catalog.indexOf(product.id);
-  final group =
-      productIndex >= 0 ? productIndex : ProProductIds.catalog.length;
+  final group = productIndex >= 0 ? productIndex : ProProductIds.catalog.length;
   final offerIndex = _proPlanOfferSortKey(product);
   return group * 10 + offerIndex;
 }
@@ -157,7 +156,9 @@ final class _ProUpgradePageState extends State<ProUpgradePage> {
 
               if (isLoading) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: _contentPadding),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: _contentPadding,
+                  ),
                   child: Text(
                     l10n.proPricesLoading,
                     style: Theme.of(context).textTheme.bodySmall,
@@ -166,7 +167,9 @@ final class _ProUpgradePageState extends State<ProUpgradePage> {
               }
               if (snapshot.hasError) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: _contentPadding),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: _contentPadding,
+                  ),
                   child: Text(
                     l10n.proStoreUnavailable,
                     style: Theme.of(context).textTheme.bodySmall,
@@ -175,7 +178,9 @@ final class _ProUpgradePageState extends State<ProUpgradePage> {
               }
               if (plans.isEmpty) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: _contentPadding),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: _contentPadding,
+                  ),
                   child: Text(
                     l10n.proPlanUnavailable,
                     style: Theme.of(context).textTheme.bodySmall,

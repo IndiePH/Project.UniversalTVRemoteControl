@@ -43,13 +43,14 @@ final class FreeTierDevicePolicy {
     required RemoteCommandService commandService,
     required DeviceRepository deviceRepository,
   }) async {
-    final removed = await FreeTierSavedDeviceCleanup.removeNonActiveSavedDevices(
-      isFreeTier: isFreeTier,
-      activeDeviceId: activeDeviceId,
-      savedDevices: savedDevices,
-      commandService: commandService,
-      deviceRepository: deviceRepository,
-    );
+    final removed =
+        await FreeTierSavedDeviceCleanup.removeNonActiveSavedDevices(
+          isFreeTier: isFreeTier,
+          activeDeviceId: activeDeviceId,
+          savedDevices: savedDevices,
+          commandService: commandService,
+          deviceRepository: deviceRepository,
+        );
     if (!removed) {
       return FreeTierSavedDeviceCleanupOutcome(
         removed: false,
@@ -95,7 +96,9 @@ final class FreeTierDevicePolicy {
     required RemoteCommandService commandService,
     required DeviceRepository deviceRepository,
   }) async {
-    if (!isFreeTier || activeDeviceId == null || activeDeviceId == newDevice.id) {
+    if (!isFreeTier ||
+        activeDeviceId == null ||
+        activeDeviceId == newDevice.id) {
       return false;
     }
     TvDevice? activeDevice;

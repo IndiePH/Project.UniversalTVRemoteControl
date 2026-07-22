@@ -9,10 +9,8 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class TclRokuAdapter implements TvBrandAdapter {
-  TclRokuAdapter({
-    required this._transportClient,
-    CommandKeyMap? keyMap,
-  }) : _keyMap = keyMap ?? const TclRokuKeyMapper();
+  TclRokuAdapter({required this._transportClient, CommandKeyMap? keyMap})
+    : _keyMap = keyMap ?? const TclRokuKeyMapper();
 
   final RokuTransportClient _transportClient;
   final CommandKeyMap _keyMap;

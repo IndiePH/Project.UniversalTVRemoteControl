@@ -68,92 +68,92 @@ final class PairingPageDialogs {
     final pinController = TextEditingController();
     try {
       return await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        String? inputError;
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          String? inputError;
 
-        String? validatePin(AppLocalizations l10n) {
-          final value = pinController.text.trim();
-          return switch (pinFormat) {
-            PinFormat.sixCharHex =>
-              RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)
-                  ? null
-                  : l10n.pairingPinErrorInvalidHex,
-            PinFormat.fourDigitNumeric =>
-              RegExp(r'^\d{4}$').hasMatch(value)
-                  ? null
-                  : l10n.pairingPinErrorInvalid,
-          };
-        }
-
-        void submit(StateSetter setDialogState, AppLocalizations l10n) {
-          final error = validatePin(l10n);
-          if (error != null) {
-            setDialogState(() => inputError = error);
-            return;
+          String? validatePin(AppLocalizations l10n) {
+            final value = pinController.text.trim();
+            return switch (pinFormat) {
+              PinFormat.sixCharHex =>
+                RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)
+                    ? null
+                    : l10n.pairingPinErrorInvalidHex,
+              PinFormat.fourDigitNumeric =>
+                RegExp(r'^\d{4}$').hasMatch(value)
+                    ? null
+                    : l10n.pairingPinErrorInvalid,
+            };
           }
-          Navigator.of(context).pop(pinController.text.trim().toUpperCase());
-        }
 
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final l10n = AppLocalizations.of(context)!;
-            final isHex = pinFormat == PinFormat.sixCharHex;
-            return AlertDialog(
-              title: Text(l10n.pairingPinTitle),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l10n.pairingPinBody),
-                  const SizedBox(height: 8),
-                  Text(
-                    pairingMessage,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: pinController,
-                    keyboardType: isHex
-                        ? TextInputType.visiblePassword
-                        : TextInputType.number,
-                    maxLength: isHex ? 6 : 4,
-                    autofocus: true,
-                    textCapitalization: isHex
-                        ? TextCapitalization.characters
-                        : TextCapitalization.none,
-                    decoration: InputDecoration(
-                      labelText: isHex
-                          ? l10n.pairingPinCodeLabelHex
-                          : l10n.pairingPinCodeLabel,
-                      border: const OutlineInputBorder(),
-                      counterText: '',
-                      errorText: inputError,
+          void submit(StateSetter setDialogState, AppLocalizations l10n) {
+            final error = validatePin(l10n);
+            if (error != null) {
+              setDialogState(() => inputError = error);
+              return;
+            }
+            Navigator.of(context).pop(pinController.text.trim().toUpperCase());
+          }
+
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              final l10n = AppLocalizations.of(context)!;
+              final isHex = pinFormat == PinFormat.sixCharHex;
+              return AlertDialog(
+                title: Text(l10n.pairingPinTitle),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.pairingPinBody),
+                    const SizedBox(height: 8),
+                    Text(
+                      pairingMessage,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    onChanged: (_) {
-                      if (inputError == null) return;
-                      setDialogState(() => inputError = null);
-                    },
-                    onSubmitted: (_) => submit(setDialogState, l10n),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: pinController,
+                      keyboardType: isHex
+                          ? TextInputType.visiblePassword
+                          : TextInputType.number,
+                      maxLength: isHex ? 6 : 4,
+                      autofocus: true,
+                      textCapitalization: isHex
+                          ? TextCapitalization.characters
+                          : TextCapitalization.none,
+                      decoration: InputDecoration(
+                        labelText: isHex
+                            ? l10n.pairingPinCodeLabelHex
+                            : l10n.pairingPinCodeLabel,
+                        border: const OutlineInputBorder(),
+                        counterText: '',
+                        errorText: inputError,
+                      ),
+                      onChanged: (_) {
+                        if (inputError == null) return;
+                        setDialogState(() => inputError = null);
+                      },
+                      onSubmitted: (_) => submit(setDialogState, l10n),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(null),
+                    child: Text(l10n.uiCancel),
+                  ),
+                  FilledButton(
+                    onPressed: () => submit(setDialogState, l10n),
+                    child: Text(l10n.pairingPinSubmitButton),
                   ),
                 ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(null),
-                  child: Text(l10n.uiCancel),
-                ),
-                FilledButton(
-                  onPressed: () => submit(setDialogState, l10n),
-                  child: Text(l10n.pairingPinSubmitButton),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+              );
+            },
+          );
+        },
+      );
     } finally {
       interstitial?.releasePresentationBlock();
     }

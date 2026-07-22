@@ -7,9 +7,9 @@ final class ProReceiptValidationResult {
   });
 
   const ProReceiptValidationResult.notEntitled()
-      : entitled = false,
-        expiresAtEpochMs = null,
-        resolvedProductId = null;
+    : entitled = false,
+      expiresAtEpochMs = null,
+      resolvedProductId = null;
 
   final bool entitled;
   final int? expiresAtEpochMs;

@@ -226,8 +226,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   }
 
   Future<void> _refreshSavedDevicesForFreeTier() async {
-    final initialSavedDevices =
-        await widget.deviceRepository.getSavedDevices();
+    final initialSavedDevices = await widget.deviceRepository.getSavedDevices();
     final cleanupOutcome = await FreeTierDevicePolicy.cleanupExtraSavedDevices(
       isFreeTier: _isResolvedFreeTier,
       activeDeviceId: _activeDevice?.id,
@@ -345,32 +344,31 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     _connectionStateSub = widget.connectionStateService.watch(device).listen((
       state,
     ) {
-          if (!mounted) {
-            return;
-          }
-          setState(() {
-            _connectionState = state;
-            if (_activeDevice == null) {
-              return;
-            }
-            if (state == remote_connection.ConnectionState.connected &&
-                _statusKind == RemoteHomeStatusKind.transportIdle) {
-              _applyStatusKind(RemoteHomeStatusKind.ready);
-            } else if (state ==
-                    remote_connection.ConnectionState.disconnected &&
-                _statusKind == RemoteHomeStatusKind.ready) {
-              _applyStatusKind(RemoteHomeStatusKind.transportIdle);
-            }
-          });
-          if (state == remote_connection.ConnectionState.error) {
-            _startConnectionRetry(device);
-          } else if (state == remote_connection.ConnectionState.disconnected &&
-              _activeDevice != null) {
-            _startConnectionRetry(device);
-          } else if (state == remote_connection.ConnectionState.connected) {
-            _stopConnectionRetry();
-          }
-        });
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _connectionState = state;
+        if (_activeDevice == null) {
+          return;
+        }
+        if (state == remote_connection.ConnectionState.connected &&
+            _statusKind == RemoteHomeStatusKind.transportIdle) {
+          _applyStatusKind(RemoteHomeStatusKind.ready);
+        } else if (state == remote_connection.ConnectionState.disconnected &&
+            _statusKind == RemoteHomeStatusKind.ready) {
+          _applyStatusKind(RemoteHomeStatusKind.transportIdle);
+        }
+      });
+      if (state == remote_connection.ConnectionState.error) {
+        _startConnectionRetry(device);
+      } else if (state == remote_connection.ConnectionState.disconnected &&
+          _activeDevice != null) {
+        _startConnectionRetry(device);
+      } else if (state == remote_connection.ConnectionState.connected) {
+        _stopConnectionRetry();
+      }
+    });
     unawaited(widget.commandService.connect(device: device));
   }
 
@@ -947,8 +945,8 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     var pendingFake = stored ?? _compileUseFakeTransports;
     final showAdPrivacyOptions =
         await AdConsentCoordinator.isPrivacyOptionsRequired();
-    final packageInfo =
-        await GetIt.instance<AppPackageInfoSource>().getPackageInfo();
+    final packageInfo = await GetIt.instance<AppPackageInfoSource>()
+        .getPackageInfo();
     if (!mounted) {
       return;
     }
@@ -976,7 +974,8 @@ class _RemoteHomePageState extends State<RemoteHomePage>
                           valueListenable: proService.storeAvailableNotifier,
                           builder: (context, storeAvailable, child) {
                             return ValueListenableBuilder<AppThemePreference>(
-                              valueListenable: themeController.preferenceNotifier,
+                              valueListenable:
+                                  themeController.preferenceNotifier,
                               builder: (context, themePreference, child) {
                                 return RemoteHomeSettingsSheet(
                                   entitlementStatus: status,
@@ -985,9 +984,10 @@ class _RemoteHomePageState extends State<RemoteHomePage>
                                   hasLifetimePro: proService.hasLifetimePro,
                                   storeAvailable: storeAvailable,
                                   themePreference: themePreference,
-                                  onThemePreferenceChanged: (value) => unawaited(
-                                    themeController.setPreference(value),
-                                  ),
+                                  onThemePreferenceChanged: (value) =>
+                                      unawaited(
+                                        themeController.setPreference(value),
+                                      ),
                                   onUpgradeToPro: () => unawaited(
                                     _openProUpgradePage(
                                       dialogContext: sheetContext,
@@ -1013,39 +1013,40 @@ class _RemoteHomePageState extends State<RemoteHomePage>
                                     });
                                   },
                                   onCopyTransportLogs: () {
-                                unawaited(() async {
-                                  final didCopy =
-                                      await _copyLatestTransportLog();
-                                  if (didCopy && sheetContext.mounted) {
+                                    unawaited(() async {
+                                      final didCopy =
+                                          await _copyLatestTransportLog();
+                                      if (didCopy && sheetContext.mounted) {
+                                        Navigator.pop(sheetContext);
+                                      }
+                                    }());
+                                  },
+                                  onCopyDiagnosticsReport: () {
+                                    unawaited(() async {
+                                      final didCopy =
+                                          await _copyDiagnosticsReport();
+                                      if (didCopy && sheetContext.mounted) {
+                                        Navigator.pop(sheetContext);
+                                      }
+                                    }());
+                                  },
+                                  onCopyRuntimeFlagsTemplate: () {
                                     Navigator.pop(sheetContext);
-                                  }
-                                }());
-                              },
-                              onCopyDiagnosticsReport: () {
-                                unawaited(() async {
-                                  final didCopy =
-                                      await _copyDiagnosticsReport();
-                                  if (didCopy && sheetContext.mounted) {
+                                    unawaited(_copyRuntimeFlagsTemplate());
+                                  },
+                                  onOpenFeedback: () {
                                     Navigator.pop(sheetContext);
-                                  }
-                                }());
-                              },
-                              onCopyRuntimeFlagsTemplate: () {
-                                Navigator.pop(sheetContext);
-                                unawaited(_copyRuntimeFlagsTemplate());
-                              },
-                              onOpenFeedback: () {
-                                Navigator.pop(sheetContext);
-                                unawaited(_showFeedbackSheet());
-                              },
-                              showPrivacyPolicyLink: showPrivacyPolicyLink,
-                              onOpenPrivacyPolicy: () =>
-                                  unawaited(_openPrivacyPolicy(sheetContext)),
-                              showAdPrivacyOptions: showAdPrivacyOptions,
-                              onOpenAdPrivacyOptions: () => unawaited(
-                                _openAdPrivacyOptions(sheetContext),
-                              ),
-                              appVersionLabel: packageInfo.versionLabel,
+                                    unawaited(_showFeedbackSheet());
+                                  },
+                                  showPrivacyPolicyLink: showPrivacyPolicyLink,
+                                  onOpenPrivacyPolicy: () => unawaited(
+                                    _openPrivacyPolicy(sheetContext),
+                                  ),
+                                  showAdPrivacyOptions: showAdPrivacyOptions,
+                                  onOpenAdPrivacyOptions: () => unawaited(
+                                    _openAdPrivacyOptions(sheetContext),
+                                  ),
+                                  appVersionLabel: packageInfo.versionLabel,
                                 );
                               },
                             );

@@ -57,9 +57,8 @@ class AdConfig {
       testAdsEnabled: testAdsEnabled,
     );
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android => useTestAds
-          ? _androidTestBannerAdUnitId
-          : _liveAndroidBannerAdUnitId(),
+      TargetPlatform.android =>
+        useTestAds ? _androidTestBannerAdUnitId : _liveAndroidBannerAdUnitId(),
       TargetPlatform.iOS =>
         useTestAds ? _iosTestBannerAdUnitId : _liveIosBannerAdUnitId(),
       _ => null,
@@ -79,12 +78,14 @@ class AdConfig {
       testAdsEnabled: testAdsEnabled,
     );
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android => useTestAds
-          ? _androidTestInterstitialAdUnitId
-          : _liveAndroidInterstitialAdUnitId(),
-      TargetPlatform.iOS => useTestAds
-          ? _iosTestInterstitialAdUnitId
-          : _liveIosInterstitialAdUnitId(),
+      TargetPlatform.android =>
+        useTestAds
+            ? _androidTestInterstitialAdUnitId
+            : _liveAndroidInterstitialAdUnitId(),
+      TargetPlatform.iOS =>
+        useTestAds
+            ? _iosTestInterstitialAdUnitId
+            : _liveIosInterstitialAdUnitId(),
       _ => null,
     };
   }

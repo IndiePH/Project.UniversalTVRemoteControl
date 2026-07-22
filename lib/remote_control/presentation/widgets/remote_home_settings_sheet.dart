@@ -89,7 +89,11 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                _proTitleLine(l10n, isPro: isPro, activeProductId: activeProductId),
+                _proTitleLine(
+                  l10n,
+                  isPro: isPro,
+                  activeProductId: activeProductId,
+                ),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 6),

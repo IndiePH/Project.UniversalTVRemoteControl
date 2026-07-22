@@ -492,10 +492,16 @@ class _SlowSamsungTransportClient implements SamsungTransportClient {
   }) async {}
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) async {}
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {}
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
 
   @override
   Stream<bool> watchRemoteTextInputReady(String deviceId) =>

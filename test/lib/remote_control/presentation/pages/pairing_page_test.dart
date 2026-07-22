@@ -883,7 +883,9 @@ void main() {
             preparePairingResult: CommandDispatchResult.success('OK'),
           ),
           deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
-          reachabilityService: const _StubTvReachabilityService(reachable: true),
+          reachabilityService: const _StubTvReachabilityService(
+            reachable: true,
+          ),
           activeDeviceId: savedDevice.id,
         ),
       );
@@ -900,7 +902,9 @@ void main() {
             preparePairingResult: CommandDispatchResult.success('OK'),
           ),
           deviceRepository: _StubDeviceRepository(savedDevices: [savedDevice]),
-          reachabilityService: const _StubTvReachabilityService(reachable: false),
+          reachabilityService: const _StubTvReachabilityService(
+            reachable: false,
+          ),
           activeDeviceId: savedDevice.id,
         ),
       );

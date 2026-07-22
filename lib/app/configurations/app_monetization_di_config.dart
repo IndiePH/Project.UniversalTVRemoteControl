@@ -32,8 +32,8 @@ final class AppMonetizationDiConfig implements IDiConfig {
   @override
   void configure(GetIt sl, AppEnvironment env) {
     final cache = SharedPrefsProEntitlementCache();
-    final receiptValidationService = _supportsReceiptValidation &&
-            Firebase.apps.isNotEmpty
+    final receiptValidationService =
+        _supportsReceiptValidation && Firebase.apps.isNotEmpty
         ? ProReceiptValidationService()
         : null;
     final repository = _supportsInAppPurchaseStore
@@ -57,7 +57,9 @@ final class AppMonetizationDiConfig implements IDiConfig {
 
     sl.registerSingleton<SharedPrefsProEntitlementCache>(cache);
     if (receiptValidationService != null) {
-      sl.registerSingleton<ProReceiptValidationService>(receiptValidationService);
+      sl.registerSingleton<ProReceiptValidationService>(
+        receiptValidationService,
+      );
     }
     sl.registerSingleton<ProEntitlementRepository>(
       repository,

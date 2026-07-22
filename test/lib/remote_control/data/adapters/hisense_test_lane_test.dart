@@ -311,7 +311,10 @@ class _SlowHisenseTransportClient
   }) async {}
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyName}) async {}
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyName,
+  }) async {}
 
   @override
   Future<void> launchVidaaApp({
@@ -323,7 +326,10 @@ class _SlowHisenseTransportClient
   }) async {}
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {}
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
 
   @override
   Future<void> probe(String host) async {}

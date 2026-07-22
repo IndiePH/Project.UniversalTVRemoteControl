@@ -26,18 +26,21 @@ bool _fitsGrid(LayoutEditItem item) {
 
 void main() {
   group('default remote layout (5x9)', () {
-    test('initial layout items fit inside grid using validation footprints', () {
-      final items = buildInitialRemoteLayoutItems();
-      for (final item in items) {
-        expect(
-          _fitsGrid(item),
-          isTrue,
-          reason:
-              '${item.id} footprint exceeds $kRemoteLayoutGridColumns'
-              'x$kRemoteLayoutGridRows',
-        );
-      }
-    });
+    test(
+      'initial layout items fit inside grid using validation footprints',
+      () {
+        final items = buildInitialRemoteLayoutItems();
+        for (final item in items) {
+          expect(
+            _fitsGrid(item),
+            isTrue,
+            reason:
+                '${item.id} footprint exceeds $kRemoteLayoutGridColumns'
+                'x$kRemoteLayoutGridRows',
+          );
+        }
+      },
+    );
 
     test('initial layout has no overlapping validation footprints', () {
       final items = buildInitialRemoteLayoutItems();

@@ -36,21 +36,24 @@ void main() {
       expect((await repository.getLastUsedDevice())?.id, 'b');
     });
 
-    test('returns false and does not persist when policy blocks switch', () async {
-      final repository = InMemoryDeviceRepository();
-      await repository.saveDevice(deviceA);
-      await repository.saveDevice(deviceB);
-      await repository.setLastUsedDevice('a');
+    test(
+      'returns false and does not persist when policy blocks switch',
+      () async {
+        final repository = InMemoryDeviceRepository();
+        await repository.saveDevice(deviceA);
+        await repository.saveDevice(deviceB);
+        await repository.setLastUsedDevice('a');
 
-      final persisted = await TvDeviceSelection.tryPersistLastUsed(
-        device: deviceB,
-        activeDeviceId: 'a',
-        isPro: false,
-        deviceRepository: repository,
-      );
+        final persisted = await TvDeviceSelection.tryPersistLastUsed(
+          device: deviceB,
+          activeDeviceId: 'a',
+          isPro: false,
+          deviceRepository: repository,
+        );
 
-      expect(persisted, isFalse);
-      expect((await repository.getLastUsedDevice())?.id, 'a');
-    });
+        expect(persisted, isFalse);
+        expect((await repository.getLastUsedDevice())?.id, 'a');
+      },
+    );
   });
 }

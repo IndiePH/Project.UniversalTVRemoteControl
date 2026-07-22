@@ -9,9 +9,7 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 /// every UI surface shares one upstream transport subscription and snapshot.
 final class MultiplexedTvConnectionStateService
     implements TvConnectionStateService {
-  MultiplexedTvConnectionStateService({
-    required this._commandService,
-  });
+  MultiplexedTvConnectionStateService({required this._commandService});
 
   final RemoteCommandService _commandService;
   final Map<String, ConnectionState> _lastStates = <String, ConnectionState>{};

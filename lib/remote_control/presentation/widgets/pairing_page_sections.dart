@@ -271,7 +271,11 @@ class _PairedTvConnectionIndicatorState
         final reachable = snapshot.data ?? false;
         return reachable
             ? const Icon(Icons.wifi, size: 18, color: Colors.green)
-            : Icon(Icons.wifi_off, size: 18, color: Theme.of(context).disabledColor);
+            : Icon(
+                Icons.wifi_off,
+                size: 18,
+                color: Theme.of(context).disabledColor,
+              );
       },
     );
   }

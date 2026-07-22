@@ -13,10 +13,8 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class HisenseAdapter implements TvBrandAdapter {
-  HisenseAdapter({
-    required this._transportClient,
-    CommandKeyMap? keyMap,
-  }) : _keyMap = keyMap ?? const HisenseKeyMapper();
+  HisenseAdapter({required this._transportClient, CommandKeyMap? keyMap})
+    : _keyMap = keyMap ?? const HisenseKeyMapper();
 
   @override
   TvBrand get brand => TvBrand.hisense;
@@ -67,14 +65,11 @@ class HisenseAdapter implements TvBrandAdapter {
 
   @override
   Future<void> connect({required TvDevice device}) {
-    return _connectInFlight.putIfAbsent(
-      device.id,
-      () {
-        final f = _transportClient.connect(deviceId: device.id);
-        unawaited(f.whenComplete(() => _connectInFlight.remove(device.id)));
-        return f;
-      },
-    );
+    return _connectInFlight.putIfAbsent(device.id, () {
+      final f = _transportClient.connect(deviceId: device.id);
+      unawaited(f.whenComplete(() => _connectInFlight.remove(device.id)));
+      return f;
+    });
   }
 
   @override

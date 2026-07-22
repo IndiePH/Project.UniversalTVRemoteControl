@@ -356,10 +356,16 @@ class _SlowLgTransportClient
   }) async => 'key';
 
   @override
-  Future<void> sendKey({required String deviceId, required String keyCode}) async {}
+  Future<void> sendKey({
+    required String deviceId,
+    required String keyCode,
+  }) async {}
 
   @override
-  Future<void> sendText({required String deviceId, required String text}) async {}
+  Future<void> sendText({
+    required String deviceId,
+    required String text,
+  }) async {}
 
   @override
   Stream<LgRegistrationState> watchRegistrationState(String deviceId) =>
@@ -370,7 +376,9 @@ class _SlowLgTransportClient
       Stream<bool>.value(false);
 
   @override
-  Future<Map<String, dynamic>?> querySystemInfo({required String deviceId}) async => null;
+  Future<Map<String, dynamic>?> querySystemInfo({
+    required String deviceId,
+  }) async => null;
 
   @override
   Future<void> clearPairing({required String deviceId}) async {}

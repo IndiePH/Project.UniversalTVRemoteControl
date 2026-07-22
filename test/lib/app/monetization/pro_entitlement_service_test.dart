@@ -217,32 +217,29 @@ void main() {
     await service.dispose();
   });
 
-  test(
-    'restorePurchases reports failed when validation fails',
-    () async {
-      late _StubProEntitlementRepository repository;
-      repository = _StubProEntitlementRepository(
-        isAvailableValue: true,
-        onRefresh: () async {
-          repository.emit(ProEntitlementStatus.notEntitled);
-        },
-        onRestore: () async {
-          throw const ProRestoreValidationFailedException();
-        },
-      );
-      final service = ProEntitlementService(
-        repository: repository,
-        cache: SharedPrefsProEntitlementCache(),
-      );
+  test('restorePurchases reports failed when validation fails', () async {
+    late _StubProEntitlementRepository repository;
+    repository = _StubProEntitlementRepository(
+      isAvailableValue: true,
+      onRefresh: () async {
+        repository.emit(ProEntitlementStatus.notEntitled);
+      },
+      onRestore: () async {
+        throw const ProRestoreValidationFailedException();
+      },
+    );
+    final service = ProEntitlementService(
+      repository: repository,
+      cache: SharedPrefsProEntitlementCache(),
+    );
 
-      await service.refreshFromStore();
-      final outcome = await service.restorePurchases();
+    await service.refreshFromStore();
+    final outcome = await service.restorePurchases();
 
-      expect(outcome, RestorePurchasesOutcome.failed);
-      expect(service.isPro, isFalse);
-      await service.dispose();
-    },
-  );
+    expect(outcome, RestorePurchasesOutcome.failed);
+    expect(service.isPro, isFalse);
+    await service.dispose();
+  });
 }
 
 final class _StubProEntitlementRepository implements ProEntitlementRepository {
@@ -275,8 +272,10 @@ final class _StubProEntitlementRepository implements ProEntitlementRepository {
   Future<bool> isAvailable() async => _isAvailableValue;
 
   @override
-  Future<void> purchasePro({String? productId, ProductDetails? productDetails}) =>
-      _onPurchase();
+  Future<void> purchasePro({
+    String? productId,
+    ProductDetails? productDetails,
+  }) => _onPurchase();
 
   @override
   Future<List<ProductDetails>> queryProProductDetails() async => const [];

@@ -5,8 +5,9 @@ import 'package:one_remote/remote_control/data/adapters/samsung/samsung_pairing_
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
 import 'package:one_remote/remote_control/data/persistence/host_scoped_secret_persistence.dart';
 
-SamsungPairingTokenStore _store() =>
-    SamsungPairingTokenStore(persistence: InMemoryHostScopedSecretPersistence());
+SamsungPairingTokenStore _store() => SamsungPairingTokenStore(
+  persistence: InMemoryHostScopedSecretPersistence(),
+);
 
 void main() {
   group('SamsungPairingTokenStore', () {

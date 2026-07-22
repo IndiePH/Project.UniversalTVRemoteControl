@@ -73,7 +73,8 @@ class _InAppLegalWebViewPageState extends State<InAppLegalWebViewPage> {
     // that stores `theme-preference` in localStorage and applies
     // `documentElement.dataset.theme`. We mirror that behavior so the page's
     // own theme system (Jekyll/CSS) controls the final look.
-    final js = '''
+    final js =
+        '''
 (() => {
   try {
     const theme = '$theme'; // 'system' | 'light' | 'dark'
@@ -108,9 +109,7 @@ class _InAppLegalWebViewPageState extends State<InAppLegalWebViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
+      appBar: AppBar(title: Text(widget.title)),
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
@@ -120,4 +119,3 @@ class _InAppLegalWebViewPageState extends State<InAppLegalWebViewPage> {
     );
   }
 }
-

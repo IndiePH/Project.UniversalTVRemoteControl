@@ -9,9 +9,7 @@ abstract interface class PairingProgressHintRegistry {
 
 class DefaultPairingProgressHintRegistry
     implements PairingProgressHintRegistry {
-  DefaultPairingProgressHintRegistry({
-    required this._localizedStrings,
-  });
+  DefaultPairingProgressHintRegistry({required this._localizedStrings});
 
   final LocalizedStrings _localizedStrings;
 

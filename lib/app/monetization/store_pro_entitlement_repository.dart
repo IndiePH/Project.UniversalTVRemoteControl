@@ -173,8 +173,7 @@ final class StoreProEntitlementRepository implements ProEntitlementRepository {
     }
     // Empty restore responses are common on Android when purchases are already
     // acknowledged; only infer "no purchases" on an explicit restore attempt.
-    if (_receivedRelevantPurchasesDuringRestore ||
-        treatEmptyAsNotEntitled) {
+    if (_receivedRelevantPurchasesDuringRestore || treatEmptyAsNotEntitled) {
       _controller.add(ProEntitlementStatus.notEntitled);
     }
   }
@@ -195,9 +194,7 @@ final class StoreProEntitlementRepository implements ProEntitlementRepository {
       }
       final relevantPurchases = response.pastPurchases
           .where((purchase) => _productIds.contains(purchase.productID))
-          .map(
-            (purchase) => purchase..status = PurchaseStatus.restored,
-          )
+          .map((purchase) => purchase..status = PurchaseStatus.restored)
           .toList(growable: false);
       if (relevantPurchases.isEmpty) {
         return;
@@ -235,11 +232,15 @@ final class StoreProEntitlementRepository implements ProEntitlementRepository {
   }
 
   Future<void> _ensureProductsLoaded() async {
-    final missing = _productIds.where((id) => !_cachedProductDetails.containsKey(id));
+    final missing = _productIds.where(
+      (id) => !_cachedProductDetails.containsKey(id),
+    );
     if (missing.isEmpty) {
       return;
     }
-    final response = await _inAppPurchase.queryProductDetails(_productIds.toSet());
+    final response = await _inAppPurchase.queryProductDetails(
+      _productIds.toSet(),
+    );
     for (final item in response.productDetails) {
       _cachedProductDetails[item.id] = item;
     }

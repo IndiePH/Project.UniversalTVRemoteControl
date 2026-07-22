@@ -8,7 +8,8 @@ abstract class HostScopedSecretPersistence {
 }
 
 /// In-memory persistence for unit tests and fakes.
-class InMemoryHostScopedSecretPersistence implements HostScopedSecretPersistence {
+class InMemoryHostScopedSecretPersistence
+    implements HostScopedSecretPersistence {
   final Map<String, String> _values = <String, String>{};
 
   static String storageKey(String prefix, String host) =>

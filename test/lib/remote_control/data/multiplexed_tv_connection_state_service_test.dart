@@ -102,22 +102,19 @@ class _RecordingCommandService implements RemoteCommandService {
   @override
   Future<CommandDispatchResult> preparePairing({
     required TvDevice device,
-  }) async =>
-      CommandDispatchResult.success('ok');
+  }) async => CommandDispatchResult.success('ok');
 
   @override
   Future<CommandDispatchResult> sendCommand({
     required TvDevice device,
     required RemoteCommand command,
-  }) async =>
-      CommandDispatchResult.success('ok');
+  }) async => CommandDispatchResult.success('ok');
 
   @override
   Future<CommandDispatchResult> sendText({
     required TvDevice device,
     required String text,
-  }) async =>
-      CommandDispatchResult.success('ok');
+  }) async => CommandDispatchResult.success('ok');
 
   @override
   Set<RemoteCommand> supportedCommandsFor({required TvDevice device}) =>
@@ -127,8 +124,7 @@ class _RecordingCommandService implements RemoteCommandService {
   Future<CommandDispatchResult> submitPairingCode({
     required TvDevice device,
     required String pinCode,
-  }) async =>
-      CommandDispatchResult.success('ok');
+  }) async => CommandDispatchResult.success('ok');
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {}
