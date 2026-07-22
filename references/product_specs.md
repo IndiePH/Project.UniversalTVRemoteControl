@@ -226,6 +226,7 @@ Control rendering details:
 * Architecture:
 
     * Service-based pattern with clear UI, domain, and communication layers
+* Developer onboarding (build, run, CI, runtime flags, APK signing): repo root [`README.md`](../README.md)
 
 ---
 

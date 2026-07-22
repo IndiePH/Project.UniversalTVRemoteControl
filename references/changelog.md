@@ -3,6 +3,12 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-07-22
+
+### Changed
+- README overhaul: replaced Flutter template **Getting Started** with project overview, supported-brand table, repo layout, developer quick start, connection/reconnect behavior (`TvConnectionStateService` / `TvReachabilityService`), expanded `--dart-define` catalog (LG default transport, TCL gate, monetization/compliance), Firebase Pro validation pointer, and documentation index linking `references/`.
+- `references/product_specs.md` §6 and `references/implementation_tasks.md` cross-link README for developer onboarding.
+
 ## 2026-06-29
 
 ### Fixed

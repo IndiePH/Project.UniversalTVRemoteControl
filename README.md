@@ -1,19 +1,77 @@
 # one_remote
 
-Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — use either label interchangeably in docs). See `references/product_specs.md` and `references/marketing_strategy.md` for naming detail.
+Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — use either label interchangeably in docs). Control smart TVs over Wi‑Fi from Android or iOS.
+
+**Version:** `1.3.5+16` (see `pubspec.yaml`)
+
+## Overview
+
+OneRemote discovers TVs on the local network, pairs with brand-specific protocols, and provides a customizable remote control surface. The MVP focus is Samsung, LG, and Hisense over Wi‑Fi; additional brands ship as adapters mature.
+
+**Product docs:** `references/product_specs.md` · **Implementation status:** `references/implementation_tasks.md` · **Store checklist:** `references/compliance-and-release-requirements.md`
+
+### Supported brands (Wi‑Fi)
+
+| Brand | Status | Notes |
+| --- | --- | --- |
+| Samsung (Tizen) | Primary validation target | WebSocket transport; TV-side approval + token auth |
+| LG (webOS) | Active development | SSAP WebSocket; in-app text input pending transport |
+| Hisense (VIDAA) | Active development | MQTT TLS (port `36669`); PIN pairing |
+| TCL legacy Wi‑Fi | Experimental | See `references/tcl_validation_matrix.md` |
+| Android TV / Roku | Limited / discovery hints | Adapters exist; not store-ready |
+
+Physical validation runbooks: `references/samsung_validation_matrix.md`, `references/hisense_validation_matrix.md`.
+
+## Project structure
+
+```
+lib/
+  app/                 # Shell, DI bootstrap, ads, monetization, compliance, feedback, diagnostics
+  remote_control/
+    presentation/      # Remote home, pairing, layout editor, shared widgets
+    application/       # Command routing, discovery, connection state, device policies
+    domain/            # TvDevice, RemoteCommand, capabilities, contracts
+    data/              # Brand adapters, SSDP discovery, transport clients
+    debug/             # Fake transports for offline / lab runs
+  theme/               # AppTheme, AppColors
+  l10n/                # Localization
+functions/             # Firebase callable — Android Pro receipt validation
+test/                  # Unit and widget tests
+references/            # Specs, compliance, validation matrices, guides
+```
+
+Architecture follows presentation → application → domain → data. Brand behavior lives in per-brand adapter + transport trees under `lib/remote_control/data/adapters/`.
+
+## Getting started (developers)
+
+**Prerequisites:** Flutter SDK compatible with `pubspec.yaml` (`sdk: ^3.12.0`), Android SDK and/or Xcode for device builds.
+
+```bash
+flutter pub get
+flutter run
+```
+
+Default wiring uses **real** Samsung, LG, and Hisense transports for physical-TV testing. Use fake transports only for offline work — see **Current Runtime Modes** below.
+
+On a phone and TV on the same LAN: open the app → pair (scan or manual IP) → remote home. Debug settings (remote screen cog) expose fake-transport toggle, diagnostics, and transport log copy.
 
 ## Current Runtime Modes
 
 - Default app runtime uses real TV paths for quick physical-device testing:
   - Samsung command transport: real WebSocket transport
+  - LG command transport: real webOS SSAP WebSocket transport
   - Hisense command transport: real VIDAA-style MQTT (TLS to TV port `36669`, self-signed cert allowed)
   - Device discovery: SSDP local-network discovery (on **Android**, the app acquires a Wi‑Fi **multicast lock** for the scan so SSDP replies are not filtered; `TV_HOST_OVERRIDE` still works if the TV does not advertise recognizable UPnP headers)
+- Connection behavior (active device on remote home):
+  - Live transport state via `TvConnectionStateService`; `connect()` runs on subscribe and on a **5 s** periodic reconnect when disconnected (paused while another route covers home, e.g. pairing)
+  - Pairing / saved-device rows use `TvReachabilityService` TCP reachability probes
+  - Per-host pairing credentials persist across restarts (`flutter_secure_storage`)
 - Optional fake transport mode for all brand adapters (single switch):
   - run with `--dart-define=USE_FAKE_TRANSPORTS=true`
   - also switches discovery to fake scan data (includes a mock Hisense TV)
 - In-app debug settings toggle (no rebuild required):
   - Remote screen top-right cog opens debug settings
-  - `Use fake transports` switches discovery + Samsung/Hisense transport wiring at runtime
+  - `Use fake transports` switches discovery + Samsung/LG/Hisense transport wiring at runtime
   - selection is persisted via `SharedPreferences` (`debug_use_fake_transports`)
   - if no saved override exists, compile-time `USE_FAKE_TRANSPORTS` remains the default
 - Optional host override for all transports (single TV target):
@@ -22,23 +80,27 @@ Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — 
   - `--dart-define=HISENSE_MQTT_CLIENT_ID=<id>`
 - Older Hisense / lab setups without TLS on port 36669:
   - `--dart-define=HISENSE_MQTT_PLAINTEXT=true`
-- Hisense pairing code simulation (temporary dev behavior):
-  - pairing requires a 4-digit code in both fake and real paths
-  - accepted code is currently `1234`; incorrect codes show retry fallback
+- Hisense pairing: real transport forwards the TV-shown 4-digit PIN; fake transport accepts dev PIN `1234` for offline runs
 - Samsung WebSocket trace (text-input diagnosis) is ON by default:
   - set `--dart-define=SAMSUNG_TRANSPORT_DEBUG=false` to disable
   - In Android Studio / `adb logcat`, filter by tag **`samsung_transport`**
   - Logs are also written on-device to:
     - Android: `Android/data/<your.package>/files/one_remote_logs/`
-- Optional Samsung text-input compatibility toggle:
+- Optional Samsung text-input compatibility toggles:
   - `--dart-define=SAMSUNG_SEND_INPUT_END_PER_TEXT=true` (enables `SendInputEnd` after each text send)
-- Samsung text-input capability exposure gate (keep disabled until physical validation):
-  - default is OFF (Samsung device capability set excludes text input; adapter reports `supportsTextInput=false`)
-  - enable only for validation runs with `--dart-define=SAMSUNG_ENABLE_TEXT_INPUT=true`
+  - `--dart-define=SAMSUNG_ENABLE_TEXT_INPUT=true` (exposes text input capability — default OFF until physical validation)
+- TCL legacy Wi‑Fi experimental gate:
+  - `--dart-define=TCL_LEGACY_WIFI_ENABLED=true`
+- Monetization / compliance overrides:
+  - `--dart-define=PRO_PRODUCT_ID=<sku>` (default catalog in `lib/app/configurations/app_monetization_di_config.dart`)
+  - `--dart-define=ADMOB_BANNER_ANDROID=<id>` / `ADMOB_BANNER_IOS=<id>` (test IDs used when Remote Config `test_ads_enabled` or debug)
+  - `--dart-define=PRIVACY_POLICY_URL=https://...`
 - In-app feedback webhook (default Apps Script URL in `FeedbackConfig`; optional overrides):
   - `--dart-define=FEEDBACK_WEBHOOK_URL=https://...`
   - `--dart-define=FEEDBACK_WEBHOOK_TOKEN=...`
   - Operator setup: `references/feedback-collection-setup.md`
+
+Brand-specific flag templates are also copyable from the in-app debug sheet (`RuntimeFlagsTemplateDebug`).
 
 ## CI and local quality checks
 
@@ -103,16 +165,23 @@ When `key.properties` is present, `signingConfigs.release` is applied to the rel
 
 Lint rules: `analysis_options.yaml` includes `package:flutter_lints/flutter.yaml`.
 
-## Getting Started
+## Firebase (Pro validation)
 
-This project is a starting point for a Flutter application.
+Android Pro IAP receipt validation uses a Firebase callable in `functions/`. Deploy and operator setup: `references/goals/goal-pro-receipt-validation-remote-setup.md`.
 
-A few resources to get you started if this is your first Flutter project:
+## Documentation index
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+| Document | Purpose |
+| --- | --- |
+| `references/product_specs.md` | Product source of truth — features, UX, architecture |
+| `references/implementation_tasks.md` | Living implementation plan and status tracker |
+| `references/changelog.md` | Dated implementation / direction updates |
+| `references/compliance-and-release-requirements.md` | Store submission checklist |
+| `references/marketing_strategy.md` | Naming, positioning, ad strategy |
+| `references/guide-adding-protocol-variant.md` | How to add a new protocol variant |
+| `references/guide-android-tv-remote-protocol.md` | Android TV protocol notes |
+| `references/feedback-collection-setup.md` | In-app feedback webhook setup |
+| `references/third_party_licenses.md` | OSS and manufacturer API license audit |
+| `references/samsung_validation_matrix.md` | Samsung physical validation runbook |
+| `references/hisense_validation_matrix.md` | Hisense physical validation runbook |
+| `references/tcl_validation_matrix.md` | TCL experimental validation runbook |

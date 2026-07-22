@@ -139,7 +139,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [x] Placeholder `SKAdNetworkItems` entry in `Info.plist` — **must be replaced with the full network-supplied SKAdNetwork list before iOS release**
     - [x] Remote `AppBar` tightened (`toolbarHeight: 50`) with thin outline dividers; `RemoteHomePage.body` switched to `Stack(fit: StackFit.expand)` so `BottomBannerAdPlacement` overlays bottom-aligned without resizing the grid
 - [x] Developer ergonomics:
-  - [x] README "Current Runtime Modes": default **real** Samsung + Hisense transports for APK/physical-TV testing; fake transports opt-in via dart-define; host overrides documented; Samsung log tag `samsung_transport` (see README)
+  - [x] README project docs (2026-07-22): overview, supported brands, repo layout, developer quick start, connection/reconnect notes, expanded runtime flags, CI/build/APK, Firebase Pro pointer, documentation index; **Current Runtime Modes** covers real Samsung/LG/Hisense defaults, fake-transport opt-in, host overrides, Samsung log tag `samsung_transport`
   - [x] Implementation plan: **Brand transport defaults** section (real-by-default policy; do not regress)
   - [x] Dart documentation convention: public types lead with `///` stating purpose/role; add brief `//` or `///` for non-obvious algorithms, protocol steps, platform behavior, and invariants (not line-by-line narration)
   - [x] Debug fake/real transport toggle now applies at runtime for pairing discovery (no app restart required), and debug sheet copy-log flow keeps sheet context visible on empty-log feedback
@@ -297,7 +297,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] **Samsung/Hisense default:** When `USE_FAKE_TRANSPORTS` is `false`, wire `SamsungAdapter` to `RealSamsungTransportClient` and `HisenseAdapter` to `RealHisenseTransportClient`.
 - [ ] **LG and future brands:** When a real transport exists, follow the same global toggle behavior — do not introduce per-brand fake flags.
 - [ ] **New brands / transports:** Copy this pattern: one global fake switch for test doubles; real by default for APK testing.
-- [ ] **Documentation:** Keep `README.md` “Current Runtime Modes” in sync whenever transport toggles or host overrides change.
+- [x] **Documentation:** Keep `README.md` in sync when transport toggles, host overrides, or developer onboarding steps change (last full pass 2026-07-22).
 
 **Review trigger:** Any PR that touches `one_remote_app.dart` adapter factories or introduces a new `Fake*Transport` must confirm defaults still favor real transports for APK testing.
 

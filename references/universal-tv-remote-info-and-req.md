@@ -1,6 +1,6 @@
 # Universal TV Remote App — Information & Requirements
 
-> **Role:** Background reference (framework comparison, OEM protocol survey, compliance tables, risk register). **Source of truth** for product and tasks: `references/product_specs.md`, `references/implementation_tasks.md` (living plan; **Status Tracker** uses Markdown checklists for shipped vs remaining), `references/marketing_strategy.md`. **Naming:** OneRemote / Universal TV Remote — see `references/product_specs.md`. **Store checklist:** `references/compliance-and-release-requirements.md`. Policies (IAP, ATT, GDPR) are standard; **TV OEM details** change—verify against current manufacturer docs.
+> **Role:** Background reference (framework comparison, OEM protocol survey, compliance tables, risk register). **Source of truth** for product and tasks: `references/product_specs.md`, `references/implementation_tasks.md` (living plan; **Status Tracker** uses Markdown checklists for shipped vs remaining), `references/marketing_strategy.md`. **Naming:** OneRemote / Universal TV Remote — see `references/product_specs.md`. **Store checklist:** `references/compliance-and-release-requirements.md`. **Developer setup** (build, run, CI, runtime flags): repo root [`README.md`](../README.md). Policies (IAP, ATT, GDPR) are standard; **TV OEM details** change—verify against current manufacturer docs.
 
 ---
 
