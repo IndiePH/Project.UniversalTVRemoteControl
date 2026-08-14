@@ -375,7 +375,16 @@
   "settingsSendFeedback": "Send feedback",
 
   "feedbackSheetTitle": "Send feedback",
-  "feedbackSheetSubtitle": "Your message is sent from the app. We do not attach logs automatically.",
+  "feedbackSheetSubtitle": "Your message is sent from the app. We attach the brand and commercial model of TVs saved on this device. We do not attach logs, IP addresses, serial numbers, or pairing codes.",
+  "feedbackPairedModelsIncluded": "Paired TVs included: {summary}",
+  "@feedbackPairedModelsIncluded": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "feedbackPairedModelsNone": "Paired TVs included: none on this device.",
   "feedbackCategorySuggestion": "Suggestion",
   "feedbackCategoryBug": "Bug",
   "feedbackCategoryOther": "Other",

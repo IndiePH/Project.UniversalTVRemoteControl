@@ -666,7 +666,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackSheetSubtitle =>
-      'Your message is sent from the app. We do not attach logs automatically.';
+      'Your message is sent from the app. We attach the brand and commercial model of TVs saved on this device. We do not attach logs, IP addresses, serial numbers, or pairing codes.';
+
+  @override
+  String feedbackPairedModelsIncluded(String summary) {
+    return 'Paired TVs included: $summary';
+  }
+
+  @override
+  String get feedbackPairedModelsNone =>
+      'Paired TVs included: none on this device.';
 
   @override
   String get feedbackCategorySuggestion => 'Suggestion';

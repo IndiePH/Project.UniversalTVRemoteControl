@@ -53,7 +53,7 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 - [x] Submission via configurable HTTPS webhook (`FeedbackConfig` / `HttpFeedbackSubmissionService`)
 - [x] Default `FEEDBACK_WEBHOOK_URL` in release builds via `FeedbackConfig` (Apps Script → Sheet; override with `--dart-define`; see `references/feedback-collection-setup.md`)
 - [ ] **Production:** set `FEEDBACK_WEBHOOK_TOKEN` and validate on the server/script side (**TVREMOTE-69**)
-- [ ] Privacy policy mentions voluntary free-text feedback (no automatic diagnostic upload from this flow) (**TVREMOTE-69**)
+- [x] Privacy policy mentions voluntary feedback including paired TV brand/model (`legal-docs` updated 2026-08-14; deploy to GitHub Pages before release build with `pairedModels`)
 
 > Override the webhook URL only when pointing at a non-default deployment. Confirm the Apps Script `doPost` + `Feedback` sheet tab are deployed before store release.
 
@@ -122,10 +122,24 @@ Code-level tests (widget/integration) are necessary but not sufficient. Each bra
 
 ## 5. COPPA (Users Under 13)
 
-- [ ] Define the target age group clearly in both store listings
+- [x] Define the target age group clearly in both store listings (**13+** on Play Console)
 - [ ] If the app may reach users under 13, ad targeting restrictions apply — review AdMob's child-directed content settings
 
-> For a TV remote app, COPPA is unlikely to apply, but the age group must be explicitly declared in store listings.
+> For a TV remote app, COPPA is unlikely to apply. Play Console target audience is **13+**; content rating may still show “all ages” separately.
+
+---
+
+## 6. Play Store listing copy
+
+Canonical short and full descriptions: **`references/marketing_strategy.md` §2**.
+
+| Field | Status |
+| --- | --- |
+| Short description (≤ 80 chars) | Draft in marketing_strategy.md — paste into Play Console |
+| Full description | Draft in marketing_strategy.md — includes ads, Pro, four brands, privacy URLs |
+| Listed brands match shipped build | Samsung, LG, Hisense, Chromecast with Google TV only |
+| Privacy policy URL in listing | `https://yoxent.github.io/legal-docs/one-remote/privacy-policy.html` |
+| Data deletion URL | `https://yoxent.github.io/legal-docs/one-remote/account-and-data-deletion.html` |
 
 ---
 

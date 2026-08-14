@@ -139,7 +139,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
     - [x] Placeholder `SKAdNetworkItems` entry in `Info.plist` — **must be replaced with the full network-supplied SKAdNetwork list before iOS release**
     - [x] Remote `AppBar` tightened (`toolbarHeight: 50`) with thin outline dividers; `RemoteHomePage.body` switched to `Stack(fit: StackFit.expand)` so `BottomBannerAdPlacement` overlays bottom-aligned without resizing the grid
 - [x] Developer ergonomics:
-  - [x] README "Current Runtime Modes": default **real** Samsung + Hisense transports for APK/physical-TV testing; fake transports opt-in via dart-define; host overrides documented; Samsung log tag `samsung_transport` (see README)
+  - [x] README project docs (2026-07-22): overview, supported brands, repo layout, developer quick start, connection/reconnect notes, expanded runtime flags, CI/build/APK, Firebase Pro pointer, documentation index; **Current Runtime Modes** covers real Samsung/LG/Hisense defaults, fake-transport opt-in, host overrides, Samsung log tag `samsung_transport`
   - [x] Implementation plan: **Brand transport defaults** section (real-by-default policy; do not regress)
   - [x] Dart documentation convention: public types lead with `///` stating purpose/role; add brief `//` or `///` for non-obvious algorithms, protocol steps, platform behavior, and invariants (not line-by-line narration)
   - [x] Debug fake/real transport toggle now applies at runtime for pairing discovery (no app restart required), and debug sheet copy-log flow keeps sheet context visible on empty-log feedback
@@ -297,7 +297,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] **Samsung/Hisense default:** When `USE_FAKE_TRANSPORTS` is `false`, wire `SamsungAdapter` to `RealSamsungTransportClient` and `HisenseAdapter` to `RealHisenseTransportClient`.
 - [ ] **LG and future brands:** When a real transport exists, follow the same global toggle behavior — do not introduce per-brand fake flags.
 - [ ] **New brands / transports:** Copy this pattern: one global fake switch for test doubles; real by default for APK testing.
-- [ ] **Documentation:** Keep `README.md` “Current Runtime Modes” in sync whenever transport toggles or host overrides change.
+- [x] **Documentation:** Keep `README.md` in sync when transport toggles, host overrides, or developer onboarding steps change (last full pass 2026-07-22).
 
 **Review trigger:** Any PR that touches `one_remote_app.dart` adapter factories or introduces a new `Fake*Transport` must confirm defaults still favor real transports for APK testing.
 
@@ -458,6 +458,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] iOS: App Tracking Transparency integrated in app code; prompt before first ad SDK init (`AdConsentCoordinator`).
   - [x] EU/California: UMP consent integrated in app code before ad load; device/regional validation still required.
   - [x] Pro: IAP via Apple IAP + Google Play Billing only (`in_app_purchase`) supporting multi-product subscriptions + lifetime (`ProProductIds` catalog); override via `--dart-define=PRO_PRODUCT_ID=...` (see `lib/app/configurations/app_monetization_di_config.dart`); Android server-side receipt validation callable in repo (`functions/src/index.ts` — deploy per `references/goals/goal-pro-receipt-validation-remote-setup.md`).
+  - [ ] Play Store listing: short + full description per `references/marketing_strategy.md` §2 (brands, ads, Pro, privacy URLs).
   - [ ] Developer accounts and signing: Apple Developer Program, Google Play developer account, AdMob as needed before ads go live.
   - [x] Production AdMob **app IDs** at build time (`4af3cdc`): Android `${admobAppId}` placeholder; iOS `GADApplicationIdentifier` in `Info.plist`.
   - [ ] Replace placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list before iOS release.

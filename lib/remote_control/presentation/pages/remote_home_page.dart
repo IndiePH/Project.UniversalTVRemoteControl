@@ -12,6 +12,7 @@ import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/compliance/app_legal_urls.dart';
 import 'package:one_remote/app/compliance/in_app_legal_webview_page.dart';
 import 'package:one_remote/app/compliance/legal_link_launcher.dart';
+import 'package:one_remote/app/feedback/feedback_paired_models.dart';
 import 'package:one_remote/app/feedback/feedback_payload.dart';
 import 'package:one_remote/app/feedback/feedback_submission_result.dart';
 import 'package:one_remote/app/feedback/feedback_submission_sheet.dart';
@@ -818,6 +819,11 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       return;
     }
     final platform = defaultTargetPlatform.name;
+    final savedDevices = await widget.deviceRepository.getSavedDevices();
+    final pairedModels = FeedbackPairedModels.summarize(savedDevices);
+    if (!mounted) {
+      return;
+    }
 
     final sent = await _withInterstitialPresentationBlocked(
       () => showModalBottomSheet<bool>(
@@ -826,6 +832,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
         showDragHandle: true,
         builder: (sheetContext) {
           return FeedbackSubmissionSheet(
+            pairedModelsSummary: pairedModels,
             onSubmit: ({required message, required category}) async {
               final result = await submissionService.submit(
                 FeedbackPayload(
@@ -834,6 +841,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
                   platform: platform,
                   appVersion: packageInfo.versionLabel,
                   submittedAtUtc: DateTime.now().toUtc(),
+                  pairedModels: pairedModels,
                 ),
               );
               if (!mounted) {

@@ -9,10 +9,12 @@ void main() {
       platform: 'android',
       appVersion: '1.0.0+1',
       submittedAtUtc: DateTime.utc(2026, 5, 21, 12),
+      pairedModels: 'Samsung UN55TU8000',
     ).toJson();
 
     expect(json['appVersion'], '1.0.0+1');
     expect(json['platform'], 'android');
     expect(json['message'], 'Layout edit is confusing.');
+    expect(json['pairedModels'], 'Samsung UN55TU8000');
   });
 }

@@ -6,6 +6,7 @@ final class FeedbackPayload {
     required this.platform,
     required this.appVersion,
     required this.submittedAtUtc,
+    this.pairedModels = '',
   });
 
   final String message;
@@ -14,11 +15,15 @@ final class FeedbackPayload {
   final String appVersion;
   final DateTime submittedAtUtc;
 
+  /// Privacy-safe brand + commercial model list. Empty when no TVs are saved.
+  final String pairedModels;
+
   Map<String, Object> toJson() => {
     'message': message,
     'category': category,
     'platform': platform,
     'appVersion': appVersion,
     'submittedAt': submittedAtUtc.toIso8601String(),
+    'pairedModels': pairedModels,
   };
 }

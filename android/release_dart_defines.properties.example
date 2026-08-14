@@ -1,0 +1,3 @@
+# Copy to release_dart_defines.properties (gitignored) for release builds.
+# Must match Apps Script Script property FEEDBACK_TOKEN.
+FEEDBACK_WEBHOOK_TOKEN=

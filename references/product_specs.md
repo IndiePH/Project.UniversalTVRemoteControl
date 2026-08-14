@@ -226,6 +226,7 @@ Control rendering details:
 * Architecture:
 
     * Service-based pattern with clear UI, domain, and communication layers
+* Developer onboarding (build, run, CI, runtime flags, APK signing): repo root [`README.md`](../README.md)
 
 ---
 
@@ -271,7 +272,7 @@ Control rendering details:
 | Samsung | Yes | High (well-known Tizen WebSocket patterns) | Core flow implemented; needs broader model verification | Validate TV-side approval prompt flow + token-auth reconnect + key commands + text input on physical TV |
 | LG | Yes | Medium-High (webOS WebSocket patterns available) | Core command path still stubbed in-app; text input not wired yet (capability off until transport exists) | Validate SSL pairing + key commands on physical TV; add webOS text send then re-enable text input in UX |
 | Hisense | Yes (best-effort) | Medium-Low (VIDAA implementations less standardized) | Experimental | Validate protocol compatibility per model before claiming support |
-| Android TV/Google TV | No (Post-MVP) | High | Backlog candidate | Re-prioritize when hardware/tester bandwidth is available |
+| Chromecast with Google TV (Android TV Remote Protocol v2) | Yes (store-listed) | High | Adapter shipped; UI label “Android TV”; experimental support tier | Validate pairing + core keys on physical Chromecast with Google TV hardware before major marketing push |
 
 ---
 
@@ -369,6 +370,7 @@ Lean **product** scope (platform/release: §1):
     * Samsung
     * LG
     * Hisense (best-effort based on protocol/device validation)
+    * Chromecast with Google TV (Android TV Remote Protocol; not Cast-only dongles)
 * Features:
 
     * Basic remote controls

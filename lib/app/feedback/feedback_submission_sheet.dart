@@ -5,13 +5,20 @@ import 'package:one_remote/l10n/app_localizations.dart';
 
 /// In-app feedback form: category, message, and send action.
 class FeedbackSubmissionSheet extends StatefulWidget {
-  const FeedbackSubmissionSheet({super.key, required this.onSubmit});
+  const FeedbackSubmissionSheet({
+    super.key,
+    required this.onSubmit,
+    this.pairedModelsSummary = '',
+  });
 
   final Future<FeedbackSheetSubmitOutcome> Function({
     required String message,
     required String category,
   })
   onSubmit;
+
+  /// Privacy-safe brand + model list shown before send. Empty if none saved.
+  final String pairedModelsSummary;
 
   @override
   State<FeedbackSubmissionSheet> createState() =>
@@ -89,6 +96,15 @@ class _FeedbackSubmissionSheetState extends State<FeedbackSubmissionSheet> {
                 const SizedBox(height: 6),
                 Text(
                   l10n.feedbackSheetSubtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.pairedModelsSummary.trim().isEmpty
+                      ? l10n.feedbackPairedModelsNone
+                      : l10n.feedbackPairedModelsIncluded(
+                          widget.pairedModelsSummary,
+                        ),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),

@@ -1,0 +1,11 @@
+{
+  "parameters": {
+    "test_ads_enabled": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "description": "When true, release builds use Google test ad unit IDs instead of production units.",
+      "valueType": "BOOLEAN"
+    }
+  }
+}
