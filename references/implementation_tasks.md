@@ -458,6 +458,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] iOS: App Tracking Transparency integrated in app code; prompt before first ad SDK init (`AdConsentCoordinator`).
   - [x] EU/California: UMP consent integrated in app code before ad load; device/regional validation still required.
   - [x] Pro: IAP via Apple IAP + Google Play Billing only (`in_app_purchase`) supporting multi-product subscriptions + lifetime (`ProProductIds` catalog); override via `--dart-define=PRO_PRODUCT_ID=...` (see `lib/app/configurations/app_monetization_di_config.dart`); Android server-side receipt validation callable in repo (`functions/src/index.ts` — deploy per `references/goals/goal-pro-receipt-validation-remote-setup.md`).
+  - [ ] Play Store listing: short + full description per `references/marketing_strategy.md` §2 (brands, ads, Pro, privacy URLs).
   - [ ] Developer accounts and signing: Apple Developer Program, Google Play developer account, AdMob as needed before ads go live.
   - [x] Production AdMob **app IDs** at build time (`4af3cdc`): Android `${admobAppId}` placeholder; iOS `GADApplicationIdentifier` in `Info.plist`.
   - [ ] Replace placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list before iOS release.

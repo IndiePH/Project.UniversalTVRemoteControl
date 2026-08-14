@@ -2,11 +2,11 @@
 
 Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — use either label interchangeably in docs). Control smart TVs over Wi‑Fi from Android or iOS.
 
-**Version:** `1.3.5+16` (see `pubspec.yaml`)
+**Version:** `1.4.0+17` (see `pubspec.yaml`)
 
 ## Overview
 
-OneRemote discovers TVs on the local network, pairs with brand-specific protocols, and provides a customizable remote control surface. The MVP focus is Samsung, LG, and Hisense over Wi‑Fi; additional brands ship as adapters mature.
+OneRemote discovers TVs on the local network, pairs with brand-specific protocols, and provides a customizable remote control surface. Store-listed Wi‑Fi brands: **Samsung, LG, Hisense, and Chromecast with Google TV**. Other adapters (Roku, TCL, etc.) remain experimental until validated.
 
 **Product docs:** `references/product_specs.md` · **Implementation status:** `references/implementation_tasks.md` · **Store checklist:** `references/compliance-and-release-requirements.md`
 
@@ -17,8 +17,8 @@ OneRemote discovers TVs on the local network, pairs with brand-specific protocol
 | Samsung (Tizen) | Primary validation target | WebSocket transport; TV-side approval + token auth |
 | LG (webOS) | Active development | SSAP WebSocket; in-app text input pending transport |
 | Hisense (VIDAA) | Active development | MQTT TLS (port `36669`); PIN pairing |
-| TCL legacy Wi‑Fi | Experimental | See `references/tcl_validation_matrix.md` |
-| Android TV / Roku | Limited / discovery hints | Adapters exist; not store-ready |
+| Chromecast with Google TV (Android TV) | Store-listed (experimental tier) | Android TV Remote Protocol v2; not Cast-only dongles |
+| Roku / TCL legacy Wi‑Fi | Experimental | See `references/tcl_validation_matrix.md`; not in store listing |
 
 Physical validation runbooks: `references/samsung_validation_matrix.md`, `references/hisense_validation_matrix.md`.
 

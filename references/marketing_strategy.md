@@ -4,7 +4,7 @@
 
 # 1. 🧠 Brand Identity
 
-**Naming:** `references/product_specs.md` (title block). **Identifiers:** e.g. `com.oneremote.tv`, `OneRemoteApp`.
+**Naming:** `references/product_specs.md` (title block). **Identifiers:** `com.vorithstudio.smarttvremote` (Android), `OneRemote`.
 
 ## App Name (Store Title)
 OneRemote – Smart TV Remote
@@ -12,84 +12,152 @@ OneRemote – Smart TV Remote
 ## Brand Name (Logo / Package)
 OneRemote
 
-## Package Name (recommended)
-com.oneremote.tv
+## Package Name (Android — shipped)
+com.vorithstudio.smarttvremote
 
 ---
 
 # 2. 📄 Play Store Listing
 
+**Last updated:** 2026-08-14 · **Target audience:** 13+ · **Listed brands:** Samsung, LG, Hisense, Chromecast with Google TV only (no Roku/TCL until validated).
+
 ## 🔹 Short Description (80 chars max)
-Control Samsung, LG & Smart TVs via WiFi. Fast setup, no IR required.
+
+```
+Control Samsung, LG, Hisense & Chromecast with Google TV over WiFi.
+```
+
+*(65 characters)*
+
+**Alternate (72 chars):**
+
+```
+WiFi remote for Samsung, LG, Hisense & Chromecast with Google TV. No IR.
+```
 
 ---
 
 ## 🔹 Full Description
 
-**OneRemote – Smart TV Remote**
+Copy below for Google Play Console → Main store listing → Full description. Plain text; line breaks preserved.
 
-OneRemote turns your phone into a powerful **WiFi TV remote control** for Smart TVs. No IR blaster needed. Fast, simple, and designed for everyday use.
+```
+OneRemote – Smart TV Remote
 
-Control your TV directly from your phone with an easy-to-use interface.
+Turn your phone into a WiFi TV remote — no IR blaster required. OneRemote discovers TVs on your home network, pairs with your TV's approval, and gives you a clean remote for everyday control.
 
----
+Supported TVs (WiFi, same network)
+• Samsung Smart TVs (Tizen)
+• LG Smart TVs (webOS)
+• Hisense smart TVs (VIDAA — model compatibility varies)
+• Chromecast with Google TV (Android TV Remote Protocol)
 
-### 📺 Supported TVs
-MVP development targets **Samsung, LG, and Hisense** (Wi‑Fi) per `references/product_specs.md`. Store listing copy must match what the **shipped** build actually supports—do not name brands that are not yet implemented or validated.
+Not supported: Cast-only Chromecast dongles without Google TV, Roku, or TVs that require an IR remote.
 
-Example positioning (adjust to match release reality):
-- Samsung Smart TVs  
-- LG Smart TVs  
-- Hisense VIDAA / compatible smart TVs (where supported)  
-- Other Wi‑Fi-enabled TVs as compatibility expands  
+Key features
+• WiFi control — phone and TV on the same network
+• Automatic TV discovery on your network
+• Core remote: power, volume, input, D-pad navigation, home/back
+• On-screen keyboard for search and text entry where the TV supports it
+• Save paired TVs and reconnect quickly
+• Optional in-app feedback to report issues (category + message; see Privacy Policy)
 
-Use it as a **Samsung TV remote**, **LG remote app**, or universal **smart TV controller**. Roadmap brands (for example Roku, broader Android TV, additional OEMs) belong in roadmap/comms only until shipped.
+Free and Pro
+• Free: full remote features with ads (banner ads and occasional full-screen ads after consent where required)
+• Pro: remove ads, unlock premium themes and customizable button layouts
+• Pro plans: weekly, monthly, yearly, or lifetime — purchased through Google Play only
 
----
+How to use
+1. Connect your phone and TV to the same WiFi
+2. Open OneRemote and select your TV
+3. Approve the connection on your TV when prompted
+4. Start controlling your TV
 
-### ⚡ Key Features
-- 📡 WiFi-based TV control (no IR required)  
-- 🔍 Automatic TV detection on network  
-- 🎮 Full remote functions (power, volume, input, navigation)  
-- ⌨️ Keyboard input for faster typing  
-- ⚡ Quick pairing with TV approval  
-- 🎨 Clean and simple interface  
+Important notes
+• TV and phone must be on the same Wi‑Fi network
+• Some TVs require a one-time pairing PIN or on-screen approval
+• Features and keyboard support depend on TV brand and model
+• Chromecast with Google TV support uses the Android TV remote protocol; Cast-only devices are not supported
 
----
+Privacy
+Privacy Policy: https://yoxent.github.io/legal-docs/one-remote/privacy-policy.html
+Account & data deletion: https://yoxent.github.io/legal-docs/one-remote/account-and-data-deletion.html
 
-### 🚀 Why OneRemote
-- Works as a **remote for Samsung Smart TV**  
-- Reliable **LG TV remote app alternative**  
-- One app for multiple Smart TV brands  
-- Lightweight and fast  
-
----
-
-### 🔧 How to Use
-1. Connect phone and TV to the same WiFi  
-2. Open OneRemote  
-3. Select your TV  
-4. Allow connection on your TV  
-5. Start controlling instantly  
-
----
-
-### ⚠️ Notes
-- TV and phone must be on the same network  
-- Some models may require permission approval on TV  
-- Performance depends on network stability  
+Download OneRemote and control your Smart TV from your phone.
+```
 
 ---
 
-Download OneRemote and simplify your Smart TV experience.
+### Listing alignment checklist
+
+| Item | Value / note |
+| --- | --- |
+| Short description | ≤ 80 chars; includes all four listed brands |
+| Full description | Matches shipped adapters only; Chromecast = **with Google TV** |
+| Target audience | 13+ (Play Console → Target audience) |
+| Privacy policy URL | `https://yoxent.github.io/legal-docs/one-remote/privacy-policy.html` |
+| Data deletion URL | `https://yoxent.github.io/legal-docs/one-remote/account-and-data-deletion.html` |
+| Ads disclosure | Banner + interstitial (not banner-only) |
+| In-app products | Weekly / monthly / yearly subscriptions + lifetime Pro |
+
+---
+
+## 🔹 Release details (AAB — Google Play)
+
+**Current release:** `1.4.0` · **versionCode:** `17` · **Track:** Internal testing → Production (promote same artifact when validated)
+
+**Build (signed AAB with production dart-defines):**
+
+```powershell
+cd E:\Projects\Flutter\one_remote
+.\scripts\build_release_android.ps1
+```
+
+Requires `android/release_dart_defines.properties` (gitignored) with `FEEDBACK_WEBHOOK_TOKEN` matching Apps Script `FEEDBACK_TOKEN`. See `references/feedback-collection-setup.md`.
+
+**Artifact:** `build/app/outputs/bundle/release/app-release.aab`
+
+### Play Console — Release notes (en-US)
+
+Paste under **Release → Release notes** (Internal testing or Production). Adjust length if Console limits apply.
+
+```
+What's new in 1.4.0
+
+• In-app feedback now includes your saved TV brand and model (when known) so we can troubleshoot compatibility faster — shown before you send; no IP addresses or pairing secrets
+• Updated privacy disclosures for feedback and Pro subscriptions
+• General stability and release improvements
+
+Thank you for using OneRemote!
+```
+
+**Shorter variant (if character limit is tight):**
+
+```
+• Feedback includes TV brand/model (when known) to help support — disclosed before send
+• Privacy policy updates
+• Stability improvements
+```
+
+### Operator checklist (this AAB)
+
+| Step | Done |
+| --- | --- |
+| Apps Script `FEEDBACK_TOKEN` matches build `FEEDBACK_WEBHOOK_TOKEN` | ☐ |
+| Sheet column **L** `pairedModels`; FILTER formulas use `A:L` | ☐ |
+| Privacy policy live (pairedModels §2.1) | ☐ |
+| Firebase Remote Config `test_ads_enabled` = `false` | ☐ |
+| Upload AAB to **Internal testing** | ☐ |
+| Verify: pair TV, Pro purchase/restore, ads, feedback row in Sheet | ☐ |
+| Promote to **Production** (staged rollout recommended) | ☐ |
 
 ---
 
 # 3. 💰 Monetization Strategy
 
 ## 🟢 Free Version (Base App)
-- Basic remote controls  
-- Ads (non-intrusive banner ads only)  
+- Full remote controls for supported brands  
+- Ads after consent where required: bottom banner + occasional interstitial (engagement-gated; not during pairing)  
 - Limited themes (1–2 only)  
 - Fixed layout only  
 
@@ -122,16 +190,16 @@ Rationale: aligned to competitor pricing, with intentionally lower price points 
 
 # 4. 📢 Ad Strategy
 
-## 🟢 Ad Type Strategy
-Use ONLY:
-- Banner ads (bottom or top, static)
+## 🟢 Ad Type Strategy (shipped)
+- **Banner ads** — bottom of remote home (free tier)
+- **Interstitial ads** — occasional full-screen ads after consent (UMP) and engagement policy; not on first launch or during pairing
 
 Avoid:
 - Full-screen ads on launch  
-- Frequent interstitial ads  
-- Ads during pairing process  
+- Ads during pairing or connection loading  
+- Aggressive interstitial frequency  
 
-**Implementation note:** The app currently includes an interstitial ad scaffold that is gated by consent and engagement policy. If interstitials are not part of the release plan, do not mention them in store copy and keep their pacing conservative (or disable at the environment level).
+**Store copy:** Disclose both banner and interstitial ads in the full description and Play Console Data safety / ads declarations.
 
 ---
 
@@ -216,6 +284,6 @@ Make your remote experience cleaner and truly yours.
 
 - OneRemote = brand identity  
 - SEO keywords in description, not spammed  
-- Banner ads only (non-intrusive)  
+- Banner + conservative interstitials (consent-gated)  
 - Pro = quality-of-life upgrades  
 - Upsell at “happy moments”  

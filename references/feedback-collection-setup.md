@@ -30,7 +30,7 @@ Create these tabs in the spreadsheet bound to the script:
 
 Row 1 on **Feedback** (script creates this if the tab is empty):
 
-`id`, `receivedAt`, `submittedAt`, `date`, `category`, `platform`, `appVersion`, `versionMajor`, `messageLength`, `spam`, `message`
+`id`, `receivedAt`, `submittedAt`, `date`, `category`, `platform`, `appVersion`, `versionMajor`, `messageLength`, `spam`, `message`, `pairedModels`
 
 | Column | Source |
 |--------|--------|
@@ -45,6 +45,7 @@ Row 1 on **Feedback** (script creates this if the tab is empty):
 | `messageLength` | Character count after trim |
 | `spam` | Heuristic `yes` \| `no` — **never blocks ingest**; filter manually in Sheets |
 | `message` | Client text (trimmed, max 2000) |
+| `pairedModels` | Privacy-safe brand + commercial model list (no IPs, serials, or TV names) |
 
 ### Category view formulas
 
@@ -52,9 +53,9 @@ On each view tab, put the formula in **cell A1** (headers flow from **Feedback**
 
 | Tab | Cell A1 formula |
 |-----|-----------------|
-| **Bugs** | `=FILTER(Feedback!A:K, Feedback!E:E="bug")` |
-| **Suggestions** | `=FILTER(Feedback!A:K, Feedback!E:E="suggestion")` |
-| **Other** | `=FILTER(Feedback!A:K, Feedback!E:E="other")` |
+| **Bugs** | `=FILTER(Feedback!A:L, Feedback!E:E="bug")` |
+| **Suggestions** | `=FILTER(Feedback!A:L, Feedback!E:E="suggestion")` |
+| **Other** | `=FILTER(Feedback!A:L, Feedback!E:E="other")` |
 
 Do not let operators edit these tabs for data entry — only **Feedback** receives POST rows.
 
@@ -100,9 +101,11 @@ At ~3k+ rows/day: monthly archive (see feedback-collection-setup.md § Monthly a
 var FEEDBACK_SHEET_NAME = 'Feedback';
 var FEEDBACK_HEADERS = [
   'id', 'receivedAt', 'submittedAt', 'date', 'category', 'platform',
-  'appVersion', 'versionMajor', 'messageLength', 'spam', 'message'
+  'appVersion', 'versionMajor', 'messageLength', 'spam', 'message',
+  'pairedModels'
 ];
 var MAX_MESSAGE_LENGTH = 2000;
+var MAX_PAIRED_MODELS_LENGTH = 500;
 var MIN_MESSAGE_LENGTH = 10;
 var VALID_CATEGORIES = { suggestion: true, bug: true, other: true };
 var DUPLICATE_CACHE_PREFIX = 'fb_dup:';
@@ -150,7 +153,8 @@ function doPost(e) {
     parseVersionMajor_(normalized.appVersion),
     normalized.messageLength,
     spam,
-    normalized.message
+    normalized.message,
+    normalized.pairedModels
   ];
 
   sheet.appendRow(row);
@@ -181,13 +185,19 @@ function normalizeBody_(body) {
     category = 'other';
   }
 
+  var pairedModels = String(body.pairedModels || '').trim();
+  if (pairedModels.length > MAX_PAIRED_MODELS_LENGTH) {
+    pairedModels = pairedModels.substring(0, MAX_PAIRED_MODELS_LENGTH);
+  }
+
   return {
     message: message,
     messageLength: message.length,
     category: category,
     platform: String(body.platform || '').trim(),
     appVersion: String(body.appVersion || '').trim(),
-    submittedAt: String(body.submittedAt || '').trim()
+    submittedAt: String(body.submittedAt || '').trim(),
+    pairedModels: pairedModels
   };
 }
 
@@ -296,6 +306,11 @@ function ensureFeedbackSheet_() {
   }
   if (needsHeader && sheet.getLastRow() === 1 && !firstRow[0]) {
     sheet.getRange(1, 1, 1, FEEDBACK_HEADERS.length).setValues([FEEDBACK_HEADERS]);
+    return sheet;
+  }
+  // Existing 11-column sheets: add pairedModels in column L without rewriting data.
+  if (firstRow[11] !== 'pairedModels') {
+    sheet.getRange(1, FEEDBACK_HEADERS.length).setValue('pairedModels');
   }
   return sheet;
 }
@@ -306,12 +321,21 @@ function jsonResponse(obj) {
 }
 ```
 
+## Adding the `pairedModels` column (existing 11-column sheet)
+
+1. On **Feedback**, set cell **L1** to `pairedModels` (leave older rows' column L blank).
+2. On **Bugs**, **Suggestions**, and **Other**, change `Feedback!A:K` to `Feedback!A:L`.
+3. Paste the updated script below → **Deploy → Manage deployments → Edit → New version → Deploy**.
+4. Optional: run the [smoke test](#smoke-test-curl) and confirm column L is filled.
+
+The script also writes `pairedModels` into L1 on the next POST if that header is missing.
+
 ## Migration (existing 5-column Feedback tab)
 
 If you already ingest into the old schema (`submittedAt`, `category`, `platform`, `appVersion`, `message`):
 
-1. **Option A — fresh tab:** Rename the current tab to `Feedback_legacy`. Create a new **Feedback** tab; leave row 1 empty (the script writes headers on first POST) or paste the [11-column header row](#feedback-header-row).
-2. **Option B — in place:** Insert new columns so the header matches the 11-column layout; map old columns into the new positions or leave legacy rows as-is (view `FILTER` formulas expect the new header on row 1 for new data).
+1. **Option A — fresh tab:** Rename the current tab to `Feedback_legacy`. Create a new **Feedback** tab; leave row 1 empty (the script writes headers on first POST) or paste the [12-column header row](#feedback-header-row).
+2. **Option B — in place:** Insert new columns so the header matches the 12-column layout; map old columns into the new positions or leave legacy rows as-is (view `FILTER` formulas expect the new header on row 1 for new data).
 3. Paste the [script](#apps-script) above → **Deploy → New version → Deploy**.
 4. Add **Bugs** / **Suggestions** / **Other** `FILTER` formulas from [Category view formulas](#category-view-formulas).
 5. Run the [smoke test](#smoke-test-curl).
@@ -336,14 +360,14 @@ Replace `YOUR_DEPLOYMENT_URL` and, if configured, `YOUR_TOKEN`.
 curl -sS -X POST "YOUR_DEPLOYMENT_URL" \
   -H "Content-Type: application/json" \
   -H "X-Feedback-Token: YOUR_TOKEN" \
-  -d "{\"submittedAt\":\"2026-05-21T12:00:00.000Z\",\"category\":\"bug\",\"platform\":\"android\",\"appVersion\":\"1.0.0+1\",\"message\":\"Smoke test from curl — layout editor freezes.\"}"
+  -d "{\"submittedAt\":\"2026-05-21T12:00:00.000Z\",\"category\":\"bug\",\"platform\":\"android\",\"appVersion\":\"1.0.0+1\",\"message\":\"Smoke test from curl — layout editor freezes.\",\"pairedModels\":\"Samsung UN55TU8000\"}"
 ```
 
 Expected JSON: `{"ok":true,"id":"<uuid>"}`.
 
 Verify on **Feedback**:
 
-- New row with `id`, `date`, `versionMajor` = `1.0.0`, `spam` = `no`.
+- New row with `id`, `date`, `versionMajor` = `1.0.0`, `spam` = `no`, `pairedModels` = `Samsung UN55TU8000`.
 - **Bugs** tab shows the row; **Suggestions** / **Other** do not.
 
 Send the **same message** again within 6 hours: row is still stored, `spam` = `yes`.

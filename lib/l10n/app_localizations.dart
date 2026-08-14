@@ -1219,8 +1219,20 @@ abstract class AppLocalizations {
   /// No description provided for @feedbackSheetSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your message is sent from the app. We do not attach logs automatically.'**
+  /// **'Your message is sent from the app. We attach the brand and commercial model of TVs saved on this device. We do not attach logs, IP addresses, serial numbers, or pairing codes.'**
   String get feedbackSheetSubtitle;
+
+  /// No description provided for @feedbackPairedModelsIncluded.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired TVs included: {summary}'**
+  String feedbackPairedModelsIncluded(String summary);
+
+  /// No description provided for @feedbackPairedModelsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired TVs included: none on this device.'**
+  String get feedbackPairedModelsNone;
 
   /// No description provided for @feedbackCategorySuggestion.
   ///
