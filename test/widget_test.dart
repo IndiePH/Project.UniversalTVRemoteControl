@@ -459,6 +459,66 @@ void main() {
     expect(commandService.connectCallCount, countAfterConnected);
   });
 
+  testWidgets(
+    'does not retry after TV authorization denial; shows allow-on-TV guidance',
+    (WidgetTester tester) async {
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'samsung-1',
+        displayName: 'Samsung TV',
+        brand: TvBrand.samsung,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.disconnected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(commandService.connectCallCount, 1);
+
+      commandService.emitConnectionState(
+        remote_connection.ConnectionState.unauthorized,
+      );
+      await tester.pump();
+
+      expect(find.text('Allow this remote on your TV'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 5));
+      expect(commandService.connectCallCount, 1);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5));
+      expect(commandService.connectCallCount, 1);
+    },
+  );
+
   testWidgets('dispose cancels retry timer', (WidgetTester tester) async {
     _registerRemoteHomePageGetIt();
     addTearDown(GetIt.instance.reset);

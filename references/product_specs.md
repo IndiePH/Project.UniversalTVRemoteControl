@@ -173,9 +173,10 @@ MVP implementation priority (current baseline)—same **platform** stance as §1
 1. Open app
 2. Attempt auto-connect to last used TV
 3. If connected, open remote interface immediately
-4. If auto-connect fails, return to device select/reconnect flow
-5. User can access Settings from remote screen to adjust layout anytime
-6. If no device has been paired yet, remote opens in "no TV connected" state until first successful pairing
+4. If auto-connect fails due to a transient network/session drop, stay on remote home and retry reconnect
+5. If the TV rejected remote-control authorization (user **Deny** or revoked token), stay on remote home with Allow-on-TV guidance and **do not** auto-retry; the user re-requests Allow via pair
+6. User can access Settings from remote screen to adjust layout anytime
+7. If no device has been paired yet, remote opens in "no TV connected" state until first successful pairing
 
 ---
 

@@ -160,6 +160,12 @@ abstract class AppLocalizations {
   /// **'Connection error'**
   String get connectionStateError;
 
+  /// No description provided for @connectionStateUnauthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow this remote on your TV'**
+  String get connectionStateUnauthorized;
+
   /// No description provided for @connectionStateDisconnected.
   ///
   /// In en, this message translates to:

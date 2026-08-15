@@ -167,11 +167,18 @@ class SamsungWebSocketTransportClient
         await _resetConnection(deviceId);
         if (SamsungTransportAuthorization.isAuthorizationError(error)) {
           await _pairing.clearTokenForHost(host);
+          _emitConnectionState(deviceId, ConnectionState.unauthorized);
+        } else {
+          _emitConnectionState(deviceId, ConnectionState.error);
         }
-        _emitConnectionState(deviceId, ConnectionState.error);
       }
     }
 
+    final error = lastError;
+    if (error != null &&
+        SamsungTransportAuthorization.isAuthorizationError(error)) {
+      Error.throwWithStackTrace(error, lastStackTrace ?? StackTrace.current);
+    }
     throw StateError(
       'Failed to connect to Samsung TV at $host. Last error: $lastError'
       '${lastStackTrace == null ? '' : '\n$lastStackTrace'}',

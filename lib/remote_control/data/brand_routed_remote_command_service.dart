@@ -39,10 +39,15 @@ class BrandRoutedRemoteCommandService
 
   @override
   Future<void> connect({required TvDevice device}) async {
-    await _adapterFor(
-      device.brand,
-      device.protocolVariant,
-    )?.connect(device: device);
+    try {
+      await _adapterFor(
+        device.brand,
+        device.protocolVariant,
+      )?.connect(device: device);
+    } catch (_) {
+      // Background connect is best-effort. Connection state carries the
+      // outcome; unhandled errors here are reported as Crashlytics crashes.
+    }
   }
 
   @override
