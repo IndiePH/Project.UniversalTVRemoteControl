@@ -26,6 +26,10 @@ ConnectionStatePresentation connectionStatePresentation({
       label: l10n.connectionStateError,
       color: colorScheme.error,
     ),
+    remote_connection.ConnectionState.unauthorized => (
+      label: l10n.connectionStateUnauthorized,
+      color: colorScheme.error,
+    ),
     remote_connection.ConnectionState.disconnected => (
       label: l10n.connectionStateDisconnected,
       color: colorScheme.error,
@@ -38,6 +42,7 @@ IconData connectionStateIcon(remote_connection.ConnectionState state) {
     remote_connection.ConnectionState.connected => Icons.wifi,
     remote_connection.ConnectionState.connecting => Icons.wifi_find,
     remote_connection.ConnectionState.error => Icons.wifi_off,
+    remote_connection.ConnectionState.unauthorized => Icons.phonelink_lock,
     remote_connection.ConnectionState.disconnected => Icons.wifi_off,
   };
 }

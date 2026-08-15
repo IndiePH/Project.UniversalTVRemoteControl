@@ -178,6 +178,41 @@ void main() {
   );
 
   test(
+    'Samsung lane: connect authorization rejection yields unauthorized state',
+    () async {
+      final adapter = SamsungAdapter(
+        transportClient: _RejectingSamsungTransportClient(),
+      );
+
+      await expectLater(
+        adapter.watchConnectionState(samsungDevice).first,
+        completion(ConnectionState.unauthorized),
+      );
+    },
+  );
+
+  test(
+    'Samsung lane: sendCommand authorization rejection is a failure result',
+    () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          SamsungAdapter(transportClient: _RejectingSamsungTransportClient()),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+
+      final result = await service.sendCommand(
+        device: samsungDevice,
+        command: RemoteCommand.back,
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(result.exception, isA<SamsungTransportAuthorizationException>());
+    },
+  );
+
+  test(
     'Samsung lane: authorization rejection surfaces as CommandDispatchResult.failure',
     () async {
       final service = BrandRoutedRemoteCommandService(
@@ -594,7 +629,11 @@ class _RejectingSamsungTransportClient implements SamsungTransportClient {
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
 
   @override
-  Future<void> connect({required String deviceId}) async {}
+  Future<void> connect({required String deviceId}) async {
+    throw const SamsungTransportAuthorizationException(
+      'Samsung TV rejected remote-control authorization.',
+    );
+  }
 
   @override
   Future<void> requestPairingApproval({

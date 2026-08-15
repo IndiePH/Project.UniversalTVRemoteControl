@@ -14,6 +14,7 @@
   "connectionStateConnected": "Connected",
   "connectionStateConnecting": "Connecting…",
   "connectionStateError": "Connection error",
+  "connectionStateUnauthorized": "Allow this remote on your TV",
   "connectionStateDisconnected": "Disconnected",
   "remoteStatusConnectTvToBegin": "Connect a TV to begin",
   "remoteStatusReady": "Ready",

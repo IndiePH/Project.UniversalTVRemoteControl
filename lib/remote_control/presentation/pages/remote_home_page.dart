@@ -182,8 +182,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     }
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshProEntitlementOnResume());
-      if (_activeDevice != null &&
-          _connectionState != remote_connection.ConnectionState.connected) {
+      if (_activeDevice != null && _connectionState.shouldAutoReconnect) {
         _startConnectionRetry(_activeDevice!);
       }
     }
@@ -361,12 +360,10 @@ class _RemoteHomePageState extends State<RemoteHomePage>
           _applyStatusKind(RemoteHomeStatusKind.transportIdle);
         }
       });
-      if (state == remote_connection.ConnectionState.error) {
+      if (state.shouldAutoReconnect) {
         _startConnectionRetry(device);
-      } else if (state == remote_connection.ConnectionState.disconnected &&
-          _activeDevice != null) {
-        _startConnectionRetry(device);
-      } else if (state == remote_connection.ConnectionState.connected) {
+      } else if (state == remote_connection.ConnectionState.connected ||
+          state == remote_connection.ConnectionState.unauthorized) {
         _stopConnectionRetry();
       }
     });

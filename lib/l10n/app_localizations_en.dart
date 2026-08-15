@@ -42,6 +42,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionStateError => 'Connection error';
 
   @override
+  String get connectionStateUnauthorized => 'Allow this remote on your TV';
+
+  @override
   String get connectionStateDisconnected => 'Disconnected';
 
   @override

@@ -7,6 +7,7 @@ import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_key_mapper.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_protocol_variants.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
@@ -84,7 +85,7 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   Future<void> connect({required TvDevice device}) {
     return _connectInFlight.putIfAbsent(device.id, () {
       final f = _transportClient.connect(deviceId: device.id);
-      unawaited(f.whenComplete(() => _connectInFlight.remove(device.id)));
+      f.whenComplete(() => _connectInFlight.remove(device.id)).ignore();
       return f;
     });
   }
@@ -142,8 +143,10 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   Stream<ConnectionState> watchConnectionState(TvDevice device) async* {
     try {
       await connect(device: device);
-    } catch (_) {
-      yield ConnectionState.error;
+    } catch (error) {
+      yield SamsungTransportAuthorization.isAuthorizationError(error)
+          ? ConnectionState.unauthorized
+          : ConnectionState.error;
       return;
     }
     yield* _transportClient.watchConnectionState(device.id);

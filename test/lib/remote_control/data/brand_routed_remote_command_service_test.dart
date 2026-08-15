@@ -5,6 +5,7 @@ import 'package:one_remote/remote_control/application/transport_log_provider.dar
 import 'package:one_remote/remote_control/application/transport_log_reader.dart';
 import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
@@ -101,6 +102,41 @@ void main() {
         variantRegistry: const DefaultVariantResolutionRegistry(),
         localizedStrings: FakeLocalizedStrings(),
       );
+      await expectLater(service.connect(device: device), completes);
+    });
+
+    test(
+      'swallows TV authorization denial so background connect is not a crash',
+      () async {
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [
+            _RecordingAdapter(
+              brand: TvBrand.samsung,
+              connectError: const SamsungTransportAuthorizationException(
+                'Samsung TV rejected remote-control authorization.',
+              ),
+            ),
+          ],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
+        );
+
+        await expectLater(service.connect(device: device), completes);
+      },
+    );
+
+    test('swallows unexpected adapter connect errors', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          _RecordingAdapter(
+            brand: TvBrand.samsung,
+            connectError: StateError('socket closed'),
+          ),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+
       await expectLater(service.connect(device: device), completes);
     });
   });
@@ -869,6 +905,7 @@ class _RecordingAdapter implements TvBrandAdapter {
   _RecordingAdapter({
     required this.brand,
     this._supportsTextInput = true,
+    this.connectError,
     Set<RemoteCommand>? supportedCommands,
     Stream<bool>? textInputReadyStream,
   }) : _supportedCommands = supportedCommands ?? RemoteCommand.values.toSet(),
@@ -883,6 +920,7 @@ class _RecordingAdapter implements TvBrandAdapter {
   final bool _supportsTextInput;
   final Set<RemoteCommand> _supportedCommands;
   final Stream<bool> _textInputReadyStream;
+  final Object? connectError;
 
   int preparePairingCallCount = 0;
   int submitPairingCodeCallCount = 0;
@@ -934,6 +972,10 @@ class _RecordingAdapter implements TvBrandAdapter {
   @override
   Future<void> connect({required TvDevice device}) async {
     connectCallCount++;
+    final error = connectError;
+    if (error != null) {
+      throw error;
+    }
   }
 
   @override
