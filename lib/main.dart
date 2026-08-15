@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -79,14 +77,6 @@ Future<void> main() async {
 
   PlatformDispatcher.instance.onError = (error, stack) {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
-
-  runZonedGuarded(() => runApp(const OneRemoteApp()), (
-    Object error,
-    StackTrace stack,
-  ) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     _recordUnhandledError(error);
     final errorSource = _errorSource();
     if (errorSource != null) {
@@ -94,5 +84,8 @@ Future<void> main() async {
     } else if (env == AppEnvironment.debug) {
       debugPrint('Unhandled error: $error\n$stack');
     }
-  });
+    return true;
+  };
+
+  runApp(const OneRemoteApp());
 }
