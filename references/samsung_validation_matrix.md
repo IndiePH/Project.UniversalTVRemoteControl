@@ -47,7 +47,7 @@ this section records **on-TV** outcomes.
 | -------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Approval request + timeout | `samsung_websocket_transport_client.dart`                           | `requestPairingApproval`: 45s default; clears TLS pins when no stored token; sends trigger key on first connect; retries token-auth connect until deadline |
 | Token + waiters            | `samsung_pairing_token_store.dart`                                  | Host-keyed token; completes/fails pending approval completers on `ms.channel.connect` frames                                                               |
-| Rejection                  | `samsung_transport_authorization.dart`, `samsung_ws_handshake.dart` | `SamsungTransportAuthorizationException`: "Samsung TV rejected remote-control authorization."                                                              |
+| Rejection                  | `samsung_transport_authorization.dart`, `samsung_ws_handshake.dart`, `samsung_adapter.dart`, `connection_state.dart` | `SamsungTransportAuthorizationException`: "Samsung TV rejected remote-control authorization." Pairing-page Deny → `CommandDispatchResult.failure`. Home reconnect Deny → `ConnectionState.unauthorized` (**Allow this remote on your TV**); not a Crashlytics fatal; no 5 s auto-retry. |
 | Cancel / recovery          | `samsung_websocket_transport_client.dart`                           | `cancelPairing` fails pending waiters + resets connection                                                                                                  |
 | Pairing UX                 | `pairing_page_sections.dart`, `pairing_page_coordinator.dart`       | Busy overlay: "Waiting for TV approval..."; failures sanitized via `MessageHandler`                                                                        |
 
@@ -98,6 +98,7 @@ before scenario A.
 | C2   | Tap Pair again after C1                                                   | New approval attempt; not permanently blocked                                                           |
 | C3   | Start pair; tap **Cancel** in app (if shown) or navigate back during wait | `cancelPairing` clears waiters; no orphan busy overlay on return                                        |
 | C4   | Timeout (A4) then immediate retry                                         | Same as C2 — recovery without reinstall                                                                 |
+| C5   | Previously paired device on Remote Home; TV Deny or revoked token on reconnect | Home shows **Allow this remote on your TV**; **no** 5 s reconnect loop; app does not crash; pair button starts a new Allow prompt |
 
 
 ### Approval outcome table (`TVREMOTE-14` AC)
@@ -109,7 +110,8 @@ Fill after physical runs. Status: `pass` | `fail` | `blocked` (no hardware).
 | ------------------------------ | ---------- | -------- | ---------- | ------ | ----------------------- | -------------- |
 | A First-time approval          | Samsung TV |          | 05/22/2026 | Pass   |                         |                |
 | B Token reuse                  | Samsung TV |          | 05/22/2026 | Pass   |                         |                |
-| C Rejection / timeout recovery | Samsung TV |          | 05/22/2026 | Pass   |                         |                |
+| C Rejection / timeout recovery | Samsung TV |          | 05/22/2026 | Pass   | C1–C4 pairing-page recovery |            |
+| C5 Home reconnect Deny         |            |          |            |        | Code contract 2026-08-15; physical re-run not yet recorded | |
 
 
 ### Expected gaps → follow-up issues
@@ -129,6 +131,9 @@ transport fix (if TV behavior differs from contract)
 
 ## Findings (running log)
 
+- *2026-08-15* — Home reconnect **Deny** / revoked token is `ConnectionState.unauthorized`
+(status **Allow this remote on your TV**, no 5 s retry, not a Crashlytics fatal).
+Runbook scenario **C5** added. Pairing-page C1–C4 unchanged.
 - *2026-05-22* — `**TVREMOTE-14` runbook shipped:** approval-variant scenarios
 A–C, code-under-test map, outcome table, and follow-up template added.
 Code-review parity: transport implements first-time wait, token reuse loop,

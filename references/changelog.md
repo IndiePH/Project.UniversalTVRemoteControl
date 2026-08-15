@@ -3,6 +3,17 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-08-15
+
+### Fixed
+- Samsung TV **Deny** / remote-control authorization rejection is a recoverable pairing outcome, not a Crashlytics fatal. `SamsungWebSocketTransportClient.connect` rethrows `SamsungTransportAuthorizationException` (does not wrap it in `StateError`); `BrandRoutedRemoteCommandService.connect` swallows background-connect failures; Samsung/LG/Hisense in-flight cleanup uses `Future.ignore()` instead of `unawaited(f.whenComplete(...))` so the cleanup future cannot leak the same error into the zone.
+- Home no longer auto-retries after authorization denial. New `ConnectionState.unauthorized` (`shouldAutoReconnect` is false); label **Allow this remote on your TV**; retry still runs on transient `disconnected` / `error`. App resume does not restart retry while unauthorized. Pairing-page Deny still maps to `CommandDispatchResult.failure`. Remote key send after Deny remains a command failure, not a crash.
+- Crashlytics `FlutterError: Zone mismatch` at `runApp` (`c1d5a2f`): `WidgetsFlutterBinding.ensureInitialized()` ran in the root zone while `runApp` ran inside `runZonedGuarded`. `runApp` now runs in the same zone as binding init; `runZonedGuarded` removed. Uncaught async errors stay on `PlatformDispatcher.instance.onError` (Crashlytics + diagnostics / `StreamUnhandledErrorSource`).
+
+### Verification
+- `flutter test` on `connection_state_test.dart`, `brand_routed_remote_command_service_test.dart`, `samsung_test_lane_test.dart`, `widget_test.dart`, `lg_test_lane_test.dart`, `hisense_test_lane_test.dart` — all passed (includes unauthorized reconnect/UI coverage and swallowed background `connect()`).
+- `flutter analyze lib/main.dart` — no issues.
+
 ## 2026-07-22
 
 ### Changed

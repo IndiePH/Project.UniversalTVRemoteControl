@@ -200,6 +200,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Settings sheet Pro status/upgrade/restore with plan or renewal details; entitlement refresh on app resume
   - [x] Tests in `pro_entitlement_service_test.dart`, `pro_receipt_validation_service_test.dart`, `pro_upgrade_page_test.dart`
 - [x] Firebase Analytics + Crashlytics (commit `bf5d103`): Firebase init + fatal error hooks in `main.dart`; `AnalyticsService` DI with Pro entitlement + startup locale events
+- [x] Crashlytics startup zone mismatch (`c1d5a2f`, 2026-08-15): `runApp` in the same zone as `WidgetsFlutterBinding.ensureInitialized()`; `runZonedGuarded` removed. Uncaught async errors stay on `PlatformDispatcher.instance.onError` (+ diagnostics / `StreamUnhandledErrorSource`)
 - [x] Android TV protobuf 6 compatibility (`ef8386b`): `PbList.createRepeated` → `List` in Android TV remote/pairing message types
 - [x] AdMob runtime test/live toggle + Android edge-to-edge (`4af3cdc` / `05aca51`, **TVREMOTE-63** / **TVREMOTE-26**):
   - [x] `AdRemoteConfigService` — Firebase Remote Config `test_ads_enabled`; fail-safe default prefers test ad units; split settings/defaults from fetch; fetch failures keep last activated value; release `minimumFetchInterval` 1 minute (`05aca51`)
@@ -222,10 +223,14 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] `FreeTierDevicePolicy`, `ProDeviceSwitchPolicy`, `SavedDeviceDisplayOrdering`, `TvDeviceSelection` extracted from `RemoteHomePage` and `PairingPage`
   - [x] Tests: policy unit tests + `multiplexed_tv_connection_state_service_test.dart`; widget/pairing stubs updated
 - [x] Home reconnect + concurrent-connect hardening (`e1af1b9`, Fix/remote connection and indicators #16):
-  - [x] `connect()` on `TvBrandAdapter` / `BrandRoutedRemoteCommandService`; LG/Samsung/Hisense `_connectInFlight` joins concurrent callers per device id (transport future returned directly; cleanup via `unawaited(f.whenComplete(...))`)
-  - [x] `RemoteHomePage` fires `connect()` on connection-state subscribe; `Timer.periodic(5 s)` reconnect on disconnect/error; lifecycle pause/resume; dispose cancels timer
+  - [x] `connect()` on `TvBrandAdapter` / `BrandRoutedRemoteCommandService`; LG/Samsung/Hisense `_connectInFlight` joins concurrent callers per device id (transport future returned directly; cleanup via `f.whenComplete(...).ignore()`)
+  - [x] `RemoteHomePage` fires `connect()` on connection-state subscribe; `Timer.periodic(5 s)` reconnect when `ConnectionState.shouldAutoReconnect` (`disconnected` / `error` only); lifecycle pause/resume; dispose cancels timer
   - [x] Retry skips when `!mounted` or home route is not current (avoids spurious LG SSAP popup while pairing another TV)
-  - [x] Tests: concurrent-connect lanes in `lg_test_lane_test.dart` / `samsung_test_lane_test.dart` / `hisense_test_lane_test.dart`; pairing indicator group + retry route-guard coverage in `pairing_page_test.dart` / `widget_test.dart` (`flutter test` — 453 passed)
+  - [x] Tests: concurrent-connect lanes in `lg_test_lane_test.dart` / `samsung_test_lane_test.dart` / `hisense_test_lane_test.dart`; pairing indicator group + retry route-guard coverage in `pairing_page_test.dart` / `widget_test.dart`
+- [x] Samsung / home authorization denial is not a crash (2026-08-15):
+  - [x] `ConnectionState.unauthorized` + `shouldAutoReconnect`; home copy **Allow this remote on your TV**; no 5 s retry after TV Deny / revoked token
+  - [x] Background `BrandRoutedRemoteCommandService.connect` swallows failures; Samsung connect rethrows `SamsungTransportAuthorizationException` instead of wrapping in `StateError`
+  - [x] Tests: `connection_state_test.dart`; swallowed-connect cases in `brand_routed_remote_command_service_test.dart`; unauthorized yield + sendCommand failure in `samsung_test_lane_test.dart`; widget test `does not retry after TV authorization denial; shows allow-on-TV guidance`
 
 ### In Progress
 - [ ] Milestone 3 / Task 3.1:
@@ -248,7 +253,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [ ] Connect pairing output to real protocol handshake/verification per non-Samsung brands
 - [ ] Expand tests:
   - [x] pairing success/failure paths (`TVREMOTE-12`): coordinator unit coverage in `test/lib/remote_control/presentation/pages/pairing_page_coordinator_test.dart` for non-PIN success (persistence, manual-IP save, enriched-device fallback), non-PIN failure (no-save invariants, sanitized message, unsupported→failure), PIN retry depth (3-rejection success, 5-rejection cancel, verbatim PIN forwarding, per-attempt `onPinRejected`), and `cancelPairing` delegation
-  - [x] Samsung approval timeout/rejection handling paths (`TVREMOTE-13`): service-lane failures preserve `TimeoutException` / `SamsungTransportAuthorizationException` messaging; retry-after-failure + `cancelPairing` delegation; token-store unauthorized/cancel/recovery unit tests
+  - [x] Samsung approval timeout/rejection handling paths (`TVREMOTE-13`): service-lane failures preserve `TimeoutException` / `SamsungTransportAuthorizationException` messaging; retry-after-failure + `cancelPairing` delegation; token-store unauthorized/cancel/recovery unit tests; home reconnect Deny → `ConnectionState.unauthorized` (not Crashlytics fatal)
   - [ ] adapter capability unsupported flows
   - [x] saved-device remove/last-used fallback paths
   - [x] vertical-slice widget/integration edge cases (`TVREMOTE-11`): discovery failure, empty-rescan recovery, returning last-used launch, command failure surfacing
@@ -383,7 +388,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 
 ### Task 2.4 - Improve connection resilience
 - [ ] Add reconnect backoff strategy for temporary network failures (fixed 5 s home retry shipped in `e1af1b9`; true backoff still pending).
-- [x] Surface clear UI states: connecting, connected, disconnected, retrying (home active device via `TvConnectionStateService` `34788d0`; pairing-list reachability probes + home 5 s reconnect / route guard `e1af1b9`; exponential backoff still pending).
+- [x] Surface clear UI states: connecting, connected, disconnected, retrying, unauthorized (home active device via `TvConnectionStateService` `34788d0`; pairing-list reachability probes + home 5 s reconnect on `disconnected`/`error` only / route guard `e1af1b9`; TV Deny stays on home with Allow-on-TV copy; exponential backoff still pending).
 
 ## Milestone 3 - UX Polish and Product Readiness
 

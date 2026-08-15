@@ -63,7 +63,8 @@ On a phone and TV on the same LAN: open the app → pair (scan or manual IP) →
   - Hisense command transport: real VIDAA-style MQTT (TLS to TV port `36669`, self-signed cert allowed)
   - Device discovery: SSDP local-network discovery (on **Android**, the app acquires a Wi‑Fi **multicast lock** for the scan so SSDP replies are not filtered; `TV_HOST_OVERRIDE` still works if the TV does not advertise recognizable UPnP headers)
 - Connection behavior (active device on remote home):
-  - Live transport state via `TvConnectionStateService`; `connect()` runs on subscribe and on a **5 s** periodic reconnect when disconnected (paused while another route covers home, e.g. pairing)
+  - Live transport state via `TvConnectionStateService`; `connect()` runs on subscribe and on a **5 s** periodic reconnect when `disconnected` or `error` (paused while another route covers home, e.g. pairing; also paused in background)
+  - TV **Deny** / revoked remote-control authorization is `ConnectionState.unauthorized` — status **Allow this remote on your TV**; **no** 5 s retry (use the pair button to request Allow again). This is not reported as a Crashlytics crash.
   - Pairing / saved-device rows use `TvReachabilityService` TCP reachability probes
   - Per-host pairing credentials persist across restarts (`flutter_secure_storage`)
 - Optional fake transport mode for all brand adapters (single switch):
