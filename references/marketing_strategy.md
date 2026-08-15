@@ -104,7 +104,7 @@ Download OneRemote and control your Smart TV from your phone.
 
 ## 🔹 Release details (AAB — Google Play)
 
-**Current release:** `1.4.0` · **versionCode:** `17` · **Track:** Internal testing → Production (promote same artifact when validated)
+**Current release:** `1.4.0` · **versionCode:** `18` · **Track:** Internal testing → Production (promote same artifact when validated)
 
 **Build (signed AAB with production dart-defines):**
 
