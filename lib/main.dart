@@ -48,6 +48,9 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   await Firebase.initializeApp();
+  if (AppBuildConfig.personalBuildUnlock) {
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
+  }
 
   final env = AppBuildConfig.environmentForMain();
   await DiBootstrap.initialize(env);
@@ -65,7 +68,9 @@ Future<void> main() async {
   }
 
   FlutterError.onError = (FlutterErrorDetails details) {
-    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    if (!AppBuildConfig.personalBuildUnlock) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    }
     _recordUnhandledError(details.exception);
     final errorSource = _errorSource();
     if (errorSource != null) {
@@ -76,7 +81,9 @@ Future<void> main() async {
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    if (!AppBuildConfig.personalBuildUnlock) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    }
     _recordUnhandledError(error);
     final errorSource = _errorSource();
     if (errorSource != null) {

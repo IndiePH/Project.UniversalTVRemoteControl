@@ -3,6 +3,8 @@ import 'dart:ui' show Locale;
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import 'package:one_remote/app/configurations/app_build_config.dart';
+
 /// App-level wrapper for Firebase Analytics.
 ///
 /// Intentionally **events-only**: do not attach navigator observers or log
@@ -13,7 +15,7 @@ final class AnalyticsService {
   String? _countryAtStartup;
 
   FirebaseAnalytics? _tryAnalytics() {
-    if (Firebase.apps.isEmpty) {
+    if (Firebase.apps.isEmpty || AppBuildConfig.personalBuildUnlock) {
       return null;
     }
     return FirebaseAnalytics.instance;

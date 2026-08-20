@@ -22,6 +22,13 @@ abstract final class AppBuildConfig {
   /// Reserved for a future `development` Gradle flavor or `--dart-define=APP_ENV=development`.
   static const bool developmentFlavorReserved = false;
 
+  /// Personal sideload builds only: forces Pro entitlement without a store purchase
+  /// and disables Analytics/Crashlytics reporting. Never set for Play Store releases.
+  static const bool personalBuildUnlock = bool.fromEnvironment(
+    'PERSONAL_BUILD',
+    defaultValue: false,
+  );
+
   static AppBuildProfile get profile => switch ((kDebugMode, kProfileMode)) {
     (true, _) => AppBuildProfile.debug,
     (false, true) => AppBuildProfile.profile,
