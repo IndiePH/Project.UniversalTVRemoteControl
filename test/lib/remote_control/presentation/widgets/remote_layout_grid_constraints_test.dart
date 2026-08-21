@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:one_remote/remote_control/domain/models/layout_zone.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_grid_metrics.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_grid_geometry.dart';
@@ -64,6 +65,27 @@ void main() {
         expect(prior, isNull, reason: 'duplicate cell ${entry.key}');
         ownersByCell[entry.key] = entry.value;
       }
+    });
+
+    test('drawer-zoned items do not occupy their old cell', () {
+      final items = buildInitialRemoteLayoutItems();
+      final mute = items.firstWhere((item) => item.id == 'mute')
+        ..zone = LayoutZone.drawer;
+
+      final gridItems = items
+          .where((item) => item.zone == LayoutZone.grid)
+          .toList();
+      final occupancy = RemoteLayoutEditorGridGeometry.occupancyByCell(
+        gridItems,
+      );
+
+      expect(occupancy.values, isNot(contains('mute')));
+      expect(
+        occupancy.containsKey(
+          RemoteLayoutEditorGridGeometry.cellKey(mute.col, mute.row),
+        ),
+        isFalse,
+      );
     });
   });
 }

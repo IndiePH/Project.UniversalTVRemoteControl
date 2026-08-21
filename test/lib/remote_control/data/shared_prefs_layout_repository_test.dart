@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/remote_control/data/shared_prefs_layout_repository.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
+import 'package:one_remote/remote_control/domain/models/layout_zone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -59,6 +60,32 @@ void main() {
       final repo = SharedPrefsLayoutRepository();
       final loaded = await repo.loadLayout(deviceId: 'bad');
       expect(loaded, isEmpty);
+    });
+
+    test('persists and reloads zone', () async {
+      final repo = SharedPrefsLayoutRepository();
+      const deviceId = 'zone-device';
+
+      await repo.saveLayout(
+        deviceId: deviceId,
+        positionsByItemId: {
+          'mute': const LayoutPosition(col: 3, row: 5, zone: LayoutZone.drawer),
+          'home': const LayoutPosition(col: 1, row: 0),
+        },
+      );
+
+      final loaded = await repo.loadLayout(deviceId: deviceId);
+      expect(loaded['mute']?.zone, LayoutZone.drawer);
+      expect(loaded['home']?.zone, LayoutZone.grid);
+    });
+
+    test('legacy JSON with no zone key defaults to grid', () async {
+      SharedPreferences.setMockInitialValues({
+        'remote_layout_v1_legacy': '{"mute": {"col": 3, "row": 5}}',
+      });
+      final repo = SharedPrefsLayoutRepository();
+      final loaded = await repo.loadLayout(deviceId: 'legacy');
+      expect(loaded['mute']?.zone, LayoutZone.grid);
     });
   });
 }

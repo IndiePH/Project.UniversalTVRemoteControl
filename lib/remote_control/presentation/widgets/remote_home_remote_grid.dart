@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/domain/models/layout_item_id.dart';
+import 'package:one_remote/remote_control/domain/models/layout_zone.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/presentation/interaction/remote_command_haptic_feedback.dart';
 import 'package:one_remote/remote_control/presentation/interaction/remote_command_interaction_category.dart';
@@ -57,6 +59,9 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
         final gridWidth =
             (gridColumns * cellSize) + ((gridColumns - 1) * gridGap);
         final gridHeight = (gridRows * cellSize) + ((gridRows - 1) * gridGap);
+        final gridItems = layoutItems
+            .where((item) => item.zone == LayoutZone.grid)
+            .toList(growable: false);
 
         return Align(
           alignment: Alignment.topCenter,
@@ -70,7 +75,7 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
                   child: Stack(
                     key: ValueKey<bool>(pairingHintActive),
                     children: [
-                      for (final item in layoutItems)
+                      for (final item in gridItems)
                         Positioned(
                           left: item.col * (cellSize + gridGap),
                           top: item.row * (cellSize + gridGap),
@@ -105,19 +110,19 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
   }) {
     final Widget itemWidget;
     switch (item.id) {
-      case 'dpad':
+      case LayoutItemId.dpad:
         itemWidget = _buildDpadItem(item, cellSize);
         break;
-      case 'searchInput':
+      case LayoutItemId.searchInput:
         itemWidget = _buildSearchInputItem(item, cellSize);
         break;
-      case 'playPause':
+      case LayoutItemId.playPause:
         itemWidget = _buildPlayPauseItem(context, item, cellSize);
         break;
-      case 'channel':
+      case LayoutItemId.channel:
         itemWidget = _buildChannelItem(item, cellSize);
         break;
-      case 'volume':
+      case LayoutItemId.volume:
         itemWidget = _buildVolumeItem(item, cellSize);
         break;
       default:
