@@ -321,18 +321,22 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
   double get _drawerScrollIncrement =>
       kRemoteLayoutDrawerItemCellSize + widget.gridGap;
 
+  /// Scroll offset after moving by [delta], clamped to the scrollable range.
+  double _clampedDrawerScrollTarget(double delta) {
+    final position = _drawerScrollController.position;
+    return (position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+  }
+
   void _scrollDrawerBy(double delta) {
     if (!_drawerScrollController.hasClients) {
       return;
     }
-    final position = _drawerScrollController.position;
-    final target = (position.pixels + delta).clamp(
-      position.minScrollExtent,
-      position.maxScrollExtent,
-    );
     unawaited(
       _drawerScrollController.animateTo(
-        target,
+        _clampedDrawerScrollTarget(delta),
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
       ),
@@ -348,12 +352,7 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
         if (!_drawerScrollController.hasClients) {
           return;
         }
-        final position = _drawerScrollController.position;
-        final target = (position.pixels + step).clamp(
-          position.minScrollExtent,
-          position.maxScrollExtent,
-        );
-        _drawerScrollController.jumpTo(target);
+        _drawerScrollController.jumpTo(_clampedDrawerScrollTarget(step));
       },
     );
   }
@@ -363,9 +362,10 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
     _drawerAutoScrollTimer = null;
   }
 
-  /// Tap scrolls one item; holding auto-scrolls. The outer [GestureDetector] handles the hold
-  /// ([InkWell] has no hold-repeat callback); `triggerMode: manual` stops [Tooltip]'s own
-  /// long-press from competing with it.
+  /// Tap scrolls by one cell width; holding auto-scrolls. (Multi-cell items like dpad take more
+  /// than one tap to clear — accepted, see [kRemoteLayoutDrawerItemCellSize].) The outer
+  /// [GestureDetector] handles the hold ([InkWell] has no hold-repeat callback); `triggerMode:
+  /// manual` stops [Tooltip]'s own long-press from competing with it.
   Widget _buildDrawerScrollButton({
     required IconData icon,
     required String tooltip,
@@ -418,9 +418,10 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
     final appColors = AppTheme.colorsOf(context);
     final chevronBudget =
         2 * (kRemoteLayoutDrawerChevronSize + kRemoteLayoutDrawerChevronGap);
+    final showChevrons = maxWidth >= chevronBudget;
     final boxWidth = math.min(
       gridWidth,
-      math.max(0.0, maxWidth - chevronBudget),
+      showChevrons ? maxWidth - chevronBudget : maxWidth,
     );
 
     final box = DragTarget<String>(
@@ -473,6 +474,10 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
         );
       },
     );
+
+    if (!showChevrons) {
+      return box;
+    }
 
     final l10n = AppLocalizations.of(context)!;
     return Row(
@@ -530,6 +535,8 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
                         child: Text(
                           AppLocalizations.of(context)!.layoutEditorTitle,
                           style: Theme.of(context).textTheme.titleLarge,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       RemoteHeaderIconButton(
