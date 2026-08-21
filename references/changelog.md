@@ -6,6 +6,7 @@ Keep entries short and append new updates at the top.
 ## 2026-08-21
 
 ### Changed
+- App version bump to `1.4.1+19` (`pubspec.yaml`; README and marketing release details synced).
 - `feature/stable-device-identifier` now treats proven per-TV identifiers as
   the internal `TvDevice.id`; the current LAN IP remains mutable host/display
   data and is no longer the primary pairing key.

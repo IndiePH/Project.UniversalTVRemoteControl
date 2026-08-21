@@ -2,7 +2,7 @@
 
 Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — use either label interchangeably in docs). Control smart TVs over Wi‑Fi from Android or iOS.
 
-**Version:** `1.4.0+18` (see `pubspec.yaml`)
+**Version:** `1.4.1+19` (see `pubspec.yaml`)
 
 ## Overview
 

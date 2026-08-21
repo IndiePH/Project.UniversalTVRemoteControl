@@ -104,7 +104,7 @@ Download OneRemote and control your Smart TV from your phone.
 
 ## 🔹 Release details (AAB — Google Play)
 
-**Current release:** `1.4.0` · **versionCode:** `18` · **Track:** Internal testing → Production (promote same artifact when validated)
+**Current release:** `1.4.1` · **versionCode:** `19` · **Track:** Internal testing → Production (promote same artifact when validated)
 
 **Build (signed AAB with production dart-defines):**
 
@@ -122,9 +122,10 @@ Requires `android/release_dart_defines.properties` (gitignored) with `FEEDBACK_W
 Paste under **Release → Release notes** (Internal testing or Production). Adjust length if Console limits apply.
 
 ```
-What's new in 1.4.0
+What's new in 1.4.1
 
-• In-app feedback now includes your saved TV brand and model (when known) so we can troubleshoot compatibility faster — shown before you send; no IP addresses or pairing secrets
+• Paired TVs keep working after a router reboot / new IP when the TV can be identified again — no re-pair needed in the common case
+• In-app feedback still includes your saved TV brand and model (when known) so we can troubleshoot compatibility faster — shown before you send; no IP addresses or pairing secrets
 • Updated privacy disclosures for feedback and Pro subscriptions
 • General stability and release improvements
 
