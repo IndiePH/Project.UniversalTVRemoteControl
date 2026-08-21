@@ -348,49 +348,50 @@ void main() {
       expect(drawerBoxWidth, lessThan(gridWidth));
     });
 
-    testWidgets('drawer hides chevrons instead of overflowing when there is no room for them', (
-      tester,
-    ) async {
-      // Below the chevron budget (2 * (chevron size + gap)), reserving space for both chevrons
-      // would overflow the row; the drawer should drop them and let the box take the full width.
-      tester.view.physicalSize = const Size(100, 700);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'drawer hides chevrons instead of overflowing when there is no room for them',
+      (tester) async {
+        // Below the chevron budget (2 * (chevron size + gap)), reserving space for both chevrons
+        // would overflow the row; the drawer should drop them and let the box take the full width.
+        tester.view.physicalSize = const Size(100, 700);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      final items = buildInitialRemoteLayoutItems();
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: _layoutEditorTestTheme(),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            resizeToAvoidBottomInset: false,
-            appBar: AppBar(toolbarHeight: 50, title: const Text('OneRemote')),
-            body: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: RemoteLayoutEditor(
-                  layoutItems: items,
-                  itemDefinitionsById: kRemoteLayoutItemDefinitionById,
-                  gridColumns: kRemoteLayoutGridColumns,
-                  gridRows: kRemoteLayoutGridRows,
-                  gridGap: kRemoteLayoutGridGap,
-                  onResetLayout: () async {},
-                  onPersistLayout: () async {},
+        final items = buildInitialRemoteLayoutItems();
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: _layoutEditorTestTheme(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              resizeToAvoidBottomInset: false,
+              appBar: AppBar(toolbarHeight: 50, title: const Text('OneRemote')),
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: RemoteLayoutEditor(
+                    layoutItems: items,
+                    itemDefinitionsById: kRemoteLayoutItemDefinitionById,
+                    gridColumns: kRemoteLayoutGridColumns,
+                    gridRows: kRemoteLayoutGridRows,
+                    gridGap: kRemoteLayoutGridGap,
+                    onResetLayout: () async {},
+                    onPersistLayout: () async {},
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
 
-      expect(find.byIcon(Icons.arrow_left), findsNothing);
-      expect(find.byIcon(Icons.arrow_right), findsNothing);
-      expect(find.byKey(const ValueKey('drawerBox')), findsOneWidget);
-    });
+        expect(find.byIcon(Icons.arrow_left), findsNothing);
+        expect(find.byIcon(Icons.arrow_right), findsNothing);
+        expect(find.byKey(const ValueKey('drawerBox')), findsOneWidget);
+      },
+    );
 
     testWidgets('tapping the right triangle scrolls by one item', (
       tester,

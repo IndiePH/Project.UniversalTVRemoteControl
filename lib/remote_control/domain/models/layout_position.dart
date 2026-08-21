@@ -12,11 +12,7 @@ final class LayoutPosition {
   final int row;
   final LayoutZone zone;
 
-  Map<String, dynamic> toJson() => {
-    'col': col,
-    'row': row,
-    'zone': zone.name,
-  };
+  Map<String, dynamic> toJson() => {'col': col, 'row': row, 'zone': zone.name};
 
   static LayoutPosition? fromJson(Object? json) {
     if (json is! Map<String, dynamic>) {
