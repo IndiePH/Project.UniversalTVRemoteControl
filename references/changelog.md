@@ -3,6 +3,14 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+> ⚠️ **Standing notice, not a dated entry — check on every changelog update:** any change
+> to app startup, DI bootstrap, or the device discovery/pairing/selection flow may make
+> `references/app-initialization-and-remote-selection-flow.md` stale. If an entry you're
+> adding touches `main.dart`, `di_bootstrap.dart`, `remote_control_di_config.dart`,
+> `one_remote_app.dart`, `remote_home_page.dart`'s device-activation path, `pairing_page.dart`,
+> `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
+> that doc alongside the changelog entry.
+
 ## 2026-08-15
 
 ### Fixed
