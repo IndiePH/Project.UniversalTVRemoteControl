@@ -20,11 +20,11 @@ layout — retrievable/re-addable later, rather than permanently absent.
 
 ## Verified facts (direct source reads, 2026-08-20)
 
-1. **No drawer-equivalent exists today.** `LayoutPosition` (`lib/remote_control/domain/models/layout_position.dart:2-21`) holds only `col`/`row` — no visible/hidden/enabled field of any kind.
-2. **`LayoutEditItem`** (`lib/remote_control/presentation/widgets/layout_edit_item.dart:4-26`) — the mutable runtime item — also has no enabled/disabled/hidden field. Checked in full; confirmed absent.
-3. **Layout catalog is fixed and global.** `kRemoteLayoutItemDefinitions` (`lib/remote_control/presentation/widgets/remote_layout_item_definitions.dart:67-156`) is a hardcoded list of 14 item ids (power, menu, volume, playPause, www, dpad, channel, home, back, mute, netflix, disney, prime, searchInput) with fixed grid geometry — same for every brand.
-4. **Filtering is capability-only, not user choice.** `buildFilteredRemoteLayoutItems` (`remote_layout_item_definitions.dart:211-236`) includes an item only if `supportedCommands.containsAll(requiredCommandsForLayoutItemId(id))` (or `supportsTextInput` for `searchInput`). An unsupported command's item is **fully omitted** — never rendered anywhere, not even as disabled.
-5. **Proof of the gap:** `RemoteCommand.youtube` and `RemoteCommand.input` (`lib/remote_control/domain/models/remote_command.dart:9,14`) are valid, dispatchable commands — `youtube` is in `kCommonSupportedRemoteCommands` (`supported_remote_commands.dart:17`) and wired into every adapter's key mapper — but **neither has a case in `requiredCommandsForLayoutItemId` or `commandForLayoutItemId`** (`remote_layout_item_definitions.dart:170-209`). They are unreachable from any UI today — not hidden, just absent.
+1. ~~**No drawer-equivalent exists today.** `LayoutPosition` (`lib/remote_control/domain/models/layout_position.dart:2-21`) holds only `col`/`row` — no visible/hidden/enabled field of any kind.~~ **Superseded by Phase 1 (2026-08-21): `LayoutPosition` (`layout_position.dart:4-35`) now also holds `category: LayoutCategory` (`grid`/`drawer`)** — this is the drawer-equivalent field this fact originally found missing.
+2. ~~**`LayoutEditItem`** (`lib/remote_control/presentation/widgets/layout_edit_item.dart:4-26`) — the mutable runtime item — also has no enabled/disabled/hidden field. Checked in full; confirmed absent.~~ **Superseded by Phase 1 (2026-08-21): `LayoutEditItem` (`layout_edit_item.dart:5-28`) now has a mutable `category: LayoutCategory` field**, mirroring `LayoutPosition`.
+3. ~~**Layout catalog is fixed and global.** `kRemoteLayoutItemDefinitions` (`lib/remote_control/presentation/widgets/remote_layout_item_definitions.dart:67-156`) is a hardcoded list of 14 item ids (power, menu, volume, playPause, www, dpad, channel, home, back, mute, netflix, disney, prime, searchInput) with fixed grid geometry — same for every brand.~~ **Superseded by Phase 2 (2026-08-21): the catalog now has 16 items** (`remote_layout_item_definitions.dart:92-228`) — the original 14 plus `youtube` and `input`. Still fixed/global (same list for every brand) — only the count changed.
+4. **Filtering is capability-only, not user choice.** `buildFilteredRemoteLayoutItems` (`remote_layout_item_definitions.dart:251-276`) includes an item only if `supportedCommands.containsAll(definition.commands)` (or `supportsTextInput` for `searchInput`). An unsupported command's item is **fully omitted** — never rendered anywhere, not even as disabled. (Still true post-Phase-2; this is exactly what Phase 3 changes.)
+5. ~~**Proof of the gap:** `RemoteCommand.youtube` and `RemoteCommand.input` (`lib/remote_control/domain/models/remote_command.dart:9,14`) are valid, dispatchable commands — `youtube` is in `kCommonSupportedRemoteCommands` (`supported_remote_commands.dart:17`) and wired into every adapter's key mapper — but **neither has a case in `requiredCommandsForLayoutItemId` or `commandForLayoutItemId`** (`remote_layout_item_definitions.dart:170-209`). They are unreachable from any UI today — not hidden, just absent.~~ **Fixed by Phase 2 (2026-08-21):** both now have catalog entries (`youtube` at `remote_layout_item_definitions.dart:212-218`, `input` at `:221-227`) with `commands: {RemoteCommand.youtube}` / `{RemoteCommand.input}`. They render on the main grid today for any device whose adapter supports them — see the Phase 3 caveat below for why that's still not the intended end state.
 6. **"Command exists for this device" = "command is in the resolved adapter's `supportedCommands` set."** `BrandRoutedRemoteCommandService._adapterFor(brand, variant)` (`lib/remote_control/data/brand_routed_remote_command_service.dart:278-279`) does a `Map<(TvBrand, String), TvBrandAdapter>` lookup; `supportedCommandsFor(device)` delegates straight to that adapter's `supportedCommands` getter. This is already the source of truth the drawer would key off of — no new "does this command exist" logic is needed, only a new "is it currently excluded from the layout by user choice" state.
 7. **Per-adapter command sets differ** (confirmed by direct read of each adapter file):
    - `android_tv`, `tcl_google_tv` (`TvBrand.tcl`, variant `googleTv`), `samsung`, `hisense`, `lg` all use the shared `kCommonSupportedRemoteCommands` (21/21 `RemoteCommand` values — i.e. this set is currently the *entire* enum, not a curated subset).
@@ -34,7 +34,7 @@ layout — retrievable/re-addable later, rather than permanently absent.
 ## Proposed design (undecided — for discussion)
 
 1. ~~Extend the persisted layout state to separate positioned/visible items from a known-but-drawer-parked set~~ — **resolved, see Decisions: `LayoutPosition.category` (`LayoutCategory.grid`/`LayoutCategory.drawer`) field chosen.**
-2. Extend `kRemoteLayoutItemDefinitions`/`requiredCommandsForLayoutItemId`/`commandForLayoutItemId` to cover every `RemoteCommand` that any adapter's `supportedCommands` set can produce (per `TvCapabilities`/adapter `supportedCommands`, verified fact #6) — uniformly, not a special case for `youtube`/`input`. Verified fact #5 (`youtube`/`input` currently unreachable) is one instance of this gap, not the whole of it; the fix should cover every command the layout catalog is currently missing so any capability-supported command can have a drawer representation.
+2. ~~Extend `kRemoteLayoutItemDefinitions`/`requiredCommandsForLayoutItemId`/`commandForLayoutItemId` to cover every `RemoteCommand` that any adapter's `supportedCommands` set can produce (per `TvCapabilities`/adapter `supportedCommands`, verified fact #6) — uniformly, not a special case for `youtube`/`input`. Verified fact #5 (`youtube`/`input` currently unreachable) is one instance of this gap, not the whole of it; the fix should cover every command the layout catalog is currently missing so any capability-supported command can have a drawer representation.~~ — **resolved by Phase 2 (2026-08-21): see Decisions for the `commands`/`dispatchCommand` field design that replaced the two switch statements, and Verified fact #5 above for the `youtube`/`input` closure.**
 3. ~~A UI surface (drawer strip within the editor) listing capability-supported-but-not-placed items, with add/remove actions~~ — **resolved, see "Proposed UX design — drawer interaction" below: a fixed, always-visible drawer strip, drag-based add/remove in both directions.** (`remote_layout_editor.dart` currently only supports drag-repositioning of items already present — no picker exists yet; grepped for `remove|delete|hide|drawer|overflow|toggle`, no relevant hits — confirms this is genuinely new UI, not an extension of an existing picker.)
 4. Small, non-breaking `SharedPreferences` shape addition — `LayoutPosition` gains `category` (an enum, default `LayoutCategory.grid` when absent), per Decisions below. No migration script needed; existing persisted data reads correctly under the new default.
 
@@ -46,6 +46,7 @@ layout — retrievable/re-addable later, rather than permanently absent.
 - 2026-08-21 (**revised same day**): ~~`LayoutPosition` gains a new `bool inDrawer` field~~ superseded — **`LayoutPosition` gains an `enum LayoutCategory { grid, drawer }` field named `category` instead of a bare `bool`.** Same underlying schema change (one new field, non-breaking, defaults correctly for already-persisted data — absent `category` reads as `LayoutCategory.grid`, matching the fact that nothing shipped has ever been drawer-parked), but per user feedback an enum reads clearer at call sites (`position.category == LayoutCategory.drawer` vs. a bare `true`/`false`) and leaves room for a future third category without another boolean bolted on later. A drawer-parked command sets `category: LayoutCategory.drawer` and **keeps its last real `col`/`row`** instead of losing it — preserved in case a future "restore to last spot" convenience is wanted, per user: "persist the original row,col if we ever want to use it." Restoring sets `category: LayoutCategory.grid`; whether the drop then reuses the preserved position as a suggestion or the user just drags to a fresh cell is a smaller UI decision, not blocked by this data choice either way. This also still resolves the magic-number tradeoff flagged against the earlier sentinel-position approach — no reserved out-of-bounds value to remember, and now no bare boolean either.
 - 2026-08-20: **Default drawer-vs-positioned state for any command (including `youtube`/`input`) matches that `(brand, variant)`'s default set**, per the `RemoteLayoutDefaults` map defined in `goal-variant-remote-layout.md` (see that doc for what determines the default set — no longer strictly physical-remote-bound, see its latest revision). A command starts positioned if it's in that variant's default set; starts in the drawer if the adapter supports it but the default set doesn't include it. This makes the drawer's default state a direct consequence of variant-layout's data, not an independent decision here.
 - 2026-08-20: **Pro-gating, confirmed:** editing/repositioning — including drawer drag-in/drag-out, since that's a position edit — is **Pro-only**, matching the existing layout-editor gate (`remote_home_page.dart:1084-1087`). The *default* command set itself (which commands a free user sees, per their device's brand+variant) is **not** Pro-gated — showing the correct commands for a device is a correctness matter, not a customization perk, and matches how defaults already work for everyone today.
+- 2026-08-21: **`RemoteLayoutItemDefinition`'s OCP fields are named `commands: Set<RemoteCommand>` and a derived getter `dispatchCommand`, not the originally-planned `requiredCommands`/`command`.** Per user feedback during Phase 2 (`RemoteLayoutItemDefinition` was hard to read with two similarly-named-but-differently-purposed fields): `commands` holds every `RemoteCommand` the device must support for the item to appear at all (empty means "not gated by a command" — today only `searchInput`, gated by `supportsTextInput` instead). `dispatchCommand` is **not a stored field** — it's `commands.length == 1 ? commands.single : null`, computed on read. Storing it separately was rejected: `dpad`/`volume`/`channel` need multiple `commands` but have no single "the tap action" (their sub-controls dispatch individually), and a second stored field for the single-command case would reopen the exact split-registry-drift failure mode that originally caused `youtube`/`input` to go missing from one switch statement while present in the other (verified fact #5, pre-fix). Verified against all 16 catalog items with zero counterexamples; documented limitation: a future item needing >1 required command but exactly 1 dispatch command would need a real (non-derived) field — no such item exists today.
 - 2026-08-20: **Build this goal first, before `goal-variant-remote-layout.md`, confirmed.** This work already touches every entry in `kRemoteLayoutItemDefinitions` (extending coverage to `youtube`/`input`) and is the natural point to fold `requiredCommandsForLayoutItemId`/`commandForLayoutItemId` into declarative fields on `RemoteLayoutItemDefinition` (OCP cleanup — see design review in `goal-variant-remote-layout.md` finding #4). The variant-layout goal then seeds its per-`(brand,variant)` catalogs from this goal's finished shape, avoiding rework.
 - 2026-08-21: **Persist-on-change and reset-to-default already exist for positions and extend naturally** to `category`-flagged entries — no new save/load pathway, just one more field riding along with the values already flowing through it:
   - `RemoteLayoutEditor.onAcceptWithDetails` already calls `widget.onPersistLayout()` on every accepted drop (`remote_layout_editor.dart:167`) — auto-save per change, no separate save step; a drag-to-drawer persists the same entry with `category: LayoutCategory.drawer` and its `col`/`row` unchanged.
@@ -98,38 +99,53 @@ there is coverage to refactor against, not a blind rewrite.
 **Phase 1 — Domain model (SRP: isolate the new state as its own type, don't overload `col`/`row`).**
 - New `enum LayoutCategory { grid, drawer }`, own file, matching the one-concept-per-file
   convention already used by `layout_position.dart` / `layout_edit_item.dart`.
-- `LayoutPosition` (`layout_position.dart:2-21`): add `final LayoutCategory category`,
+- `LayoutPosition` (`layout_position.dart:4-35`): add `final LayoutCategory category`,
   default `LayoutCategory.grid`. `toJson` adds `'category': category.name`; `fromJson` parses
   defensively and falls back to `LayoutCategory.grid` when the key is absent or unrecognized —
   preserves the non-breaking guarantee already recorded in Decisions (old persisted blobs have
   no `category` key at all).
-- `LayoutEditItem` (`layout_edit_item.dart:4-26`): mirror with a **mutable** `category` field
+- `LayoutEditItem` (`layout_edit_item.dart:5-28`): mirror with a **mutable** `category` field
   (mutable like `col`/`row`, since drag operations flip it live) — this is the type the running
   editor actually reads from (`_layoutItems`, `remote_home_page.dart:92`), so the runtime model
   needs the field independently of the persisted one.
-- `RemoteLayoutItemDefinition.toLayoutEditItem()` (`remote_layout_item_definitions.dart:44-54`):
+- `RemoteLayoutItemDefinition.toLayoutEditItem()` (`remote_layout_item_definitions.dart:74-89`):
   gains a `category` parameter (default `LayoutCategory.grid`) so default-set construction can
   stamp "starts positioned" vs. "starts in drawer" per Decisions.
 
+**Implemented as planned (2026-08-21), confirmed by re-read.** One addition beyond this
+section's original scope: `LayoutPosition`/`LayoutEditItem` both live in their own files
+alongside the new `layout_category.dart` and `layout_item_id.dart` (the latter added during
+Phase 2, see implementation note below) — same one-concept-per-file convention, no deviation.
+
 **Phase 2 — Close the catalog gap uniformly (OCP), not `youtube`-specific.**
 Verified precisely this turn: `RemoteCommand` (`remote_command.dart:1-23`) has 21 values; the
-union of `requiredCommandsForLayoutItemId`'s switch (`remote_layout_item_definitions.dart:170-190`)
-plus `searchInput`'s special-cased `supportsTextInput` path covers 19 of them. The gap is
-**exactly and only** `RemoteCommand.input` and `RemoteCommand.youtube` — a fully closed, verified
-set, not an illustrative example. Two moves:
+union of `requiredCommandsForLayoutItemId`'s switch (pre-Phase-2:
+`remote_layout_item_definitions.dart:170-190`) plus `searchInput`'s special-cased
+`supportsTextInput` path covers 19 of them. The gap is **exactly and only**
+`RemoteCommand.input` and `RemoteCommand.youtube` — a fully closed, verified set, not an
+illustrative example. Two moves:
 1. Fold `requiredCommandsForLayoutItemId`/`commandForLayoutItemId`'s switch statements into
-   declarative fields on `RemoteLayoutItemDefinition` (`requiredCommands: Set<RemoteCommand>`,
-   `command: RemoteCommand?`) — the OCP cleanup already flagged in
+   declarative fields on `RemoteLayoutItemDefinition` — the OCP cleanup already flagged in
    `goal-variant-remote-layout.md` finding #4 and explicitly slated for this goal in Decisions.
-   Adding a new item becomes "one list entry," not "touch three places."
-2. Add `youtube` and `input` entries to `kRemoteLayoutItemDefinitions` with their required
-   commands declared inline.
+   **As implemented, the fields are `commands: Set<RemoteCommand>` and a derived getter
+   `dispatchCommand` (not the `requiredCommands`/`command` names originally sketched here —
+   see the Decisions bullet dated 2026-08-21 for the naming rationale).** Adding a new item
+   becomes "one list entry," not "touch three places."
+2. Add `youtube` and `input` entries to `kRemoteLayoutItemDefinitions`
+   (`remote_layout_item_definitions.dart:212-227`) with their commands declared inline.
+
+**Implemented as planned (2026-08-21), confirmed by re-read.** `requiredCommandsForLayoutItemId`
+and `commandForLayoutItemId` (`remote_layout_item_definitions.dart:242-249`) are now thin
+lookups into `kRemoteLayoutItemDefinitionById[itemId]?.commands` /
+`kRemoteLayoutItemDefinitionById[itemId]?.dispatchCommand` — kept as functions rather than
+removed since `remote_home_remote_grid.dart` calls `commandForLayoutItemId` directly (a real,
+load-bearing external caller, confirmed by read).
 
 **Phase 3 — Placement resolution (SRP: separate "is this eligible" from "where does it render").**
-- `buildFilteredRemoteLayoutItems` (`remote_layout_item_definitions.dart:211-236`) currently
+- `buildFilteredRemoteLayoutItems` (`remote_layout_item_definitions.dart:251-276`) currently
   conflates capability eligibility with grid inclusion — an eligible-but-not-default item is
   **omitted** today. Its contract changes to: still capability-filter the same way
-  (`supportedCommands.containsAll(requiredCommands)`), but an eligible item that isn't in the
+  (`supportedCommands.containsAll(definition.commands)`), but an eligible item that isn't in the
   default-positioned set is now **included with `category: LayoutCategory.drawer`** instead of
   dropped.
 - New pure, independently-testable function decides each item's starting category from the
@@ -188,7 +204,7 @@ occupancy.
 
 2. **Occupancy map is NOT already filtered — this is a real bug the plan must fix, not an
    open question.** `RemoteLayoutEditorGridGeometry.occupancyByCell`
-   (`remote_layout_editor_grid_geometry.dart:21-31`) stamps every item's `col`/`row`/`width`/
+   (`remote_layout_editor_grid_geometry.dart:22-32`) stamps every item's `col`/`row`/`width`/
    `height` into cells with no category awareness. It's called at
    `remote_layout_editor.dart:70-72` with the **full, unfiltered** `widget.layoutItems`; the
    `itemsById` map right below it (`:73-75`) and the grid-canvas render loop
