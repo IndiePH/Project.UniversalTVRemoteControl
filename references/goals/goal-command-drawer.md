@@ -1,14 +1,18 @@
 # Goal: Command Drawer (excluded-but-valid commands)
 
 **Branch:** `feature/command-drawer` (current)
-**Status:** proposed — analysis only, **NOT FINALIZED**
+**Status:** **implemented and shipped.** All 7 phases built, three rounds of real-device manual
+testing plus two code-review passes completed, every issue found fixed and verified. User
+confirmed the final build (`8f59466`) on a real device — "the last build seems alright." Not yet
+merged to `main`.
 **Related:** `references/goals/goal-variant-remote-layout.md` (same underlying data model — likely built together); `references/goals/goal-stable-device-identifier.md` (this goal's persisted state inherits that goal's `deviceId` fragility, not a blocker)
 **Analysis session:** `references/goals/goal-command-drawer-and-variant-layouts.md`
 
-> ⚠️ **This document has not been verified or approved by the user.** Every claim under
-> "Verified facts" was confirmed by direct source reads (file:line cited) as of 2026-08-20,
-> but the user has explicitly not yet checked this against their own understanding. Do not
-> treat this as a spec. Everything under "Proposed design" is a recommendation only.
+> The sections below trace the goal from initial analysis (2026-08-20, unverified proposal)
+> through implementation and three rounds of real-device hardening (2026-08-21). Earlier
+> sections' hedges ("proposed," "undecided," "not yet approved") describe that starting point,
+> not the current state — see **Status** above and the dated sections following "Implementation
+> plan" for what was actually built and confirmed.
 
 ---
 
@@ -454,6 +458,65 @@ hold-scrolls-further-than-a-tap. All three assert against the real `Scrollable`'
 `ScrollableState.position.pixels`, not fragile item-visibility checks — an early draft tracking
 a specific item's on-screen position failed when that item scrolled outside the `ListView`'s
 retained cache window after just one tap, which is what led to the more robust approach.
+
+## Drawer strip finalization, round 3 of real-device testing and code review (2026-08-21)
+
+Round 2 carved the two scroll chevrons out of the *same* width budget the drawer box already
+had (box narrower than `gridWidth`, chevrons filling the gap). Per user feedback, this was
+inverted: **the box now matches `gridWidth` exactly whenever there's room for the chevrons
+outside it**, only shrinking below `gridWidth` on narrow/width-limited screens where the
+chevrons wouldn't otherwise fit on-screen. Below a second, more extreme threshold (available
+width under the chevron budget itself, `2 * (chevronSize + gap)` ≈ 80px — far narrower than any
+current phone, closer to a split-screen sliver or a foldable's cover display) the chevrons
+disappear entirely rather than overflow the row; the box takes the full available width instead.
+User confirmed this is an acceptable fallback for that edge case: "for really narrow screens you
+can hide the chevron, anyway the size of the drawer became bigger so it's easier to scroll."
+
+Writing the regression test for the chevron-hiding threshold surfaced a second, unrelated latent
+bug at the same extreme widths: the header **title** text (unlike its neighboring instruction
+text, fixed in round 2) had never gotten `maxLines`/`overflow` protection, so it could also blow
+the fixed-height header. Fixed the same way — `maxLines: 1, overflow: TextOverflow.ellipsis`.
+
+Two code-review passes (one after the box-width redesign, one after the chevron-hiding fix) also
+found and fixed, in order of severity:
+
+1. **Bug (severity: high) — `RemoteHomePage._canPlaceItem` didn't filter by zone.** Loading a
+   saved layout validated a grid-zone item's target cell against *all* items, including
+   drawer-parked ones — whose `col`/`row` are never cleared by `_moveItemToZone` (only `zone`
+   flips). A drawer item's stale grid coordinates could therefore falsely block a *different*
+   item from landing at its own saved grid position on reload, silently reverting it to its
+   catalog default instead. Fixed by filtering the occupancy loop to `zone == LayoutZone.grid`,
+   matching every other occupancy check in this feature. Currently masked in most real usage
+   (collisions require a specific stale/saved-position overlap) but a real, reachable bug.
+2. **Accessibility/consistency gap — chevron buttons were a bare `GestureDetector` + `Icon`,**
+   with no ripple, tooltip, or semantics label, unlike every other tappable control in the app.
+   Rebuilt as `Tooltip` (`triggerMode: manual`, to avoid its own long-press recognizer racing the
+   hold-to-auto-scroll gesture) wrapping `Material` + `InkWell`, matching
+   `RemoteHeaderIconButton`'s visual language. The tap/hold split still needs a raw
+   `GestureDetector` layered outside for `onLongPressStart`/`onLongPressEnd` — `InkWell` has no
+   hold-repeat callback pair.
+3. **Efficiency — `_itemsById` rebuilt a full map from scratch on every access,** including live
+   inside `DragTarget` accept/reject callbacks during a drag, not just once per widget build.
+   Now built once per `build()` (`_buildItemsById`) and passed down as a parameter.
+4. **Duplication — the same setState + `markDropAccepted` + persist choreography** was
+   copy-pasted between the grid's and drawer's drop-accept handlers, differing only in the
+   mutation itself (drawer flips a zone; grid resolves collisions and may displace another item).
+   Extracted to one `_applyDropAndPersist(VoidCallback mutate)` helper.
+5. **Duplication — the tap-scroll and hold-to-auto-scroll paths independently re-derived the
+   same scroll-clamp expression.** Extracted to `_clampedDrawerScrollTarget(delta)`.
+
+Separately (not a drawer fix, but the same real-device-testing pass): three default button
+positions were adjusted per user direction — `youtube` moved under `disney` (was under
+`netflix`), `searchInput` (text input) moved two rows under `netflix` (was directly under
+`disney`), and `input` moved two rows under `prime` (was under `youtube`). Purely cosmetic
+default placement in `remote_layout_item_definitions.dart` — no geometry or persistence logic
+changed.
+
+Verified: `flutter analyze` clean; full suite 480 passed (up from 478). New tests: drawer box
+matches grid width exactly on a wide viewport where there's slack for the chevrons, box shrinks
+below grid width on a narrow (320px) viewport where there isn't, and chevrons disappear entirely
+(with the box taking full width, no overflow) on an even narrower (100px) viewport. User
+confirmed the resulting build on a real device.
 
 ## Open questions
 
