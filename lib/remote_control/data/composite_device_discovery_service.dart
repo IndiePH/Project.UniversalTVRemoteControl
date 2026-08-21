@@ -1,16 +1,22 @@
 import 'dart:io';
 
 import 'package:flutter_multicast_lock/flutter_multicast_lock.dart';
+import 'package:one_remote/remote_control/application/android_tv_stable_identity_resolver.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/data/discovery_result_merger.dart';
+import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 /// Runs multiple [DeviceDiscoveryService] implementations in parallel and
 /// merges their results, deduplicating by host IP and brand priority.
 class CompositeDeviceDiscoveryService implements DeviceDiscoveryService {
-  const CompositeDeviceDiscoveryService({required this.services});
+  const CompositeDeviceDiscoveryService({
+    required this.services,
+    this.androidTvIdentityResolver,
+  });
 
   final List<DeviceDiscoveryService> services;
+  final AndroidTvStableIdentityResolver? androidTvIdentityResolver;
 
   @override
   Future<List<TvDevice>> discoverDevices() async {
@@ -32,15 +38,36 @@ class CompositeDeviceDiscoveryService implements DeviceDiscoveryService {
         }),
       );
 
-      return DiscoveryResultMerger.mergeByHost(
+      final merged = DiscoveryResultMerger.mergeByHost(
         results.expand((list) => list).toList(),
       );
+      return Future.wait(merged.map(_enrichAndroidTvIdentity));
     } finally {
       if (Platform.isAndroid) {
         try {
           await multicastLock.releaseMulticastLock();
         } catch (_) {}
       }
+    }
+  }
+
+  Future<TvDevice> _enrichAndroidTvIdentity(TvDevice device) async {
+    final resolver = androidTvIdentityResolver;
+    if (device.brand != TvBrand.androidTv || resolver == null) {
+      return device;
+    }
+
+    final host = device.resolvedHost.trim();
+    if (host.isEmpty) return device;
+
+    try {
+      final stableId = await resolver.discoverStableIdAtHost(host);
+      if (stableId == null || stableId.trim().isEmpty) return device;
+      return device.copyWith(id: stableId.trim());
+    } catch (_) {
+      // Identity enrichment is best-effort. The IP-derived discovery result
+      // remains available when the TV cannot be probed during this scan.
+      return device;
     }
   }
 }

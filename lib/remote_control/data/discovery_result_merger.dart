@@ -5,31 +5,22 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 final class DiscoveryResultMerger {
   const DiscoveryResultMerger._();
 
-  static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
-
   static List<TvDevice> mergeByHost(List<TvDevice> devices) {
     final byIp = <String, TvDevice>{};
     for (final device in devices) {
-      final ip = _ipv4FromDeviceId(device.id);
-      if (ip == null) {
-        byIp.putIfAbsent(device.id, () => device);
-        continue;
-      }
-      final existing = byIp[ip];
+      final ip = device.resolvedHost;
+      final key = ip.isEmpty ? device.id : ip;
+      final existing = byIp[key];
       if (existing == null ||
           DiscoveredDeviceSupport.brandIdentificationPriority(device.brand) <
               DiscoveredDeviceSupport.brandIdentificationPriority(
                 existing.brand,
               )) {
-        byIp[ip] = device;
+        byIp[key] = device;
       }
     }
     final merged = byIp.values.toList()
       ..sort(DiscoveredDeviceSupport.compareForDiscoveryList);
     return merged;
-  }
-
-  static String? _ipv4FromDeviceId(String deviceId) {
-    return _ipv4.firstMatch(deviceId)?.group(1);
   }
 }

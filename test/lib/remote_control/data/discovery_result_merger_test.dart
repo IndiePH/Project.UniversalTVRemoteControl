@@ -54,5 +54,48 @@ void main() {
 
       expect(merged.first.brand, TvBrand.lg);
     });
+
+    test('dedups by explicit host when set, ignoring the id', () {
+      // Two discovery hits for the same physical device: one carries a
+      // stable id (no IP) with an explicit host, the other an IP-derived id.
+      // They must merge because resolvedHost resolves to the same IP.
+      final merged = DiscoveryResultMerger.mergeByHost([
+        TvDevice(
+          id: 'samsung-uuid:1234',
+          displayName: 'Samsung TV (192.168.1.50)',
+          brand: TvBrand.samsung,
+          capabilities: const TvCapabilities().capabilitiesFor(TvBrand.samsung),
+          host: '192.168.1.50',
+        ),
+        _device(
+          id: 'samsung-192.168.1.50',
+          brand: TvBrand.samsung,
+          displayName: 'Samsung TV (192.168.1.50)',
+        ),
+      ]);
+
+      expect(merged, hasLength(1));
+    });
+
+    test('falls back to id for dedup when host is empty and id has no IP', () {
+      // Devices with neither an explicit host nor an IP in their id must not
+      // all collapse into one empty-string bucket; they dedup by their ids.
+      final merged = DiscoveryResultMerger.mergeByHost([
+        TvDevice(
+          id: 'roku-YX001',
+          displayName: 'Roku A',
+          brand: TvBrand.roku,
+          capabilities: const TvCapabilities().capabilitiesFor(TvBrand.roku),
+        ),
+        TvDevice(
+          id: 'roku-YX002',
+          displayName: 'Roku B',
+          brand: TvBrand.roku,
+          capabilities: const TvCapabilities().capabilitiesFor(TvBrand.roku),
+        ),
+      ]);
+
+      expect(merged, hasLength(2));
+    });
   });
 }

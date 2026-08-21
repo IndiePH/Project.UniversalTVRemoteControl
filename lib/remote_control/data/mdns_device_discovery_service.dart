@@ -96,6 +96,7 @@ class MdnsDeviceDiscoveryService implements DeviceDiscoveryService {
         displayName: instanceName,
         brand: TvBrand.androidTv,
         capabilities: const TvCapabilities().capabilitiesFor(TvBrand.androidTv),
+        host: ip.address.address,
       );
     }
     return null;

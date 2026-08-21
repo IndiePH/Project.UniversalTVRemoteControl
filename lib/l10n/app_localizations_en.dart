@@ -407,6 +407,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get pairingLegacyCleanupTitle => 'Old saved TVs found';
+
+  @override
+  String get pairingLegacyCleanupBody =>
+      'Some saved TVs have not been found for 30 days. Remove them and their custom layouts?';
+
+  @override
+  String get pairingLegacyCleanupRemove => 'Remove old TVs';
+
+  @override
+  String get pairingLegacyDevicesRemoved => 'Old saved TVs removed.';
+
+  @override
   String get pairingSectionPaired => 'Paired';
 
   @override

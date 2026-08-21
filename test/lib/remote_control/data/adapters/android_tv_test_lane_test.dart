@@ -36,11 +36,32 @@ void main() {
       expect(transport.sentKeys, containsAllInOrder(['82', '176']));
     },
   );
+
+  test('AndroidTvAdapter: reachability probes the resolved host', () async {
+    final transport = _SpyAndroidTvTransportClient();
+    final adapter = AndroidTvAdapter(transportClient: transport);
+    const device = TvDevice(
+      id: 'androidtv-certificate-hash',
+      displayName: 'Android TV Test',
+      brand: TvBrand.androidTv,
+      capabilities: {
+        DeviceCapability.keyCommands,
+        DeviceCapability.textInput,
+        DeviceCapability.powerControl,
+      },
+      host: '192.168.1.30',
+    );
+
+    await adapter.probeConnection(device: device);
+
+    expect(transport.probedHost, '192.168.1.30');
+  });
 }
 
 class _SpyAndroidTvTransportClient implements AndroidTvTransportClient {
   int connectCalls = 0;
   final List<String> sentKeys = [];
+  String? probedHost;
 
   @override
   Future<void> connect({required String deviceId}) async {
@@ -74,7 +95,9 @@ class _SpyAndroidTvTransportClient implements AndroidTvTransportClient {
   }) async {}
 
   @override
-  Future<void> probe(String host) async {}
+  Future<void> probe(String host) async {
+    probedHost = host;
+  }
 
   @override
   Future<void> clearPairing({required String deviceId}) async {}

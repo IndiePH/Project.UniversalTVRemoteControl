@@ -83,13 +83,55 @@ Result: no re-pair, no orphan, layout/drawer/saved-device state all survive an I
 
 ---
 
+## Legacy orphan cleanup
+
+Phase 5 tracks only non-active devices whose `id` still contains an IP
+address. A successful discovery scan records `lastSeenAt` when exactly one
+discovered device has the same brand and resolved host, even if discovery now
+reports a stable id for that TV.
+
+If a legacy record has no timestamp, the first scan after this feature ships
+starts a 30-day grace period. A record unseen for 30 days is presented to the
+user for confirmation; it is never deleted automatically. Confirmed removal
+unpairs the device, removes its saved-device record, and deletes the
+`remote_layout_v1_<legacyId>` layout key. Existing free-tier cleanup remains
+unchanged because it already removes non-active saved devices.
+
+The Android TV certificate probe can prove identity for already-paired TVs
+whose host changes, but the generic legacy migration remains conservative when
+an old IP-keyed record has already moved to a different host. In that case the
+old device and layout records remain available rather than being guessed as a
+different physical TV.
+
+---
+
+## Current branch implementation status
+
+Phases 0–5 are implemented on `feature/stable-device-identifier`. The shipped
+shape is:
+
+- `TvDevice.id` is the internal stable identity when proven; the LAN IP remains
+  in `host` and user-facing display text.
+- Discovery reconciliation updates hosts and preserves saved-device, layout, and
+  pairing state across IP changes.
+- Legacy host-keyed secrets remain a fallback, while device-scoped secrets are
+  preferred.
+- Legacy IP-keyed orphan cleanup is confirmation-only, has a 30-day grace
+  period, excludes the active device, and removes its layout when confirmed.
+
+Phase 6 remains the final validation step: complete the router-reboot
+integration scenario and interrupted-migration fallback coverage, then record
+the verification result in the goal and changelog.
+
+---
+
 ## File touchpoints
 
 Domain: `tv_device.dart`, `tv_device_info.dart`.
 Discovery: `ssdp_device_discovery_service.dart`, `mdns_device_discovery_service.dart`, `roku_ssdp_discovery_service.dart`, `discovery_result_merger.dart`, `pairing_page_data.dart` (manual-IP path).
 Adapters/transports (host resolution): `samsung_adapter.dart`, `lg_adapter.dart`, `hisense_adapter.dart`, `tcl_google_tv_adapter.dart`, `roku_http_transport_client.dart`, `tcl_legacy_tcp_transport_client.dart`, `android_tv_tcp_transport_client.dart`.
 Pairing enrichment: `pairing_page_coordinator.dart` (stamp stable id + host on the enriched device).
-Persistence: `host_scoped_secret_persistence.dart` → `device_scoped_secret_persistence.dart`, `secure_host_scoped_secret_persistence.dart`, `samsung_pairing_token_store.dart`, `lg_pairing_key_store.dart`, `hisense_pairing_auth_store.dart`, `android_tv_certificate_store.dart`, `shared_prefs_device_repository.dart`, `shared_prefs_layout_repository.dart`.
+Persistence: `persistence/legacy/legacy_host_scoped_secret_persistence.dart` → `device_scoped_secret_persistence.dart`, `persistence/legacy/legacy_secure_host_scoped_secret_persistence.dart`, `samsung_pairing_token_store.dart`, `lg_pairing_key_store.dart`, `hisense_pairing_auth_store.dart`, `android_tv_certificate_store.dart`, `shared_prefs_device_repository.dart`, `shared_prefs_layout_repository.dart`.
 DI: `remote_control_di_config.dart` (`_resolveHost` → `device.host`).
 Reconciliation: `remote_home_page.dart` (`_loadInitialDevice`, `_startConnectionRetry`).
-Tests: `shared_prefs_layout_repository_test.dart`, `discovery_result_merger_test.dart`, `shared_prefs_device_repository`-adjacent, brand adapter host-resolution tests, plus new migration/reconciliation tests.
+Tests: `legacy_device_orphan_detector_test.dart`, `shared_prefs_device_last_seen_test.dart`, `shared_prefs_layout_repository_test.dart`, `discovery_result_merger_test.dart`, `shared_prefs_device_repository`-adjacent, brand adapter host-resolution tests, plus new migration/reconciliation tests.

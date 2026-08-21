@@ -58,4 +58,50 @@ void main() {
       );
     });
   });
+
+  group('udnFromSsdpHeaders', () {
+    test('extracts the UUID from a rootdevice USN', () {
+      expect(
+        udnFromSsdpHeaders({
+          'usn': 'uuid:12345678-1234-1234-1234-123456789abc::upnp:rootdevice',
+        }),
+        '12345678-1234-1234-1234-123456789abc',
+      );
+    });
+
+    test('extracts the UUID from a bare uuid USN', () {
+      expect(
+        udnFromSsdpHeaders({'usn': 'uuid:abcdef12-3456-7890-abcd-ef1234567890'}),
+        'abcdef12-3456-7890-abcd-ef1234567890',
+      );
+    });
+
+    test('extracts the UUID from a service USN', () {
+      expect(
+        udnFromSsdpHeaders({
+          'usn':
+              'uuid:11111111-2222-3333-4444-555555555555::urn:schemas-upnp-org:device:MediaRenderer:1',
+        }),
+        '11111111-2222-3333-4444-555555555555',
+      );
+    });
+
+    test('returns null when USN is absent', () {
+      expect(udnFromSsdpHeaders({}), isNull);
+    });
+
+    test('returns null when USN has no uuid token', () {
+      expect(
+        udnFromSsdpHeaders({'usn': 'upnp:rootdevice'}),
+        isNull,
+      );
+    });
+
+    test('returns null for a malformed UUID', () {
+      expect(
+        udnFromSsdpHeaders({'usn': 'uuid:not-a-uuid'}),
+        isNull,
+      );
+    });
+  });
 }

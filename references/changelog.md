@@ -3,6 +3,38 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+## 2026-08-21
+
+### Changed
+- `feature/stable-device-identifier` now treats proven per-TV identifiers as
+  the internal `TvDevice.id`; the current LAN IP remains mutable host/display
+  data and is no longer the primary pairing key.
+- Discovery reconciliation updates saved hosts after IP changes and
+  conservatively migrates saved-device and layout state from legacy IP-derived
+  ids without removing legacy fallback data prematurely.
+- Pairing secrets prefer device-scoped storage while retaining legacy
+  host-scoped fallback for older app data and interrupted migrations.
+
+### Added
+- Android TV certificate-backed identity probing for already-paired TVs.
+- Persisted `lastSeenAt` tracking and a 30-day, confirmation-only cleanup flow
+  for stale non-active legacy records, including pairing-data and layout
+  deletion. Existing free-tier cleanup remains unchanged.
+- Legacy persistence/resolver namespace, identity reconciliation contracts,
+  migration tests, discovery enrichment tests, and Phase 5 orphan-cleanup
+  tests.
+
+### Compatibility
+- Older IP-keyed records remain usable when stable identity cannot be proven.
+- IP changes after stable identity discovery do not require re-pairing; the IP
+  continues to be available for display and transport resolution.
+
+### Verification
+- `flutter test` — 554 tests passed; 1 test skipped.
+- `flutter analyze` — no issues found.
+- Final Phase 6 router-reboot integration and interrupted-migration coverage
+  remains pending.
+
 ## 2026-08-15
 
 ### Fixed

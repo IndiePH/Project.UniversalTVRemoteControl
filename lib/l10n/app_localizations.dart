@@ -778,6 +778,30 @@ abstract class AppLocalizations {
   /// **'This will remove \"{deviceName}\" from saved devices.'**
   String pairingRemoveSavedBody(String deviceName);
 
+  /// No description provided for @pairingLegacyCleanupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Old saved TVs found'**
+  String get pairingLegacyCleanupTitle;
+
+  /// No description provided for @pairingLegacyCleanupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some saved TVs have not been found for 30 days. Remove them and their custom layouts?'**
+  String get pairingLegacyCleanupBody;
+
+  /// No description provided for @pairingLegacyCleanupRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove old TVs'**
+  String get pairingLegacyCleanupRemove;
+
+  /// No description provided for @pairingLegacyDevicesRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Old saved TVs removed.'**
+  String get pairingLegacyDevicesRemoved;
+
   /// No description provided for @pairingSectionPaired.
   ///
   /// In en, this message translates to:

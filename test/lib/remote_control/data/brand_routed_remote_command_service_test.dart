@@ -7,6 +7,7 @@ import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
 import 'package:one_remote/remote_control/data/brand_routed_remote_command_service.dart';
+import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
@@ -77,6 +78,75 @@ void main() {
       );
       final result = await service.preparePairing(device: device);
       expect(result.isSuccess, isTrue);
+    });
+  });
+
+  group('brand dispatch — preparePairing identity registration', () {
+    test('registers host->stableId from enriched device info', () async {
+      final registry = DeviceIdentityRegistry();
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          _InfoReturningAdapter(const TvDeviceInfo(stableId: 'samsung-udn-1')),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+        identityRegistry: registry,
+      );
+      const deviceWithHost = TvDevice(
+        id: 'samsung-192.168.1.10',
+        displayName: 'Living Room',
+        brand: TvBrand.samsung,
+        capabilities: {DeviceCapability.keyCommands},
+        host: '192.168.1.10',
+      );
+
+      await service.preparePairing(device: deviceWithHost);
+
+      expect(registry.stableIdForHost('192.168.1.10'), 'samsung-udn-1');
+    });
+
+    test('prefers an existing device stableId over info stableId', () async {
+      final registry = DeviceIdentityRegistry();
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          _InfoReturningAdapter(
+            const TvDeviceInfo(stableId: 'samsung-from-info'),
+          ),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+        identityRegistry: registry,
+      );
+      const deviceWithStableId = TvDevice(
+        id: 'samsung-pre-existing',
+        displayName: 'Living Room',
+        brand: TvBrand.samsung,
+        capabilities: {DeviceCapability.keyCommands},
+        host: '192.168.1.10',
+      );
+
+      await service.preparePairing(device: deviceWithStableId);
+
+      expect(registry.stableIdForHost('192.168.1.10'), 'samsung-pre-existing');
+    });
+
+    test('no registry wired is a no-op (does not throw)', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [
+          _InfoReturningAdapter(const TvDeviceInfo(stableId: 'samsung-udn-1')),
+        ],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+      const deviceWithHost = TvDevice(
+        id: 'samsung-192.168.1.10',
+        displayName: 'Living Room',
+        brand: TvBrand.samsung,
+        capabilities: {DeviceCapability.keyCommands},
+        host: '192.168.1.10',
+      );
+
+      await expectLater(service.preparePairing(device: deviceWithHost), completes);
     });
   });
 

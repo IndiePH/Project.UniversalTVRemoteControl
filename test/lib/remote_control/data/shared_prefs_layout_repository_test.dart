@@ -60,5 +60,78 @@ void main() {
       final loaded = await repo.loadLayout(deviceId: 'bad');
       expect(loaded, isEmpty);
     });
+
+    test(
+      'migrates a legacy layout without overwriting stable layout',
+      () async {
+        final repo = SharedPrefsLayoutRepository();
+        await repo.saveLayout(
+          deviceId: 'samsung-192.168.1.10',
+          positionsByItemId: {'mute': const LayoutPosition(col: 3, row: 5)},
+        );
+
+        final didMigrate = await repo.migrateLayoutIdentity(
+          legacyDeviceId: 'samsung-192.168.1.10',
+          newDeviceId: 'samsung-udn-1',
+        );
+
+        expect(didMigrate, isTrue);
+        final loaded = await repo.loadLayout(deviceId: 'samsung-udn-1');
+        expect(loaded['mute']?.col, 3);
+        expect(loaded['mute']?.row, 5);
+        expect(
+          (await repo.loadLayout(
+            deviceId: 'samsung-192.168.1.10',
+          ))['mute']?.col,
+          3,
+        );
+
+        await repo.completeLayoutIdentityMigration(
+          legacyDeviceId: 'samsung-192.168.1.10',
+        );
+        expect(
+          await repo.loadLayout(deviceId: 'samsung-192.168.1.10'),
+          isEmpty,
+        );
+      },
+    );
+
+    test('keeps an existing stable layout during migration', () async {
+      final repo = SharedPrefsLayoutRepository();
+      await repo.saveLayout(
+        deviceId: 'samsung-192.168.1.10',
+        positionsByItemId: {'mute': const LayoutPosition(col: 3, row: 5)},
+      );
+      await repo.saveLayout(
+        deviceId: 'samsung-udn-1',
+        positionsByItemId: {'mute': const LayoutPosition(col: 1, row: 2)},
+      );
+
+      final didMigrate = await repo.migrateLayoutIdentity(
+        legacyDeviceId: 'samsung-192.168.1.10',
+        newDeviceId: 'samsung-udn-1',
+      );
+
+      expect(didMigrate, isTrue);
+      final loaded = await repo.loadLayout(deviceId: 'samsung-udn-1');
+      expect(loaded['mute']?.col, 1);
+      expect(loaded['mute']?.row, 2);
+      await repo.completeLayoutIdentityMigration(
+        legacyDeviceId: 'samsung-192.168.1.10',
+      );
+    });
+
+    test('deletes a layout by device id', () async {
+      final repo = SharedPrefsLayoutRepository();
+      const deviceId = 'samsung-192.168.1.10';
+      await repo.saveLayout(
+        deviceId: deviceId,
+        positionsByItemId: {'mute': const LayoutPosition(col: 3, row: 5)},
+      );
+
+      await repo.deleteLayout(deviceId: deviceId);
+
+      expect(await repo.loadLayout(deviceId: deviceId), isEmpty);
+    });
   });
 }
