@@ -298,6 +298,12 @@ abstract class AppLocalizations {
   /// **'Drag buttons to new positions. Grid lines show cells; a green outline means the drop is allowed.'**
   String get layoutEditorInstruction;
 
+  /// No description provided for @layoutEditorDrawerEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a button here to remove it from your remote.'**
+  String get layoutEditorDrawerEmptyHint;
+
   /// No description provided for @remoteTextEntrySheetTitle.
   ///
   /// In en, this message translates to:

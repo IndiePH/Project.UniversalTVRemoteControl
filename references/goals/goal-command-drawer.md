@@ -57,10 +57,10 @@ layout — retrievable/re-addable later, rather than permanently absent.
 
 Grounded directly in `remote_layout_editor.dart` and `remote_home_page.dart` (pencil icon = `Icons.edit_outlined` in `remote_home_app_bar_actions.dart:31` → `_toggleLayoutEditMode`, confirmed).
 
-1. **Always visible during edit mode — no toggle icon, no open/close step.** The earlier icon-triggered-overlay proposal added a tap the user has to discover before they can even use the drawer. That protection wasn't actually needed: the "cancel edit" control (the pencil icon, `Icons.edit_outlined`) lives in the app bar (`remote_home_app_bar_actions.dart`), **outside** `RemoteLayoutEditor` entirely — there was never a collision to guard against. Instead, add the drawer as a **fixed, permanently-present region** in `RemoteLayoutEditor.build`'s existing `Column` (`remote_layout_editor.dart:283-318`) — e.g. a slim horizontally-scrollable strip between the header and the grid canvas. Because it's never toggled on/off during an edit session, `RemoteLayoutEditorGridGeometry.fitCellSize` computes the grid's available space once, consistently, for the whole session — "not intrusive to positioning" is satisfied by the drawer's presence being constant, not by a show/hide mechanic.
+1. **Always visible during edit mode — no toggle icon, no open/close step.** The earlier icon-triggered-overlay proposal added a tap the user has to discover before they can even use the drawer. That protection wasn't actually needed: the "cancel edit" control (the pencil icon, `Icons.edit_outlined`) lives in the app bar (`remote_home_app_bar_actions.dart`), **outside** `RemoteLayoutEditor` entirely — there was never a collision to guard against. Instead, add the drawer as a **fixed, permanently-present region** in `RemoteLayoutEditor.build`'s existing `Column` (`remote_layout_editor.dart:283-318` pre-Phase-5; `build()` is now at `:379-420` post-Phase-5) — e.g. a slim horizontally-scrollable strip between the header and the grid canvas. Because it's never toggled on/off during an edit session, `RemoteLayoutEditorGridGeometry.fitCellSize` computes the grid's available space once, consistently, for the whole session — "not intrusive to positioning" is satisfied by the drawer's presence being constant, not by a show/hide mechanic.
 2. **Both remove and restore are drag, not tap.** Tap-to-restore was rejected earlier: the item would place itself automatically somewhere in the grid the user didn't choose, "confusing... you'll need to look for it." Drag keeps the destination visible and user-chosen, consistent with how repositioning already works.
    - **Remove (grid → drawer):** the drawer strip is a `DragTarget<String>` — the user drags a grid item (already `Draggable<String>`, no new widget needed) into it to park it (sets `zone: LayoutZone.drawer`, keeps `col`/`row` as-is, per Decisions above).
-   - **Restore (drawer → grid):** drawer items are also `Draggable<String>` (reusing `RemoteLayoutEditorItemPreview` for feedback/preview, same as grid items) — the user drags one out onto a chosen grid cell. Grid cells' existing `DragTarget<String>` (`remote_layout_editor.dart:105-168`) already validates footprint/occupancy via `RemoteLayoutEditorDragSession`/`RemoteLayoutEditorGridGeometry` — no new validation logic needed, the drop just needs to also accept drags originating from the drawer, not only from other grid cells.
+   - **Restore (drawer → grid):** drawer items are also `Draggable<String>` (reusing `RemoteLayoutEditorItemPreview` for feedback/preview, same as grid items) — the user drags one out onto a chosen grid cell. Grid cells' existing `DragTarget<String>` (`remote_layout_editor.dart:105-168` pre-Phase-5; `:204-303` post-Phase-5) already validates footprint/occupancy via `RemoteLayoutEditorDragSession`/`RemoteLayoutEditorGridGeometry` — no new validation logic needed, the drop just needs to also accept drags originating from the drawer, not only from other grid cells.
    - One interaction language throughout edit mode — drag between zones — no separate tap-badge gesture to learn.
 3. Both directions call `onPersistLayout()` immediately, matching the existing auto-persist-on-change pattern. Empty-state text in the drawer ("Drag a command here to remove it from your remote") for discoverability.
 4. Drawer items reuse `RemoteLayoutEditorItemPreview` (already used for grid items and drag feedback) — no new preview widget needed, visual consistency for free.
@@ -178,8 +178,26 @@ job.
   `_buildLayoutDefaultsForDevice`'s output — once Phases 1 and 3 land, zone resets "for
   free" the same way position already does, per the existing claim in Decisions.
 
+**Implemented as planned, with one refinement found during implementation (2026-08-21),
+confirmed by `flutter analyze` (clean) and `flutter test` (402 passed).** The overlay loop's
+existing `_canPlaceItem` bounds/no-overlap check (`:1105-1112` pre-change) was written for
+grid items — it protects the live grid from corrupt or colliding saved `col`/`row` data. A
+drawer-zoned item isn't rendered on the grid at all, so gating its `col`/`row` restore behind
+a grid-collision check is both meaningless and actively harmful: a drawer item whose saved
+spot happens to collide with something now sitting there would silently fail to have its
+`col`/`row` restored, quietly undermining the "keep last real position for a future restore"
+guarantee from Decisions. Fix: `item.zone = position.zone` is applied unconditionally; the
+`_canPlaceItem` gate now only runs when `position.zone == LayoutZone.grid`— unchanged
+behavior for grid items, no spurious validation for drawer items.
+`domain/domain.dart`'s barrel export also gained `export 'models/layout_zone.dart';`
+(alongside the existing `layout_position.dart` export) since `remote_home_page.dart` now
+references `LayoutZone` by name and only imported the domain barrel, not the model file
+directly.
+
 **Phase 5 — Editor UI (architecture-consistency: extend the existing drag/drop protocol,
-don't invent a second one).**
+don't invent a second one).** *(Bullets below are the pre-implementation plan and keep their
+original, now-stale line numbers, same convention as Phases 1-4 above — see "Implemented as
+planned" further down for current line numbers and what actually shipped.)*
 - `RemoteLayoutEditor.build` (`remote_layout_editor.dart:279-317`): today's `Column` is
   `[header, Expanded(grid canvas)]`. Insert a third fixed-height child for the drawer strip.
   Because it's a permanent `Column` child, not conditionally built, `fitCellSize`'s
@@ -200,6 +218,46 @@ don't invent a second one).**
   grid `Draggable`'s contract. A drawer→grid accepted drop additionally sets
   `item.zone = LayoutZone.grid` alongside the existing `col`/`row` write.
 
+**Implemented as planned, with one correction to the plan found by tracing the resolver
+(2026-08-21), confirmed by `flutter analyze` (clean), the full suite (402 passed), and three
+throwaway smoke tests exercising the actual drag gestures (drawer renders a parked item;
+grid→drawer drag parks and persists; drawer→grid drag restores to the correct cell and
+persists) — not committed, Phase 7 owns the permanent tests.**
+
+The doc's original plan said to filter `widget.layoutItems` down to `zone == grid` before
+building *both* `occupancyByCell` and `itemsById` (per the "Both previously-flagged items
+verified" item #2 above — that section has since been corrected in place too, since it had
+asserted the wrong-in-part original plan as settled fact rather than as a plan). Tracing
+`RemoteLayoutDropResolver.resolveDrop` (`remote_layout_drop_resolver.dart:736-739`) shows it
+does `itemsById[movingId]` and returns `null` if that's absent — so a grid-only `itemsById`
+would make every drawer-originated drag unresolvable (the resolver could never find the moving
+item). Fix: the two now have different scopes. `occupancyByCell` is built from a
+`zone == grid`-filtered `gridItems` list (`remote_layout_editor.dart:171`; this is the actual
+occupancy bug-fix) — the render loop consuming that same filtered list is at `:305`. `itemsById`
+— the `_itemsById` getter (`:59-61`) — stays **unfiltered**, since it's a pure id lookup with no
+occupancy semantics; nothing else needed to change in `RemoteLayoutDropResolver` or
+`RemoteLayoutEditorDragSession`, exactly as the doc hoped, just with the filter boundary in a
+different place than originally written.
+
+**Follow-up fix (2026-08-21, same day, caught on request for a self-review):** the initial
+Phase 5 diff had copy-pasted the same ~60-line `Draggable` drag-lifecycle block (feedback,
+childWhenDragging, `Listener`+`onPointerDown`, drag callbacks) once for grid items and once for
+drawer items, identical apart from which `cellSize` constant was passed in — a DRY/SRP miss.
+Extracted into a shared `_buildDraggableItemPreview({item, cellSize})` (`:80-148`), called from
+both the grid render loop (`:309`) and the drawer `itemBuilder` (`:366`). Re-verified
+with `flutter analyze` (clean) and all three smoke tests plus the two pre-existing
+`remote_layout_editor_widget_test.dart` cases (5/5 passed) after the refactor.
+
+Two new metrics constants (`remote_layout_editor_metrics.dart`): `kRemoteLayoutDrawerStripHeight`
+(88, fixed — deliberately not content-sized, so the grid's `fitCellSize` doesn't shift every
+time an item enters/leaves the drawer) and `kRemoteLayoutDrawerItemCellSize` (56, independent of
+the grid's dynamically-fitted `cellSize`, per the class doc's "may diverge when useful"
+allowance). Accepted limitation: a multi-cell item (dpad/volume/channel) parked in the drawer
+would render taller than the fixed strip height — considered out of scope since those are core
+physical-remote controls, not realistic drawer candidates, and no scaling logic was added for
+it. New l10n string `layoutEditorDrawerEmptyHint` (`app_en.arb`), regenerated via
+`flutter gen-l10n`.
+
 **Phase 6 — Pro-gating: no new code.** The gate already wraps entry into `RemoteLayoutEditor`
 itself (`remote_home_page.dart:1084-1087`); drawer drag is just another drag inside that same
 gated widget, so it inherits the gate for free.
@@ -212,26 +270,35 @@ occupancy.
 **Both previously-flagged items verified, 2026-08-21:**
 
 1. **Grid `Draggable<String>` data contract — confirmed as assumed.**
-   `remote_layout_editor.dart:210` — `Draggable<String>(data: item.id, ...)`. A drawer-strip
+   `remote_layout_editor.dart:87` (post-Phase-5; was `:210` pre-Phase-5) — `Draggable<String>(data: item.id, ...)`, now inside the shared `_buildDraggableItemPreview` helper used by both the grid and the drawer strip. A drawer-strip
    `Draggable<String>` reusing `data: item.id` interoperates with the existing grid
    `DragTarget` callbacks with zero changes there, exactly as Phase 5 assumed.
 
 2. **Occupancy map is NOT already filtered — this is a real bug the plan must fix, not an
    open question.** `RemoteLayoutEditorGridGeometry.occupancyByCell`
    (`remote_layout_editor_grid_geometry.dart:22-32`) stamps every item's `col`/`row`/`width`/
-   `height` into cells with no zone awareness. It's called at
-   `remote_layout_editor.dart:70-72` with the **full, unfiltered** `widget.layoutItems`; the
-   `itemsById` map right below it (`:73-75`) and the grid-canvas render loop
-   (`for (final item in widget.layoutItems)`, `:203`) do the same. Because Decisions has a
+   `height` into cells with no zone awareness. Pre-Phase-5, it was called with the **full,
+   unfiltered** `widget.layoutItems` (`remote_layout_editor.dart:70-72` in the pre-Phase-5
+   file); the `itemsById` map right below it (`:73-75`) and the grid-canvas render loop
+   (`for (final item in widget.layoutItems)`, `:203`) did the same. Because Decisions has a
    drawer-parked item **keep** its last real `col`/`row` rather than clearing it, an unfiltered
-   list means a drawer-parked item would keep "occupying" its last grid cell — silently
+   occupancy map would let a drawer-parked item keep "occupying" its last grid cell — silently
    blocking other items from being dropped there even though nothing renders there anymore.
-   **Required fix, folded into Phase 5:** filter `widget.layoutItems` down to
-   `zone == LayoutZone.grid` before both the `occupancyByCell`/`itemsById`
-   construction (`:70-75`) and the Positioned-item render loop (`:203`) — one `.where` clause
-   reused at both sites. This is the concrete mechanism behind the original Decisions item 5
-   ("items with `zone: drawer` must be filtered out of the grid-canvas render path"), now
-   pinned to exact line numbers and confirmed necessary rather than assumed. **Considered and
+
+   **This item originally claimed the required fix was to filter `widget.layoutItems` down to
+   `zone == LayoutZone.grid` before *both* the `occupancyByCell`/`itemsById` construction and
+   the render loop, "confirmed necessary rather than assumed." That claim was half right and
+   half wrong, corrected during Phase 5 implementation (2026-08-21) — see the "Implemented as
+   planned, with one correction" note under Phase 5 above for the full reasoning.** Short
+   version: filtering `occupancyByCell` and the render loop to `zone == grid` was correct and
+   necessary (that's the actual bug fix). Filtering `itemsById` the same way was **not** —
+   `RemoteLayoutDropResolver.resolveDrop` looks up the dragged item via `itemsById[movingId]`,
+   so a grid-only `itemsById` would make every drawer-originated drag unresolvable. Current
+   state (post-Phase-5, `remote_layout_editor.dart`): `occupancyByCell` built from a
+   `gridItems` list filtered to `zone == grid` (`:171`); the render loop iterates that same
+   filtered list (`:305`); `itemsById` (the `_itemsById` getter, `:59-61`) stays deliberately
+   unfiltered. This is the concrete mechanism behind the original Decisions item 5 ("items with
+   `zone: drawer` must be filtered out of the grid-canvas render path"). **Considered and
    rejected: a sentinel `col`/`row` (e.g. `-1`/`-999`) instead of the filter** — this would
    overwrite the real last-known position Decisions already chose to preserve (per user: "persist
    the original row,col if we ever want to use it"), and reintroduces the exact "reserved

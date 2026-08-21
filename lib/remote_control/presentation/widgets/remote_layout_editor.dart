@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
+import 'package:one_remote/remote_control/domain/models/layout_zone.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_edit_grid_painter.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_drag_session.dart';
@@ -49,6 +50,99 @@ class RemoteLayoutEditor extends StatefulWidget {
 class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
   final RemoteLayoutEditorDragSession _drag = RemoteLayoutEditorDragSession();
 
+  /// All items by id, grid and drawer alike — drops need to look up drawer items too, or a
+  /// drawer→grid drag could never resolve. Occupancy is the grid-only concern; see `gridItems`.
+  Map<String, LayoutEditItem> get _itemsById => {
+    for (final item in widget.layoutItems) item.id: item,
+  };
+
+  void _moveItemToZone(String itemId, LayoutZone zone) {
+    final item = _itemsById[itemId];
+    if (item == null || item.zone == zone) {
+      return;
+    }
+    setState(() {
+      item.zone = zone;
+      _drag.markDropAccepted();
+    });
+    unawaited(widget.onPersistLayout());
+  }
+
+  /// One draggable item preview, shared by the grid canvas and the drawer strip.
+  ///
+  /// [cellSize] differs by caller: the grid's dynamically-fitted cell size, or the drawer's
+  /// fixed [kRemoteLayoutDrawerItemCellSize] — everything else about drag wiring is identical
+  /// regardless of which zone the item is currently in.
+  Widget _buildDraggableItemPreview({
+    required LayoutEditItem item,
+    required double cellSize,
+  }) {
+    return IgnorePointer(
+      ignoring: _drag.isDraggingLayoutItem,
+      child: Draggable<String>(
+        data: item.id,
+        onDragStarted: () {
+          if (_drag.isDraggingLayoutItem) {
+            return;
+          }
+          setState(_drag.beginDragSession);
+        },
+        onDragEnd: (_) {
+          if (!mounted) {
+            return;
+          }
+          if (!_drag.isDraggingLayoutItem) {
+            return;
+          }
+          setState(_drag.clearDragTracking);
+        },
+        onDraggableCanceled: (velocity, offset) {
+          if (!mounted) {
+            return;
+          }
+          setState(_drag.clearDragTracking);
+        },
+        feedback: Material(
+          color: Colors.transparent,
+          child: Opacity(
+            opacity: 0.85,
+            child: RemoteLayoutEditorItemPreview(
+              item: item,
+              cellSize: cellSize,
+              gridGap: widget.gridGap,
+              itemDefinitionsById: widget.itemDefinitionsById,
+            ),
+          ),
+        ),
+        childWhenDragging: Opacity(
+          opacity: 0.35,
+          child: RemoteLayoutEditorItemPreview(
+            item: item,
+            cellSize: cellSize,
+            gridGap: widget.gridGap,
+            itemDefinitionsById: widget.itemDefinitionsById,
+          ),
+        ),
+        child: Listener(
+          onPointerDown: (event) {
+            _drag.recordDragAnchor(
+              item: item,
+              localPosition: event.localPosition,
+              cellSize: cellSize,
+              gridGap: widget.gridGap,
+            );
+          },
+          child: RemoteLayoutEditorItemPreview(
+            item: item,
+            cellSize: cellSize,
+            gridGap: widget.gridGap,
+            itemDefinitionsById: widget.itemDefinitionsById,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLayoutGridCanvas() {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -67,12 +161,13 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
         final gridHeight =
             (widget.gridRows * cellSize) +
             ((widget.gridRows - 1) * widget.gridGap);
+        final gridItems = widget.layoutItems
+            .where((item) => item.zone == LayoutZone.grid)
+            .toList(growable: false);
         final occupancyByCell = RemoteLayoutEditorGridGeometry.occupancyByCell(
-          widget.layoutItems,
+          gridItems,
         );
-        final itemsById = <String, LayoutEditItem>{
-          for (final item in widget.layoutItems) item.id: item,
-        };
+        final itemsById = _itemsById;
 
         final appColors = AppTheme.colorsOf(context);
         final gridLineColor = appColors.remoteOutline.withValues(alpha: 0);
@@ -157,6 +252,8 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
                                 resolved.movingPlacement.col;
                             resolved.movingPlacement.item.row =
                                 resolved.movingPlacement.row;
+                            resolved.movingPlacement.item.zone =
+                                LayoutZone.grid;
                             final displaced = resolved.displacedPlacement;
                             if (displaced != null) {
                               displaced.item.col = displaced.col;
@@ -201,78 +298,74 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
                         },
                       ),
                     ),
-                for (final item in widget.layoutItems)
+                for (final item in gridItems)
                   Positioned(
                     left: item.col * (cellSize + widget.gridGap),
                     top: item.row * (cellSize + widget.gridGap),
-                    child: IgnorePointer(
-                      ignoring: _drag.isDraggingLayoutItem,
-                      child: Draggable<String>(
-                        data: item.id,
-                        onDragStarted: () {
-                          if (_drag.isDraggingLayoutItem) {
-                            return;
-                          }
-                          setState(_drag.beginDragSession);
-                        },
-                        onDragEnd: (_) {
-                          if (!mounted) {
-                            return;
-                          }
-                          if (!_drag.isDraggingLayoutItem) {
-                            return;
-                          }
-                          setState(_drag.clearDragTracking);
-                        },
-                        onDraggableCanceled: (velocity, offset) {
-                          if (!mounted) {
-                            return;
-                          }
-                          setState(_drag.clearDragTracking);
-                        },
-                        feedback: Material(
-                          color: Colors.transparent,
-                          child: Opacity(
-                            opacity: 0.85,
-                            child: RemoteLayoutEditorItemPreview(
-                              item: item,
-                              cellSize: cellSize,
-                              gridGap: widget.gridGap,
-                              itemDefinitionsById: widget.itemDefinitionsById,
-                            ),
-                          ),
-                        ),
-                        childWhenDragging: Opacity(
-                          opacity: 0.35,
-                          child: RemoteLayoutEditorItemPreview(
-                            item: item,
-                            cellSize: cellSize,
-                            gridGap: widget.gridGap,
-                            itemDefinitionsById: widget.itemDefinitionsById,
-                          ),
-                        ),
-                        child: Listener(
-                          onPointerDown: (event) {
-                            _drag.recordDragAnchor(
-                              item: item,
-                              localPosition: event.localPosition,
-                              cellSize: cellSize,
-                              gridGap: widget.gridGap,
-                            );
-                          },
-                          child: RemoteLayoutEditorItemPreview(
-                            item: item,
-                            cellSize: cellSize,
-                            gridGap: widget.gridGap,
-                            itemDefinitionsById: widget.itemDefinitionsById,
-                          ),
-                        ),
-                      ),
+                    child: _buildDraggableItemPreview(
+                      item: item,
+                      cellSize: cellSize,
                     ),
                   ),
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDrawerStrip() {
+    final drawerItems = widget.layoutItems
+        .where((item) => item.zone == LayoutZone.drawer)
+        .toList(growable: false);
+    final appColors = AppTheme.colorsOf(context);
+
+    return DragTarget<String>(
+      onWillAcceptWithDetails: (details) =>
+          _itemsById[details.data]?.zone == LayoutZone.grid,
+      onAcceptWithDetails: (details) =>
+          _moveItemToZone(details.data, LayoutZone.drawer),
+      builder: (context, candidateData, _) {
+        final highlightDrop = candidateData.isNotEmpty;
+        return Container(
+          height: kRemoteLayoutDrawerStripHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: highlightDrop
+                ? appColors.layoutEditorDropValid.withValues(alpha: 0.18)
+                : appColors.remoteSurface.withValues(alpha: 0.5),
+            border: Border.all(
+              color: highlightDrop
+                  ? appColors.layoutEditorDropValid
+                  : appColors.remoteOutline,
+              width: highlightDrop ? 2.0 : 1.0,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: drawerItems.isEmpty
+              ? Center(
+                  child: Text(
+                    AppLocalizations.of(context)!.layoutEditorDrawerEmptyHint,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                )
+              : ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: drawerItems.length,
+                  separatorBuilder: (_, _) =>
+                      SizedBox(width: widget.gridGap),
+                  itemBuilder: (context, index) {
+                    final item = drawerItems[index];
+                    return Center(
+                      child: _buildDraggableItemPreview(
+                        item: item,
+                        cellSize: kRemoteLayoutDrawerItemCellSize,
+                      ),
+                    );
+                  },
+                ),
         );
       },
     );
@@ -313,6 +406,9 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
             ],
           ),
         ),
+        const SizedBox(height: kRemoteLayoutDrawerStripSpacing),
+        _buildDrawerStrip(),
+        const SizedBox(height: kRemoteLayoutDrawerStripSpacing),
         Expanded(child: _buildLayoutGridCanvas()),
       ],
     );

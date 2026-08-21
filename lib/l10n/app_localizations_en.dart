@@ -114,6 +114,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Drag buttons to new positions. Grid lines show cells; a green outline means the drop is allowed.';
 
   @override
+  String get layoutEditorDrawerEmptyHint =>
+      'Drag a button here to remove it from your remote.';
+
+  @override
   String get remoteTextEntrySheetTitle => 'Send text to TV';
 
   @override

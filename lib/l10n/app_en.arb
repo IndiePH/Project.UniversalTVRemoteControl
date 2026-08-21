@@ -38,6 +38,7 @@
   "layoutEditorResetButton": "Reset Layout",
   "layoutEditorResetSuccess": "Layout reset to defaults.",
   "layoutEditorInstruction": "Drag buttons to new positions. Grid lines show cells; a green outline means the drop is allowed.",
+  "layoutEditorDrawerEmptyHint": "Drag a button here to remove it from your remote.",
 
   "remoteTextEntrySheetTitle": "Send text to TV",
   "remoteTextEntryHint": "Search or enter text",
