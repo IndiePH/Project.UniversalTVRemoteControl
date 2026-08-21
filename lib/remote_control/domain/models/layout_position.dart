@@ -1,21 +1,21 @@
-import 'package:one_remote/remote_control/domain/models/layout_category.dart';
+import 'package:one_remote/remote_control/domain/models/layout_zone.dart';
 
 /// Grid coordinates for a remote control item.
 final class LayoutPosition {
   const LayoutPosition({
     required this.col,
     required this.row,
-    this.category = LayoutCategory.grid,
+    this.zone = LayoutZone.grid,
   });
 
   final int col;
   final int row;
-  final LayoutCategory category;
+  final LayoutZone zone;
 
   Map<String, dynamic> toJson() => {
     'col': col,
     'row': row,
-    'category': category.name,
+    'zone': zone.name,
   };
 
   static LayoutPosition? fromJson(Object? json) {
@@ -27,10 +27,10 @@ final class LayoutPosition {
     if (col is! int || row is! int) {
       return null;
     }
-    final category = LayoutCategory.values.firstWhere(
-      (value) => value.name == json['category'],
-      orElse: () => LayoutCategory.grid,
+    final zone = LayoutZone.values.firstWhere(
+      (value) => value.name == json['zone'],
+      orElse: () => LayoutZone.grid,
     );
-    return LayoutPosition(col: col, row: row, category: category);
+    return LayoutPosition(col: col, row: row, zone: zone);
   }
 }

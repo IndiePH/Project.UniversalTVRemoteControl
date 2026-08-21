@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:one_remote/remote_control/domain/models/layout_category.dart';
+import 'package:one_remote/remote_control/domain/models/layout_zone.dart';
 
 /// Mutable grid item used by remote layout rendering and editor interactions.
 class LayoutEditItem {
@@ -13,7 +13,7 @@ class LayoutEditItem {
     this.width = 1,
     this.height = 1,
     this.isPower = false,
-    this.category = LayoutCategory.grid,
+    this.zone = LayoutZone.grid,
   });
 
   final String id;
@@ -25,5 +25,5 @@ class LayoutEditItem {
   final int width;
   final int height;
   final bool isPower;
-  LayoutCategory category;
+  LayoutZone zone;
 }

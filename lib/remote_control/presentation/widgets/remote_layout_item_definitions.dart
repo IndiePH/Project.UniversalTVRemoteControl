@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:one_remote/remote_control/domain/models/layout_category.dart';
+import 'package:one_remote/remote_control/domain/models/layout_zone.dart';
 import 'package:one_remote/remote_control/domain/models/layout_item_id.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
@@ -71,9 +71,7 @@ class RemoteLayoutItemDefinition {
   RemoteCommand? get dispatchCommand =>
       commands.length == 1 ? commands.single : null;
 
-  LayoutEditItem toLayoutEditItem({
-    LayoutCategory category = LayoutCategory.grid,
-  }) {
+  LayoutEditItem toLayoutEditItem({LayoutZone zone = LayoutZone.grid}) {
     return LayoutEditItem(
       id: id,
       icon: icon,
@@ -84,7 +82,7 @@ class RemoteLayoutItemDefinition {
       width: width,
       height: height,
       isPower: isPower,
-      category: category,
+      zone: zone,
     );
   }
 }
@@ -248,28 +246,52 @@ RemoteCommand? commandForLayoutItemId(String itemId) {
   return kRemoteLayoutItemDefinitionById[itemId]?.dispatchCommand;
 }
 
+/// Whether [itemId] starts on the grid or parked in the drawer.
+///
+/// `defaultPositionedIds` is the set of ids considered "on by default" for the current
+/// device — today that's `null` everywhere (no narrower-than-full-catalog default set
+/// exists yet; see `goal-variant-remote-layout.md`), which this treats as "everything is
+/// default" so every eligible item still starts on the grid. Once a real default set exists,
+/// passing it here is the only change needed — this function doesn't need to change shape.
+LayoutZone resolveDefaultLayoutItemZone({
+  required String itemId,
+  required Set<String>? defaultPositionedIds,
+}) {
+  if (defaultPositionedIds == null) {
+    return LayoutZone.grid;
+  }
+  return defaultPositionedIds.contains(itemId)
+      ? LayoutZone.grid
+      : LayoutZone.drawer;
+}
+
 List<LayoutEditItem> buildFilteredRemoteLayoutItems({
   required Set<RemoteCommand> supportedCommands,
   required bool supportsTextInput,
   Set<String> forceIncludeIds = const <String>{},
+  Set<String>? defaultPositionedIds,
 }) {
   final items = <LayoutEditItem>[];
   for (final definition in kRemoteLayoutItemDefinitions) {
     final id = definition.id;
+    final zone = resolveDefaultLayoutItemZone(
+      itemId: id,
+      defaultPositionedIds: defaultPositionedIds,
+    );
     if (id == LayoutItemId.searchInput) {
       if (!supportsTextInput && !forceIncludeIds.contains(id)) {
         continue;
       }
-      items.add(definition.toLayoutEditItem());
+      items.add(definition.toLayoutEditItem(zone: zone));
       continue;
     }
     final commands = definition.commands;
     if (commands.isEmpty || forceIncludeIds.contains(id)) {
-      items.add(definition.toLayoutEditItem());
+      items.add(definition.toLayoutEditItem(zone: zone));
       continue;
     }
     if (supportedCommands.containsAll(commands)) {
-      items.add(definition.toLayoutEditItem());
+      items.add(definition.toLayoutEditItem(zone: zone));
     }
   }
   return items;
