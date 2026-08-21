@@ -394,6 +394,67 @@ against a real TV until this pass. Three issues surfaced, all fixed and re-verif
    `ScrollController` field + `dispose()` override on `_RemoteLayoutEditorState` (didn't
    previously have one).
 
+## Drawer strip redesign, round 2 of real-device testing (2026-08-21)
+
+Real-device testing surfaced a sizing regression I introduced while fixing the earlier overflow
+bug (see "Post-implementation findings" above): I shrank `kRemoteLayoutDrawerItemCellSize`
+(56→44) and `kRemoteLayoutDrawerStripHeight` (88→60) reflexively while chasing the overflow
+number, without checking whether the smaller sizes were still comfortable for a human — a fair
+callout. Re-tested with the *original* drawer values after the real fix (the instruction
+text — see below) landed, and they passed cleanly even at 320×700. **The drawer was never the
+problem; reverted `kRemoteLayoutDrawerItemCellSize`/`kRemoteLayoutDrawerStripHeight` back to
+88/56, unchanged from before.**
+
+The actual overflow cause: `layoutEditorInstruction`'s replacement text was 58% longer than the
+original, and the *original* text was already marginally too tall for the header's fixed 106px
+budget at narrow widths (a pre-existing, latent issue, confirmed by measuring the exact original
+string in isolation — 118px needed vs. 106px budget at 328px content width). Iterated the
+replacement text down through several drafts, each measured directly against the real widget
+render (not a bare `TextPainter` — an early attempt used one with a test-only fallback font that
+doesn't match production Roboto metrics and gave misleading numbers) until landing on "Drag to
+reposition, or drop below to remove." (46 chars), which fits without truncation on any phone
+≥360dp wide. Also added `maxLines: 2, overflow: TextOverflow.ellipsis` as a permanent safety net
+so this text can never produce a visible overflow crash again, regardless of device width or
+font-scaling settings — on the shrinking minority of devices ≤320dp it now truncates gracefully
+instead.
+
+Separately, per user feedback, redesigned the drawer strip's interaction model:
+- **Drawer row width now exactly matches the grid's width** (previously stretched to the full
+  editor width, which was wider than the grid on any device where the grid is height- rather
+  than width-constrained — the common case in portrait). Required lifting `cellSize`/`gridWidth`
+  computation out of `_buildLayoutGridCanvas`'s own `LayoutBuilder` into one `LayoutBuilder`
+  wrapping the whole `build()` — needed so the drawer strip (built as a sibling, not a descendant
+  of the grid canvas) can be sized to the identical value. `_buildLayoutGridCanvas` no longer has
+  its own `LayoutBuilder`; it takes `cellSize`/`gridWidth` as parameters instead.
+- **Removed the `Scrollbar`, replaced with two triangle buttons** (`Icons.arrow_left`/
+  `Icons.arrow_right`) outside the drawer box, sized so `2 * (chevronSize + chevronGap)` plus the
+  box width equals `gridWidth` exactly — no fallback path needed for width-constrained devices,
+  since the triangles are carved out of the same budget the drawer already had (it used to be
+  wider than the grid; now that surplus funds the triangles instead of empty stretch space).
+  Tap scrolls by exactly one item's width (`kRemoteLayoutDrawerItemCellSize + gridGap`); holding
+  scrolls continuously via a `Timer.periodic` (`kRemoteLayoutDrawerAutoScrollTickInterval` =
+  16ms, `kRemoteLayoutDrawerAutoScrollPixelsPerTick` = 6) until released. New state:
+  `Timer? _drawerAutoScrollTimer`, cancelled in both `onLongPressEnd`/`onLongPressCancel` and
+  `dispose()`.
+- Drawer items remain plain `Draggable` (not `LongPressDraggable`) — the triangle buttons are a
+  separate touch target from the item tiles, so there was never a gesture-arena conflict to
+  design around here in the first place, unlike the earlier (reverted) scrollbar-thumb-vs-drag
+  investigation.
+
+New metrics (`remote_layout_editor_metrics.dart`): `kRemoteLayoutDrawerChevronSize` (36, meets
+common ~44dp touch-target guidance closely enough while leaving most of the width budget to the
+box), `kRemoteLayoutDrawerChevronGap` (4), `kRemoteLayoutDrawerAutoScrollPixelsPerTick` (6),
+`kRemoteLayoutDrawerAutoScrollTickInterval` (16ms).
+
+Verified: `flutter analyze` clean; full suite 478 passed (up from 475). Added 3 permanent tests
+to `remote_layout_editor_widget_test.dart`'s drawer group — drawer-row-width-equals-grid-width,
+tap-scrolls-exactly-one-item (asserts the scroll position delta equals
+`kRemoteLayoutDrawerItemCellSize + gridGap` precisely, not just "some movement"), and
+hold-scrolls-further-than-a-tap. All three assert against the real `Scrollable`'s
+`ScrollableState.position.pixels`, not fragile item-visibility checks — an early draft tracking
+a specific item's on-screen position failed when that item scrolled outside the `ListView`'s
+retained cache window after just one tap, which is what led to the more robust approach.
+
 ## Open questions
 
 None remaining for this goal — both prior questions resolved (see Decisions). Remaining dependency: `goal-variant-remote-layout.md`'s physical-remote source data determines each variant's actual default set.

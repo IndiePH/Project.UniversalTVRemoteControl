@@ -97,6 +97,51 @@ void main() {
     expect(resetCalls, 1);
   });
 
+  testWidgets('no overflow on a narrow screen with realistic app chrome', (
+    tester,
+  ) async {
+    // Regression test: the fixed test viewport above (400px wide, no
+    // AppBar/SafeArea/body padding) is far more generous than a real
+    // small phone. Real-device testing found a RenderFlex overflow that
+    // this viewport never caught. Mirrors RemoteHomePage's actual
+    // wrapping (AppBar + SafeArea + 16px body padding) at a narrow,
+    // realistic width.
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final items = buildInitialRemoteLayoutItems();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: _layoutEditorTestTheme(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          resizeToAvoidBottomInset: false,
+          appBar: AppBar(toolbarHeight: 50, title: const Text('OneRemote')),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: RemoteLayoutEditor(
+                layoutItems: items,
+                itemDefinitionsById: kRemoteLayoutItemDefinitionById,
+                gridColumns: kRemoteLayoutGridColumns,
+                gridRows: kRemoteLayoutGridRows,
+                gridGap: kRemoteLayoutGridGap,
+                onResetLayout: () async {},
+                onPersistLayout: () async {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
+
   group('drawer', () {
     const emptyHint = 'Drag a button here to remove it from your remote.';
 
@@ -194,9 +239,7 @@ void main() {
                 muteDefinition.col);
         final gridTarget = find.byType(DragTarget<String>).at(targetIndex);
 
-        final gesture = await tester.startGesture(
-          tester.getCenter(draggable),
-        );
+        final gesture = await tester.startGesture(tester.getCenter(draggable));
         await tester.pump(const Duration(milliseconds: 50));
         await gesture.moveTo(tester.getCenter(gridTarget));
         await tester.pump(const Duration(milliseconds: 50));
@@ -210,5 +253,98 @@ void main() {
         expect(persistCalls, 1);
       },
     );
+
+    testWidgets('drawer box width matches grid width', (tester) async {
+      final items = buildInitialRemoteLayoutItems();
+      await tester.pumpWidget(buildEditor(layoutItems: items));
+      await tester.pumpAndSettle();
+      tester.takeException();
+
+      final gridPaintFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is CustomPaint &&
+            widget.painter.runtimeType.toString() ==
+                'RemoteLayoutEditGridPainter',
+      );
+      final gridWidth = tester.getSize(gridPaintFinder).width;
+
+      final drawerRowFinder = find
+          .ancestor(
+            of: find.byIcon(Icons.arrow_left),
+            matching: find.byType(Row),
+          )
+          .first;
+      final drawerRowWidth = tester.getSize(drawerRowFinder).width;
+
+      expect(drawerRowWidth, closeTo(gridWidth, 1.0));
+    });
+
+    testWidgets('tapping the right triangle scrolls by one item', (
+      tester,
+    ) async {
+      final items = buildInitialRemoteLayoutItems();
+      for (final id in ['mute', 'netflix', 'disney', 'prime', 'back']) {
+        items.firstWhere((item) => item.id == id).zone = LayoutZone.drawer;
+      }
+      await tester.pumpWidget(buildEditor(layoutItems: items));
+      await tester.pumpAndSettle();
+      tester.takeException();
+
+      final scrollable = find.byType(Scrollable);
+      final beforePixels = tester
+          .state<ScrollableState>(scrollable)
+          .position
+          .pixels;
+
+      await tester.tap(find.byIcon(Icons.arrow_right));
+      await tester.pumpAndSettle();
+      tester.takeException();
+
+      final afterPixels = tester
+          .state<ScrollableState>(scrollable)
+          .position
+          .pixels;
+      expect(
+        afterPixels - beforePixels,
+        closeTo(kRemoteLayoutDrawerItemCellSize + kRemoteLayoutGridGap, 0.5),
+      );
+    });
+
+    testWidgets('holding the right triangle scrolls continuously', (
+      tester,
+    ) async {
+      final items = buildInitialRemoteLayoutItems();
+      for (final id in ['mute', 'netflix', 'disney', 'prime', 'back']) {
+        items.firstWhere((item) => item.id == id).zone = LayoutZone.drawer;
+      }
+      await tester.pumpWidget(buildEditor(layoutItems: items));
+      await tester.pumpAndSettle();
+      tester.takeException();
+
+      final scrollable = find.byType(Scrollable);
+      final beforePixels = tester
+          .state<ScrollableState>(scrollable)
+          .position
+          .pixels;
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byIcon(Icons.arrow_right)),
+      );
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(kRemoteLayoutDrawerAutoScrollTickInterval * 10);
+      await gesture.up();
+      await tester.pumpAndSettle();
+      tester.takeException();
+
+      final afterPixels = tester
+          .state<ScrollableState>(scrollable)
+          .position
+          .pixels;
+      // Holding scrolls further than a single tap would.
+      expect(
+        afterPixels - beforePixels,
+        greaterThan(kRemoteLayoutDrawerItemCellSize + kRemoteLayoutGridGap),
+      );
+    });
   });
 }

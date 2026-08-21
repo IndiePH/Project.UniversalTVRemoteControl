@@ -34,3 +34,23 @@ const double kRemoteLayoutDrawerItemCellSize = 56;
 
 /// Vertical gap between the drawer strip and its neighboring header/grid regions.
 const double kRemoteLayoutDrawerStripSpacing = 8;
+
+/// Tap target size (width and height) of each drawer scroll triangle.
+///
+/// 36 meets the common ~44dp mobile touch-target guideline closely enough at typical device
+/// pixel ratios while still leaving most of the shared grid-width budget for the drawer box
+/// itself — the box shrinks by `2 * (kRemoteLayoutDrawerChevronSize +
+/// kRemoteLayoutDrawerChevronGap)` to make room for both triangles within the same total width
+/// as the grid.
+const double kRemoteLayoutDrawerChevronSize = 36;
+
+/// Gap between each scroll triangle and the drawer box next to it.
+const double kRemoteLayoutDrawerChevronGap = 4;
+
+/// Pixels moved per timer tick while a drawer scroll triangle is held down.
+const double kRemoteLayoutDrawerAutoScrollPixelsPerTick = 6;
+
+/// Timer tick interval for continuous scroll while a drawer scroll triangle is held down.
+const Duration kRemoteLayoutDrawerAutoScrollTickInterval = Duration(
+  milliseconds: 16,
+);
