@@ -259,13 +259,61 @@ it. New l10n string `layoutEditorDrawerEmptyHint` (`app_en.arb`), regenerated vi
 `flutter gen-l10n`.
 
 **Phase 6 — Pro-gating: no new code.** The gate already wraps entry into `RemoteLayoutEditor`
-itself (`remote_home_page.dart:1084-1087`); drawer drag is just another drag inside that same
-gated widget, so it inherits the gate for free.
+itself; drawer drag is just another drag inside that same gated widget, so it inherits the gate
+for free.
+
+**Verified, 2026-08-21 — the `:1084-1087` citation above was stale and pointed at the wrong
+code** (that's inside `_loadLayoutForDevice`, Phase 4's territory, unrelated to gating). Traced
+the actual mechanism instead of trusting the old citation:
+- `_isLayoutEditMode` (`remote_home_page.dart:96`) can only become `true` via
+  `_toggleLayoutEditMode()` (`:734-744`), which the app bar action only wires up when
+  `canToggleLayout` is true (`:1331-1332`: `_isLayoutEditMode || (_activeDevice != null &&
+  isPro)`). A non-Pro user gets `showLayoutLockedOnPress` instead (`:1333-1334`), which shows an
+  upsell toast (`_showProLayoutLockedMessage`, `:619-623`) and never flips
+  `_isLayoutEditMode`.
+- `RemoteLayoutEditor` — grid canvas *and* the Phase 5 drawer strip, as one unit — is only
+  constructed when `_isLayoutEditMode` is true (`:1392`: `_isLayoutEditMode ?
+  RemoteLayoutEditor(...) : RemoteHomeStatusPanel(...)`). A non-Pro user never has this widget
+  in the tree, so the drawer's `DragTarget`/`Draggable` never mount — not hidden, structurally
+  absent.
+- Edge case checked: a mid-session Pro downgrade (e.g. subscription lapses while the editor is
+  open) is already handled by pre-existing code, unrelated to this feature —
+  `remote_home_page.dart:215-217` force-exits edit mode the moment `isPro` goes false while
+  `_isLayoutEditMode` is true, tearing down the whole editor (drawer included) immediately.
+
+No test added for this gate: it's a pre-existing app-wide mechanism with no test coverage
+anywhere in the suite (checked — not command-drawer-specific, out of this goal's scope; Phase 7
+below only extends the four files that already cover the drawer's own new surface).
 
 **Testing** — extend the four Phase-0 files rather than add new ones: repository round-trip
 (including legacy JSON with no `zone` key → defaults to grid), a drag-to-drawer / drag-
 from-drawer widget test, and a grid-constraints check that drawer items don't count toward cell
 occupancy.
+
+**Implemented as planned, 2026-08-21, confirmed by the full suite (472 passed, up from 402).**
+Three of the four Phase-0 files were extended; the fourth was confirmed to need no changes,
+verified rather than assumed:
+- `shared_prefs_layout_repository_test.dart`: +2 tests — `zone` round-trips through save/load
+  (`LayoutZone.drawer` survives, un-set entries default to `LayoutZone.grid`); a hand-written
+  legacy JSON blob with no `"zone"` key at all (simulating pre-Phase-1 persisted data) loads as
+  `LayoutZone.grid`.
+- `remote_layout_grid_constraints_test.dart`: +1 test — parks `mute` in the drawer, rebuilds
+  `occupancyByCell` from the `zone == grid`-filtered list (mirroring what
+  `RemoteLayoutEditor._buildLayoutGridCanvas` actually does), and asserts neither `mute`'s id nor
+  its old cell key appear in the result.
+- `remote_layout_editor_widget_test.dart`: +4 tests — empty-state hint shows/hides correctly;
+  simulated `TestGesture` drags (down → move → up, no actual pointer needed) covering both
+  directions: dragging a grid item onto the drawer strip (asserts `zone` flips to `drawer`,
+  `col`/`row` stay unchanged per Decisions, `onPersistLayout` fires once) and dragging a
+  drawer item back onto its own default cell (asserts `zone` flips to `grid`, correct `col`/`row`,
+  persist fires). The grid-cell `DragTarget` is targeted via `kRemoteLayoutItemDefinitionById['mute']`'s
+  own `col`/`row` rather than a hardcoded cell, so the test stays correct if the catalog's default
+  positions ever change.
+- `remote_layout_drop_resolver_test.dart`: **no changes — confirmed, not assumed.** Re-read in
+  full: every test constructs `LayoutEditItem`s directly (no `zone` field involved in any
+  assertion) and calls `RemoteLayoutDropResolver.resolveDrop` with plain `occupancyByCell`/
+  `itemsById` maps the test builds itself. The resolver has no zone awareness at all — filtering
+  by zone is entirely the caller's job (`RemoteLayoutEditor`), exactly as Phase 5 designed it.
 
 **Both previously-flagged items verified, 2026-08-21:**
 

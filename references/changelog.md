@@ -11,6 +11,56 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-08-21
+
+### Added
+- Command drawer (branch `feature/command-drawer`; full design/implementation log:
+  `references/goals/goal-command-drawer.md`): `LayoutPosition`/`LayoutEditItem` gain a `zone`
+  field (`LayoutZone.grid` / `LayoutZone.drawer`) — a non-breaking `SharedPreferences` addition,
+  absent key defaults to `grid`. `RemoteLayoutEditor` gains an always-visible drawer strip
+  between the header and the grid canvas: drag a button into it to park it, drag a parked
+  button back out to restore it at its own `col`/`row`. Both directions auto-persist immediately,
+  matching the existing save-on-drop pattern; the editor header reset still clears any
+  drawer-parked state back to defaults.
+- Catalog gap closed: `youtube` and `input` were valid `RemoteCommand`s with no layout-item
+  entry anywhere — added to `kRemoteLayoutItemDefinitions` (16 items, up from 14).
+- `RemoteLayoutItemDefinition`'s required-command/dispatch-command switch statements replaced
+  with declarative fields — `commands: Set<RemoteCommand>` plus a derived `dispatchCommand`
+  getter — closing the split-registry-drift bug class that let `youtube`/`input` go unnoticed
+  for as long as they did.
+- `LayoutItemId`: named `static const String` constants replace scattered magic-string item
+  ids (kept as plain `String`, not an enum — the drop-resolver's tests construct synthetic
+  non-catalog ids a closed enum can't represent).
+
+### Changed
+- `buildFilteredRemoteLayoutItems` gains an optional `defaultPositionedIds` parameter and a
+  pure `resolveDefaultLayoutItemZone` helper deciding each item's starting zone. Currently
+  always called with `null` (no per-variant default set exists yet — that's
+  `goal-variant-remote-layout.md`'s job), so today's rendered layout is unchanged; this is
+  plumbing for that future work, not a visible behavior change yet.
+- `RemoteLayoutEditorGridGeometry.occupancyByCell` is now built from a grid-only-filtered item
+  list inside the editor, fixing a real bug: a drawer-parked item (which keeps its last real
+  `col`/`row`, preserved for a possible future "restore to last spot") would otherwise keep
+  blocking its old grid cell from new drops.
+
+### Fixed
+- Self-review caught a DRY/SRP miss in the drawer strip's initial diff: the ~60-line
+  drag-lifecycle widget block (feedback preview, drag callbacks, anchor recording) was
+  duplicated between the grid and drawer render paths; extracted to a shared
+  `_buildDraggableItemPreview`.
+
+### Verification
+- `flutter analyze` clean throughout. Full suite: 472 passed (up from 402 pre-feature),
+  including 7 new tests across `shared_prefs_layout_repository_test.dart` (zone round-trip,
+  legacy-JSON-no-zone-key defaults to grid), `remote_layout_grid_constraints_test.dart`
+  (drawer items excluded from cell occupancy), and `remote_layout_editor_widget_test.dart`
+  (simulated `TestGesture` drags covering both directions). `remote_layout_drop_resolver_test.dart`
+  confirmed, not assumed, to need no changes — the resolver is entirely zone-agnostic by design.
+- Pro-gating confirmed to cover the drawer with no new gating code: `RemoteLayoutEditor` (grid
+  canvas and drawer strip together, as one widget) is only constructed when `_isLayoutEditMode`
+  is true, which a non-Pro user can never set — traced the actual toggle-button wiring rather
+  than assuming.
+
 ## 2026-08-15
 
 ### Fixed
