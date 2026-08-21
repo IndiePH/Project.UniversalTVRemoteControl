@@ -100,12 +100,8 @@ void main() {
   testWidgets('no overflow on a narrow screen with realistic app chrome', (
     tester,
   ) async {
-    // Regression test: the fixed test viewport above (400px wide, no
-    // AppBar/SafeArea/body padding) is far more generous than a real
-    // small phone. Real-device testing found a RenderFlex overflow that
-    // this viewport never caught. Mirrors RemoteHomePage's actual
-    // wrapping (AppBar + SafeArea + 16px body padding) at a narrow,
-    // realistic width.
+    // The default 400px test viewport is more generous than a real small phone and missed a
+    // RenderFlex overflow real-device testing found. Mirrors RemoteHomePage's actual chrome.
     tester.view.physicalSize = const Size(320, 700);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -229,10 +225,7 @@ void main() {
         final draggable = find.byWidgetPredicate(
           (widget) => widget is Draggable<String> && widget.data == 'mute',
         );
-        // Grid DragTargets start at index 1 (index 0 is the drawer's own
-        // target); row-major order matches the nested loop in
-        // RemoteLayoutEditor. Targeting mute's own default cell keeps this
-        // test correct even if the catalog's default positions change.
+        // Index 0 is the drawer's own target; grid targets follow in row-major order.
         final targetIndex =
             1 +
             (muteDefinition.row * kRemoteLayoutGridColumns +
@@ -254,9 +247,35 @@ void main() {
       },
     );
 
-    testWidgets('drawer box width matches grid width', (tester) async {
+    testWidgets('drawer box width matches grid width when there is room', (
+      tester,
+    ) async {
+      // Wide enough that the grid's cell size is height-limited (fixed
+      // regardless of width), leaving slack around it for the chevrons to
+      // sit in without shrinking the box below grid width.
       final items = buildInitialRemoteLayoutItems();
-      await tester.pumpWidget(buildEditor(layoutItems: items));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: _layoutEditorTestTheme(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: SizedBox(
+              width: 520,
+              height: kRemoteLayoutEditorTestViewportHeight,
+              child: RemoteLayoutEditor(
+                layoutItems: items,
+                itemDefinitionsById: kRemoteLayoutItemDefinitionById,
+                gridColumns: kRemoteLayoutGridColumns,
+                gridRows: kRemoteLayoutGridRows,
+                gridGap: kRemoteLayoutGridGap,
+                onResetLayout: () async {},
+                onPersistLayout: () async {},
+              ),
+            ),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       tester.takeException();
 
@@ -268,15 +287,65 @@ void main() {
       );
       final gridWidth = tester.getSize(gridPaintFinder).width;
 
-      final drawerRowFinder = find
-          .ancestor(
-            of: find.byIcon(Icons.arrow_left),
-            matching: find.byType(Row),
-          )
-          .first;
-      final drawerRowWidth = tester.getSize(drawerRowFinder).width;
+      final drawerBoxWidth = tester
+          .getSize(find.byKey(const ValueKey('drawerBox')))
+          .width;
 
-      expect(drawerRowWidth, closeTo(gridWidth, 1.0));
+      expect(drawerBoxWidth, closeTo(gridWidth, 1.0));
+    });
+
+    testWidgets('drawer box shrinks below grid width on narrow screens', (
+      tester,
+    ) async {
+      // At this width the chevron budget doesn't fit outside a box the
+      // full grid width, so the box must shrink to keep both chevrons
+      // on-screen and tappable rather than overflowing past the edge.
+      tester.view.physicalSize = const Size(320, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final items = buildInitialRemoteLayoutItems();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: _layoutEditorTestTheme(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            resizeToAvoidBottomInset: false,
+            appBar: AppBar(toolbarHeight: 50, title: const Text('OneRemote')),
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: RemoteLayoutEditor(
+                  layoutItems: items,
+                  itemDefinitionsById: kRemoteLayoutItemDefinitionById,
+                  gridColumns: kRemoteLayoutGridColumns,
+                  gridRows: kRemoteLayoutGridRows,
+                  gridGap: kRemoteLayoutGridGap,
+                  onResetLayout: () async {},
+                  onPersistLayout: () async {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      final gridPaintFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is CustomPaint &&
+            widget.painter.runtimeType.toString() ==
+                'RemoteLayoutEditGridPainter',
+      );
+      final gridWidth = tester.getSize(gridPaintFinder).width;
+      final drawerBoxWidth = tester
+          .getSize(find.byKey(const ValueKey('drawerBox')))
+          .width;
+
+      expect(drawerBoxWidth, lessThan(gridWidth));
     });
 
     testWidgets('tapping the right triangle scrolls by one item', (

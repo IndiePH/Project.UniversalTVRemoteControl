@@ -1183,7 +1183,9 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     }
 
     for (final other in _layoutItems) {
-      if (other.id == item.id || ignoreIds.contains(other.id)) {
+      if (other.id == item.id ||
+          ignoreIds.contains(other.id) ||
+          other.zone != LayoutZone.grid) {
         continue;
       }
       final overlaps =

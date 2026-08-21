@@ -39,6 +39,8 @@
   "layoutEditorResetSuccess": "Layout reset to defaults.",
   "layoutEditorInstruction": "Drag to reposition, or drop below to remove.",
   "layoutEditorDrawerEmptyHint": "Drag a button here to remove it from your remote.",
+  "layoutEditorDrawerScrollLeft": "Scroll drawer left",
+  "layoutEditorDrawerScrollRight": "Scroll drawer right",
 
   "remoteTextEntrySheetTitle": "Send text to TV",
   "remoteTextEntryHint": "Search or enter text",

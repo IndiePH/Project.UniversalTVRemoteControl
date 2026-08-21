@@ -10,6 +10,7 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_layout_edi
 import 'package:one_remote/remote_control/presentation/widgets/remote_header_icon_button.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_grid_geometry.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor_item_preview.dart';
+import 'package:one_remote/remote_control/presentation/metrics/remote_layout_button_metrics.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_editor_metrics.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_header_metrics.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
@@ -60,31 +61,36 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
     super.dispose();
   }
 
-  /// All items by id, grid and drawer alike — drops need to look up drawer items too, or a
-  /// drawer→grid drag could never resolve. Occupancy is the grid-only concern; see `gridItems`.
-  Map<String, LayoutEditItem> get _itemsById => {
+  /// All items by id, including drawer items (drops need to resolve those too). Built once per
+  /// [build] and passed down, not recomputed per drag callback.
+  Map<String, LayoutEditItem> _buildItemsById() => {
     for (final item in widget.layoutItems) item.id: item,
   };
 
-  void _moveItemToZone(String itemId, LayoutZone zone) {
-    final item = _itemsById[itemId];
-    if (item == null || item.zone == zone) {
-      return;
-    }
+  /// Shared setState + markDropAccepted + persist wiring for both drop paths; only the mutation
+  /// itself differs between them.
+  void _applyDropAndPersist(VoidCallback mutate) {
     setState(() {
-      item.zone = zone;
+      mutate();
       _drag.markDropAccepted();
     });
     unawaited(widget.onPersistLayout());
   }
 
-  /// One draggable item preview, shared by the grid canvas and the drawer strip.
-  ///
-  /// [cellSize] differs by caller: the grid's dynamically-fitted cell size, or the drawer's
-  /// fixed [kRemoteLayoutDrawerItemCellSize] — everything else about drag wiring is identical
-  /// regardless of which zone the item is currently in. The drawer strip scrolls via its own
-  /// left/right triangle buttons (a separate touch target from these items), so items stay
-  /// instant-drag like the grid — no long-press-to-distinguish-from-scroll needed.
+  void _moveItemToZone(
+    Map<String, LayoutEditItem> itemsById,
+    String itemId,
+    LayoutZone zone,
+  ) {
+    final item = itemsById[itemId];
+    if (item == null || item.zone == zone) {
+      return;
+    }
+    _applyDropAndPersist(() => item.zone = zone);
+  }
+
+  /// Draggable item preview shared by the grid and drawer. Drawer items stay instant-drag (no
+  /// long-press) since the drawer scrolls via its own chevrons, not by dragging items.
   Widget _buildDraggableItemPreview({
     required LayoutEditItem item,
     required double cellSize,
@@ -155,11 +161,12 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
     );
   }
 
-  /// Renders the grid canvas at a [cellSize]/[gridWidth] already resolved by [build] — computed
-  /// once, up front, so the drawer strip below can be sized to the exact same [gridWidth].
+  /// Renders the grid at the [cellSize]/[gridWidth] [build] already resolved, so the drawer
+  /// strip can match [gridWidth] exactly.
   Widget _buildLayoutGridCanvas({
     required double cellSize,
     required double gridWidth,
+    required Map<String, LayoutEditItem> itemsById,
   }) {
     final gridHeight =
         (widget.gridRows * cellSize) + ((widget.gridRows - 1) * widget.gridGap);
@@ -169,7 +176,6 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
     final occupancyByCell = RemoteLayoutEditorGridGeometry.occupancyByCell(
       gridItems,
     );
-    final itemsById = _itemsById;
 
     final appColors = AppTheme.colorsOf(context);
     final gridLineColor = appColors.remoteOutline.withValues(alpha: 0);
@@ -249,7 +255,7 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
                       if (resolved == null) {
                         return;
                       }
-                      setState(() {
+                      _applyDropAndPersist(() {
                         resolved.movingPlacement.item.col =
                             resolved.movingPlacement.col;
                         resolved.movingPlacement.item.row =
@@ -260,9 +266,7 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
                           displaced.item.col = displaced.col;
                           displaced.item.row = displaced.row;
                         }
-                        _drag.markDropAccepted();
                       });
-                      unawaited(widget.onPersistLayout());
                     },
                     builder: (context, candidateData, _) {
                       final footprintHover = _drag.cellInActiveFootprint(
@@ -359,46 +363,75 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
     _drawerAutoScrollTimer = null;
   }
 
-  /// One tap scrolls by [_drawerScrollIncrement] (one item); holding scrolls continuously via
-  /// [_startDrawerAutoScroll] until released.
+  /// Tap scrolls one item; holding auto-scrolls. The outer [GestureDetector] handles the hold
+  /// ([InkWell] has no hold-repeat callback); `triggerMode: manual` stops [Tooltip]'s own
+  /// long-press from competing with it.
   Widget _buildDrawerScrollButton({
     required IconData icon,
+    required String tooltip,
     required double scrollDirection,
   }) {
+    final appColors = AppTheme.colorsOf(context);
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(
+        color: appColors.remoteOutline,
+        width: kRemoteHeaderButtonBorderWidth,
+      ),
+    );
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () =>
-          _scrollDrawerBy(scrollDirection.sign * _drawerScrollIncrement),
       onLongPressStart: (_) => _startDrawerAutoScroll(scrollDirection),
       onLongPressEnd: (_) => _stopDrawerAutoScroll(),
       onLongPressCancel: _stopDrawerAutoScroll,
-      child: SizedBox(
-        width: kRemoteLayoutDrawerChevronSize,
-        height: kRemoteLayoutDrawerStripHeight,
-        child: Icon(icon, size: kRemoteLayoutDrawerChevronSize * 0.7),
+      child: Tooltip(
+        message: tooltip,
+        triggerMode: TooltipTriggerMode.manual,
+        child: Material(
+          color: appColors.remoteSurface,
+          shape: shape,
+          child: InkWell(
+            customBorder: shape,
+            onTap: () =>
+                _scrollDrawerBy(scrollDirection.sign * _drawerScrollIncrement),
+            child: SizedBox(
+              width: kRemoteLayoutDrawerChevronSize,
+              height: kRemoteLayoutDrawerStripHeight,
+              child: Icon(icon, size: kRemoteLayoutDrawerChevronSize * 0.7),
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildDrawerStrip({required double gridWidth}) {
+  /// Box matches [gridWidth] when there's room for the chevrons outside it; shrinks below that
+  /// only on narrow screens where there isn't.
+  Widget _buildDrawerStrip({
+    required double gridWidth,
+    required double maxWidth,
+    required Map<String, LayoutEditItem> itemsById,
+  }) {
     final drawerItems = widget.layoutItems
         .where((item) => item.zone == LayoutZone.drawer)
         .toList(growable: false);
     final appColors = AppTheme.colorsOf(context);
-    final boxWidth = math.max(
-      0.0,
-      gridWidth -
-          2 * (kRemoteLayoutDrawerChevronSize + kRemoteLayoutDrawerChevronGap),
+    final chevronBudget =
+        2 * (kRemoteLayoutDrawerChevronSize + kRemoteLayoutDrawerChevronGap);
+    final boxWidth = math.min(
+      gridWidth,
+      math.max(0.0, maxWidth - chevronBudget),
     );
 
     final box = DragTarget<String>(
       onWillAcceptWithDetails: (details) =>
-          _itemsById[details.data]?.zone == LayoutZone.grid,
+          itemsById[details.data]?.zone == LayoutZone.grid,
       onAcceptWithDetails: (details) =>
-          _moveItemToZone(details.data, LayoutZone.drawer),
+          _moveItemToZone(itemsById, details.data, LayoutZone.drawer),
       builder: (context, candidateData, _) {
         final highlightDrop = candidateData.isNotEmpty;
         return Container(
+          key: const ValueKey('drawerBox'),
           width: boxWidth,
           height: kRemoteLayoutDrawerStripHeight,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -441,18 +474,24 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
       },
     );
 
-    return SizedBox(
-      width: gridWidth,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildDrawerScrollButton(icon: Icons.arrow_left, scrollDirection: -1),
-          const SizedBox(width: kRemoteLayoutDrawerChevronGap),
-          box,
-          const SizedBox(width: kRemoteLayoutDrawerChevronGap),
-          _buildDrawerScrollButton(icon: Icons.arrow_right, scrollDirection: 1),
-        ],
-      ),
+    final l10n = AppLocalizations.of(context)!;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildDrawerScrollButton(
+          icon: Icons.arrow_left,
+          tooltip: l10n.layoutEditorDrawerScrollLeft,
+          scrollDirection: -1,
+        ),
+        const SizedBox(width: kRemoteLayoutDrawerChevronGap),
+        box,
+        const SizedBox(width: kRemoteLayoutDrawerChevronGap),
+        _buildDrawerScrollButton(
+          icon: Icons.arrow_right,
+          tooltip: l10n.layoutEditorDrawerScrollRight,
+          scrollDirection: 1,
+        ),
+      ],
     );
   }
 
@@ -475,6 +514,7 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
         final gridWidth =
             (widget.gridColumns * cellSize) +
             ((widget.gridColumns - 1) * widget.gridGap);
+        final itemsById = _buildItemsById();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -516,13 +556,18 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
             const SizedBox(height: kRemoteLayoutDrawerStripSpacing),
             Align(
               alignment: Alignment.topCenter,
-              child: _buildDrawerStrip(gridWidth: gridWidth),
+              child: _buildDrawerStrip(
+                gridWidth: gridWidth,
+                maxWidth: constraints.maxWidth,
+                itemsById: itemsById,
+              ),
             ),
             const SizedBox(height: kRemoteLayoutDrawerStripSpacing),
             Expanded(
               child: _buildLayoutGridCanvas(
                 cellSize: cellSize,
                 gridWidth: gridWidth,
+                itemsById: itemsById,
               ),
             ),
           ],

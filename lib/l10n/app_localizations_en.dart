@@ -118,6 +118,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Drag a button here to remove it from your remote.';
 
   @override
+  String get layoutEditorDrawerScrollLeft => 'Scroll drawer left';
+
+  @override
+  String get layoutEditorDrawerScrollRight => 'Scroll drawer right';
+
+  @override
   String get remoteTextEntrySheetTitle => 'Send text to TV';
 
   @override

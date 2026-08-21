@@ -304,6 +304,18 @@ abstract class AppLocalizations {
   /// **'Drag a button here to remove it from your remote.'**
   String get layoutEditorDrawerEmptyHint;
 
+  /// No description provided for @layoutEditorDrawerScrollLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll drawer left'**
+  String get layoutEditorDrawerScrollLeft;
+
+  /// No description provided for @layoutEditorDrawerScrollRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll drawer right'**
+  String get layoutEditorDrawerScrollRight;
+
   /// No description provided for @remoteTextEntrySheetTitle.
   ///
   /// In en, this message translates to:

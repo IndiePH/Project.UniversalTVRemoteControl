@@ -18,30 +18,20 @@ const double kRemoteLayoutEditorInstructionTopSpacing = 6;
 
 /// Fixed height of the always-visible drawer strip, between the header and the grid canvas.
 ///
-/// Fixed (not content-dependent) deliberately: the grid's `fitCellSize` computes available space
-/// once per build from the `Column`'s remaining space, so a strip that resized with its contents
-/// would shift the grid's cell size every time an item entered or left the drawer.
+/// Fixed, not content-sized — a strip that grew or shrank with its contents would shift the
+/// grid's cell size every time an item entered or left the drawer.
 const double kRemoteLayoutDrawerStripHeight = 88;
 
 /// `cellSize` passed to [RemoteLayoutEditorItemPreview] for drawer-strip items.
 ///
-/// Independent of the grid's dynamically-fitted cell size — the drawer strip is a fixed height,
-/// so its items use a fixed preview size too, per the class doc's "look and feel may diverge"
-/// allowance. Multi-cell items (dpad, volume, channel) are rare drawer contents but will render
-/// taller than the strip if parked there; accepted as a minor cosmetic edge case rather than
-/// adding scaling logic for it.
+/// Independent of the grid's cell size. Multi-cell items (dpad, volume, channel) render taller
+/// than the strip if parked here — accepted as a rare cosmetic edge case.
 const double kRemoteLayoutDrawerItemCellSize = 56;
 
 /// Vertical gap between the drawer strip and its neighboring header/grid regions.
 const double kRemoteLayoutDrawerStripSpacing = 8;
 
-/// Tap target size (width and height) of each drawer scroll triangle.
-///
-/// 36 meets the common ~44dp mobile touch-target guideline closely enough at typical device
-/// pixel ratios while still leaving most of the shared grid-width budget for the drawer box
-/// itself — the box shrinks by `2 * (kRemoteLayoutDrawerChevronSize +
-/// kRemoteLayoutDrawerChevronGap)` to make room for both triangles within the same total width
-/// as the grid.
+/// Tap target size (width and height) of each drawer scroll chevron.
 const double kRemoteLayoutDrawerChevronSize = 36;
 
 /// Gap between each scroll triangle and the drawer box next to it.
