@@ -33,23 +33,23 @@ layout — retrievable/re-addable later, rather than permanently absent.
 
 ## Proposed design (undecided — for discussion)
 
-1. ~~Extend the persisted layout state to separate positioned/visible items from a known-but-drawer-parked set~~ — **resolved, see Decisions: `LayoutPosition.inDrawer` field chosen.**
-2. Extend `kRemoteLayoutItemDefinitions`/`requiredCommandsForLayoutItemId`/`commandForLayoutItemId` to cover every `RemoteCommand`, starting with `youtube` and `input`, so they have *some* layout representation to place in the drawer.
-3. A UI surface (drawer strip within the editor) listing capability-supported-but-not-placed items, with add/remove actions. `remote_layout_editor.dart` currently only supports drag-repositioning of items already present — no picker exists (grepped for `remove|delete|hide|drawer|overflow|toggle`, no relevant hits).
-4. Small, non-breaking `SharedPreferences` shape addition — `LayoutPosition` gains `inDrawer` (default `false` when absent), per Decisions below. No migration script needed; existing persisted data reads correctly under the new default.
+1. ~~Extend the persisted layout state to separate positioned/visible items from a known-but-drawer-parked set~~ — **resolved, see Decisions: `LayoutPosition.category` (`LayoutCategory.grid`/`LayoutCategory.drawer`) field chosen.**
+2. Extend `kRemoteLayoutItemDefinitions`/`requiredCommandsForLayoutItemId`/`commandForLayoutItemId` to cover every `RemoteCommand` that any adapter's `supportedCommands` set can produce (per `TvCapabilities`/adapter `supportedCommands`, verified fact #6) — uniformly, not a special case for `youtube`/`input`. Verified fact #5 (`youtube`/`input` currently unreachable) is one instance of this gap, not the whole of it; the fix should cover every command the layout catalog is currently missing so any capability-supported command can have a drawer representation.
+3. ~~A UI surface (drawer strip within the editor) listing capability-supported-but-not-placed items, with add/remove actions~~ — **resolved, see "Proposed UX design — drawer interaction" below: a fixed, always-visible drawer strip, drag-based add/remove in both directions.** (`remote_layout_editor.dart` currently only supports drag-repositioning of items already present — no picker exists yet; grepped for `remove|delete|hide|drawer|overflow|toggle`, no relevant hits — confirms this is genuinely new UI, not an extension of an existing picker.)
+4. Small, non-breaking `SharedPreferences` shape addition — `LayoutPosition` gains `category` (an enum, default `LayoutCategory.grid` when absent), per Decisions below. No migration script needed; existing persisted data reads correctly under the new default.
 
 ## Decisions
 
-- **Terminology:** "positioned" = an item with `inDrawer: false` (or absent, defaulting false) in `LayoutRepository`'s `Map<String, LayoutPosition>` (`layout_repository.dart:4`) — i.e. currently placed/visible on the grid at its `col`/`row`. "Drawer" = adapter-`supportedCommands` items that are either absent from that map, or present with `inDrawer: true`.
+- **Terminology:** "positioned" = an item with `category: LayoutCategory.grid` (or absent, defaulting to `LayoutCategory.grid`) in `LayoutRepository`'s `Map<String, LayoutPosition>` (`layout_repository.dart:4`) — i.e. currently placed/visible on the grid at its `col`/`row`. "Drawer" = adapter-`supportedCommands` items that are either absent from that map, or present with `category: LayoutCategory.drawer`.
 - 2026-08-20 (**revised** — see next bullet): ~~Design option (b), fully derived, no persisted field~~ superseded. Pure derivation (absence = drawer) has a real edge case: if a Pro user drags *every* item out of the grid, the saved-positions map goes empty, and the app currently infers "empty map = never customized" (`_loadLayoutForDevice`, verified fact #9 in `goal-variant-remote-layout.md`) — so on next load it would silently repopulate the full default set, undoing the user's explicit choice.
 - 2026-08-20 (**superseded by next bullet**): ~~drawer state persists via a sentinel `col: -1, row: -1` position~~ — replaced with a proper field, see below.
-- 2026-08-21: **`LayoutPosition` gains a new `bool inDrawer` field (default `false`), rather than a sentinel position.** A drawer-parked command sets `inDrawer: true` and **keeps its last real `col`/`row`** instead of losing it — preserved in case a future "restore to last spot" convenience is wanted, per user: "persist the original row,col if we ever want to use it." Restoring sets `inDrawer: false`; whether the drop then reuses the preserved position as a suggestion or the user just drags to a fresh cell is a smaller UI decision, not blocked by this data choice either way. This **is** a schema change (`LayoutPosition.toJson`/`fromJson` gain the field) — revises the earlier "zero schema change" framing — but it's non-breaking: any already-persisted `{col, row}` blob from the currently-shipped editor reads `inDrawer` as `false` by default, which is correct for that data (nothing shipped has ever been drawer-parked). This also resolves the magic-number tradeoff flagged against the sentinel approach — an explicit boolean reads clearly, no reserved out-of-bounds value to remember.
+- 2026-08-21 (**revised same day**): ~~`LayoutPosition` gains a new `bool inDrawer` field~~ superseded — **`LayoutPosition` gains an `enum LayoutCategory { grid, drawer }` field named `category` instead of a bare `bool`.** Same underlying schema change (one new field, non-breaking, defaults correctly for already-persisted data — absent `category` reads as `LayoutCategory.grid`, matching the fact that nothing shipped has ever been drawer-parked), but per user feedback an enum reads clearer at call sites (`position.category == LayoutCategory.drawer` vs. a bare `true`/`false`) and leaves room for a future third category without another boolean bolted on later. A drawer-parked command sets `category: LayoutCategory.drawer` and **keeps its last real `col`/`row`** instead of losing it — preserved in case a future "restore to last spot" convenience is wanted, per user: "persist the original row,col if we ever want to use it." Restoring sets `category: LayoutCategory.grid`; whether the drop then reuses the preserved position as a suggestion or the user just drags to a fresh cell is a smaller UI decision, not blocked by this data choice either way. This also still resolves the magic-number tradeoff flagged against the earlier sentinel-position approach — no reserved out-of-bounds value to remember, and now no bare boolean either.
 - 2026-08-20: **Default drawer-vs-positioned state for any command (including `youtube`/`input`) matches that `(brand, variant)`'s default set**, per the `RemoteLayoutDefaults` map defined in `goal-variant-remote-layout.md` (see that doc for what determines the default set — no longer strictly physical-remote-bound, see its latest revision). A command starts positioned if it's in that variant's default set; starts in the drawer if the adapter supports it but the default set doesn't include it. This makes the drawer's default state a direct consequence of variant-layout's data, not an independent decision here.
 - 2026-08-20: **Pro-gating, confirmed:** editing/repositioning — including drawer drag-in/drag-out, since that's a position edit — is **Pro-only**, matching the existing layout-editor gate (`remote_home_page.dart:1084-1087`). The *default* command set itself (which commands a free user sees, per their device's brand+variant) is **not** Pro-gated — showing the correct commands for a device is a correctness matter, not a customization perk, and matches how defaults already work for everyone today.
 - 2026-08-20: **Build this goal first, before `goal-variant-remote-layout.md`, confirmed.** This work already touches every entry in `kRemoteLayoutItemDefinitions` (extending coverage to `youtube`/`input`) and is the natural point to fold `requiredCommandsForLayoutItemId`/`commandForLayoutItemId` into declarative fields on `RemoteLayoutItemDefinition` (OCP cleanup — see design review in `goal-variant-remote-layout.md` finding #4). The variant-layout goal then seeds its per-`(brand,variant)` catalogs from this goal's finished shape, avoiding rework.
-- 2026-08-21: **Persist-on-change and reset-to-default already exist for positions and extend naturally** to `inDrawer`-flagged entries — no new save/load pathway, just one more field riding along with the values already flowing through it:
-  - `RemoteLayoutEditor.onAcceptWithDetails` already calls `widget.onPersistLayout()` on every accepted drop (`remote_layout_editor.dart:167`) — auto-save per change, no separate save step; a drag-to-drawer persists the same entry with `inDrawer: true` and its `col`/`row` unchanged.
-  - The editor header's `restart_alt` icon already wires to `_resetLayoutForActiveDevice()` → `_resetLayoutToDefaults()` → re-persists the cleared state (`remote_home_page.dart:1159-1167`, `1072-1081`); reset replaces the whole map with the default profile's real positions (`inDrawer: false` throughout), so no leftover drawer-parked entries survive a reset.
+- 2026-08-21: **Persist-on-change and reset-to-default already exist for positions and extend naturally** to `category`-flagged entries — no new save/load pathway, just one more field riding along with the values already flowing through it:
+  - `RemoteLayoutEditor.onAcceptWithDetails` already calls `widget.onPersistLayout()` on every accepted drop (`remote_layout_editor.dart:167`) — auto-save per change, no separate save step; a drag-to-drawer persists the same entry with `category: LayoutCategory.drawer` and its `col`/`row` unchanged.
+  - The editor header's `restart_alt` icon already wires to `_resetLayoutForActiveDevice()` → `_resetLayoutToDefaults()` → re-persists the cleared state (`remote_home_page.dart:1159-1167`, `1072-1081`); reset replaces the whole map with the default profile's real positions (`category: LayoutCategory.grid` throughout), so no leftover drawer-parked entries survive a reset.
 
 ## Proposed UX design — drawer interaction (revised 2026-08-20 per user feedback)
 
@@ -57,12 +57,140 @@ Grounded directly in `remote_layout_editor.dart` and `remote_home_page.dart` (pe
 
 1. **Always visible during edit mode — no toggle icon, no open/close step.** The earlier icon-triggered-overlay proposal added a tap the user has to discover before they can even use the drawer. That protection wasn't actually needed: the "cancel edit" control (the pencil icon, `Icons.edit_outlined`) lives in the app bar (`remote_home_app_bar_actions.dart`), **outside** `RemoteLayoutEditor` entirely — there was never a collision to guard against. Instead, add the drawer as a **fixed, permanently-present region** in `RemoteLayoutEditor.build`'s existing `Column` (`remote_layout_editor.dart:283-318`) — e.g. a slim horizontally-scrollable strip between the header and the grid canvas. Because it's never toggled on/off during an edit session, `RemoteLayoutEditorGridGeometry.fitCellSize` computes the grid's available space once, consistently, for the whole session — "not intrusive to positioning" is satisfied by the drawer's presence being constant, not by a show/hide mechanic.
 2. **Both remove and restore are drag, not tap.** Tap-to-restore was rejected earlier: the item would place itself automatically somewhere in the grid the user didn't choose, "confusing... you'll need to look for it." Drag keeps the destination visible and user-chosen, consistent with how repositioning already works.
-   - **Remove (grid → drawer):** the drawer strip is a `DragTarget<String>` — the user drags a grid item (already `Draggable<String>`, no new widget needed) into it to park it (sets `inDrawer: true`, keeps `col`/`row` as-is, per Decisions above).
+   - **Remove (grid → drawer):** the drawer strip is a `DragTarget<String>` — the user drags a grid item (already `Draggable<String>`, no new widget needed) into it to park it (sets `category: LayoutCategory.drawer`, keeps `col`/`row` as-is, per Decisions above).
    - **Restore (drawer → grid):** drawer items are also `Draggable<String>` (reusing `RemoteLayoutEditorItemPreview` for feedback/preview, same as grid items) — the user drags one out onto a chosen grid cell. Grid cells' existing `DragTarget<String>` (`remote_layout_editor.dart:105-168`) already validates footprint/occupancy via `RemoteLayoutEditorDragSession`/`RemoteLayoutEditorGridGeometry` — no new validation logic needed, the drop just needs to also accept drags originating from the drawer, not only from other grid cells.
    - One interaction language throughout edit mode — drag between zones — no separate tap-badge gesture to learn.
 3. Both directions call `onPersistLayout()` immediately, matching the existing auto-persist-on-change pattern. Empty-state text in the drawer ("Drag a command here to remove it from your remote") for discoverability.
 4. Drawer items reuse `RemoteLayoutEditorItemPreview` (already used for grid items and drag feedback) — no new preview widget needed, visual consistency for free.
-5. Items with `inDrawer: true` must be filtered out of the grid-canvas render path and routed to the drawer strip's render path instead — the one new bit of rendering logic this design needs.
+5. Items with `category: LayoutCategory.drawer` must be filtered out of the grid-canvas render path and routed to the drawer strip's render path instead — the one new bit of rendering logic this design needs.
+
+## Implementation plan (2026-08-21, grounded in direct source reads)
+
+Ordered by dependency (each phase's output is what the next phase consumes). Applies SRP,
+OCP, DIP, and architecture-consistency deliberately at each step — called out inline. No code
+has been written yet; this is the sequencing this analysis converged on.
+
+**Phase 0 — Precondition already satisfied.** Four existing test files touch this exact
+surface: `test/lib/remote_control/data/shared_prefs_layout_repository_test.dart`,
+`remote_layout_grid_constraints_test.dart`, `remote_layout_editor_widget_test.dart`,
+`remote_layout_drop_resolver_test.dart`. This answers the open refactoring-precondition
+question flagged in `goal-variant-remote-layout.md` finding #3 (for this goal, at least):
+there is coverage to refactor against, not a blind rewrite.
+
+**Phase 1 — Domain model (SRP: isolate the new state as its own type, don't overload `col`/`row`).**
+- New `enum LayoutCategory { grid, drawer }`, own file, matching the one-concept-per-file
+  convention already used by `layout_position.dart` / `layout_edit_item.dart`.
+- `LayoutPosition` (`layout_position.dart:2-21`): add `final LayoutCategory category`,
+  default `LayoutCategory.grid`. `toJson` adds `'category': category.name`; `fromJson` parses
+  defensively and falls back to `LayoutCategory.grid` when the key is absent or unrecognized —
+  preserves the non-breaking guarantee already recorded in Decisions (old persisted blobs have
+  no `category` key at all).
+- `LayoutEditItem` (`layout_edit_item.dart:4-26`): mirror with a **mutable** `category` field
+  (mutable like `col`/`row`, since drag operations flip it live) — this is the type the running
+  editor actually reads from (`_layoutItems`, `remote_home_page.dart:92`), so the runtime model
+  needs the field independently of the persisted one.
+- `RemoteLayoutItemDefinition.toLayoutEditItem()` (`remote_layout_item_definitions.dart:44-54`):
+  gains a `category` parameter (default `LayoutCategory.grid`) so default-set construction can
+  stamp "starts positioned" vs. "starts in drawer" per Decisions.
+
+**Phase 2 — Close the catalog gap uniformly (OCP), not `youtube`-specific.**
+Verified precisely this turn: `RemoteCommand` (`remote_command.dart:1-23`) has 21 values; the
+union of `requiredCommandsForLayoutItemId`'s switch (`remote_layout_item_definitions.dart:170-190`)
+plus `searchInput`'s special-cased `supportsTextInput` path covers 19 of them. The gap is
+**exactly and only** `RemoteCommand.input` and `RemoteCommand.youtube` — a fully closed, verified
+set, not an illustrative example. Two moves:
+1. Fold `requiredCommandsForLayoutItemId`/`commandForLayoutItemId`'s switch statements into
+   declarative fields on `RemoteLayoutItemDefinition` (`requiredCommands: Set<RemoteCommand>`,
+   `command: RemoteCommand?`) — the OCP cleanup already flagged in
+   `goal-variant-remote-layout.md` finding #4 and explicitly slated for this goal in Decisions.
+   Adding a new item becomes "one list entry," not "touch three places."
+2. Add `youtube` and `input` entries to `kRemoteLayoutItemDefinitions` with their required
+   commands declared inline.
+
+**Phase 3 — Placement resolution (SRP: separate "is this eligible" from "where does it render").**
+- `buildFilteredRemoteLayoutItems` (`remote_layout_item_definitions.dart:211-236`) currently
+  conflates capability eligibility with grid inclusion — an eligible-but-not-default item is
+  **omitted** today. Its contract changes to: still capability-filter the same way
+  (`supportedCommands.containsAll(requiredCommands)`), but an eligible item that isn't in the
+  default-positioned set is now **included with `category: LayoutCategory.drawer`** instead of
+  dropped.
+- New pure, independently-testable function decides each item's starting category from the
+  default-positioned-id set (today: current baseline; later: `RemoteLayoutDefaults` per the
+  sibling goal, without this function needing to change shape — DIP against that future swap).
+  Same testability rationale that already justified pulling `RemoteLayoutDropResolver` out of
+  the editor widget.
+
+**Phase 4 — Persistence round-trip** (`remote_home_page.dart`):
+- `_persistLayoutForActiveDevice` (`:1145-1157`): add `category: item.category` to the
+  `LayoutPosition` it already constructs per item. No other shape change.
+- `_loadLayoutForDevice` (`:1083-1122`): inside the existing Pro-gated per-item overlay loop
+  (`:1100-1116`), add `item.category = position.category` alongside the existing `col`/`row`
+  overlay — same Tier-0 mechanism, no new resolution path.
+- `_resetLayoutToDefaults` (`:1072-1081`) already fully replaces `_layoutItems` wholesale from
+  `_buildLayoutDefaultsForDevice`'s output — once Phases 1 and 3 land, category resets "for
+  free" the same way position already does, per the existing claim in Decisions.
+
+**Phase 5 — Editor UI (architecture-consistency: extend the existing drag/drop protocol,
+don't invent a second one).**
+- `RemoteLayoutEditor.build` (`remote_layout_editor.dart:279-317`): today's `Column` is
+  `[header, Expanded(grid canvas)]`. Insert a third fixed-height child for the drawer strip.
+  Because it's a permanent `Column` child, not conditionally built, `fitCellSize`'s
+  `LayoutBuilder` (`:47-58`) sees a consistently-reduced canvas on every build — the "constant
+  presence, no layout jump" requirement from Decisions falls out of this structurally, not from
+  extra logic.
+- Drawer strip: a horizontally-scrollable list of `Draggable<String>` — one per
+  `category == LayoutCategory.drawer` item — reusing `RemoteLayoutEditorItemPreview`
+  (already used for grid cells, `:270-277`) for the preview widget, per Decisions.
+- Drawer strip root is itself one `DragTarget<String>`; an accepted drop sets
+  `item.category = LayoutCategory.drawer` inside `setState`, then
+  `unawaited(widget.onPersistLayout())` — the exact same resolve → mutate → `setState` → persist
+  shape the grid `DragTarget.onAcceptWithDetails` already uses (`:167`), not a new callback
+  contract.
+- The existing grid `DragTarget<String>` callbacks (`:107-168`) resolve purely by the dragged
+  `movingId` string — they don't need to know whether a drag originated from a grid cell or the
+  drawer, **provided** the drawer's `Draggable<String>` carries `data: item.id`, matching the
+  grid `Draggable`'s contract. A drawer→grid accepted drop additionally sets
+  `item.category = LayoutCategory.grid` alongside the existing `col`/`row` write.
+
+**Phase 6 — Pro-gating: no new code.** The gate already wraps entry into `RemoteLayoutEditor`
+itself (`remote_home_page.dart:1084-1087`); drawer drag is just another drag inside that same
+gated widget, so it inherits the gate for free.
+
+**Testing** — extend the four Phase-0 files rather than add new ones: repository round-trip
+(including legacy JSON with no `category` key → defaults to grid), a drag-to-drawer / drag-
+from-drawer widget test, and a grid-constraints check that drawer items don't count toward cell
+occupancy.
+
+**Both previously-flagged items verified, 2026-08-21:**
+
+1. **Grid `Draggable<String>` data contract — confirmed as assumed.**
+   `remote_layout_editor.dart:210` — `Draggable<String>(data: item.id, ...)`. A drawer-strip
+   `Draggable<String>` reusing `data: item.id` interoperates with the existing grid
+   `DragTarget` callbacks with zero changes there, exactly as Phase 5 assumed.
+
+2. **Occupancy map is NOT already filtered — this is a real bug the plan must fix, not an
+   open question.** `RemoteLayoutEditorGridGeometry.occupancyByCell`
+   (`remote_layout_editor_grid_geometry.dart:21-31`) stamps every item's `col`/`row`/`width`/
+   `height` into cells with no category awareness. It's called at
+   `remote_layout_editor.dart:70-72` with the **full, unfiltered** `widget.layoutItems`; the
+   `itemsById` map right below it (`:73-75`) and the grid-canvas render loop
+   (`for (final item in widget.layoutItems)`, `:203`) do the same. Because Decisions has a
+   drawer-parked item **keep** its last real `col`/`row` rather than clearing it, an unfiltered
+   list means a drawer-parked item would keep "occupying" its last grid cell — silently
+   blocking other items from being dropped there even though nothing renders there anymore.
+   **Required fix, folded into Phase 5:** filter `widget.layoutItems` down to
+   `category == LayoutCategory.grid` before both the `occupancyByCell`/`itemsById`
+   construction (`:70-75`) and the Positioned-item render loop (`:203`) — one `.where` clause
+   reused at both sites. This is the concrete mechanism behind the original Decisions item 5
+   ("items with `category: drawer` must be filtered out of the grid-canvas render path"), now
+   pinned to exact line numbers and confirmed necessary rather than assumed. **Considered and
+   rejected: a sentinel `col`/`row` (e.g. `-1`/`-999`) instead of the filter** — this would
+   overwrite the real last-known position Decisions already chose to preserve (per user: "persist
+   the original row,col if we ever want to use it"), and reintroduces the exact "reserved
+   out-of-bounds value every consumer must special-case" smell the `category` field was
+   introduced to eliminate in place of the earlier sentinel-position proposal. The filter keeps
+   `col`/`row` always real; `category` alone (already explicit, not a magic number) governs
+   occupancy.
 
 ## Open questions
 
