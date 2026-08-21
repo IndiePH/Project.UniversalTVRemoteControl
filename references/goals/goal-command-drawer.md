@@ -355,6 +355,45 @@ verified rather than assumed:
    `col`/`row` always real; `zone` alone (already explicit, not a magic number) governs
    occupancy.
 
+## Post-implementation findings from real-device manual testing (2026-08-21)
+
+All 7 phases passed automated tests but had never been exercised on an actual touchscreen
+against a real TV until this pass. Three issues surfaced, all fixed and re-verified
+(`flutter analyze` clean, full suite 474 passed, up from 472):
+
+1. **Bug (severity: high) — a drawer-parked item never actually disappeared from the live
+   remote screen, only from the editor.** `RemoteHomeRemoteGrid` (the non-edit-mode, everyday
+   remote view — `remote_home_remote_grid.dart`) rendered `for (final item in layoutItems)`
+   with **zero `zone` filtering**; it didn't even import `layout_zone.dart`. Phase 5 only fixed
+   the *editor's* grid canvas — this second consumer of the same shared `_layoutItems` list was
+   missed entirely. Fixed: added a `gridItems = layoutItems.where((item) => item.zone ==
+   LayoutZone.grid)` filter before the render loop (`remote_home_remote_grid.dart`), mirroring
+   the editor's existing fix. Added `remote_home_remote_grid_test.dart` (new file — this widget
+   had no dedicated test coverage at all before this) with a positive and negative case; this is
+   exactly the kind of regression this class of bug needs to keep from recurring.
+2. **Doc gap — the editor's instruction text never mentioned the drawer.**
+   `layoutEditorInstruction` (`app_en.arb`) said only "Drag buttons to new positions. Grid lines
+   show cells; a green outline means the drop is allowed." Updated to: "Drag buttons to new
+   positions, or into the strip below to remove them from your remote. Grid lines show cells; a
+   green outline means the drop is allowed." Regenerated via `flutter gen-l10n`.
+3. **UX gap — the drawer strip had no way to scroll it and no indication scrolling was
+   possible.** Root cause: a plain `Draggable` inside a `ListView` of the same scroll axis wins
+   the gesture arena over the list's own scroll recognizer, so a swipe over any item is consumed
+   as a (failed) drag attempt instead of scrolling — and since the strip is mostly covered by
+   item tiles, there was barely any "dead space" left to swipe from. First fix attempt used
+   `LongPressDraggable` for drawer items only (quick swipe scrolls, a deliberate hold drags) —
+   works, but reintroduces exactly the interaction-language inconsistency Decisions had
+   deliberately avoided ("one interaction language throughout edit mode — drag between zones");
+   grid items stay instant-drag while drawer items would need a hold, an asymmetry the user
+   flagged as unnecessary. **Superseded, same day:** reverted to plain `Draggable` for drawer
+   items too (identical to grid — `_buildDraggableItemPreview` has no branching now), and instead
+   wrapped the drawer's `ListView` in a `Scrollbar(thumbVisibility: true, interactive: true)`.
+   The scrollbar thumb is a separate touch target from the item tiles, so it never competes with
+   `Draggable` in the gesture arena — solves both the "can't scroll" and "no indication scrolling
+   is possible" complaints without touching the drag interaction at all. Needed a
+   `ScrollController` field + `dispose()` override on `_RemoteLayoutEditorState` (didn't
+   previously have one).
+
 ## Open questions
 
 None remaining for this goal — both prior questions resolved (see Decisions). Remaining dependency: `goal-variant-remote-layout.md`'s physical-remote source data determines each variant's actual default set.

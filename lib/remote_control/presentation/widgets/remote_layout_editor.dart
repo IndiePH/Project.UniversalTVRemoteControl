@@ -49,6 +49,13 @@ class RemoteLayoutEditor extends StatefulWidget {
 
 class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
   final RemoteLayoutEditorDragSession _drag = RemoteLayoutEditorDragSession();
+  final ScrollController _drawerScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _drawerScrollController.dispose();
+    super.dispose();
+  }
 
   /// All items by id, grid and drawer alike — drops need to look up drawer items too, or a
   /// drawer→grid drag could never resolve. Occupancy is the grid-only concern; see `gridItems`.
@@ -72,7 +79,9 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
   ///
   /// [cellSize] differs by caller: the grid's dynamically-fitted cell size, or the drawer's
   /// fixed [kRemoteLayoutDrawerItemCellSize] — everything else about drag wiring is identical
-  /// regardless of which zone the item is currently in.
+  /// regardless of which zone the item is currently in. The drawer strip scrolls via its own
+  /// [Scrollbar] thumb (a separate touch target from these items), so items stay instant-drag
+  /// like the grid — no long-press-to-distinguish-from-scroll needed.
   Widget _buildDraggableItemPreview({
     required LayoutEditItem item,
     required double cellSize,
@@ -351,20 +360,26 @@ class _RemoteLayoutEditorState extends State<RemoteLayoutEditor> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 )
-              : ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: drawerItems.length,
-                  separatorBuilder: (_, _) =>
-                      SizedBox(width: widget.gridGap),
-                  itemBuilder: (context, index) {
-                    final item = drawerItems[index];
-                    return Center(
-                      child: _buildDraggableItemPreview(
-                        item: item,
-                        cellSize: kRemoteLayoutDrawerItemCellSize,
-                      ),
-                    );
-                  },
+              : Scrollbar(
+                  controller: _drawerScrollController,
+                  thumbVisibility: true,
+                  interactive: true,
+                  child: ListView.separated(
+                    controller: _drawerScrollController,
+                    scrollDirection: Axis.horizontal,
+                    itemCount: drawerItems.length,
+                    separatorBuilder: (_, _) =>
+                        SizedBox(width: widget.gridGap),
+                    itemBuilder: (context, index) {
+                      final item = drawerItems[index];
+                      return Center(
+                        child: _buildDraggableItemPreview(
+                          item: item,
+                          cellSize: kRemoteLayoutDrawerItemCellSize,
+                        ),
+                      );
+                    },
+                  ),
                 ),
         );
       },
