@@ -18,7 +18,11 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   SamsungAdapter({required this._transportClient, CommandKeyMap? keyMapper})
-    : _keyMapper = keyMapper ?? const SamsungKeyMapper();
+    : _keyMapper = keyMapper ?? const SamsungKeyMapper() {
+    _supportedCommands = kCommonSupportedRemoteCommands
+        .where((command) => _keyMapper.keyCodesFor(command).isNotEmpty)
+        .toSet();
+  }
 
   @override
   TvBrand get brand => TvBrand.samsung;
@@ -48,10 +52,11 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   bool get supportsTextInput => true;
 
   @override
-  Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
+  Set<RemoteCommand> get supportedCommands => _supportedCommands;
 
   final SamsungTransportClient _transportClient;
   final CommandKeyMap _keyMapper;
+  late final Set<RemoteCommand> _supportedCommands;
   final Map<String, Future<void>> _connectInFlight = {};
 
   static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');

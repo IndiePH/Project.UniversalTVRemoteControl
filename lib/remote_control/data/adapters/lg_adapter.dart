@@ -14,7 +14,11 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class LgAdapter implements TvBrandAdapter {
   LgAdapter({required this._transportClient, CommandKeyMap? keyMap})
-    : _keyMap = keyMap ?? const LgKeyMapper();
+    : _keyMap = keyMap ?? const LgKeyMapper() {
+    _supportedCommands = kCommonSupportedRemoteCommands
+        .where((command) => _keyMap.keyCodesFor(command).isNotEmpty)
+        .toSet();
+  }
 
   @override
   TvBrand get brand => TvBrand.lg;
@@ -26,10 +30,11 @@ class LgAdapter implements TvBrandAdapter {
   bool get supportsTextInput => true;
 
   @override
-  Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
+  Set<RemoteCommand> get supportedCommands => _supportedCommands;
 
   final LgTransportClient _transportClient;
   final CommandKeyMap _keyMap;
+  late final Set<RemoteCommand> _supportedCommands;
   final Map<String, Future<void>> _connectInFlight = {};
 
   static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');

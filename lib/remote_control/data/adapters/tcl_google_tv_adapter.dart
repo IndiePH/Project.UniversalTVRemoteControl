@@ -12,10 +12,19 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class TclGoogleTvAdapter implements TvBrandAdapter {
   TclGoogleTvAdapter({required this._transportClient, CommandKeyMap? keyMap})
-    : _keyMap = keyMap ?? const AndroidTvKeyMapper();
+    : _keyMap = keyMap ?? const AndroidTvKeyMapper() {
+    _supportedCommands = kCommonSupportedRemoteCommands
+        .where(
+          (command) =>
+              _keyMap.keyCodesFor(command).isNotEmpty ||
+              _appLinks.containsKey(command),
+        )
+        .toSet();
+  }
 
   final AndroidTvTransportClient _transportClient;
   final CommandKeyMap _keyMap;
+  late final Set<RemoteCommand> _supportedCommands;
 
   static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
 
@@ -37,7 +46,7 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
   bool get supportsTextInput => true;
 
   @override
-  Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
+  Set<RemoteCommand> get supportedCommands => _supportedCommands;
 
   @override
   Future<void> probeConnection({required TvDevice device}) async {

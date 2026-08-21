@@ -14,7 +14,15 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class HisenseAdapter implements TvBrandAdapter {
   HisenseAdapter({required this._transportClient, CommandKeyMap? keyMap})
-    : _keyMap = keyMap ?? const HisenseKeyMapper();
+    : _keyMap = keyMap ?? const HisenseKeyMapper() {
+    _supportedCommands = kCommonSupportedRemoteCommands
+        .where(
+          (command) =>
+              _keyMap.keyCodesFor(command).isNotEmpty ||
+              _vidaaLaunchSpec(command) != null,
+        )
+        .toSet();
+  }
 
   @override
   TvBrand get brand => TvBrand.hisense;
@@ -30,10 +38,11 @@ class HisenseAdapter implements TvBrandAdapter {
   bool get supportsTextInput => _isTextInputEnabled;
 
   @override
-  Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
+  Set<RemoteCommand> get supportedCommands => _supportedCommands;
 
   final HisenseTransportClient _transportClient;
   final CommandKeyMap _keyMap;
+  late final Set<RemoteCommand> _supportedCommands;
   final Map<String, Future<void>> _connectInFlight = {};
   static const bool _isTextInputEnabled = bool.fromEnvironment(
     'HISENSE_ENABLE_TEXT_INPUT',
