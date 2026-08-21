@@ -53,33 +53,44 @@ All chosen identifiers are unique per **physical TV**, so two identical units (s
 
 ## Migration design (lossless, lazy)
 
-One-time, on app start, after Phase 0–2 land:
+Migration is **lazy on rediscovery / pairing enrichment**, not a one-shot wipe on app
+start. Legacy IP-keyed records remain usable until a stable identity can be proven.
 
-1. Load legacy saved devices (still keyed by old IP-based `id`).
-2. For each, derive its stable id:
-   - Android TV: re-read stored server cert → sha256.
-   - Roku: re-query `/query/device-info` serial (cache from last pairing if available).
-   - Samsung/LG/Hisense: use a UDN captured at last pairing (Phase 1 must persist it alongside the device), or re-discover.
-3. If a stable id is derived:
-   - Write the device, its secrets, and its layout under the new stable-id key.
-   - **Then** delete the old host-keyed/IP-keyed entries.
-   - Order matters: write-new-then-delete-old. Never delete old until new is confirmed written.
-4. If derivation fails: leave the legacy entry in place; keep working off the IP-based id for that device until rediscovery reconciles it (Phase 4). Never lose data mid-migration.
+1. Keep loading legacy saved devices keyed by old IP-based `id`.
+2. When discovery or pairing proves a stable id for the same physical TV:
+   - Android TV: certificate fingerprint when the peer cert is already known.
+   - Roku: serial from `/query/device-info` when available.
+   - Samsung/LG/Hisense: SSDP UDN (or Hisense composite / IP fallback).
+3. On a conservative exact host + brand match (or certificate proof for Android TV):
+   - Write the device, secrets preference, and layout under the new stable-id key
+     before retiring the old active device record.
+   - Layout copy happens before device re-key; legacy layout retirement happens only
+     after device migration succeeds.
+   - Legacy host-keyed pairing secrets are retained as a fallback during the window.
+4. If derivation or matching fails: leave the legacy entry in place and keep working
+   off the IP-based id until a later scan can reconcile it. Never lose data mid-migration.
 
-**Idempotent:** re-running migration finds new-key entries already present and skips them. **Interrupt-safe:** a kill mid-migration leaves either the old key (preferred) or both keys; never neither.
+**Idempotent:** re-running migration finds new-key entries already present and skips or
+retries safely. **Interrupt-safe:** a kill mid-migration leaves either the old key
+(preferred) or both keys; never neither.
 
 ---
 
 ## Reconciliation design
 
-On `_loadInitialDevice` (`remote_home_page.dart:397-418`) and after any discovery scan:
+After discovery scans (`PairingPageData.reconcileDiscovery` via
+`DeviceReconciliationService`) and during active reconnect:
 
-1. Build the set of discovered devices (each now carries a stable id from Phase 1).
-2. For each saved device, match by stable id against discovered devices.
-3. On match: update the saved device's `host` to the discovered IP via `copyWith(host:)` and re-persist. The retry timer (`remote_home_page.dart:377-389`) then connects to the live IP.
-4. On no match yet: keep retrying the last-known host (current behavior) — no regression.
+1. Build the set of discovered devices (stable id when proven; otherwise IP-derived).
+2. For each saved device with a stable id, match discovered devices by that id.
+3. On match: update the saved device's `host` to the discovered IP via `copyWith(host:)`
+   and re-persist. Home reconnect then uses the live host.
+4. For remaining legacy IP-keyed saved devices, propose a re-key only on an unambiguous
+   exact host + brand match; skip ambiguous or already-moved hosts.
+5. On no match yet: keep retrying the last-known host — no regression.
 
-Result: no re-pair, no orphan, layout/drawer/saved-device state all survive an IP change.
+Result: no re-pair, no orphan, layout/drawer/saved-device state all survive an IP change
+when identity can be proven.
 
 ---
 

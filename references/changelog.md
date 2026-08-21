@@ -29,6 +29,13 @@ Keep entries short and append new updates at the top.
 - IP changes after stable identity discovery do not require re-pairing; the IP
   continues to be available for display and transport resolution.
 
+### Docs
+- Synced branch status into `goal-persistent-device-identity.md`,
+  `persistent-device-identity.md`, `README.md`, `product_specs.md`, and
+  `implementation_tasks.md`.
+- Removed temporary copied references from the other branch once this goal's
+  own docs superseded them.
+
 ### Verification
 - `flutter test` — 554 tests passed; 1 test skipped.
 - `flutter analyze` — no issues found.

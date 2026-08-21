@@ -174,9 +174,10 @@ MVP implementation priority (current baseline)—same **platform** stance as §1
 2. Attempt auto-connect to last used TV
 3. If connected, open remote interface immediately
 4. If auto-connect fails due to a transient network/session drop, stay on remote home and retry reconnect
-5. If the TV rejected remote-control authorization (user **Deny** or revoked token), stay on remote home with Allow-on-TV guidance and **do not** auto-retry; the user re-requests Allow via pair
-6. User can access Settings from remote screen to adjust layout anytime
-7. If no device has been paired yet, remote opens in "no TV connected" state until first successful pairing
+5. If the TV's LAN IP changed after a router reboot / DHCP renewal, rediscovery updates the saved mutable host for that TV's stable identity and reconnects without requiring re-pairing when identity is proven
+6. If the TV rejected remote-control authorization (user **Deny** or revoked token), stay on remote home with Allow-on-TV guidance and **do not** auto-retry; the user re-requests Allow via pair
+7. User can access Settings from remote screen to adjust layout anytime
+8. If no device has been paired yet, remote opens in "no TV connected" state until first successful pairing
 
 ---
 
@@ -378,6 +379,7 @@ Lean **product** scope (platform/release: §1):
     * Text input keyboard for search/forms
     * Manual pairing
     * Save and auto-reconnect last used device
+    * Persistent per-TV identity (stable id + mutable LAN host) so saved pairing, layout, and reconnect survive DHCP/IP changes when identity is proven
     * Settings access with per-device editable grid layout persistence
     * In-app user feedback in settings (category + message; HTTPS webhook to operator Sheet — see `references/compliance-and-release-requirements.md` §1.5)
 

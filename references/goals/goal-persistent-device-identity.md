@@ -3,7 +3,6 @@
 **Branch:** `feature/stable-device-identifier`
 **Status:** Phases 0–5 implemented — Phase 6 validation pending
 **Decided:** 2026-08-21 (DT-2 confirmation recorded)
-**Analysis source:** `references/goals/goal-stable-device-identifier.md` (borrowed from `feature/command-drawer`; temporary, to be deleted)
 **Supporting reference:** `references/persistent-device-identity.md` — per-brand identifier sources, uniqueness, migration & reconciliation design.
 
 ---
@@ -13,8 +12,8 @@
 `TvDevice.id` is derived from **brand + current IP**, not anything inherent to the physical TV. A router reboot / DHCP renewal changes the IP, generating a different `id` for the same TV and orphaning everything keyed by the old one:
 
 - Saved-device entry unreachable under old `id`.
-- Pairing secrets keyed by host IP (`HostScopedSecretPersistence`) unreachable → forced re-pair.
-- Layout/drawer state keyed by `deviceId` would vanish with it (affects unbuilt `goal-command-drawer` / `goal-variant-remote-layout`).
+- Pairing secrets keyed by host IP (legacy host-scoped secure storage) unreachable → forced re-pair.
+- Layout/drawer state keyed by `deviceId` would vanish with it (affects unbuilt command-drawer / variant-layout goals).
 - Free-tier 1-device limit: the orphan counts against the slot, blocking the "new" device.
 
 The retry timer (`remote_home_page.dart:377-389`) retries the dead address forever; no reconciliation exists. Verified facts live in the analysis doc.
@@ -91,7 +90,7 @@ The stable id is **not secret** (observable on LAN); it replaces the *identity* 
 
 ## Sequencing vs. other goals
 
-`goal-command-drawer.md` and `goal-variant-remote-layout.md` are unbuilt and key off `deviceId`. **This goal first** → they inherit a stable key for free. Doing it after means retrofitting migration onto already-shipped layout/drawer state. This answers the "before or after" open question in the analysis doc.
+Unbuilt command-drawer / variant-layout goals key persisted layout state off `deviceId`. **This goal first** → they inherit a stable key for free. Doing it after would mean retrofitting migration onto already-shipped layout/drawer state.
 
 ---
 

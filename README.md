@@ -8,7 +8,7 @@ Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — 
 
 OneRemote discovers TVs on the local network, pairs with brand-specific protocols, and provides a customizable remote control surface. Store-listed Wi‑Fi brands: **Samsung, LG, Hisense, and Chromecast with Google TV**. Other adapters (Roku, TCL, etc.) remain experimental until validated.
 
-**Product docs:** `references/product_specs.md` · **Implementation status:** `references/implementation_tasks.md` · **Store checklist:** `references/compliance-and-release-requirements.md`
+**Product docs:** `references/product_specs.md` · **Implementation status:** `references/implementation_tasks.md` · **Store checklist:** `references/compliance-and-release-requirements.md` · **Persistent TV identity:** `references/goals/goal-persistent-device-identity.md`
 
 ### Supported brands (Wi‑Fi)
 
@@ -66,7 +66,8 @@ On a phone and TV on the same LAN: open the app → pair (scan or manual IP) →
   - Live transport state via `TvConnectionStateService`; `connect()` runs on subscribe and on a **5 s** periodic reconnect when `disconnected` or `error` (paused while another route covers home, e.g. pairing; also paused in background)
   - TV **Deny** / revoked remote-control authorization is `ConnectionState.unauthorized` — status **Allow this remote on your TV**; **no** 5 s retry (use the pair button to request Allow again). This is not reported as a Crashlytics crash.
   - Pairing / saved-device rows use `TvReachabilityService` TCP reachability probes
-  - Per-host pairing credentials persist across restarts (`flutter_secure_storage`)
+  - Pairing credentials persist across restarts (`flutter_secure_storage`); preferred key is the proven per-TV stable id, with legacy host-keyed fallback during migration
+  - After a router/DHCP IP change, rediscovery updates the saved TV's mutable `host` so reconnect does not require re-pairing when stable identity is known
 - Optional fake transport mode for all brand adapters (single switch):
   - run with `--dart-define=USE_FAKE_TRANSPORTS=true`
   - also switches discovery to fake scan data (includes a mock Hisense TV)
@@ -177,6 +178,8 @@ Android Pro IAP receipt validation uses a Firebase callable in `functions/`. Dep
 | `references/product_specs.md` | Product source of truth — features, UX, architecture |
 | `references/implementation_tasks.md` | Living implementation plan and status tracker |
 | `references/changelog.md` | Dated implementation / direction updates |
+| `references/goals/goal-persistent-device-identity.md` | Stable TV identity across IP changes (branch goal) |
+| `references/persistent-device-identity.md` | Per-brand identity sources, migration, reconciliation |
 | `references/compliance-and-release-requirements.md` | Store submission checklist |
 | `references/marketing_strategy.md` | Naming, positioning, ad strategy |
 | `references/guide-adding-protocol-variant.md` | How to add a new protocol variant |
