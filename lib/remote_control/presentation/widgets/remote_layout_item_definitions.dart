@@ -197,29 +197,29 @@ const List<RemoteLayoutItemDefinition> kRemoteLayoutItemDefinitions = [
     commands: {RemoteCommand.primeVideo},
   ),
 
-  /// Single cell; same footprint on main remote and layout editor.
+  /// Placeholder default position — cosmetic only. Two rows under netflix, per user direction.
   RemoteLayoutItemDefinition(
     id: LayoutItemId.searchInput,
     icon: Icons.keyboard_outlined,
-    col: 2,
-    row: 6,
+    col: 1,
+    row: 7,
     previewStyle: RemoteLayoutPreviewStyle.centeredCircleIcon,
   ),
 
-  /// Placeholder default position — cosmetic only. Stacked under netflix, per user direction.
+  /// Placeholder default position — cosmetic only. Stacked under disney, per user direction.
   RemoteLayoutItemDefinition(
     id: LayoutItemId.youtube,
     icon: Icons.smart_display_outlined,
-    col: 1,
+    col: 2,
     row: 6,
     commands: {RemoteCommand.youtube},
   ),
 
-  /// Placeholder default position — cosmetic only. Stacked under youtube, per user direction.
+  /// Placeholder default position — cosmetic only. Two rows under prime, per user direction.
   RemoteLayoutItemDefinition(
     id: LayoutItemId.input,
     icon: Icons.input,
-    col: 1,
+    col: 3,
     row: 7,
     commands: {RemoteCommand.input},
   ),
