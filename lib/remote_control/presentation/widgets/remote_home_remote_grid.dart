@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/domain/models/layout_item_id.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/presentation/interaction/remote_command_haptic_feedback.dart';
 import 'package:one_remote/remote_control/presentation/interaction/remote_command_interaction_category.dart';
@@ -105,19 +106,19 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
   }) {
     final Widget itemWidget;
     switch (item.id) {
-      case 'dpad':
+      case LayoutItemId.dpad:
         itemWidget = _buildDpadItem(item, cellSize);
         break;
-      case 'searchInput':
+      case LayoutItemId.searchInput:
         itemWidget = _buildSearchInputItem(item, cellSize);
         break;
-      case 'playPause':
+      case LayoutItemId.playPause:
         itemWidget = _buildPlayPauseItem(context, item, cellSize);
         break;
-      case 'channel':
+      case LayoutItemId.channel:
         itemWidget = _buildChannelItem(item, cellSize);
         break;
-      case 'volume':
+      case LayoutItemId.volume:
         itemWidget = _buildVolumeItem(item, cellSize);
         break;
       default:

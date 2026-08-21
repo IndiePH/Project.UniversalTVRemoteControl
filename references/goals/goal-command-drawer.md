@@ -67,8 +67,26 @@ Grounded directly in `remote_layout_editor.dart` and `remote_home_page.dart` (pe
 ## Implementation plan (2026-08-21, grounded in direct source reads)
 
 Ordered by dependency (each phase's output is what the next phase consumes). Applies SRP,
-OCP, DIP, and architecture-consistency deliberately at each step — called out inline. No code
-has been written yet; this is the sequencing this analysis converged on.
+OCP, DIP, and architecture-consistency deliberately at each step — called out inline. Phases
+1 and 2 have since been implemented (2026-08-21); phases 3-7 are still analysis/plan only.
+
+**Implementation note, added during Phase 2 (2026-08-21): `LayoutItemId` is a `String`-typed
+class of named constants, not an enum.** The catalog gap (`youtube`/`input`) surfaced that
+layout item ids were scattered as raw string literals in three places (`kRemoteLayoutItemDefinitions`,
+a widget-selection `switch` in `remote_home_remote_grid.dart`, and footprint special-casing in
+`remote_layout_editor_grid_geometry.dart`). A closed `enum LayoutItemId` was tried first, but
+`remote_layout_drop_resolver_test.dart` legitimately depends on being able to construct
+synthetic, non-catalog ids (e.g. `fill-$col-$row`, up to ~36 of them) to stress-test the pure
+grid-geometry algorithm independent of the real 16-item catalog — a closed enum can't represent
+that. Converting only the catalog/persistence layer to an enum while keeping the resolver/drag
+layer on `String` was considered and abandoned as too large a propagation (it would have
+required `LayoutRepository`/`SharedPrefsLayoutRepository`'s JSON boundary, `Draggable<String>`/
+`DragTarget<String>` generics, and several `Map<String, ...>` structures to change shape or gain
+a conversion seam, for marginal benefit over the simpler fix). `LayoutItemId` as
+`abstract final class` with `static const String` members gets the same typo-safety and
+autocomplete benefit at every literal-comparison site, with **zero** changes required to
+`LayoutRepository`, `SharedPrefsLayoutRepository`, the resolver, the drag session, or any of
+their tests — confirmed by a full `flutter analyze` + test run after the change.
 
 **Phase 0 — Precondition already satisfied.** Four existing test files touch this exact
 surface: `test/lib/remote_control/data/shared_prefs_layout_repository_test.dart`,

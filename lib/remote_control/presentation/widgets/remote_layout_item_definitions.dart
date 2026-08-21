@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/domain/models/layout_category.dart';
+import 'package:one_remote/remote_control/domain/models/layout_item_id.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/streaming_service_brand_assets.dart';
@@ -34,6 +36,7 @@ class RemoteLayoutItemDefinition {
     this.height = 1,
     this.isPower = false,
     this.previewStyle = RemoteLayoutPreviewStyle.standard,
+    this.commands = const <RemoteCommand>{},
   });
 
   final String id;
@@ -49,7 +52,28 @@ class RemoteLayoutItemDefinition {
   final bool isPower;
   final RemoteLayoutPreviewStyle previewStyle;
 
-  LayoutEditItem toLayoutEditItem() {
+  /// The commands the device must support for this item to appear at all.
+  ///
+  /// Example: `volume` needs both `volumeUp` and `volumeDown`, so a device missing either one
+  /// won't show the volume button. Empty means "not gated by a command" — today that's only
+  /// `searchInput`, which shows or hides based on `supportsTextInput` instead.
+  final Set<RemoteCommand> commands;
+
+  /// The command sent when this item is tapped, or `null` if tapping it doesn't map to one
+  /// command.
+  ///
+  /// Set automatically from [commands] when there's exactly one: e.g. `power` has
+  /// `commands = {power}`, so this is `power`. It's `null` for `dpad`/`volume`/`channel`
+  /// because those have more than one command and no single "the tap action" — pressing
+  /// up/down/left/etc. is handled separately, by which part of the control was touched. It's
+  /// also `null` for `searchInput`, which has zero commands: tapping it opens a text-input
+  /// keyboard instead of sending anything to the TV.
+  RemoteCommand? get dispatchCommand =>
+      commands.length == 1 ? commands.single : null;
+
+  LayoutEditItem toLayoutEditItem({
+    LayoutCategory category = LayoutCategory.grid,
+  }) {
     return LayoutEditItem(
       id: id,
       icon: icon,
@@ -60,98 +84,146 @@ class RemoteLayoutItemDefinition {
       width: width,
       height: height,
       isPower: isPower,
+      category: category,
     );
   }
 }
 
 const List<RemoteLayoutItemDefinition> kRemoteLayoutItemDefinitions = [
   RemoteLayoutItemDefinition(
-    id: 'power',
+    id: LayoutItemId.power,
     icon: Icons.power_settings_new,
     col: 0,
     row: 0,
     isPower: true,
+    commands: {RemoteCommand.power},
   ),
-  RemoteLayoutItemDefinition(id: 'menu', label: 'MENU', col: 4, row: 0),
   RemoteLayoutItemDefinition(
-    id: 'volume',
+    id: LayoutItemId.menu,
+    label: 'MENU',
+    col: 4,
+    row: 0,
+    commands: {RemoteCommand.menu},
+  ),
+  RemoteLayoutItemDefinition(
+    id: LayoutItemId.volume,
     label: 'VOL',
     col: 0,
     row: 2,
     height: 3,
     previewStyle: RemoteLayoutPreviewStyle.verticalRocker,
+    commands: {RemoteCommand.volumeUp, RemoteCommand.volumeDown},
   ),
   RemoteLayoutItemDefinition(
-    id: 'playPause',
+    id: LayoutItemId.playPause,
     label: '|>||',
     col: 1,
     row: 1,
     previewStyle: RemoteLayoutPreviewStyle.playPause,
+    commands: {RemoteCommand.playPause},
   ),
-  RemoteLayoutItemDefinition(id: 'www', label: 'WWW', col: 3, row: 1),
   RemoteLayoutItemDefinition(
-    id: 'dpad',
+    id: LayoutItemId.www,
+    label: 'WWW',
+    col: 3,
+    row: 1,
+    commands: {RemoteCommand.web},
+  ),
+  RemoteLayoutItemDefinition(
+    id: LayoutItemId.dpad,
     label: 'DPAD',
     col: 1,
     row: 2,
     width: 3,
     height: 3,
     previewStyle: RemoteLayoutPreviewStyle.circularDpad,
+    commands: {
+      RemoteCommand.dpadUp,
+      RemoteCommand.dpadDown,
+      RemoteCommand.dpadLeft,
+      RemoteCommand.dpadRight,
+      RemoteCommand.dpadOk,
+    },
   ),
   RemoteLayoutItemDefinition(
-    id: 'channel',
+    id: LayoutItemId.channel,
     label: 'CH',
     col: 4,
     row: 2,
     height: 3,
     previewStyle: RemoteLayoutPreviewStyle.verticalRocker,
+    commands: {RemoteCommand.channelUp, RemoteCommand.channelDown},
   ),
   RemoteLayoutItemDefinition(
-    id: 'home',
+    id: LayoutItemId.home,
     icon: Icons.home_outlined,
     col: 2,
     row: 0,
+    commands: {RemoteCommand.home},
   ),
   RemoteLayoutItemDefinition(
-    id: 'back',
+    id: LayoutItemId.back,
     icon: Icons.arrow_back,
     col: 0,
     row: 5,
+    commands: {RemoteCommand.back},
   ),
   RemoteLayoutItemDefinition(
-    id: 'mute',
+    id: LayoutItemId.mute,
     icon: Icons.volume_off,
     col: 4,
     row: 5,
+    commands: {RemoteCommand.mute},
   ),
   RemoteLayoutItemDefinition(
-    id: 'netflix',
+    id: LayoutItemId.netflix,
     imageAsset: StreamingServiceBrandAssets.netflix,
     brandColor: StreamingServiceBrandAssets.netflixBrand,
     col: 1,
     row: 5,
+    commands: {RemoteCommand.netflix},
   ),
   RemoteLayoutItemDefinition(
-    id: 'disney',
+    id: LayoutItemId.disney,
     imageAsset: StreamingServiceBrandAssets.disneyPlus,
     col: 2,
     row: 5,
+    commands: {RemoteCommand.disneyPlus},
   ),
   RemoteLayoutItemDefinition(
-    id: 'prime',
+    id: LayoutItemId.prime,
     imageAsset: StreamingServiceBrandAssets.primeVideo,
     brandColor: StreamingServiceBrandAssets.primeVideoBrand,
     col: 3,
     row: 5,
+    commands: {RemoteCommand.primeVideo},
   ),
 
   /// Single cell; same footprint on main remote and layout editor.
   RemoteLayoutItemDefinition(
-    id: 'searchInput',
+    id: LayoutItemId.searchInput,
     icon: Icons.keyboard_outlined,
     col: 2,
     row: 6,
     previewStyle: RemoteLayoutPreviewStyle.centeredCircleIcon,
+  ),
+
+  /// Placeholder default position — cosmetic only. Stacked under netflix, per user direction.
+  RemoteLayoutItemDefinition(
+    id: LayoutItemId.youtube,
+    icon: Icons.smart_display_outlined,
+    col: 1,
+    row: 6,
+    commands: {RemoteCommand.youtube},
+  ),
+
+  /// Placeholder default position — cosmetic only. Stacked under youtube, per user direction.
+  RemoteLayoutItemDefinition(
+    id: LayoutItemId.input,
+    icon: Icons.input,
+    col: 1,
+    row: 7,
+    commands: {RemoteCommand.input},
   ),
 ];
 
@@ -168,44 +240,12 @@ List<LayoutEditItem> buildInitialRemoteLayoutItems() {
 }
 
 Set<RemoteCommand> requiredCommandsForLayoutItemId(String itemId) {
-  return switch (itemId) {
-    'home' => {RemoteCommand.home},
-    'power' => {RemoteCommand.power},
-    'back' => {RemoteCommand.back},
-    'menu' => {RemoteCommand.menu},
-    'www' => {RemoteCommand.web},
-    'netflix' => {RemoteCommand.netflix},
-    'prime' => {RemoteCommand.primeVideo},
-    'disney' => {RemoteCommand.disneyPlus},
-    'mute' => {RemoteCommand.mute},
-    'playPause' => {RemoteCommand.playPause},
-    'channel' => {RemoteCommand.channelUp, RemoteCommand.channelDown},
-    'volume' => {RemoteCommand.volumeUp, RemoteCommand.volumeDown},
-    'dpad' => {
-      RemoteCommand.dpadUp,
-      RemoteCommand.dpadDown,
-      RemoteCommand.dpadLeft,
-      RemoteCommand.dpadRight,
-      RemoteCommand.dpadOk,
-    },
-    _ => const <RemoteCommand>{},
-  };
+  return kRemoteLayoutItemDefinitionById[itemId]?.commands ??
+      const <RemoteCommand>{};
 }
 
 RemoteCommand? commandForLayoutItemId(String itemId) {
-  return switch (itemId) {
-    'home' => RemoteCommand.home,
-    'power' => RemoteCommand.power,
-    'back' => RemoteCommand.back,
-    'menu' => RemoteCommand.menu,
-    'www' => RemoteCommand.web,
-    'netflix' => RemoteCommand.netflix,
-    'prime' => RemoteCommand.primeVideo,
-    'disney' => RemoteCommand.disneyPlus,
-    'mute' => RemoteCommand.mute,
-    'playPause' => RemoteCommand.playPause,
-    _ => null,
-  };
+  return kRemoteLayoutItemDefinitionById[itemId]?.dispatchCommand;
 }
 
 List<LayoutEditItem> buildFilteredRemoteLayoutItems({
@@ -216,19 +256,19 @@ List<LayoutEditItem> buildFilteredRemoteLayoutItems({
   final items = <LayoutEditItem>[];
   for (final definition in kRemoteLayoutItemDefinitions) {
     final id = definition.id;
-    if (id == 'searchInput') {
+    if (id == LayoutItemId.searchInput) {
       if (!supportsTextInput && !forceIncludeIds.contains(id)) {
         continue;
       }
       items.add(definition.toLayoutEditItem());
       continue;
     }
-    final requiredCommands = requiredCommandsForLayoutItemId(id);
-    if (requiredCommands.isEmpty || forceIncludeIds.contains(id)) {
+    final commands = definition.commands;
+    if (commands.isEmpty || forceIncludeIds.contains(id)) {
       items.add(definition.toLayoutEditItem());
       continue;
     }
-    if (supportedCommands.containsAll(requiredCommands)) {
+    if (supportedCommands.containsAll(commands)) {
       items.add(definition.toLayoutEditItem());
     }
   }
