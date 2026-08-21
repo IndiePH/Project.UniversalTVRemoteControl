@@ -19,7 +19,7 @@ com.vorithstudio.smarttvremote
 
 # 2. 📄 Play Store Listing
 
-**Last updated:** 2026-08-14 · **Target audience:** 13+ · **Listed brands:** Samsung, LG, Hisense, Chromecast with Google TV only (no Roku/TCL until validated).
+**Last updated:** 2026-08-21 · **Target audience:** 13+ · **Listed brands:** Samsung, LG, Hisense, Chromecast with Google TV only (no Roku/TCL until validated).
 
 ## 🔹 Short Description (80 chars max)
 
@@ -60,6 +60,7 @@ Key features
 • Core remote: power, volume, input, D-pad navigation, home/back
 • On-screen keyboard for search and text entry where the TV supports it
 • Save paired TVs and reconnect quickly
+• Keeps paired TVs after a router reboot / new IP when the TV can be identified again (no re-pair in the common case)
 • Optional in-app feedback to report issues (category + message; see Privacy Policy)
 
 Free and Pro
@@ -106,6 +107,8 @@ Download OneRemote and control your Smart TV from your phone.
 
 **Current release:** `1.4.1` · **versionCode:** `19` · **Track:** Internal testing → Production (promote same artifact when validated)
 
+**Focus for this release:** Persistent TV identity — paired TVs, layouts, and pairing credentials survive DHCP / IP changes when the TV can be re-identified. No Play Console Data safety form change (stable ids and pairing secrets stay on-device; no new data leaves the device).
+
 **Build (signed AAB with production dart-defines):**
 
 ```powershell
@@ -124,10 +127,10 @@ Paste under **Release → Release notes** (Internal testing or Production). Adju
 ```
 What's new in 1.4.1
 
-• Paired TVs keep working after a router reboot / new IP when the TV can be identified again — no re-pair needed in the common case
-• In-app feedback still includes your saved TV brand and model (when known) so we can troubleshoot compatibility faster — shown before you send; no IP addresses or pairing secrets
-• Updated privacy disclosures for feedback and Pro subscriptions
-• General stability and release improvements
+• Paired TVs stay connected after a router reboot or new IP when the TV can be identified again — no re-pair needed in the common case
+• Saved layouts and pairing stay with the TV across IP changes
+• Feedback can include saved TV brand/model (when known) to help support — disclosed before send; no IP addresses or pairing secrets
+• Stability and reconnect improvements
 
 Thank you for using OneRemote!
 ```
@@ -135,8 +138,8 @@ Thank you for using OneRemote!
 **Shorter variant (if character limit is tight):**
 
 ```
-• Feedback includes TV brand/model (when known) to help support — disclosed before send
-• Privacy policy updates
+• Paired TVs keep working after router reboot / new IP (no re-pair in common cases)
+• Saved layouts and pairing survive IP changes
 • Stability improvements
 ```
 
@@ -147,9 +150,12 @@ Thank you for using OneRemote!
 | Apps Script `FEEDBACK_TOKEN` matches build `FEEDBACK_WEBHOOK_TOKEN` | ☐ |
 | Sheet column **L** `pairedModels`; FILTER formulas use `A:L` | ☐ |
 | Privacy policy live (pairedModels §2.1) | ☐ |
+| Data safety form unchanged (no new collected/shared data for this release) | ☐ |
 | Firebase Remote Config `test_ads_enabled` = `false` | ☐ |
 | Upload AAB to **Internal testing** | ☐ |
 | Verify: pair TV, Pro purchase/restore, ads, feedback row in Sheet | ☐ |
+| Verify: reboot router / change TV IP, rediscover, reconnect without re-pair when identity is known | ☐ |
+| Update Main store listing full description with the IP-resilience feature bullet | ☐ |
 | Promote to **Production** (staged rollout recommended) | ☐ |
 
 ---

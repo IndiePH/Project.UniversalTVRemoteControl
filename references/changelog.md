@@ -36,6 +36,8 @@ Keep entries short and append new updates at the top.
   `implementation_tasks.md`.
 - Removed temporary copied references from the other branch once this goal's
   own docs superseded them.
+- Updated Play Store release details in `marketing_strategy.md` for `1.4.1`
+  (release notes, listing feature bullet, operator checklist, Data safety note).
 
 ### Verification
 - `flutter test` — 554 tests passed; 1 test skipped.
