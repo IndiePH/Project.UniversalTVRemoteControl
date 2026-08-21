@@ -21,7 +21,10 @@ Keep entries short and append new updates at the top.
   between the header and the grid canvas: drag a button into it to park it, drag a parked
   button back out to restore it at its own `col`/`row`. Both directions auto-persist immediately,
   matching the existing save-on-drop pattern; the editor header reset still clears any
-  drawer-parked state back to defaults.
+  drawer-parked state back to defaults. The strip scrolls via tap/hold left-right chevrons
+  (dragging past its edge would conflict with dragging items) and matches the grid's width
+  exactly when there's room for the chevrons outside it; on screens too narrow for that budget
+  the chevrons hide instead of the layout overflowing.
 - Catalog gap closed: `youtube` and `input` were valid `RemoteCommand`s with no layout-item
   entry anywhere — added to `kRemoteLayoutItemDefinitions` (16 items, up from 14).
 - `RemoteLayoutItemDefinition`'s required-command/dispatch-command switch statements replaced
@@ -42,20 +45,40 @@ Keep entries short and append new updates at the top.
   list inside the editor, fixing a real bug: a drawer-parked item (which keeps its last real
   `col`/`row`, preserved for a possible future "restore to last spot") would otherwise keep
   blocking its old grid cell from new drops.
+- `RemoteLayoutEditor`'s item-id lookup map is now built once per `build()` and passed down,
+  instead of rebuilt from scratch inside every drag callback. The shared setState +
+  markDropAccepted + persist wiring for both the grid and drawer drop paths is now one
+  `_applyDropAndPersist` helper instead of duplicated inline.
 
 ### Fixed
 - Self-review caught a DRY/SRP miss in the drawer strip's initial diff: the ~60-line
   drag-lifecycle widget block (feedback preview, drag callbacks, anchor recording) was
   duplicated between the grid and drawer render paths; extracted to a shared
   `_buildDraggableItemPreview`.
+- Real-device testing found the live (non-edit-mode) remote grid never filtered out
+  drawer-parked items — only the editor did — so removing a button never actually removed it
+  from the remote you actually use (`RemoteHomeRemoteGrid`, previously untested).
+- A narrow-screen `RenderFlex` overflow root-caused to the header instruction text exceeding
+  its fixed-height budget, not the drawer strip itself (an initial fix reflexively shrank the
+  drawer's item/strip sizing without checking touch-target/readability impact, then reverted
+  once the real cause was found and given `maxLines`/`overflow` protection — same fix later
+  applied to the header title text, which had the identical latent gap).
+- `RemoteHomePage._canPlaceItem` checked saved-layout cell occupancy against all items
+  including drawer-parked ones, whose stale grid `col`/`row` (never cleared on parking) could
+  falsely block a *different* item from landing at its own saved grid position on reload.
+- Drawer scroll chevrons now match the app's shared button visuals (ripple, tooltip/accessible
+  label) instead of a bare `GestureDetector` + `Icon`.
 
 ### Verification
-- `flutter analyze` clean throughout. Full suite: 472 passed (up from 402 pre-feature),
-  including 7 new tests across `shared_prefs_layout_repository_test.dart` (zone round-trip,
-  legacy-JSON-no-zone-key defaults to grid), `remote_layout_grid_constraints_test.dart`
-  (drawer items excluded from cell occupancy), and `remote_layout_editor_widget_test.dart`
-  (simulated `TestGesture` drags covering both directions). `remote_layout_drop_resolver_test.dart`
-  confirmed, not assumed, to need no changes — the resolver is entirely zone-agnostic by design.
+- `flutter analyze` clean throughout. Full suite: 480 passed (up from 402 pre-feature), across
+  four rounds of real-device testing and two code-review passes. New/extended coverage
+  includes `shared_prefs_layout_repository_test.dart` (zone round-trip, legacy-JSON-no-zone-key
+  defaults to grid), `remote_layout_grid_constraints_test.dart` (drawer items excluded from
+  cell occupancy), `remote_home_remote_grid_test.dart` (new file — live grid zone filtering),
+  and `remote_layout_editor_widget_test.dart` (simulated drags, chevron tap/hold scroll,
+  drawer-width-vs-grid-width at multiple viewport widths, narrow-screen overflow regressions).
+  `remote_layout_drop_resolver_test.dart` confirmed, not assumed, to need no changes — the
+  resolver is entirely zone-agnostic by design.
 - Pro-gating confirmed to cover the drawer with no new gating code: `RemoteLayoutEditor` (grid
   canvas and drawer strip together, as one widget) is only constructed when `_isLayoutEditMode`
   is true, which a non-Pro user can never set — traced the actual toggle-button wiring rather
