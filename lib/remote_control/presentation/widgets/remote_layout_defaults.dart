@@ -1,5 +1,3 @@
-import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_protocol_variants.dart';
-import 'package:one_remote/remote_control/domain/models/layout_item_id.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
