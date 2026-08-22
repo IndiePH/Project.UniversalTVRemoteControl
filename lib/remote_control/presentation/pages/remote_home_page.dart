@@ -46,6 +46,7 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_home_devic
 import 'package:one_remote/remote_control/presentation/widgets/remote_home_status_panel.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_grid_metrics.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
+import 'package:one_remote/remote_control/presentation/widgets/remote_layout_defaults.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_text_entry_sheet.dart';
 import 'package:one_remote/theme/app_theme.dart';
@@ -1140,6 +1141,10 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       supportedCommands: supportedCommands,
       supportsTextInput: supportsTextInput,
       forceIncludeIds: forceIncludeIds,
+      definitions: const RemoteLayoutDefaults().layoutFor(
+        device.brand,
+        device.protocolVariant,
+      ),
     );
   }
 
@@ -1394,7 +1399,13 @@ class _RemoteHomePageState extends State<RemoteHomePage>
                   child: _isLayoutEditMode
                       ? RemoteLayoutEditor(
                           layoutItems: _layoutItems,
-                          itemDefinitionsById: kRemoteLayoutItemDefinitionById,
+                          itemDefinitionsById: _activeDevice == null
+                              ? kRemoteLayoutItemDefinitionById
+                              : resolveItemDefinitionsById(
+                                  brand: _activeDevice!.brand,
+                                  protocolVariant:
+                                      _activeDevice!.protocolVariant,
+                                ),
                           gridColumns: kRemoteLayoutGridColumns,
                           gridRows: kRemoteLayoutGridRows,
                           gridGap: kRemoteLayoutGridGap,

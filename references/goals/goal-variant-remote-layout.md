@@ -1,7 +1,7 @@
 # Goal: Per-Brand-Variant Default Remote Layout
 
-**Branch:** `feature/command-drawer` (current)
-**Status:** proposed — analysis only, **NOT FINALIZED**
+**Branch:** `feature/variant-remote-layout` (current)
+**Status:** partially implemented — see "Implementation status" below (2026-08-22)
 **Related:** `references/goals/goal-command-drawer.md` (same underlying data model — likely built together); `references/goals/goal-stable-device-identifier.md` (this goal's persisted state inherits that goal's `deviceId` fragility, not a blocker)
 **Protocol variant guide:** `references/guide-adding-protocol-variant.md`
 **Layout override guide:** `references/guide-adding-variant-remote-layout.md` (proposed — companion doc, not the protocol guide itself, per the earlier design-review recommendation)
@@ -11,6 +11,35 @@
 > "Verified facts" was confirmed by direct source reads (file:line cited) as of 2026-08-20,
 > but the user has explicitly not yet checked this against their own understanding. Do not
 > treat this as a spec. Everything under "Proposed design" is a recommendation only.
+
+---
+
+## Implementation status (2026-08-22)
+
+The mechanism this goal describes is now built and tested on `feature/variant-remote-layout`:
+
+- `RemoteLayoutDefaults` exists (`lib/remote_control/presentation/widgets/remote_layout_defaults.dart`
+  — not `domain/models` as originally proposed below; see Design Review for why) with an empty
+  `_map`. `layoutFor(brand, variant)` implements the tier 1→2→3 fallback exactly as decided.
+- `_buildLayoutDefaultsForDevice` (`remote_home_page.dart`) now sources its item list from
+  `RemoteLayoutDefaults().layoutFor(device.brand, device.protocolVariant)` instead of the global
+  `kRemoteLayoutItemDefinitions`. `_loadLayoutForDevice` and `_resetLayoutToDefaults` both call
+  this one function, so they can't drift apart from each other.
+- A related rendering smell, found independently while wiring this in: the live grid and layout
+  editor re-resolved each item's `imageAsset`/`imageIconSize`/`brandColor` from a single global
+  id-keyed lookup at render time, ignoring whatever `RemoteLayoutDefaults` entry actually built
+  the item. Fixed by carrying `imageIconSize`/`brandColor` on `LayoutEditItem` itself (grid) and
+  by a variant-aware `resolveItemDefinitionsById(brand, variant)` (editor) — see
+  `guide-adding-variant-remote-layout.md` for detail.
+- Confirmed by real-device test (Android TV, `channel` filtered out of the default-variant entry):
+  the override correctly excludes `channel` from the live grid, and reset respects it too.
+- **A real gap found in testing, accepted as-is for now:** omitting an id from an override entry
+  removes it entirely rather than just deprioritizing it to the drawer — a pre-existing saved
+  customization positioning that id becomes silently orphaned (never re-applied, never surfaced).
+  See `guide-adding-variant-remote-layout.md`'s "When does an item actually show up?" section.
+- **Not yet done:** no real per-variant entry has been committed (only a local test entry); the
+  regression tests Design Review finding #3 called for (`_buildLayoutDefaultsForDevice`/
+  `buildFilteredRemoteLayoutItems`) still don't exist.
 
 ---
 

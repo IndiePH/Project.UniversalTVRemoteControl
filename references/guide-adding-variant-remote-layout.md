@@ -1,10 +1,15 @@
 # Guide: Adding a Per-Brand-Variant Remote Layout
 
-> ⚠️ **Status: proposed, not yet implemented.** `RemoteLayoutDefaults` does not exist in
-> the codebase yet — this guide documents the design agreed in
-> `references/goals/goal-variant-remote-layout.md` and `references/goals/goal-command-drawer.md`,
-> written in ready-to-follow form so it can become the real guide once that goal is built.
-> Cross-check against the actual code before following it as a spec.
+> ⚠️ **Status: mechanism fully wired, no real entries authored yet.** `RemoteLayoutDefaults`
+> (`lib/remote_control/presentation/widgets/remote_layout_defaults.dart`) is live end-to-end:
+> `_buildLayoutDefaultsForDevice` sources the item *list* from `layoutFor(device.brand,
+> device.protocolVariant)` (`remote_home_page.dart`), and the rendering plumbing
+> (`resolveItemDefinitionsById`, plus `imageIconSize`/`brandColor` on `LayoutEditItem`) is
+> wired for both the live grid and the layout editor. `_map` itself is still empty — this
+> guide's Step 4 is the only remaining work, per brand+variant. This guide documents the
+> design agreed in `references/goals/goal-variant-remote-layout.md`; `goal-command-drawer.md`
+> (referenced below) exists on the separate `feature/command-drawer` branch, not this one.
+> Cross-check against the actual code before following this as a spec.
 
 A per-brand-variant remote layout is an entry in `RemoteLayoutDefaults` that overrides the
 app's default button grid for one specific `(TvBrand, protocolVariant)` pairing — used when
@@ -56,8 +61,11 @@ save/customize/reset mechanics) already exists and needs no new work here.
 
 ### RemoteLayoutDefaults
 
-**File (proposed):** `lib/remote_control/domain/models/remote_layout_defaults.dart` —
-sibling of `tv_capabilities.dart`.
+**File:** `lib/remote_control/presentation/widgets/remote_layout_defaults.dart` — beside
+`remote_layout_item_definitions.dart`, not `domain/models` (where `TvCapabilities` lives):
+`RemoteLayoutItemDefinition` itself depends on Flutter types (`IconData`, `Color`) and
+presentation-only assets, so putting `RemoteLayoutDefaults` in `domain/models` would make
+domain code depend on presentation code.
 
 ```dart
 class RemoteLayoutDefaults {
@@ -79,6 +87,32 @@ class RemoteLayoutDefaults {
 Instantiated inline at the call site (`const RemoteLayoutDefaults()`), same as
 `const TvCapabilities()` is today (`tv_capabilities.dart:68`, called directly from
 presentation code at `pairing_page_data.dart:79`) — no DI registration needed.
+
+### When does an item actually show up?
+
+Four independent gates, checked inside `buildFilteredRemoteLayoutItems`:
+
+1. **Catalog membership.** Is the id present in `RemoteLayoutDefaults().layoutFor(device.brand,
+   device.protocolVariant)` (or the global baseline, when no override applies)? An id absent from
+   this list can never appear — nothing later can rescue it (see the caveat below).
+2. **Command support.** For ids with a non-empty `commands` set, `supportedCommands.containsAll
+   (definition.commands)` must hold, where `supportedCommands` comes from
+   `commandService.supportedCommandsFor(device)` — independent of layout, this is "does this
+   brand/adapter actually implement this command."
+3. **`forceIncludeIds` bypasses gate 2, never gate 1.** A previously-saved item id skips the
+   command-support check, so a device that stops reporting support for something the user already
+   positioned doesn't just disappear — but it can't resurrect an id gate 1 already excluded.
+4. **`searchInput` is the one exception** — it has no `commands`, so it's gated by
+   `supportsTextInput` (`device.capabilities.contains(DeviceCapability.textInput)`) instead.
+
+**Caveat, confirmed by real-device testing:** omitting an id from an override entry's item list
+makes it vanish completely, not merely deprioritize it to the drawer. If a Pro user had already
+positioned that id via their saved customization, `forceIncludeIds` cannot bring it back — the
+id's definition is gone from the catalog being iterated, so there's nothing for gate 3 to check.
+The saved position for that id becomes silently orphaned in `SharedPreferences`: never deleted,
+never re-applied, never surfaced to the user. There's currently no way to express "not on by
+default, but still available via the drawer" for an omitted id — only full inclusion or full
+removal.
 
 ---
 
@@ -119,7 +153,7 @@ button that matches the baseline; only override `col`/`row`/`width`/`height` for
 that are repositioned, and add new `RemoteLayoutItemDefinition` entries only for buttons the
 baseline doesn't have at all.
 
-**File:** `lib/remote_control/domain/models/remote_layout_defaults.dart`
+**File:** `lib/remote_control/presentation/widgets/remote_layout_defaults.dart`
 
 ```dart
 static const Map<(TvBrand, String), List<RemoteLayoutItemDefinition>> _map = {
@@ -132,10 +166,16 @@ static const Map<(TvBrand, String), List<RemoteLayoutItemDefinition>> _map = {
 };
 ```
 
-Every id used must have a `requiredCommands`/primary-command mapping (declarative field on
-`RemoteLayoutItemDefinition` if the OCP refactor from `goal-command-drawer.md` has landed,
-otherwise the legacy `requiredCommandsForLayoutItemId`/`commandForLayoutItemId` switches in
-`remote_layout_item_definitions.dart`) — a new id with no command mapping is inert.
+An entry may diverge an id on `icon`/`imageAsset`/`imageIconSize`/`brandColor` as well as
+position — both the live grid and the layout editor resolve these from whichever
+`RemoteLayoutItemDefinition` this entry provides for that id, not a fixed global one. (Before
+the grid/editor rendering fix — see Design notes below — only `col`/`row`/`width`/`height`
+overrides were safe to author; visual-identity overrides were silently ignored at render
+time.)
+
+Every id used must have a `commands`/`dispatchCommand` mapping — declarative fields on
+`RemoteLayoutItemDefinition` (`remote_layout_item_definitions.dart`) — a new id with no
+command mapping is inert.
 
 ### Step 5 — Register and verify fallback
 
@@ -146,8 +186,9 @@ entry (tier 2) or the global baseline (tier 3), not accidentally pick up this ov
 ### Step 6 — No separate drawer step
 
 Commands the adapter supports but that don't appear in this entry's item list automatically
-start in the drawer on a fresh pairing (per `goal-command-drawer.md`: no entry for a command
-in the positions map means it's not positioned, and the drawer is `supportedCommands` minus
+start in the drawer on a fresh pairing (per `goal-command-drawer.md`, on the separate
+`feature/command-drawer` branch — not present on this branch yet: no entry for a command in
+the positions map means it's not positioned, and the drawer is `supportedCommands` minus
 positioned items) — no additional wiring needed here.
 
 ---
@@ -194,5 +235,29 @@ doesn't answer "where should that button be for this specific device." The per-v
 override exists to answer the second question — the physical remote is one useful signal
 for that answer, not the only one; app-UX judgment is equally valid where it serves the user
 better than replicating the physical unit.
+
+**What happens if dozens of variants end up needing real overrides?**
+`_map` is a single `static const` literal in this one file — fine at a handful of entries,
+but each entry can hold a full `List<RemoteLayoutItemDefinition>` (heavier than
+`TvCapabilities`'s `Set<DeviceCapability>` entries), so a few dozen real overrides would make
+this file hard to scan. If that happens, split the data across per-brand files and merge them
+with the const spread operator — `layoutFor()` and every caller stay unchanged, since nothing
+outside this class ever reads `_map` directly:
+
+```dart
+// samsung_layout_overrides.dart
+const Map<(TvBrand, String), List<RemoteLayoutItemDefinition>> samsungLayoutOverrides = {
+  (TvBrand.samsung, SamsungProtocolVariants.frameVariant): [...],
+};
+
+// remote_layout_defaults.dart
+static const Map<(TvBrand, String), List<RemoteLayoutItemDefinition>> _map = {
+  ...samsungLayoutOverrides,
+  ...lgLayoutOverrides,
+};
+```
+
+Not worth building ahead of need — do this once the single-file map actually becomes hard to
+read, not before.
 
 ---

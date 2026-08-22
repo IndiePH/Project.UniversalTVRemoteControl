@@ -128,7 +128,6 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
       default:
         final width = (item.width * cellSize) + ((item.width - 1) * gridGap);
         final height = (item.height * cellSize) + ((item.height - 1) * gridGap);
-        final definition = kRemoteLayoutItemDefinitionById[item.id];
         final command = commandForLayoutItemId(item.id);
         final onPressed = command == null
             ? _noopAction
@@ -146,9 +145,9 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
               fit: BoxFit.contain,
               child: RemoteIconCircleButton(
                 icon: item.icon,
-                imageAsset: definition?.imageAsset ?? item.imageAsset,
-                imageIconSize: definition?.imageIconSize,
-                brandColor: definition?.brandColor,
+                imageAsset: item.imageAsset,
+                imageIconSize: item.imageIconSize,
+                brandColor: item.brandColor,
                 label: item.label,
                 isPower: controlsEnabled && item.isPower,
                 onPressed: onPressed,
@@ -207,9 +206,7 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
   Widget _buildSearchInputItem(LayoutEditItem item, double cellSize) {
     final width = (item.width * cellSize) + ((item.width - 1) * gridGap);
     final height = (item.height * cellSize) + ((item.height - 1) * gridGap);
-    final definition = kRemoteLayoutItemDefinitionById[item.id];
-    final keyboardIcon =
-        definition?.icon ?? item.icon ?? Icons.keyboard_outlined;
+    final keyboardIcon = item.icon ?? Icons.keyboard_outlined;
     return SizedBox(
       width: width,
       height: height,
