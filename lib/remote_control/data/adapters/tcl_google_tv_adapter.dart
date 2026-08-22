@@ -10,22 +10,39 @@ import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
+// TCL's Google TV builds have not been verified against the https:// App Link URIs
+// used by AndroidTvKeyMapper's default map (see android_tv_key_mapper.dart) — until
+// confirmed on hardware, these four commands keep the legacy `market://launch?id=...`
+// behavior TCL devices previously relied on.
+const _tclLegacyAppLinkOverrides = <RemoteCommand, CommandPayload>{
+  RemoteCommand.netflix: AppLink('market://launch?id=com.netflix.ninja'),
+  RemoteCommand.primeVideo: AppLink(
+    'market://launch?id=com.amazon.avod.thirdpartyclient',
+  ),
+  RemoteCommand.disneyPlus: AppLink('market://launch?id=com.disney.disneyplus'),
+  RemoteCommand.youtube: AppLink(
+    'market://launch?id=com.google.android.youtube.tv',
+  ),
+};
+
 class TclGoogleTvAdapter implements TvBrandAdapter {
   TclGoogleTvAdapter({required this._transportClient, CommandKeyMap? keyMap})
-    : _keyMap = keyMap ?? const AndroidTvKeyMapper();
+    : _keyMap =
+          keyMap ??
+          const VariantKeyMap(
+            AndroidTvKeyMapper(),
+            _tclLegacyAppLinkOverrides,
+          ) {
+    _supportedCommands = kCommonSupportedRemoteCommands
+        .where((command) => _keyMap.payloadFor(command) != null)
+        .toSet();
+  }
 
   final AndroidTvTransportClient _transportClient;
   final CommandKeyMap _keyMap;
+  late final Set<RemoteCommand> _supportedCommands;
 
   static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
-
-  static const Map<RemoteCommand, String> _appLinks = {
-    RemoteCommand.netflix: 'market://launch?id=com.netflix.ninja',
-    RemoteCommand.primeVideo:
-        'market://launch?id=com.amazon.avod.thirdpartyclient',
-    RemoteCommand.disneyPlus: 'market://launch?id=com.disney.disneyplus',
-    RemoteCommand.youtube: 'market://launch?id=com.google.android.youtube.tv',
-  };
 
   @override
   TvBrand get brand => TvBrand.tcl;
@@ -37,7 +54,7 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
   bool get supportsTextInput => true;
 
   @override
-  Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
+  Set<RemoteCommand> get supportedCommands => _supportedCommands;
 
   @override
   Future<void> probeConnection({required TvDevice device}) async {
@@ -82,19 +99,23 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
     required RemoteCommand command,
   }) async {
     await _transportClient.connect(deviceId: device.id);
-    final appLink = _appLinks[command];
-    if (appLink != null) {
-      await _transportClient.sendAppLink(deviceId: device.id, appLink: appLink);
-      return;
-    }
-    final keyCodes = _keyMap.keyCodesFor(command);
-    if (keyCodes.isEmpty) {
+    final payload = _keyMap.payloadFor(command);
+    if (payload == null) {
       throw UnsupportedError(
         'No TCL Google TV key mapping for command: $command',
       );
     }
-    for (final keyCode in keyCodes) {
-      await _transportClient.sendKey(deviceId: device.id, keyCode: keyCode);
+    switch (payload) {
+      case KeySequence(:final codes):
+        for (final code in codes) {
+          await _transportClient.sendKey(deviceId: device.id, keyCode: code);
+        }
+      case AppLink(:final uri):
+        await _transportClient.sendAppLink(deviceId: device.id, appLink: uri);
+      case VidaaLaunch():
+        throw UnsupportedError(
+          'TCL Google TV has no VidaaLaunch dispatch path.',
+        );
     }
   }
 

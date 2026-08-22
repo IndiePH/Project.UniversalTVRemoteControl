@@ -338,7 +338,7 @@ void main() {
   );
 
   test(
-    'Samsung adapter: app shortcuts route launch keys for web/netflix/prime',
+    'Samsung adapter: app shortcuts route via launchApp for web/netflix/prime',
     () async {
       final transport = _SpySamsungTransportClient();
       final adapter = SamsungAdapter(transportClient: transport);
@@ -356,10 +356,11 @@ void main() {
         command: RemoteCommand.primeVideo,
       );
 
-      expect(transport.sentKeyCodes, [
-        'LAUNCH:org.tizen.browser',
-        'LAUNCH:3201907018807',
-        'LAUNCH:3201910019365',
+      expect(transport.sentKeyCodes, isEmpty);
+      expect(transport.launchedAppIds, [
+        'org.tizen.browser',
+        '3201907018807',
+        '3201910019365',
       ]);
     },
   );
@@ -432,6 +433,7 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
   int clearPairingCalls = 0;
   final List<String> clearPairingDeviceIds = [];
   final List<String> sentKeyCodes = [];
+  final List<String> launchedAppIds = [];
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -458,6 +460,14 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
   }) async {
     sendKeyCalls += 1;
     sentKeyCodes.add(keyCode);
+  }
+
+  @override
+  Future<void> launchApp({
+    required String deviceId,
+    required String appId,
+  }) async {
+    launchedAppIds.add(appId);
   }
 
   @override
@@ -533,6 +543,12 @@ class _SlowSamsungTransportClient implements SamsungTransportClient {
   }) async {}
 
   @override
+  Future<void> launchApp({
+    required String deviceId,
+    required String appId,
+  }) async {}
+
+  @override
   Future<void> sendText({
     required String deviceId,
     required String text,
@@ -588,6 +604,12 @@ class _TimeoutSamsungTransportClient implements SamsungTransportClient {
   Future<void> sendKey({
     required String deviceId,
     required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> launchApp({
+    required String deviceId,
+    required String appId,
   }) async {}
 
   @override
@@ -650,6 +672,12 @@ class _RejectingSamsungTransportClient implements SamsungTransportClient {
   Future<void> sendKey({
     required String deviceId,
     required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> launchApp({
+    required String deviceId,
+    required String appId,
   }) async {}
 
   @override
@@ -719,6 +747,12 @@ class _FlakySamsungTransportClient implements SamsungTransportClient {
   Future<void> sendKey({
     required String deviceId,
     required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> launchApp({
+    required String deviceId,
+    required String appId,
   }) async {}
 
   @override

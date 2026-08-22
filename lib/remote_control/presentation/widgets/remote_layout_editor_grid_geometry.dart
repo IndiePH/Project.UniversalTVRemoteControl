@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:one_remote/remote_control/domain/models/layout_item_id.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_drop_resolver.dart';
 
@@ -7,10 +8,10 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_layout_dro
 abstract final class RemoteLayoutEditorGridGeometry {
   /// Same rules as the drop resolver: dpad/channel/volume overrides, else item dimensions.
   static RemoteLayoutItemFootprint validationFootprintFor(LayoutEditItem item) {
-    if (item.id == 'dpad') {
+    if (item.id == LayoutItemId.dpad) {
       return const RemoteLayoutItemFootprint(width: 3, height: 3);
     }
-    if (item.id == 'volume' || item.id == 'channel') {
+    if (item.id == LayoutItemId.volume || item.id == LayoutItemId.channel) {
       return const RemoteLayoutItemFootprint(width: 1, height: 3);
     }
     return RemoteLayoutItemFootprint(width: item.width, height: item.height);

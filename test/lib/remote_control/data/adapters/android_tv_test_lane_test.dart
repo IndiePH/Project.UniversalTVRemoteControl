@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_key_mapper.dart';
+import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
@@ -24,7 +25,10 @@ void main() {
   );
 
   test('AndroidTvKeyMapper: menu returns fallback key codes', () {
-    expect(mapper.keyCodesFor(RemoteCommand.menu), ['82', '176']);
+    expect(
+      mapper.payloadFor(RemoteCommand.menu),
+      const KeySequence(['82', '176']),
+    );
   });
 
   test(

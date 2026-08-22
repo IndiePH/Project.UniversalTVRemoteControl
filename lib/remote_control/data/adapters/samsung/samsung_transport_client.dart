@@ -23,6 +23,9 @@ abstract class SamsungTransportClient
 
   Future<void> sendKey({required String deviceId, required String keyCode});
 
+  /// Launches a Tizen app via `ms.channel.emit` / `ed.apps.launch`.
+  Future<void> launchApp({required String deviceId, required String appId});
+
   Future<void> sendText({required String deviceId, required String text});
 
   /// Lightweight TCP reachability check. Tries Samsung ports in order.

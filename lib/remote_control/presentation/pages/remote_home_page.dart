@@ -46,6 +46,7 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_home_devic
 import 'package:one_remote/remote_control/presentation/widgets/remote_home_status_panel.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_grid_metrics.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
+import 'package:one_remote/remote_control/presentation/widgets/remote_layout_defaults.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_editor.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_text_entry_sheet.dart';
 import 'package:one_remote/theme/app_theme.dart';
@@ -1102,12 +1103,14 @@ class _RemoteHomePageState extends State<RemoteHomePage>
         if (position == null) {
           continue;
         }
-        if (!_canPlaceItem(
-          item: item,
-          col: position.col,
-          row: position.row,
-          ignoreIds: {item.id},
-        )) {
+        item.zone = position.zone;
+        if (position.zone == LayoutZone.grid &&
+            !_canPlaceItem(
+              item: item,
+              col: position.col,
+              row: position.row,
+              ignoreIds: {item.id},
+            )) {
           continue;
         }
         item.col = position.col;
@@ -1138,6 +1141,10 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       supportedCommands: supportedCommands,
       supportsTextInput: supportsTextInput,
       forceIncludeIds: forceIncludeIds,
+      definitions: const RemoteLayoutDefaults().layoutFor(
+        device.brand,
+        device.protocolVariant,
+      ),
     );
   }
 
@@ -1148,7 +1155,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     }
     final positions = <String, LayoutPosition>{
       for (final item in _layoutItems)
-        item.id: LayoutPosition(col: item.col, row: item.row),
+        item.id: LayoutPosition(col: item.col, row: item.row, zone: item.zone),
     };
     await widget.layoutRepository.saveLayout(
       deviceId: deviceId,
@@ -1181,7 +1188,9 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     }
 
     for (final other in _layoutItems) {
-      if (other.id == item.id || ignoreIds.contains(other.id)) {
+      if (other.id == item.id ||
+          ignoreIds.contains(other.id) ||
+          other.zone != LayoutZone.grid) {
         continue;
       }
       final overlaps =
@@ -1390,7 +1399,13 @@ class _RemoteHomePageState extends State<RemoteHomePage>
                   child: _isLayoutEditMode
                       ? RemoteLayoutEditor(
                           layoutItems: _layoutItems,
-                          itemDefinitionsById: kRemoteLayoutItemDefinitionById,
+                          itemDefinitionsById: _activeDevice == null
+                              ? kRemoteLayoutItemDefinitionById
+                              : resolveItemDefinitionsById(
+                                  brand: _activeDevice!.brand,
+                                  protocolVariant:
+                                      _activeDevice!.protocolVariant,
+                                ),
                           gridColumns: kRemoteLayoutGridColumns,
                           gridRows: kRemoteLayoutGridRows,
                           gridGap: kRemoteLayoutGridGap,

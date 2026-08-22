@@ -94,6 +94,26 @@ class FakeSamsungTransportClient
   }
 
   @override
+  Future<void> launchApp({
+    required String deviceId,
+    required String appId,
+  }) async {
+    await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'samsung',
+        deviceId: deviceId,
+        type: 'app_launched',
+        message: appId,
+      ),
+    );
+    log(
+      'Samsung transport launchApp: $deviceId -> $appId',
+      name: 'samsung_transport',
+    );
+  }
+
+  @override
   Future<void> sendText({
     required String deviceId,
     required String text,

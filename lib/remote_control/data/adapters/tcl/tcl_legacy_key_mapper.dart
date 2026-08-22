@@ -5,27 +5,24 @@ class TclLegacyKeyMapper extends CommandKeyMap {
   const TclLegacyKeyMapper();
 
   @override
-  List<String> keyCodesFor(RemoteCommand command) {
-    final code = _map[command];
-    return code == null ? const [] : [code];
-  }
+  CommandPayload? payloadFor(RemoteCommand command) => _payloads[command];
 }
 
-const Map<RemoteCommand, String> _map = {
-  RemoteCommand.power: 'KEY_POWER',
-  RemoteCommand.playPause: 'KEY_PLAYPAUSE',
-  RemoteCommand.volumeUp: 'KEY_VOLUMEUP',
-  RemoteCommand.volumeDown: 'KEY_VOLUMEDOWN',
-  RemoteCommand.channelUp: 'KEY_CHANNELUP',
-  RemoteCommand.channelDown: 'KEY_CHANNELDOWN',
-  RemoteCommand.mute: 'KEY_MUTE',
-  RemoteCommand.input: 'KEY_SOURCE',
-  RemoteCommand.dpadUp: 'KEY_UP',
-  RemoteCommand.dpadDown: 'KEY_DOWN',
-  RemoteCommand.dpadLeft: 'KEY_LEFT',
-  RemoteCommand.dpadRight: 'KEY_RIGHT',
-  RemoteCommand.dpadOk: 'KEY_OK',
-  RemoteCommand.back: 'KEY_BACK',
-  RemoteCommand.home: 'KEY_HOME',
-  RemoteCommand.menu: 'KEY_MENU',
+const Map<RemoteCommand, CommandPayload> _payloads = {
+  RemoteCommand.power: KeySequence(['KEY_POWER']),
+  RemoteCommand.playPause: KeySequence(['KEY_PLAYPAUSE']),
+  RemoteCommand.volumeUp: KeySequence(['KEY_VOLUMEUP']),
+  RemoteCommand.volumeDown: KeySequence(['KEY_VOLUMEDOWN']),
+  RemoteCommand.channelUp: KeySequence(['KEY_CHANNELUP']),
+  RemoteCommand.channelDown: KeySequence(['KEY_CHANNELDOWN']),
+  RemoteCommand.mute: KeySequence(['KEY_MUTE']),
+  RemoteCommand.input: KeySequence(['KEY_SOURCE']),
+  RemoteCommand.dpadUp: KeySequence(['KEY_UP']),
+  RemoteCommand.dpadDown: KeySequence(['KEY_DOWN']),
+  RemoteCommand.dpadLeft: KeySequence(['KEY_LEFT']),
+  RemoteCommand.dpadRight: KeySequence(['KEY_RIGHT']),
+  RemoteCommand.dpadOk: KeySequence(['KEY_OK']),
+  RemoteCommand.back: KeySequence(['KEY_BACK']),
+  RemoteCommand.home: KeySequence(['KEY_HOME']),
+  RemoteCommand.menu: KeySequence(['KEY_MENU']),
 };

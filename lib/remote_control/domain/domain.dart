@@ -1,6 +1,7 @@
 export 'models/connection_state.dart';
 export 'models/device_capability.dart';
 export 'models/layout_position.dart';
+export 'models/layout_zone.dart';
 export 'models/pin_format.dart';
 export 'models/remote_command.dart';
 export 'models/tv_brand.dart';
