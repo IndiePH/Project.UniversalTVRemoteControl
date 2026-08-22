@@ -5,6 +5,7 @@ import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/presentation/metrics/remote_layout_grid_metrics.dart';
 import 'package:one_remote/remote_control/presentation/widgets/layout_edit_item.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_home_remote_grid.dart';
+import 'package:one_remote/remote_control/presentation/widgets/remote_icon_circle_button.dart';
 import 'package:one_remote/remote_control/presentation/widgets/remote_layout_item_definitions.dart';
 
 void main() {
@@ -49,4 +50,28 @@ void main() {
 
     expect(find.byIcon(Icons.volume_off), findsNothing);
   });
+
+  testWidgets(
+    'renders imageIconSize and brandColor straight from the item, not a global lookup',
+    (tester) async {
+      final item = LayoutEditItem(
+        id: 'custom-brand-item',
+        imageAsset: 'assets/icons/some_brand.svg',
+        imageIconSize: 42,
+        brandColor: const Color(0xFF112233),
+        col: 0,
+        row: 0,
+      );
+
+      await tester.pumpWidget(buildGrid(layoutItems: [item]));
+      await tester.pumpAndSettle();
+      tester.takeException();
+
+      final button = tester.widget<RemoteIconCircleButton>(
+        find.byType(RemoteIconCircleButton),
+      );
+      expect(button.imageIconSize, 42);
+      expect(button.brandColor, const Color(0xFF112233));
+    },
+  );
 }
