@@ -11,6 +11,65 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-08-22
+
+### Added
+- `CommandPayload` dispatch contract (branch `refactor/command-and-adapters`; design doc
+  `references/goals/goal-app-launch-dispatch-unification.md`, guide
+  `references/guide-command-payload-dispatch.md`): `CommandKeyMap.keyCodesFor(RemoteCommand) ->
+  List<String>` replaced with `payloadFor(RemoteCommand) -> CommandPayload?`, a sealed type with
+  three cases — `KeySequence(codes)` (dispatched via `sendKey`/`sendFrame`), `AppLink(uri)`
+  (dispatched via a brand's app-link method), `VidaaLaunch(displayName, url)` (Hisense-only, via
+  `launchVidaaApp`). Each brand's keymapper now holds exactly one
+  `Map<RemoteCommand, CommandPayload>`, replacing the three previously-inconsistent app-launch
+  mechanisms: Samsung/LG's `LAUNCH:`-prefixed sentinel sniffed by `startsWith` inside the
+  transport client's `sendKey`, AndroidTv/TclGoogleTv's second `_appLinks` map checked on the
+  adapter before the keymapper, and Hisense's tuple-returning `_vidaaLaunchSpec` switch with the
+  keymapper deliberately left empty for those commands.
+- `SamsungTransportClient` gains a real `launchApp({deviceId, appId})` method; the initial design
+  review (`fb7cfac`) had proposed a `Set<RemoteCommand> appLinkCommands` marker instead of a
+  payload type, dropped once it was clear the marker set and the key map were two collections
+  that could drift out of sync, and it couldn't represent Hisense's `(displayName, url)` tuple.
+
+### Changed
+- Every adapter's `sendCommand` is now one exhaustive switch over `payloadFor`'s result (sealed
+  type, so the compiler flags any brand that doesn't handle a new `CommandPayload` case) instead
+  of a keycode loop plus a separate app-link/vidaa branch. `supportedCommands` is now the same
+  one-liner on every brand — `kCommonSupportedRemoteCommands.where((c) => _keyMap.payloadFor(c)
+  != null).toSet()`, computed once in the constructor — replacing per-brand hand-rolled sets
+  (TclRoku's 20-command set, TclLegacyWifi's 16-command set, both confirmed to match the derived
+  set exactly) and an interim `keyCodesFor(c).isNotEmpty || _appLinks.containsKey(c)`
+  OR-workaround for AndroidTv/TclGoogleTv/Hisense (`dc96524`).
+- Samsung: the `LAUNCH:` prefix is retired entirely — `sendKey` no longer parses key codes to
+  find app-launch commands, since `launchApp` never consumed the prefix anyway (it only ever
+  used the raw Tizen app id), so direct `AppLink` dispatch produces an identical wire payload.
+- LG intentionally kept asymmetric to Samsung: app-launch commands stay `KeySequence(['LAUNCH:
+  <id>'])` dispatched through the unchanged `sendKey`/`_LgCommandFactory` path, because `menu`'s
+  settings-app fallback list also relies on the same `LAUNCH:` sentinel being interpreted there —
+  removing it for the five real app-launch commands would just duplicate the same SSAP call
+  through a second code path for no benefit. Documented on `lgLaunchPrefix`'s doc comment and in
+  the guide.
+- `guide-command-payload-dispatch.md`'s "Writing `sendCommand`" section now spells out that a new
+  dispatch case requires editing both the transport-client interface and its concrete
+  implementation, and that any test-local or debug fake using `implements` (not `extends`) needs
+  the new method added by hand — `implements` never inherits a default method body.
+
+### Fixed
+- `SamsungAdapter.preparePairing` still called the removed `keyCodesFor` during final cleanup;
+  switched to `payloadFor(RemoteCommand.back)` + an `is KeySequence` pattern match.
+- An early draft of this migration kept two separate maps per keymapper (a command map plus a
+  parallel app-link map) instead of one unified map, and briefly gave LG's app-launch commands
+  the same prefix-stripped `AppLink`+new-transport-method treatment as Samsung before the `menu`
+  fallback dependency above was traced — both reverted before landing.
+
+### Verification
+- `flutter analyze lib/ test/` clean; `flutter test` — 478 passed (up from 402), 1 pre-existing
+  skip. Samsung's five `implements SamsungTransportClient` test fakes in
+  `samsung_test_lane_test.dart` (plus the debug `FakeSamsungTransportClient`) updated with a
+  `launchApp` override; its "app shortcuts" test now asserts `transport.launchedAppIds` instead
+  of a sentinel-prefixed key code. `android_tv_key_mapper_test.dart`,
+  `lg_key_mapper_test.dart`, `hisense_key_mapper_test.dart` rewritten against `payloadFor`.
+
 ## 2026-08-21
 
 ### Added
