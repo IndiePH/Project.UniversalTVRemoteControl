@@ -452,8 +452,7 @@ class RemoteImeBatchEdit extends $pb.GeneratedMessage {
   bool hasFieldCounter() => $_has(1);
   void clearFieldCounter() => clearField(2);
 
-  List<RemoteEditInfo> get editInfo =>
-      $_getList(2) as $pb.PbList<RemoteEditInfo>;
+  List<RemoteEditInfo> get editInfo => $_getList<RemoteEditInfo>(2);
 }
 
 // ---------------------------------------------------------------------------

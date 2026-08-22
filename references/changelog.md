@@ -30,6 +30,14 @@ Keep entries short and append new updates at the top.
   review (`fb7cfac`) had proposed a `Set<RemoteCommand> appLinkCommands` marker instead of a
   payload type, dropped once it was clear the marker set and the key map were two collections
   that could drift out of sync, and it couldn't represent Hisense's `(displayName, url)` tuple.
+- `RemoteLayoutDefaults` (branch `feature/variant-remote-layout`; design doc
+  `references/goals/goal-variant-remote-layout.md`, guide
+  `references/guide-adding-variant-remote-layout.md`): a `(TvBrand, protocolVariant)`-keyed
+  override of the default remote layout, mirroring `TvCapabilities`' tier 1→2→3 fallback shape
+  (`_map[(brand,v)] ?? _map[(brand,default)] ?? kRemoteLayoutItemDefinitions`). Lives in
+  `lib/remote_control/presentation/widgets/remote_layout_defaults.dart`, not `domain/models`,
+  since `RemoteLayoutItemDefinition` itself depends on Flutter/presentation types. `_map` is
+  currently empty — no real per-variant entry has shipped yet.
 
 ### Changed
 - Every adapter's `sendCommand` is now one exhaustive switch over `payloadFor`'s result (sealed
@@ -53,6 +61,19 @@ Keep entries short and append new updates at the top.
   dispatch case requires editing both the transport-client interface and its concrete
   implementation, and that any test-local or debug fake using `implements` (not `extends`) needs
   the new method added by hand — `implements` never inherits a default method body.
+- `_buildLayoutDefaultsForDevice` (`remote_home_page.dart`) now sources its item list from
+  `RemoteLayoutDefaults().layoutFor(device.brand, device.protocolVariant)` instead of the global
+  `kRemoteLayoutItemDefinitions` — `buildFilteredRemoteLayoutItems` gained a `definitions`
+  parameter (defaulting to the global list) to make this possible. `_loadLayoutForDevice` and
+  `_resetLayoutToDefaults` both call through this one function, so a per-variant override applies
+  identically on initial load and on reset.
+- Fixed a DIP smell found while wiring the above: the live grid and layout editor re-resolved each
+  item's `imageAsset`/`imageIconSize`/`brandColor` from the single global
+  `kRemoteLayoutItemDefinitionById` at render time, ignoring whichever definition actually built
+  the item — meaning a future per-variant visual override would have been silently ignored.
+  `LayoutEditItem` now carries `imageIconSize`/`brandColor` directly (the grid no longer needs any
+  lookup); the layout editor's lookup is now variant-aware via
+  `resolveItemDefinitionsById(brand, protocolVariant)` instead of the raw global map.
 
 ### Fixed
 - `SamsungAdapter.preparePairing` still called the removed `keyCodesFor` during final cleanup;
@@ -69,6 +90,16 @@ Keep entries short and append new updates at the top.
   `launchApp` override; its "app shortcuts" test now asserts `transport.launchedAppIds` instead
   of a sentinel-prefixed key code. `android_tv_key_mapper_test.dart`,
   `lg_key_mapper_test.dart`, `hisense_key_mapper_test.dart` rewritten against `payloadFor`.
+- `RemoteLayoutDefaults`/rendering-path work: `flutter analyze lib/ test/` clean; full suite —
+  487 passed, 1 pre-existing skip. New coverage added for the parts of Design Review finding #3
+  that don't require a live per-variant entry: `RemoteLayoutDefaults.layoutFor`'s fallback,
+  `resolveItemDefinitionsById`'s baseline behavior, `buildFilteredRemoteLayoutItems`'s new
+  `definitions` parameter, and the grid rendering `imageIconSize`/`brandColor` straight from the
+  item (`remote_layout_defaults_test.dart`, new; `remote_home_remote_grid_test.dart`, +1).
+  `_buildLayoutDefaultsForDevice`/`_loadLayoutForDevice` themselves stay covered only indirectly,
+  via the existing `widget_test.dart` pairing/device-switching suite — not duplicated. Confirmed
+  on real Android TV hardware: a local test entry filtering `channel` out of the default-variant
+  catalog correctly hides it on the live grid and survives reset.
 
 ## 2026-08-21
 

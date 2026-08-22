@@ -76,6 +76,8 @@ class RemoteLayoutItemDefinition {
       id: id,
       icon: icon,
       imageAsset: imageAsset,
+      imageIconSize: imageIconSize,
+      brandColor: brandColor,
       label: label,
       col: col,
       row: row,
@@ -270,9 +272,10 @@ List<LayoutEditItem> buildFilteredRemoteLayoutItems({
   required bool supportsTextInput,
   Set<String> forceIncludeIds = const <String>{},
   Set<String>? defaultPositionedIds,
+  List<RemoteLayoutItemDefinition> definitions = kRemoteLayoutItemDefinitions,
 }) {
   final items = <LayoutEditItem>[];
-  for (final definition in kRemoteLayoutItemDefinitions) {
+  for (final definition in definitions) {
     final id = definition.id;
     final zone = resolveDefaultLayoutItemZone(
       itemId: id,
