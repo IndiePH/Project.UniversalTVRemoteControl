@@ -15,28 +15,18 @@ class RemoteLayoutDefaults {
 
   static final Map<(TvBrand, String), List<RemoteLayoutItemDefinition>> _map =
       {
-        // example
-        // (TvBrand.androidTv, AndroidTvProtocolVariants.defaultVariant): [
-        //   for (final definition in kRemoteLayoutItemDefinitions)
-        //      if (definition.id != LayoutItemId.channel) definition
-            
-        //   // custom item that's only available to this brand+variant...
-        //   //  , 
-        //   //    RemoteLayoutItemDefinition(
-        //   //      id: LayoutItemId.home,
-        //   //      icon: Icons.wallpaper,
-        //   //      label: 'ART',
-        //   //      col: 2,
-        //   //      row: 0,
-        //   //      commands: {RemoteCommand.home},
-        //   //    ),
-        //   //  ],
-        //   //
-        //   // NOTE
-        //   // Filter the id out of the spread before adding its replacement — reusing
-        //   // the same id keeps dispatch/positioning working, but appending without
-        //   // filtering would leave two 'home' entries in the list.
-        // ]
+        // example — hypothetical: Android TV's default variant omits the dedicated
+        // channel button entirely (no replacement), e.g. if most Android TV devices
+        // in this category have no tuner. Everything else falls through unchanged:
+        //
+        //  (TvBrand.androidTv, AndroidTvProtocolVariants.defaultVariant): [
+        //    for (final definition in kRemoteLayoutItemDefinitions)
+        //      if (definition.id != LayoutItemId.channel) definition,
+        //  ],
+        //
+        // Omitting an id like this removes it from the catalog entirely — see
+        // "When does an item actually show up?" in guide-adding-variant-remote-layout.md
+        // for what that means for a device with a pre-existing saved customization.
       };
 
   List<RemoteLayoutItemDefinition> layoutFor(TvBrand brand, [String? variant]) {

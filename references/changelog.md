@@ -90,12 +90,15 @@ Keep entries short and append new updates at the top.
   `launchApp` override; its "app shortcuts" test now asserts `transport.launchedAppIds` instead
   of a sentinel-prefixed key code. `android_tv_key_mapper_test.dart`,
   `lg_key_mapper_test.dart`, `hisense_key_mapper_test.dart` rewritten against `payloadFor`.
-- `RemoteLayoutDefaults`/rendering-path work: `flutter analyze` clean on every touched file.
-  Targeted suite (`remote_home_remote_grid_test.dart`, `remote_layout_editor_widget_test.dart`,
-  `remote_layout_grid_constraints_test.dart`, `remote_layout_drop_resolver_test.dart`,
-  `widget_test.dart` — 52 tests) still passes; no new tests were added for this change (Design
-  Review finding #3 in `goal-variant-remote-layout.md` — a known, still-open gap). Confirmed on
-  real Android TV hardware: a local test entry filtering `channel` out of the default-variant
+- `RemoteLayoutDefaults`/rendering-path work: `flutter analyze lib/ test/` clean; full suite —
+  487 passed, 1 pre-existing skip. New coverage added for the parts of Design Review finding #3
+  that don't require a live per-variant entry: `RemoteLayoutDefaults.layoutFor`'s fallback,
+  `resolveItemDefinitionsById`'s baseline behavior, `buildFilteredRemoteLayoutItems`'s new
+  `definitions` parameter, and the grid rendering `imageIconSize`/`brandColor` straight from the
+  item (`remote_layout_defaults_test.dart`, new; `remote_home_remote_grid_test.dart`, +1).
+  `_buildLayoutDefaultsForDevice`/`_loadLayoutForDevice` themselves stay covered only indirectly,
+  via the existing `widget_test.dart` pairing/device-switching suite — not duplicated. Confirmed
+  on real Android TV hardware: a local test entry filtering `channel` out of the default-variant
   catalog correctly hides it on the live grid and survives reset.
 
 ## 2026-08-21
