@@ -125,6 +125,30 @@ Because `CommandPayload` is `sealed`, this `switch` is exhaustiveness-checked by
 If a new subclass is ever added and a brand's `sendCommand` doesn't handle it, that adapter
 fails to compile — not silently drops the command at runtime.
 
+**Each `case` calls a real method on `_transportClient`.** If the dispatch you need doesn't
+have one yet — a brand's first `AppLink` command, or a payload shape that needs a transport
+call no existing method covers — the method has to be added to that brand's transport client
+before `sendCommand` can call it. Concretely, that means two edits, not one:
+
+1. The abstract interface (e.g. `SamsungTransportClient`, `LgTransportClient`,
+   `HisenseTransportClient`) gains the new method signature.
+2. The concrete implementation (e.g. `SamsungWebSocketTransportClient`) implements it — this
+   is where the actual network/socket/MQTT call for that dispatch action lives.
+
+If any test-local fake or debug fake (e.g. `FakeSamsungTransportClient`) implements that
+interface directly with `implements` rather than `extends`, it also needs the new method added
+by hand — `implements` never inherits a default method body, even if the interface method has
+one, so every direct implementer has to be updated or the project won't compile. This is exactly
+what happened when Samsung's `AppLink` case was added: `launchApp` had to be declared on
+`SamsungTransportClient` and implemented on `SamsungWebSocketTransportClient`, and every fake
+implementing that interface — including the 5 test-local ones in `samsung_test_lane_test.dart`
+— needed the same method added before the suite would compile again.
+
+Don't add a new `CommandPayload` subclass just to get a new transport method, though — check
+first whether the dispatch you need is actually a `KeySequence` with unusual-looking codes
+(still just `sendKey`) before assuming it needs its own type. See "Adding a brand-specific
+payload type" below for when a new subclass is actually warranted.
+
 ## Writing `supportedCommands`
 
 Uniform across every brand, no per-adapter special-casing needed:

@@ -14,11 +14,7 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
   TclGoogleTvAdapter({required this._transportClient, CommandKeyMap? keyMap})
     : _keyMap = keyMap ?? const AndroidTvKeyMapper() {
     _supportedCommands = kCommonSupportedRemoteCommands
-        .where(
-          (command) =>
-              _keyMap.keyCodesFor(command).isNotEmpty ||
-              _appLinks.containsKey(command),
-        )
+        .where((command) => _keyMap.payloadFor(command) != null)
         .toSet();
   }
 
@@ -27,14 +23,6 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
   late final Set<RemoteCommand> _supportedCommands;
 
   static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
-
-  static const Map<RemoteCommand, String> _appLinks = {
-    RemoteCommand.netflix: 'market://launch?id=com.netflix.ninja',
-    RemoteCommand.primeVideo:
-        'market://launch?id=com.amazon.avod.thirdpartyclient',
-    RemoteCommand.disneyPlus: 'market://launch?id=com.disney.disneyplus',
-    RemoteCommand.youtube: 'market://launch?id=com.google.android.youtube.tv',
-  };
 
   @override
   TvBrand get brand => TvBrand.tcl;
@@ -91,19 +79,23 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
     required RemoteCommand command,
   }) async {
     await _transportClient.connect(deviceId: device.id);
-    final appLink = _appLinks[command];
-    if (appLink != null) {
-      await _transportClient.sendAppLink(deviceId: device.id, appLink: appLink);
-      return;
-    }
-    final keyCodes = _keyMap.keyCodesFor(command);
-    if (keyCodes.isEmpty) {
+    final payload = _keyMap.payloadFor(command);
+    if (payload == null) {
       throw UnsupportedError(
         'No TCL Google TV key mapping for command: $command',
       );
     }
-    for (final keyCode in keyCodes) {
-      await _transportClient.sendKey(deviceId: device.id, keyCode: keyCode);
+    switch (payload) {
+      case KeySequence(:final codes):
+        for (final code in codes) {
+          await _transportClient.sendKey(deviceId: device.id, keyCode: code);
+        }
+      case AppLink(:final uri):
+        await _transportClient.sendAppLink(deviceId: device.id, appLink: uri);
+      case VidaaLaunch():
+        throw UnsupportedError(
+          'TCL Google TV has no VidaaLaunch dispatch path.',
+        );
     }
   }
 

@@ -20,7 +20,7 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   SamsungAdapter({required this._transportClient, CommandKeyMap? keyMapper})
     : _keyMapper = keyMapper ?? const SamsungKeyMapper() {
     _supportedCommands = kCommonSupportedRemoteCommands
-        .where((command) => _keyMapper.keyCodesFor(command).isNotEmpty)
+        .where((command) => _keyMapper.payloadFor(command) != null)
         .toSet();
   }
 
@@ -78,8 +78,11 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
 
   @override
   Future<void> preparePairing({required TvDevice device}) async {
-    final keyCodes = _keyMapper.keyCodesFor(RemoteCommand.back);
-    final triggerKeyCode = keyCodes.isNotEmpty ? keyCodes.first : 'KEY_RETURN';
+    final backPayload = _keyMapper.payloadFor(RemoteCommand.back);
+    final triggerKeyCode =
+        backPayload is KeySequence && backPayload.codes.isNotEmpty
+        ? backPayload.codes.first
+        : 'KEY_RETURN';
     await _transportClient.requestPairingApproval(
       deviceId: device.id,
       triggerKeyCode: triggerKeyCode,
@@ -110,13 +113,20 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
     required TvDevice device,
     required RemoteCommand command,
   }) async {
-    final keyCodes = _keyMapper.keyCodesFor(command);
-    if (keyCodes.isEmpty) {
+    final payload = _keyMapper.payloadFor(command);
+    if (payload == null) {
       throw UnsupportedError('No Samsung key mapping for command: $command');
     }
     await _transportClient.connect(deviceId: device.id);
-    for (final keyCode in keyCodes) {
-      await _transportClient.sendKey(deviceId: device.id, keyCode: keyCode);
+    switch (payload) {
+      case KeySequence(:final codes):
+        for (final code in codes) {
+          await _transportClient.sendKey(deviceId: device.id, keyCode: code);
+        }
+      case AppLink(:final uri):
+        await _transportClient.launchApp(deviceId: device.id, appId: uri);
+      case VidaaLaunch():
+        throw UnsupportedError('Samsung has no VidaaLaunch dispatch path.');
     }
   }
 
