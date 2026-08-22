@@ -48,26 +48,32 @@ void main() {
       commands: {RemoteCommand.power},
     );
 
-    test('iterates the passed-in definitions instead of the global catalog', () {
-      final items = buildFilteredRemoteLayoutItems(
-        supportedCommands: {RemoteCommand.power},
-        supportsTextInput: false,
-        definitions: const [onlyDefinition],
-      );
+    test(
+      'iterates the passed-in definitions instead of the global catalog',
+      () {
+        final items = buildFilteredRemoteLayoutItems(
+          supportedCommands: {RemoteCommand.power},
+          supportsTextInput: false,
+          definitions: const [onlyDefinition],
+        );
 
-      expect(items, hasLength(1));
-      expect(items.single.id, 'only-item');
-    });
+        expect(items, hasLength(1));
+        expect(items.single.id, 'only-item');
+      },
+    );
 
-    test('still applies the command-support filter against custom definitions', () {
-      final items = buildFilteredRemoteLayoutItems(
-        supportedCommands: const {},
-        supportsTextInput: false,
-        definitions: const [onlyDefinition],
-      );
+    test(
+      'still applies the command-support filter against custom definitions',
+      () {
+        final items = buildFilteredRemoteLayoutItems(
+          supportedCommands: const {},
+          supportsTextInput: false,
+          definitions: const [onlyDefinition],
+        );
 
-      expect(items, isEmpty);
-    });
+        expect(items, isEmpty);
+      },
+    );
 
     test('defaults to the global catalog when no definitions are passed', () {
       final items = buildFilteredRemoteLayoutItems(

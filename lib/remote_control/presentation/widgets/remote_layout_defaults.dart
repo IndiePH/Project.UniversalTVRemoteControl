@@ -13,21 +13,20 @@ import 'package:one_remote/remote_control/presentation/widgets/remote_layout_ite
 class RemoteLayoutDefaults {
   const RemoteLayoutDefaults();
 
-  static final Map<(TvBrand, String), List<RemoteLayoutItemDefinition>> _map =
-      {
-        // example — hypothetical: Android TV's default variant omits the dedicated
-        // channel button entirely (no replacement), e.g. if most Android TV devices
-        // in this category have no tuner. Everything else falls through unchanged:
-        //
-        //  (TvBrand.androidTv, AndroidTvProtocolVariants.defaultVariant): [
-        //    for (final definition in kRemoteLayoutItemDefinitions)
-        //      if (definition.id != LayoutItemId.channel) definition,
-        //  ],
-        //
-        // Omitting an id like this removes it from the catalog entirely — see
-        // "When does an item actually show up?" in guide-adding-variant-remote-layout.md
-        // for what that means for a device with a pre-existing saved customization.
-      };
+  static final Map<(TvBrand, String), List<RemoteLayoutItemDefinition>> _map = {
+    // example — hypothetical: Android TV's default variant omits the dedicated
+    // channel button entirely (no replacement), e.g. if most Android TV devices
+    // in this category have no tuner. Everything else falls through unchanged:
+    //
+    //  (TvBrand.androidTv, AndroidTvProtocolVariants.defaultVariant): [
+    //    for (final definition in kRemoteLayoutItemDefinitions)
+    //      if (definition.id != LayoutItemId.channel) definition,
+    //  ],
+    //
+    // Omitting an id like this removes it from the catalog entirely — see
+    // "When does an item actually show up?" in guide-adding-variant-remote-layout.md
+    // for what that means for a device with a pre-existing saved customization.
+  };
 
   List<RemoteLayoutItemDefinition> layoutFor(TvBrand brand, [String? variant]) {
     final v = variant ?? TvDevice.defaultProtocolVariant;
