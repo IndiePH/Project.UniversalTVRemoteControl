@@ -66,3 +66,17 @@ abstract class CommandKeyMap {
   /// Returns the payload for [command], or `null` if this brand/variant doesn't support it.
   CommandPayload? payloadFor(RemoteCommand command);
 }
+
+/// Decorates a base [CommandKeyMap] with a small set of per-command overrides — see
+/// `guide-adding-diverging-remote-commands.md`. Falls through to [_base] for anything
+/// [_overrides] doesn't touch, so the base mapper's full command set stays live and
+/// current automatically.
+class VariantKeyMap extends CommandKeyMap {
+  const VariantKeyMap(this._base, this._overrides);
+  final CommandKeyMap _base;
+  final Map<RemoteCommand, CommandPayload> _overrides;
+
+  @override
+  CommandPayload? payloadFor(RemoteCommand command) =>
+      _overrides[command] ?? _base.payloadFor(command);
+}

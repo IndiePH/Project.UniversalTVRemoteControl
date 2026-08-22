@@ -10,9 +10,29 @@ import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
+// TCL's Google TV builds have not been verified against the https:// App Link URIs
+// used by AndroidTvKeyMapper's default map (see android_tv_key_mapper.dart) — until
+// confirmed on hardware, these four commands keep the legacy `market://launch?id=...`
+// behavior TCL devices previously relied on.
+const _tclLegacyAppLinkOverrides = <RemoteCommand, CommandPayload>{
+  RemoteCommand.netflix: AppLink('market://launch?id=com.netflix.ninja'),
+  RemoteCommand.primeVideo: AppLink(
+    'market://launch?id=com.amazon.avod.thirdpartyclient',
+  ),
+  RemoteCommand.disneyPlus: AppLink('market://launch?id=com.disney.disneyplus'),
+  RemoteCommand.youtube: AppLink(
+    'market://launch?id=com.google.android.youtube.tv',
+  ),
+};
+
 class TclGoogleTvAdapter implements TvBrandAdapter {
   TclGoogleTvAdapter({required this._transportClient, CommandKeyMap? keyMap})
-    : _keyMap = keyMap ?? const AndroidTvKeyMapper() {
+    : _keyMap =
+          keyMap ??
+          const VariantKeyMap(
+            AndroidTvKeyMapper(),
+            _tclLegacyAppLinkOverrides,
+          ) {
     _supportedCommands = kCommonSupportedRemoteCommands
         .where((command) => _keyMap.payloadFor(command) != null)
         .toSet();
