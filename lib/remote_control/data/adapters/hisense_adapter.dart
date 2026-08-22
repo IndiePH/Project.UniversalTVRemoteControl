@@ -14,7 +14,11 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class HisenseAdapter implements TvBrandAdapter {
   HisenseAdapter({required this._transportClient, CommandKeyMap? keyMap})
-    : _keyMap = keyMap ?? const HisenseKeyMapper();
+    : _keyMap = keyMap ?? const HisenseKeyMapper() {
+    _supportedCommands = kCommonSupportedRemoteCommands
+        .where((command) => _keyMap.payloadFor(command) != null)
+        .toSet();
+  }
 
   @override
   TvBrand get brand => TvBrand.hisense;
@@ -30,10 +34,11 @@ class HisenseAdapter implements TvBrandAdapter {
   bool get supportsTextInput => _isTextInputEnabled;
 
   @override
-  Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
+  Set<RemoteCommand> get supportedCommands => _supportedCommands;
 
   final HisenseTransportClient _transportClient;
   final CommandKeyMap _keyMap;
+  late final Set<RemoteCommand> _supportedCommands;
   final Map<String, Future<void>> _connectInFlight = {};
   static const bool _isTextInputEnabled = bool.fromEnvironment(
     'HISENSE_ENABLE_TEXT_INPUT',
@@ -91,30 +96,29 @@ class HisenseAdapter implements TvBrandAdapter {
     required TvDevice device,
     required RemoteCommand command,
   }) async {
-    final launch = _vidaaLaunchSpec(command);
-    if (launch != null) {
-      await _transportClient.connect(deviceId: device.id);
-      await _transportClient.launchVidaaApp(
-        deviceId: device.id,
-        displayName: launch.$1,
-        url: launch.$2,
-      );
-      return;
-    }
-
-    final keyCodes = _keyMap.keyCodesFor(command);
-    if (keyCodes.isEmpty) {
+    final payload = _keyMap.payloadFor(command);
+    if (payload == null) {
       throw UnsupportedError('No Hisense mapping for command: $command');
     }
-
     await _transportClient.connect(deviceId: device.id);
-    // VIDAA firmwares vary in which key alias they recognize for a given
-    // logical command (e.g. KEY_RETURNS vs KEY_RETURN vs KEY_BACK). MQTT
-    // sendkey is fire-and-forget atMostOnce with no per-key ack channel, so
-    // we publish each known alias in order; the TV silently ignores aliases
-    // it does not recognize and acts on the one it does.
-    for (final keyName in keyCodes) {
-      await _transportClient.sendKey(deviceId: device.id, keyName: keyName);
+    switch (payload) {
+      case KeySequence(:final codes):
+        // VIDAA firmwares vary in which key alias they recognize for a given
+        // logical command (e.g. KEY_RETURNS vs KEY_RETURN vs KEY_BACK). MQTT
+        // sendkey is fire-and-forget atMostOnce with no per-key ack channel, so
+        // we publish each known alias in order; the TV silently ignores aliases
+        // it does not recognize and acts on the one it does.
+        for (final code in codes) {
+          await _transportClient.sendKey(deviceId: device.id, keyName: code);
+        }
+      case AppLink():
+        throw UnsupportedError('Hisense has no AppLink dispatch path.');
+      case VidaaLaunch(:final displayName, :final url):
+        await _transportClient.launchVidaaApp(
+          deviceId: device.id,
+          displayName: displayName,
+          url: url,
+        );
     }
   }
 
@@ -147,18 +151,5 @@ class HisenseAdapter implements TvBrandAdapter {
       );
     }
     await _transportClient.sendText(deviceId: device.id, text: text);
-  }
-
-  /// Returns `(displayName, url)` for MQTT `launchapp` when [command] is an
-  /// app shortcut; otherwise `null` (handled via `sendkey`).
-  (String, String)? _vidaaLaunchSpec(RemoteCommand command) {
-    return switch (command) {
-      RemoteCommand.netflix => ('Netflix', 'netflix'),
-      RemoteCommand.primeVideo => ('Amazon', 'amazon'),
-      RemoteCommand.disneyPlus => ('Disney+', 'disneyplus'),
-      RemoteCommand.youtube => ('YouTube', 'youtube'),
-      RemoteCommand.web => ('YouTube', 'youtube'),
-      _ => null,
-    };
   }
 }

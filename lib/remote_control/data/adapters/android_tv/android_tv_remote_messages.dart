@@ -876,8 +876,10 @@ class RemoteStart extends $pb.GeneratedMessage {
 
 // ---------------------------------------------------------------------------
 // RemoteAppLinkLaunchRequest  (field 90 in RemoteMessage)
-// Launches an app on the Android TV device by deep-link URI.
-// app_link is typically 'market://launch?id=<packageName>'.
+// Launches an app on the Android TV device by deep-link URI. The TV resolves app_link
+// via Intent.parseUri(), so it must be a URI the target app registers a native intent
+// filter for — typically an https:// App Link (e.g. 'https://www.netflix.com'), not
+// the legacy, now-unreliable `market://launch?id=<packageName>` Play Store scheme.
 // ---------------------------------------------------------------------------
 
 class RemoteAppLinkLaunchRequest extends $pb.GeneratedMessage {
