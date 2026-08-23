@@ -1114,30 +1114,67 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       );
 
     if (isPro) {
-      for (final item in _layoutItems) {
-        final position = saved[item.id];
-        if (position == null) {
-          continue;
-        }
-        item.zone = position.zone;
-        if (position.zone == LayoutZone.grid &&
-            !_canPlaceItem(
-              item: item,
-              col: position.col,
-              row: position.row,
-              ignoreIds: {item.id},
-            )) {
-          continue;
-        }
-        item.col = position.col;
-        item.row = position.row;
-      }
+      _restoreSavedPositions(saved);
     }
 
     if (!mounted) {
       return;
     }
     setState(() {});
+  }
+
+  /// Applies [saved] positions onto `_layoutItems` (already populated with
+  /// default positions by the caller).
+  ///
+  /// Every saved position is applied unconditionally first, then the fully
+  /// restored layout is validated and only items still genuinely invalid
+  /// (out of bounds, or truly overlapping another item in the final
+  /// arrangement) fall back to their default cell.
+  ///
+  /// This must be a two-pass restore, not a single pass that validates each
+  /// item as it's applied: `_layoutItems` starts at default positions, so
+  /// validating item A's saved cell against item B's still-default cell
+  /// (because B hasn't been reached in the loop yet) can reject a
+  /// perfectly valid saved arrangement — most commonly, restoring a swap of
+  /// two items, where each one's saved cell is exactly the other's default
+  /// cell. Applying every saved position first means every item is at its
+  /// true final position by the time anything gets validated.
+  void _restoreSavedPositions(Map<String, LayoutPosition> saved) {
+    final defaultPositionById = <String, LayoutPosition>{
+      for (final item in _layoutItems)
+        item.id: LayoutPosition(col: item.col, row: item.row, zone: item.zone),
+    };
+
+    for (final item in _layoutItems) {
+      final position = saved[item.id];
+      if (position == null) {
+        continue;
+      }
+      item.zone = position.zone;
+      item.col = position.col;
+      item.row = position.row;
+    }
+
+    for (final item in _layoutItems) {
+      if (saved[item.id] == null || item.zone != LayoutZone.grid) {
+        continue;
+      }
+      if (_canPlaceItem(
+        item: item,
+        col: item.col,
+        row: item.row,
+        ignoreIds: {item.id},
+      )) {
+        continue;
+      }
+      final fallback = defaultPositionById[item.id];
+      if (fallback == null) {
+        continue;
+      }
+      item.zone = fallback.zone;
+      item.col = fallback.col;
+      item.row = fallback.row;
+    }
   }
 
   List<LayoutEditItem> _buildLayoutDefaultsForDevice(
