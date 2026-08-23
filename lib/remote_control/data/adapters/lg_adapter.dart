@@ -14,7 +14,11 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class LgAdapter implements TvBrandAdapter {
   LgAdapter({required this._transportClient, CommandKeyMap? keyMap})
-    : _keyMap = keyMap ?? const LgKeyMapper();
+    : _keyMap = keyMap ?? const LgKeyMapper() {
+    _supportedCommands = kCommonSupportedRemoteCommands
+        .where((command) => _keyMap.payloadFor(command) != null)
+        .toSet();
+  }
 
   @override
   TvBrand get brand => TvBrand.lg;
@@ -26,10 +30,11 @@ class LgAdapter implements TvBrandAdapter {
   bool get supportsTextInput => true;
 
   @override
-  Set<RemoteCommand> get supportedCommands => kCommonSupportedRemoteCommands;
+  Set<RemoteCommand> get supportedCommands => _supportedCommands;
 
   final LgTransportClient _transportClient;
   final CommandKeyMap _keyMap;
+  late final Set<RemoteCommand> _supportedCommands;
   final Map<String, Future<void>> _connectInFlight = {};
 
   @override
@@ -84,13 +89,20 @@ class LgAdapter implements TvBrandAdapter {
     required TvDevice device,
     required RemoteCommand command,
   }) async {
-    final keyCodes = _keyMap.keyCodesFor(command);
-    if (keyCodes.isEmpty) {
+    final payload = _keyMap.payloadFor(command);
+    if (payload == null) {
       throw UnsupportedError('No LG key mapping for command: $command');
     }
     await _transportClient.connect(deviceId: device.id);
-    for (final keyCode in keyCodes) {
-      await _transportClient.sendKey(deviceId: device.id, keyCode: keyCode);
+    switch (payload) {
+      case KeySequence(:final codes):
+        for (final code in codes) {
+          await _transportClient.sendKey(deviceId: device.id, keyCode: code);
+        }
+      case AppLink():
+        throw UnsupportedError('LG has no AppLink dispatch path.');
+      case VidaaLaunch():
+        throw UnsupportedError('LG has no VidaaLaunch dispatch path.');
     }
   }
 

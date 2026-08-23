@@ -3,6 +3,104 @@
 This changelog provides a quick summary of product and implementation direction updates.
 Keep entries short and append new updates at the top.
 
+> ⚠️ **Standing notice, not a dated entry — check on every changelog update:** any change
+> to app startup, DI bootstrap, or the device discovery/pairing/selection flow may make
+> `references/app-initialization-and-remote-selection-flow.md` stale. If an entry you're
+> adding touches `main.dart`, `di_bootstrap.dart`, `remote_control_di_config.dart`,
+> `one_remote_app.dart`, `remote_home_page.dart`'s device-activation path, `pairing_page.dart`,
+> `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
+> that doc alongside the changelog entry.
+
+## 2026-08-22
+
+### Added
+- `CommandPayload` dispatch contract (branch `refactor/command-and-adapters`; design doc
+  `references/goals/goal-app-launch-dispatch-unification.md`, guide
+  `references/guide-command-payload-dispatch.md`): `CommandKeyMap.keyCodesFor(RemoteCommand) ->
+  List<String>` replaced with `payloadFor(RemoteCommand) -> CommandPayload?`, a sealed type with
+  three cases — `KeySequence(codes)` (dispatched via `sendKey`/`sendFrame`), `AppLink(uri)`
+  (dispatched via a brand's app-link method), `VidaaLaunch(displayName, url)` (Hisense-only, via
+  `launchVidaaApp`). Each brand's keymapper now holds exactly one
+  `Map<RemoteCommand, CommandPayload>`, replacing the three previously-inconsistent app-launch
+  mechanisms: Samsung/LG's `LAUNCH:`-prefixed sentinel sniffed by `startsWith` inside the
+  transport client's `sendKey`, AndroidTv/TclGoogleTv's second `_appLinks` map checked on the
+  adapter before the keymapper, and Hisense's tuple-returning `_vidaaLaunchSpec` switch with the
+  keymapper deliberately left empty for those commands.
+- `SamsungTransportClient` gains a real `launchApp({deviceId, appId})` method; the initial design
+  review (`fb7cfac`) had proposed a `Set<RemoteCommand> appLinkCommands` marker instead of a
+  payload type, dropped once it was clear the marker set and the key map were two collections
+  that could drift out of sync, and it couldn't represent Hisense's `(displayName, url)` tuple.
+- `RemoteLayoutDefaults` (branch `feature/variant-remote-layout`; design doc
+  `references/goals/goal-variant-remote-layout.md`, guide
+  `references/guide-adding-variant-remote-layout.md`): a `(TvBrand, protocolVariant)`-keyed
+  override of the default remote layout, mirroring `TvCapabilities`' tier 1→2→3 fallback shape
+  (`_map[(brand,v)] ?? _map[(brand,default)] ?? kRemoteLayoutItemDefinitions`). Lives in
+  `lib/remote_control/presentation/widgets/remote_layout_defaults.dart`, not `domain/models`,
+  since `RemoteLayoutItemDefinition` itself depends on Flutter/presentation types. `_map` is
+  currently empty — no real per-variant entry has shipped yet.
+
+### Changed
+- Every adapter's `sendCommand` is now one exhaustive switch over `payloadFor`'s result (sealed
+  type, so the compiler flags any brand that doesn't handle a new `CommandPayload` case) instead
+  of a keycode loop plus a separate app-link/vidaa branch. `supportedCommands` is now the same
+  one-liner on every brand — `kCommonSupportedRemoteCommands.where((c) => _keyMap.payloadFor(c)
+  != null).toSet()`, computed once in the constructor — replacing per-brand hand-rolled sets
+  (TclRoku's 20-command set, TclLegacyWifi's 16-command set, both confirmed to match the derived
+  set exactly) and an interim `keyCodesFor(c).isNotEmpty || _appLinks.containsKey(c)`
+  OR-workaround for AndroidTv/TclGoogleTv/Hisense (`dc96524`).
+- Samsung: the `LAUNCH:` prefix is retired entirely — `sendKey` no longer parses key codes to
+  find app-launch commands, since `launchApp` never consumed the prefix anyway (it only ever
+  used the raw Tizen app id), so direct `AppLink` dispatch produces an identical wire payload.
+- LG intentionally kept asymmetric to Samsung: app-launch commands stay `KeySequence(['LAUNCH:
+  <id>'])` dispatched through the unchanged `sendKey`/`_LgCommandFactory` path, because `menu`'s
+  settings-app fallback list also relies on the same `LAUNCH:` sentinel being interpreted there —
+  removing it for the five real app-launch commands would just duplicate the same SSAP call
+  through a second code path for no benefit. Documented on `lgLaunchPrefix`'s doc comment and in
+  the guide.
+- `guide-command-payload-dispatch.md`'s "Writing `sendCommand`" section now spells out that a new
+  dispatch case requires editing both the transport-client interface and its concrete
+  implementation, and that any test-local or debug fake using `implements` (not `extends`) needs
+  the new method added by hand — `implements` never inherits a default method body.
+- `_buildLayoutDefaultsForDevice` (`remote_home_page.dart`) now sources its item list from
+  `RemoteLayoutDefaults().layoutFor(device.brand, device.protocolVariant)` instead of the global
+  `kRemoteLayoutItemDefinitions` — `buildFilteredRemoteLayoutItems` gained a `definitions`
+  parameter (defaulting to the global list) to make this possible. `_loadLayoutForDevice` and
+  `_resetLayoutToDefaults` both call through this one function, so a per-variant override applies
+  identically on initial load and on reset.
+- Fixed a DIP smell found while wiring the above: the live grid and layout editor re-resolved each
+  item's `imageAsset`/`imageIconSize`/`brandColor` from the single global
+  `kRemoteLayoutItemDefinitionById` at render time, ignoring whichever definition actually built
+  the item — meaning a future per-variant visual override would have been silently ignored.
+  `LayoutEditItem` now carries `imageIconSize`/`brandColor` directly (the grid no longer needs any
+  lookup); the layout editor's lookup is now variant-aware via
+  `resolveItemDefinitionsById(brand, protocolVariant)` instead of the raw global map.
+
+### Fixed
+- `SamsungAdapter.preparePairing` still called the removed `keyCodesFor` during final cleanup;
+  switched to `payloadFor(RemoteCommand.back)` + an `is KeySequence` pattern match.
+- An early draft of this migration kept two separate maps per keymapper (a command map plus a
+  parallel app-link map) instead of one unified map, and briefly gave LG's app-launch commands
+  the same prefix-stripped `AppLink`+new-transport-method treatment as Samsung before the `menu`
+  fallback dependency above was traced — both reverted before landing.
+
+### Verification
+- `flutter analyze lib/ test/` clean; `flutter test` — 478 passed (up from 402), 1 pre-existing
+  skip. Samsung's five `implements SamsungTransportClient` test fakes in
+  `samsung_test_lane_test.dart` (plus the debug `FakeSamsungTransportClient`) updated with a
+  `launchApp` override; its "app shortcuts" test now asserts `transport.launchedAppIds` instead
+  of a sentinel-prefixed key code. `android_tv_key_mapper_test.dart`,
+  `lg_key_mapper_test.dart`, `hisense_key_mapper_test.dart` rewritten against `payloadFor`.
+- `RemoteLayoutDefaults`/rendering-path work: `flutter analyze lib/ test/` clean; full suite —
+  487 passed, 1 pre-existing skip. New coverage added for the parts of Design Review finding #3
+  that don't require a live per-variant entry: `RemoteLayoutDefaults.layoutFor`'s fallback,
+  `resolveItemDefinitionsById`'s baseline behavior, `buildFilteredRemoteLayoutItems`'s new
+  `definitions` parameter, and the grid rendering `imageIconSize`/`brandColor` straight from the
+  item (`remote_layout_defaults_test.dart`, new; `remote_home_remote_grid_test.dart`, +1).
+  `_buildLayoutDefaultsForDevice`/`_loadLayoutForDevice` themselves stay covered only indirectly,
+  via the existing `widget_test.dart` pairing/device-switching suite — not duplicated. Confirmed
+  on real Android TV hardware: a local test entry filtering `channel` out of the default-variant
+  catalog correctly hides it on the live grid and survives reset.
+
 ## 2026-08-21
 
 ### Changed
@@ -44,6 +142,77 @@ Keep entries short and append new updates at the top.
 - `flutter analyze` — no issues found.
 - Final Phase 6 router-reboot integration and interrupted-migration coverage
   remains pending.
+
+### Added
+- Command drawer (branch `feature/command-drawer`; full design/implementation log:
+  `references/goals/goal-command-drawer.md`): `LayoutPosition`/`LayoutEditItem` gain a `zone`
+  field (`LayoutZone.grid` / `LayoutZone.drawer`) — a non-breaking `SharedPreferences` addition,
+  absent key defaults to `grid`. `RemoteLayoutEditor` gains an always-visible drawer strip
+  between the header and the grid canvas: drag a button into it to park it, drag a parked
+  button back out to restore it at its own `col`/`row`. Both directions auto-persist immediately,
+  matching the existing save-on-drop pattern; the editor header reset still clears any
+  drawer-parked state back to defaults. The strip scrolls via tap/hold left-right chevrons
+  (dragging past its edge would conflict with dragging items) and matches the grid's width
+  exactly when there's room for the chevrons outside it; on screens too narrow for that budget
+  the chevrons hide instead of the layout overflowing.
+- Catalog gap closed: `youtube` and `input` were valid `RemoteCommand`s with no layout-item
+  entry anywhere — added to `kRemoteLayoutItemDefinitions` (16 items, up from 14).
+- `RemoteLayoutItemDefinition`'s required-command/dispatch-command switch statements replaced
+  with declarative fields — `commands: Set<RemoteCommand>` plus a derived `dispatchCommand`
+  getter — closing the split-registry-drift bug class that let `youtube`/`input` go unnoticed
+  for as long as they did.
+- `LayoutItemId`: named `static const String` constants replace scattered magic-string item
+  ids (kept as plain `String`, not an enum — the drop-resolver's tests construct synthetic
+  non-catalog ids a closed enum can't represent).
+
+### Changed
+- `buildFilteredRemoteLayoutItems` gains an optional `defaultPositionedIds` parameter and a
+  pure `resolveDefaultLayoutItemZone` helper deciding each item's starting zone. Currently
+  always called with `null` (no per-variant default set exists yet — that's
+  `goal-variant-remote-layout.md`'s job), so today's rendered layout is unchanged; this is
+  plumbing for that future work, not a visible behavior change yet.
+- `RemoteLayoutEditorGridGeometry.occupancyByCell` is now built from a grid-only-filtered item
+  list inside the editor, fixing a real bug: a drawer-parked item (which keeps its last real
+  `col`/`row`, preserved for a possible future "restore to last spot") would otherwise keep
+  blocking its old grid cell from new drops.
+- `RemoteLayoutEditor`'s item-id lookup map is now built once per `build()` and passed down,
+  instead of rebuilt from scratch inside every drag callback. The shared setState +
+  markDropAccepted + persist wiring for both the grid and drawer drop paths is now one
+  `_applyDropAndPersist` helper instead of duplicated inline.
+
+### Fixed
+- Self-review caught a DRY/SRP miss in the drawer strip's initial diff: the ~60-line
+  drag-lifecycle widget block (feedback preview, drag callbacks, anchor recording) was
+  duplicated between the grid and drawer render paths; extracted to a shared
+  `_buildDraggableItemPreview`.
+- Real-device testing found the live (non-edit-mode) remote grid never filtered out
+  drawer-parked items — only the editor did — so removing a button never actually removed it
+  from the remote you actually use (`RemoteHomeRemoteGrid`, previously untested).
+- A narrow-screen `RenderFlex` overflow root-caused to the header instruction text exceeding
+  its fixed-height budget, not the drawer strip itself (an initial fix reflexively shrank the
+  drawer's item/strip sizing without checking touch-target/readability impact, then reverted
+  once the real cause was found and given `maxLines`/`overflow` protection — same fix later
+  applied to the header title text, which had the identical latent gap).
+- `RemoteHomePage._canPlaceItem` checked saved-layout cell occupancy against all items
+  including drawer-parked ones, whose stale grid `col`/`row` (never cleared on parking) could
+  falsely block a *different* item from landing at its own saved grid position on reload.
+- Drawer scroll chevrons now match the app's shared button visuals (ripple, tooltip/accessible
+  label) instead of a bare `GestureDetector` + `Icon`.
+
+### Verification
+- `flutter analyze` clean throughout. Full suite: 480 passed (up from 402 pre-feature), across
+  four rounds of real-device testing and two code-review passes. New/extended coverage
+  includes `shared_prefs_layout_repository_test.dart` (zone round-trip, legacy-JSON-no-zone-key
+  defaults to grid), `remote_layout_grid_constraints_test.dart` (drawer items excluded from
+  cell occupancy), `remote_home_remote_grid_test.dart` (new file — live grid zone filtering),
+  and `remote_layout_editor_widget_test.dart` (simulated drags, chevron tap/hold scroll,
+  drawer-width-vs-grid-width at multiple viewport widths, narrow-screen overflow regressions).
+  `remote_layout_drop_resolver_test.dart` confirmed, not assumed, to need no changes — the
+  resolver is entirely zone-agnostic by design.
+- Pro-gating confirmed to cover the drawer with no new gating code: `RemoteLayoutEditor` (grid
+  canvas and drawer strip together, as one widget) is only constructed when `_isLayoutEditMode`
+  is true, which a non-Pro user can never set — traced the actual toggle-button wiring rather
+  than assuming.
 
 ## 2026-08-15
 

@@ -13,7 +13,6 @@ import 'package:one_remote/remote_control/data/adapters/samsung/samsung_remote_t
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_logging.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_ws_handshake.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_tls_trust_store.dart';
-import 'package:one_remote/remote_control/data/adapters/samsung/samsung_app_launch.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_authorization.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 
@@ -261,12 +260,6 @@ class SamsungWebSocketTransportClient
     required String deviceId,
     required String keyCode,
   }) async {
-    if (keyCode.startsWith(samsungLaunchPrefix)) {
-      final appId = keyCode.substring(samsungLaunchPrefix.length);
-      await launchApp(deviceId: deviceId, appId: appId);
-      return;
-    }
-
     final socket = await _socketFor(deviceId);
     await _applyKeyPacing(deviceId);
 
@@ -292,6 +285,7 @@ class SamsungWebSocketTransportClient
   }
 
   /// Launches a Tizen app via `ms.channel.emit` / `ed.apps.launch`.
+  @override
   Future<void> launchApp({
     required String deviceId,
     required String appId,

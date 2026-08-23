@@ -1,8 +1,13 @@
 # Guide: Android TV / Google TV Remote Protocol
 
 This document covers the platform distinction between Android TV and Google TV,
-the remote control protocol they share, and how a future adapter would fit into
-this project's architecture.
+the remote control protocol they share, and how the adapter fits into this
+project's architecture.
+
+**Status: implemented.** `AndroidTvAdapter` and `TclGoogleTvAdapter` both ship today
+(`references/product_specs.md` §6/§implementation — "Adapter shipped... experimental
+support tier"). The sections below describe the current, real implementation, not a
+future one.
 
 ---
 
@@ -118,13 +123,68 @@ directly:
 | Channel Up | `KEYCODE_CHANNEL_UP` (166) |
 | Channel Down | `KEYCODE_CHANNEL_DOWN` (167) |
 
-The protobuf message wraps a key code and an action type (`KEY_DOWN` / `KEY_UP`).
+The protobuf message (`RemoteKeyInject`) wraps a `key_code` and a `RemoteDirection`:
+
+```
+UNKNOWN_DIRECTION = 0
+START_LONG        = 1   ← start of long press
+END_LONG          = 2   ← end of long press
+SHORT             = 3   ← normal tap/press — used for every standard button send
+```
+
+### App launch (Netflix, YouTube, Prime Video, Disney+, ...)
+
+Sent as `RemoteAppLinkLaunchRequest` (field 90 on `RemoteMessage`), carrying a single
+`app_link` string. The TV resolves this via `Intent.parseUri()`, so it must be a URI the
+target app registers a native intent filter for. `AndroidTvKeyMapper` uses `https://`
+App Links (e.g. `https://www.netflix.com`) — see `android_tv_key_mapper.dart`. The
+legacy `market://launch?id=<packageName>` scheme (an undocumented Play Store intent)
+is no longer reliable on current Android TV/Google TV builds; it's kept only as a
+`VariantKeyMap` override on `TclGoogleTvAdapter` until verified against the `https://`
+alternative on real TCL hardware.
 
 ### Text input
 
 Text input is supported by sending individual key events for each character, or via
-a dedicated `RemoteImeSendEvent` message in the protobuf schema that delivers a string
-directly to the focused text field.
+the `RemoteImeBatchEdit` message in the protobuf schema, which delivers a string
+directly to the focused text field. The required sub-fields (`RemoteEditInfo`,
+`RemoteImeObject`, counters) are non-obvious — cross-check against the Python
+`send_text_command` implementation in `tronikos/androidtvremote2` before changing
+`sendText` in `android_tv_tcp_transport_client.dart`.
+
+### Pairing handshake
+
+All pairing messages wrap in `OuterMessage` (`polo.proto`), exchanged over port 6467:
+
+1. Client sends `OuterMessage { pairing_request { service_name, client_name } }`
+2. TV sends `OuterMessage { pairing_request_ack { server_name } }` — TV now shows a PIN
+3. Client sends `OuterMessage { options { input_encodings, output_encodings } }`
+4. TV sends `OuterMessage { configuration { encoding, client_role } }`
+5. Client sends `OuterMessage { configuration_ack }` (empty)
+6. Client sends `OuterMessage { secret { secret: <computed_bytes> } }`
+7. TV sends `OuterMessage { secret_ack { secret: <echo> } }` — pairing success
+
+Each message is preceded by a 4-byte big-endian length prefix on the wire (confirmed
+against the Python `connection.py` reference).
+
+**Pairing code format:** 6 hex characters (e.g. `"F3A2C1"`), not a 4-digit decimal PIN.
+Characters 0–1 are a verification/checksum byte; characters 2–5 feed the secret formula.
+
+**Secret formula** (from the Python source, exact):
+
+```python
+h = hashlib.sha256()
+h.update(bytes.fromhex(f"{client_modulus:X}"))
+h.update(bytes.fromhex(f"0{client_exponent:X}"))
+h.update(bytes.fromhex(f"{server_modulus:X}"))
+h.update(bytes.fromhex(f"0{server_exponent:X}"))
+h.update(bytes.fromhex(pairing_code[2:]))  # last 4 hex chars only
+secret_bytes = h.digest()
+```
+
+Verify: `secret_bytes[0] == int(pairing_code[0:2], 16)`. The four `modulus`/`exponent`
+values are the RSA key components from the client's and server's certificates — not
+the full DER-encoded public key.
 
 ---
 
@@ -140,8 +200,6 @@ directly to the focused text field.
 
 The structural pattern is the same: TLS transport with a one-time pairing ceremony that
 produces a persisted credential (token / certificate), and then stateless command dispatch.
-An `AndroidTvTransportClient` would implement the same `TransportClient` interface as the
-Samsung and LG clients.
 
 ## Why one adapter covers Android TV, Google TV, and Chromecast
 
@@ -166,22 +224,29 @@ The protocol variants system in this project handles the real differences:
 
 ## Adapter architecture fit
 
-A future adapter would follow the existing pattern:
-
 ```
 lib/remote_control/data/adapters/
-  android_tv_adapter.dart               ← TvBrandAdapter implementation
+  android_tv_adapter.dart                 ← TvBrandAdapter implementation (TvBrand.androidTv)
+  tcl_google_tv_adapter.dart               ← TvBrandAdapter implementation (TvBrand.tcl,
+                                              protocolVariant googleTv) — reuses AndroidTvKeyMapper
+                                              via VariantKeyMap for its app-launch overrides
   android_tv/
-    android_tv_key_mapper.dart          ← RemoteCommand → Android KeyEvent int
-    android_tv_protocol_variants.dart   ← variant constants + predicates
-    android_tv_transport_client.dart    ← abstract transport interface
-    real_android_tv_transport_client.dart
+    android_tv_key_mapper.dart            ← RemoteCommand → CommandPayload (KeySequence/AppLink)
+    android_tv_protocol_variants.dart     ← variant constants + predicates
+    android_tv_transport_client.dart      ← abstract transport interface
+    android_tv_tcp_transport_client.dart  ← real transport (protobuf/TLS)
+    android_tv_certificate_store.dart     ← RSA keypair + self-signed cert persistence
+    android_tv_remote_messages.dart       ← hand-written protobuf message classes
+    android_tv_pairing_messages.dart      ← hand-written pairing (polo.proto) message classes
+  debug/
     fake_android_tv_transport_client.dart
 ```
 
-`TvBrand` would gain a new `androidTv` value. Because Google TV runs on Android TV,
-no separate `googleTv` brand is needed — the same adapter handles both, potentially
-with a protocol variant distinguishing them if behavioral differences are discovered.
+`TvBrand.androidTv` covers Android TV. Because Google TV runs on Android TV, it does not
+get its own `TvBrand` value — `TclGoogleTvAdapter` instead reports `TvBrand.tcl` with a
+distinct `protocolVariant`, since TCL also ships a non-Google-TV line under the same
+brand. Any other Google TV device (e.g. a Sony Bravia) would use `AndroidTvAdapter`
+directly rather than needing a brand-specific subclass.
 
 ---
 
@@ -220,9 +285,16 @@ developer mode on the TV — not a viable UX for a consumer app. Avoid this path
 
 ## Implementation status
 
-Per `references/product_specs.md` §6, Android TV / Google TV is a **Post-MVP expansion
-candidate** with "High" protocol maturity. Re-prioritize when test hardware or a verified
-external tester is available.
+Shipped — `AndroidTvAdapter` and `TclGoogleTvAdapter` are both live, listed in
+`references/product_specs.md` §6 as "Adapter shipped... experimental support tier."
+
+`AndroidTvKeyMapper`'s `https://` App Link URIs (`android_tv_key_mapper.dart`) are
+hardware-confirmed working on real hardware for Prime Video, Disney+, and YouTube.
+Netflix required a path segment — the bare `https://www.netflix.com` domain falls
+through to a browser instead of the app; `https://www.netflix.com/title` resolves
+correctly. Still open: whether `TclGoogleTvAdapter`'s legacy `market://`
+`VariantKeyMap` override (kept for TCL hardware not yet tested against the `https://`
+links) can be dropped once TCL is verified.
 
 ---
 

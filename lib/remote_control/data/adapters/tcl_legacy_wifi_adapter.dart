@@ -1,5 +1,6 @@
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
+import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_legacy_key_mapper.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_legacy_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variants.dart';
@@ -11,29 +12,15 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class TclLegacyWifiAdapter implements TvBrandAdapter {
   TclLegacyWifiAdapter({required this._transportClient, CommandKeyMap? keyMap})
-    : _keyMap = keyMap ?? const TclLegacyKeyMapper();
+    : _keyMap = keyMap ?? const TclLegacyKeyMapper() {
+    _supportedCommands = kCommonSupportedRemoteCommands
+        .where((command) => _keyMap.payloadFor(command) != null)
+        .toSet();
+  }
 
   final TclLegacyTransportClient _transportClient;
   final CommandKeyMap _keyMap;
-
-  static const Set<RemoteCommand> _supportedCommands = {
-    RemoteCommand.power,
-    RemoteCommand.playPause,
-    RemoteCommand.volumeUp,
-    RemoteCommand.volumeDown,
-    RemoteCommand.channelUp,
-    RemoteCommand.channelDown,
-    RemoteCommand.mute,
-    RemoteCommand.input,
-    RemoteCommand.dpadUp,
-    RemoteCommand.dpadDown,
-    RemoteCommand.dpadLeft,
-    RemoteCommand.dpadRight,
-    RemoteCommand.dpadOk,
-    RemoteCommand.back,
-    RemoteCommand.home,
-    RemoteCommand.menu,
-  };
+  late final Set<RemoteCommand> _supportedCommands;
 
   @override
   TvBrand get brand => TvBrand.tcl;
@@ -86,11 +73,25 @@ class TclLegacyWifiAdapter implements TvBrandAdapter {
     required RemoteCommand command,
   }) async {
     await _transportClient.connect(deviceId: device.id);
-    final frame = _keyMap.primaryKeyCodeFor(command);
-    if (frame == null) {
+    final payload = _keyMap.payloadFor(command);
+    if (payload == null) {
       throw UnsupportedError('No TCL legacy key mapping for command: $command');
     }
-    await _transportClient.sendFrame(deviceId: device.id, frame: frame);
+    switch (payload) {
+      case KeySequence(:final codes):
+        await _transportClient.sendFrame(
+          deviceId: device.id,
+          frame: codes.first,
+        );
+      case AppLink():
+        throw UnsupportedError(
+          'TCL legacy Wi-Fi has no app-link dispatch path.',
+        );
+      case VidaaLaunch():
+        throw UnsupportedError(
+          'TCL legacy Wi-Fi has no VidaaLaunch dispatch path.',
+        );
+    }
   }
 
   @override
