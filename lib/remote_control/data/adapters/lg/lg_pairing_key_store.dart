@@ -1,30 +1,48 @@
-import 'package:one_remote/remote_control/data/persistence/host_scoped_secret_persistence.dart';
-import 'package:one_remote/remote_control/data/persistence/secure_host_scoped_secret_persistence.dart';
+import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
+import 'package:one_remote/remote_control/data/persistence/device_scoped_secret_gateway.dart';
+import 'package:one_remote/remote_control/data/persistence/device_scoped_secret_persistence.dart';
+import 'package:one_remote/remote_control/data/persistence/legacy/legacy_host_scoped_secret_persistence.dart';
+import 'package:one_remote/remote_control/data/persistence/legacy/legacy_secure_host_scoped_secret_persistence.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Persists the LG webOS client-key across app restarts per TV host.
 ///
 /// Keys are stored in encrypted local storage on mobile (same as Samsung/Hisense).
 /// Legacy values in [SharedPreferences] are migrated on first [keyForHost] read.
+///
+/// Phase 3: when a stable id is known for a host (via [DeviceIdentityRegistry]),
+/// the client-key is persisted under that stable id through
+/// [DeviceScopedSecretGateway] so it survives LAN IP changes. Legacy host-keyed
+/// entries are still read as a fallback for devices paired before stable ids
+/// were captured.
 class LgPairingKeyStore {
-  LgPairingKeyStore({HostScopedSecretPersistence? persistence})
-    : _persistence =
-          persistence ??
-          SecureHostScopedSecretPersistence(keyPrefix: 'lg_client_key_');
+  LgPairingKeyStore({
+    LegacyHostScopedSecretPersistence? persistence,
+    DeviceScopedSecretPersistence? devicePersistence,
+    DeviceIdentityRegistry? identityRegistry,
+  }) : _gateway = DeviceScopedSecretGateway(
+         hostPersistence:
+             persistence ??
+             LegacySecureHostScopedSecretPersistence(
+               keyPrefix: 'lg_client_key_',
+             ),
+         devicePersistence: devicePersistence,
+         identityRegistry: identityRegistry,
+       );
 
   static const String _legacyKeyPrefix = 'lg_client_key_';
 
-  final HostScopedSecretPersistence _persistence;
+  final DeviceScopedSecretGateway _gateway;
 
   Future<void> storeKeyForHost(String host, String key) async {
     final normalized = _normalizeHost(host);
-    await _persistence.write(normalized, key);
+    await _gateway.write(normalized, key);
     await _removeLegacyKeys(host, normalized);
   }
 
   Future<String?> keyForHost(String host) async {
     final normalized = _normalizeHost(host);
-    final stored = await _persistence.read(normalized);
+    final stored = await _gateway.read(normalized);
     if (stored != null && stored.isNotEmpty) {
       return stored;
     }
@@ -33,7 +51,7 @@ class LgPairingKeyStore {
 
   Future<void> clearKeyForHost(String host) async {
     final normalized = _normalizeHost(host);
-    await _persistence.delete(normalized);
+    await _gateway.delete(normalized);
     await _removeLegacyKeys(host, normalized);
   }
 
@@ -46,7 +64,7 @@ class LgPairingKeyStore {
     if (legacy == null || legacy.isEmpty) {
       return null;
     }
-    await _persistence.write(normalized, legacy);
+    await _gateway.write(normalized, legacy);
     await _removeLegacyKeys(host, normalized);
     return legacy;
   }

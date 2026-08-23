@@ -1,7 +1,11 @@
 export 'command_dispatch_result.dart';
+export 'android_tv_stable_identity_resolver.dart';
 export 'device_discovery_service.dart';
+export 'device_last_seen_repository.dart';
 export 'free_tier_device_policy.dart';
+export 'layout_deletion_repository.dart';
 export 'free_tier_saved_device_cleanup.dart';
+export 'legacy_device_orphan_detector.dart';
 export 'pro_device_switch_policy.dart';
 export 'saved_device_display_ordering.dart';
 export 'tv_device_selection.dart';

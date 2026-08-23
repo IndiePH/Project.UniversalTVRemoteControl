@@ -81,6 +81,7 @@ class RokuHttpTransportClient
     return TvDeviceInfo(
       modelIdentifier: ['roku', model, serial].whereType<String>().join(':'),
       firmwareVersion: firmware,
+      stableId: serial == null ? null : 'roku-$serial',
     );
   }
 

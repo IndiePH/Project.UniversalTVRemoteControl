@@ -234,6 +234,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       savedDevices: initialSavedDevices,
       commandService: widget.commandService,
       deviceRepository: widget.deviceRepository,
+      layoutRepository: widget.layoutRepository,
     );
     final savedDevices = cleanupOutcome.savedDevices;
     final removedExtraDevices = cleanupOutcome.removed;
@@ -702,6 +703,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       commandService: widget.commandService,
       discoveryService: widget.discoveryService,
       deviceRepository: widget.deviceRepository,
+      layoutRepository: widget.layoutRepository,
       proEntitlementService: widget.proEntitlementService,
       activeDeviceId: _activeDevice?.id,
     );

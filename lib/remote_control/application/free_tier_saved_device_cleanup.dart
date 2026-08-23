@@ -1,4 +1,5 @@
 import 'package:one_remote/remote_control/application/device_repository.dart';
+import 'package:one_remote/remote_control/application/layout_deletion_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
@@ -12,6 +13,7 @@ final class FreeTierSavedDeviceCleanup {
     required List<TvDevice> savedDevices,
     required RemoteCommandService commandService,
     required DeviceRepository deviceRepository,
+    LayoutDeletionRepository? layoutDeleter,
   }) async {
     if (!isFreeTier || activeDeviceId == null) {
       return false;
@@ -22,6 +24,11 @@ final class FreeTierSavedDeviceCleanup {
     for (final device in devicesToRemove) {
       await commandService.unpairDevice(device: device);
       await deviceRepository.removeSavedDevice(device.id);
+      try {
+        await layoutDeleter?.deleteLayout(deviceId: device.id);
+      } catch (_) {
+        // Saved-device cleanup remains complete if layout cleanup fails.
+      }
     }
     return devicesToRemove.isNotEmpty;
   }

@@ -34,12 +34,9 @@ class AndroidTvAdapter implements TvBrandAdapter {
   final CommandKeyMap _keyMap;
   late final Set<RemoteCommand> _supportedCommands;
 
-  static final _ipv4 = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
-
   @override
   Future<void> probeConnection({required TvDevice device}) async {
-    final host = _ipv4.firstMatch(device.id)?.group(1) ?? '';
-    await _transportClient.probe(host);
+    await _transportClient.probe(device.resolvedHost);
   }
 
   @override

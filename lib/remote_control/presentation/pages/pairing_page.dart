@@ -6,6 +6,7 @@ import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
+import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/application/application.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variants.dart';
@@ -35,6 +36,8 @@ class PairingPage extends StatefulWidget {
     required this.reachabilityService,
     required this.proEntitlementService,
     this.activeDeviceId,
+    this.identityRegistry,
+    this.layoutRepository,
   });
 
   final RemoteCommandService commandService;
@@ -46,6 +49,13 @@ class PairingPage extends StatefulWidget {
   final ProEntitlementService proEntitlementService;
   final String? activeDeviceId;
 
+  /// Optional identity registry. When wired, discovery reconciles saved
+  /// devices to discovered ones by stable id and persists refreshed hosts so
+  /// a paired TV survives an IP change. Null (e.g. in unit tests) skips
+  /// reconciliation and degrades to legacy IP-derived behaviour.
+  final DeviceIdentityRegistry? identityRegistry;
+  final LayoutRepository? layoutRepository;
+
   @override
   State<PairingPage> createState() => _PairingPageState();
 }
@@ -53,6 +63,7 @@ class PairingPage extends StatefulWidget {
 class _PairingPageState extends State<PairingPage> {
   PairingPageViewState _viewState = const PairingPageViewState();
   TvDevice? _activePairingDevice;
+  bool _legacyCleanupOffered = false;
   final ScrollController _pairedDevicesScrollController = ScrollController();
   late final PairingPageCoordinator _pairingCoordinator =
       PairingPageCoordinator(
@@ -127,6 +138,7 @@ class _PairingPageState extends State<PairingPage> {
       savedDevices: metadata.savedDevices,
       commandService: widget.commandService,
       deviceRepository: widget.deviceRepository,
+      layoutRepository: widget.layoutRepository,
     );
     final removedExtraDevices = cleanupOutcome.removed;
     if (removedExtraDevices) {
@@ -167,9 +179,53 @@ class _PairingPageState extends State<PairingPage> {
       if (!mounted) {
         return;
       }
+      // Reconcile discovered ↔ saved by stable id and persist any host
+      // changes so a paired TV that moved IPs keeps working. Best-effort,
+      // fire-and-forget: the scan result is shown immediately regardless.
+      var saved = _viewState.savedDevices;
+      try {
+        saved = await widget.deviceRepository.getSavedDevices();
+      } catch (_) {
+        // Discovery remains useful even if saved-device refresh is unavailable.
+      }
+      var staleLegacyDevices = const <TvDevice>[];
+      final lastSeenRepository =
+          widget.deviceRepository is DeviceLastSeenRepository
+          ? widget.deviceRepository as DeviceLastSeenRepository
+          : null;
+      if (lastSeenRepository != null && saved.isNotEmpty) {
+        try {
+          staleLegacyDevices =
+              await LegacyDeviceOrphanDetector.updateAndFindCandidates(
+                savedDevices: saved,
+                discoveredDevices: discovered,
+                activeDeviceId: widget.activeDeviceId,
+                repository: lastSeenRepository,
+              );
+        } catch (_) {
+          // Orphan tracking is advisory and must not block discovery.
+        }
+      }
+      if (saved.isNotEmpty) {
+        unawaited(
+          PairingPageData.reconcileDiscovery(
+            discovered: discovered,
+            saved: saved,
+            identityRegistry: widget.identityRegistry,
+            deviceRepository: widget.deviceRepository,
+            layoutRepository: widget.layoutRepository,
+          ),
+        );
+      }
       setState(() {
         _viewState = _viewState.copyWith(discoveredDevices: discovered);
       });
+      if (staleLegacyDevices.isNotEmpty &&
+          widget.proEntitlementService.isPro &&
+          !_legacyCleanupOffered) {
+        _legacyCleanupOffered = true;
+        unawaited(_offerLegacyCleanup(staleLegacyDevices));
+      }
     } catch (_) {
       if (!mounted) {
         return;
@@ -256,6 +312,7 @@ class _PairingPageState extends State<PairingPage> {
           savedDevices: _viewState.savedDevices,
           commandService: widget.commandService,
           deviceRepository: widget.deviceRepository,
+          layoutRepository: widget.layoutRepository,
         );
     if (replaced) {
       await _loadPairingMetadata();
@@ -390,6 +447,14 @@ class _PairingPageState extends State<PairingPage> {
 
     await widget.commandService.unpairDevice(device: device);
     await widget.deviceRepository.removeSavedDevice(device.id);
+    final layoutDeleter = widget.layoutRepository is LayoutDeletionRepository
+        ? widget.layoutRepository as LayoutDeletionRepository
+        : null;
+    try {
+      await layoutDeleter?.deleteLayout(deviceId: device.id);
+    } catch (_) {
+      // Keep the saved-device removal complete if layout cleanup fails.
+    }
     await _loadPairingMetadata();
     if (!mounted) {
       return;
@@ -400,6 +465,51 @@ class _PairingPageState extends State<PairingPage> {
           AppLocalizations.of(
             context,
           )!.pairingDeviceRemoved(device.displayName),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _offerLegacyCleanup(List<TvDevice> devices) async {
+    if (!mounted) return;
+    final shouldRemove = await PairingPageDialogs.confirmRemoveLegacyDevices(
+      context: context,
+      devices: devices,
+    );
+    if (!shouldRemove || !mounted) return;
+
+    var removedAny = false;
+    final layoutDeleter = widget.layoutRepository is LayoutDeletionRepository
+        ? widget.layoutRepository as LayoutDeletionRepository
+        : null;
+    for (final device in devices) {
+      try {
+        await widget.commandService.unpairDevice(device: device);
+      } catch (_) {
+        // Continue with local cleanup when the TV is no longer reachable.
+      }
+      try {
+        await widget.deviceRepository.removeSavedDevice(device.id);
+        removedAny = true;
+      } catch (_) {
+        continue;
+      }
+      if (layoutDeleter != null) {
+        try {
+          await layoutDeleter.deleteLayout(deviceId: device.id);
+        } catch (_) {
+          // A failed layout cleanup leaves the saved layout recoverable.
+        }
+      }
+    }
+
+    if (!removedAny) return;
+    await _loadPairingMetadata();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context)!.pairingLegacyDevicesRemoved,
         ),
       ),
     );

@@ -302,6 +302,56 @@ final class PairingPageDialogs {
     return shouldRemove == true;
   }
 
+  static Future<bool> confirmRemoveLegacyDevices({
+    required BuildContext context,
+    required List<TvDevice> devices,
+  }) async {
+    final shouldRemove = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(l10n.pairingLegacyCleanupTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.pairingLegacyCleanupBody),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 240),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final device in devices)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text('• ${device.displayName}'),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.uiCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.pairingLegacyCleanupRemove),
+            ),
+          ],
+        );
+      },
+    );
+
+    return shouldRemove == true;
+  }
+
   static Future<void> showDeviceInfo({
     required BuildContext context,
     required TvDevice device,

@@ -11,6 +11,21 @@ String ssdpDiscoveryProbeText(Map<String, String> headers) {
   ].join(' ');
 }
 
+/// Extracts the UPnP UDN (device UUID) from SSDP headers, when present.
+///
+/// SSDP `USN` commonly takes forms like `uuid:<uuid>::upnp:rootdevice` or
+/// `uuid:<uuid>`. Returns the bare UUID (no `uuid:` prefix) so it can be used
+/// directly as a stable per-device identifier. Returns null when no UUID is
+/// found — callers must fall back to an IP-derived identity in that case.
+String? udnFromSsdpHeaders(Map<String, String> headers) {
+  final usn = headers['usn'];
+  if (usn == null || usn.isEmpty) return null;
+  final match = RegExp(
+    r'uuid:([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})',
+  ).firstMatch(usn);
+  return match?.group(1);
+}
+
 /// Returns a supported [TvBrand] when SSDP headers match a known fingerprint.
 TvBrand? inferSsdpTvBrand(Map<String, String> headers) {
   final probe = ssdpDiscoveryProbeText(headers).toLowerCase();

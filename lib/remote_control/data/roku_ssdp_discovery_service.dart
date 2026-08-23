@@ -72,6 +72,7 @@ class RokuSsdpDiscoveryService implements DeviceDiscoveryService {
             displayName: 'Roku TV ($ip)',
             brand: TvBrand.roku,
             capabilities: const TvCapabilities().capabilitiesFor(TvBrand.roku),
+            host: ip,
           ),
         );
       });

@@ -3,6 +3,7 @@ import 'package:one_remote/remote_control/application/application.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
+import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
 import 'package:one_remote/remote_control/domain/domain.dart';
 
@@ -15,11 +16,13 @@ class BrandRoutedRemoteCommandService
     required List<TvBrandAdapter> adapters,
     required this._variantRegistry,
     required this._localizedStrings,
+    this._identityRegistry,
   }) : _adapters = {for (final a in adapters) (a.brand, a.protocolVariant): a};
 
   final Map<(TvBrand, String), TvBrandAdapter> _adapters;
   final VariantResolutionRegistry _variantRegistry;
   final LocalizedStrings _localizedStrings;
+  final DeviceIdentityRegistry? _identityRegistry;
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {
@@ -69,10 +72,12 @@ class BrandRoutedRemoteCommandService
         variant,
       );
       final enriched = device.copyWith(
+        id: device.hasStableId ? device.id : (info?.stableId ?? device.id),
         capabilities: capabilities,
         protocolVariant: variant,
         modelIdentifier: info?.modelIdentifier,
       );
+      _registerIdentity(enriched);
       if (capabilities.contains(DeviceCapability.pinPairing)) {
         // Handshake succeeded and the TV is now displaying a PIN.
         return CommandDispatchResult.pinRequired(
@@ -277,4 +282,13 @@ class BrandRoutedRemoteCommandService
 
   TvBrandAdapter? _adapterFor(TvBrand brand, String variant) =>
       _adapters[(brand, variant)];
+
+  void _registerIdentity(TvDevice device) {
+    final registry = _identityRegistry;
+    if (registry == null) return;
+    if (!device.hasStableId) return;
+    final host = device.resolvedHost;
+    if (host.isEmpty) return;
+    registry.register(host, device.id);
+  }
 }
