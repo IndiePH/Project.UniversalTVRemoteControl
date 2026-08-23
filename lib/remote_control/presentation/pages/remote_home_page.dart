@@ -112,6 +112,16 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   ProEntitlementStatus _lastKnownProStatus = ProEntitlementStatus.unknown;
   bool _suppressProActivatedToast = false;
 
+  /// The most recently started layout save, if one is still in flight.
+  ///
+  /// Every layout-save call site fires this without awaiting it (dropping a
+  /// grid item or leaving edit mode shouldn't stall the UI), which normally
+  /// races against the app being backgrounded and killed before the write
+  /// reaches disk. [didChangeAppLifecycleState] awaits this on `paused` — the
+  /// one point Android/iOS give an app to finish quick work before it's
+  /// stopped — to close that race instead of losing the edit silently.
+  Future<void>? _pendingLayoutSave;
+
   void _applyStatusKind(RemoteHomeStatusKind kind) {
     _statusKind = kind;
     _statusCustomMessage = null;
@@ -177,9 +187,13 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.paused) {
       _stopConnectionRetry();
+      // Best-effort: give an in-flight layout save a chance to reach disk
+      // before the OS can kill the process. Not a hard guarantee under an
+      // aggressive OOM-kill, but this is the only hook the platform gives us.
+      await _pendingLayoutSave;
     }
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshProEntitlementOnResume());
@@ -1100,30 +1114,85 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       );
 
     if (isPro) {
-      for (final item in _layoutItems) {
-        final position = saved[item.id];
-        if (position == null) {
-          continue;
-        }
-        item.zone = position.zone;
-        if (position.zone == LayoutZone.grid &&
-            !_canPlaceItem(
-              item: item,
-              col: position.col,
-              row: position.row,
-              ignoreIds: {item.id},
-            )) {
-          continue;
-        }
-        item.col = position.col;
-        item.row = position.row;
-      }
+      _restoreSavedPositions(saved);
     }
 
     if (!mounted) {
       return;
     }
     setState(() {});
+  }
+
+  /// Applies [saved] positions onto `_layoutItems` (already populated with
+  /// default positions by the caller).
+  ///
+  /// Every saved position is applied unconditionally first, then the fully
+  /// restored layout is validated and only items still genuinely invalid
+  /// (out of bounds, or truly overlapping another item in the final
+  /// arrangement — e.g. stale data from a layout definition that's since
+  /// changed) fall back to their default cell. On the happy path this
+  /// validation never rejects anything: [saved] is always a full snapshot
+  /// of every item (see `_persistLayoutForActiveDevice`) taken from a live
+  /// layout the editor already kept collision-free via
+  /// [RemoteLayoutDropResolver], so it's self-consistent by construction.
+  ///
+  /// This must be a two-pass restore, not a single pass that validates each
+  /// item as it's applied: `_layoutItems` starts at default positions, so
+  /// validating item A's saved cell against item B's still-default cell
+  /// (because B hasn't been reached in the loop yet) can reject a
+  /// perfectly valid saved arrangement — most commonly, restoring a swap of
+  /// two items, where each one's saved cell is exactly the other's default
+  /// cell. Applying every saved position first means every item is at its
+  /// true final position by the time anything gets validated.
+  ///
+  /// Validation itself uses a cell-occupancy map built once — same
+  /// technique as [RemoteLayoutDropResolver]'s `occupancyByCell` — so the
+  /// whole restore is O(n) instead of the O(n²) an all-pairs-per-item scan
+  /// would need.
+  void _restoreSavedPositions(Map<String, LayoutPosition> saved) {
+    final defaultPositionById = <String, LayoutPosition>{
+      for (final item in _layoutItems)
+        item.id: LayoutPosition(col: item.col, row: item.row, zone: item.zone),
+    };
+
+    for (final item in _layoutItems) {
+      final position = saved[item.id];
+      if (position == null) {
+        continue;
+      }
+      item.zone = position.zone;
+      item.col = position.col;
+      item.row = position.row;
+    }
+
+    final occupancyByCell = <String, String>{
+      for (final item in _layoutItems)
+        if (item.zone == LayoutZone.grid)
+          for (var row = item.row; row < item.row + item.height; row++)
+            for (var col = item.col; col < item.col + item.width; col++)
+              '$col:$row': item.id,
+    };
+
+    for (final item in _layoutItems) {
+      if (saved[item.id] == null || item.zone != LayoutZone.grid) {
+        continue;
+      }
+      if (_canPlaceItem(
+        item: item,
+        col: item.col,
+        row: item.row,
+        occupancyByCell: occupancyByCell,
+      )) {
+        continue;
+      }
+      final fallback = defaultPositionById[item.id];
+      if (fallback == null) {
+        continue;
+      }
+      item.zone = fallback.zone;
+      item.col = fallback.col;
+      item.row = fallback.row;
+    }
   }
 
   List<LayoutEditItem> _buildLayoutDefaultsForDevice(
@@ -1159,10 +1228,12 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       for (final item in _layoutItems)
         item.id: LayoutPosition(col: item.col, row: item.row, zone: item.zone),
     };
-    await widget.layoutRepository.saveLayout(
+    final save = widget.layoutRepository.saveLayout(
       deviceId: deviceId,
       positionsByItemId: positions,
     );
+    _pendingLayoutSave = save;
+    await save;
   }
 
   Future<void> _resetLayoutForActiveDevice() async {
@@ -1175,11 +1246,16 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     await _persistLayoutForActiveDevice();
   }
 
+  /// Whether [item] can occupy [col]/[row] given a cell-occupancy map built
+  /// from the current `_layoutItems` state (see [_restoreSavedPositions]).
+  /// A cell is fine if it's unclaimed or already claimed by [item] itself —
+  /// so the map must be built with [item] already at ([col], [row]) for
+  /// this to correctly treat that as "no conflict."
   bool _canPlaceItem({
     required LayoutEditItem item,
     required int col,
     required int row,
-    Set<String> ignoreIds = const {},
+    required Map<String, String> occupancyByCell,
   }) {
     if (col < 0 || row < 0) {
       return false;
@@ -1189,19 +1265,12 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       return false;
     }
 
-    for (final other in _layoutItems) {
-      if (other.id == item.id ||
-          ignoreIds.contains(other.id) ||
-          other.zone != LayoutZone.grid) {
-        continue;
-      }
-      final overlaps =
-          col < other.col + other.width &&
-          col + item.width > other.col &&
-          row < other.row + other.height &&
-          row + item.height > other.row;
-      if (overlaps) {
-        return false;
+    for (var r = row; r < row + item.height; r++) {
+      for (var c = col; c < col + item.width; c++) {
+        final occupant = occupancyByCell['$c:$r'];
+        if (occupant != null && occupant != item.id) {
+          return false;
+        }
       }
     }
     return true;
