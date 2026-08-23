@@ -43,7 +43,9 @@ import 'package:one_remote/remote_control/data/variant_resolution_registry.dart'
 import 'package:one_remote/remote_control/data/in_memory_device_repository.dart';
 import 'package:one_remote/remote_control/data/in_memory_remote_command_service.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/domain/models/layout_item_id.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
+import 'package:one_remote/remote_control/domain/models/layout_zone.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
     as remote_connection;
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -1647,6 +1649,185 @@ void main() {
         deviceId: activeDevice.id,
       );
       expect(saved, isNotEmpty);
+    },
+  );
+
+  testWidgets(
+    'restoring a saved swap keeps both items swapped instead of reverting '
+    'to defaults',
+    (WidgetTester tester) async {
+      _useTallTestSurface(tester);
+      SharedPreferences.setMockInitialValues({});
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final deviceRepository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'samsung-living-room',
+        displayName: 'Living Room TV',
+        brand: TvBrand.samsung,
+        capabilities: {
+          DeviceCapability.keyCommands,
+          DeviceCapability.powerControl,
+        },
+      );
+      await deviceRepository.saveDevice(activeDevice);
+      await deviceRepository.setLastUsedDevice(activeDevice.id);
+      final commandService = InMemoryRemoteCommandService();
+      final layoutRepository = _InMemoryLayoutRepository();
+
+      // Read real default positions rather than hardcoding them, so this
+      // test doesn't rot if RemoteLayoutDefaults changes — power and menu
+      // are both plain 1x1 items with no special footprint.
+      final defaults = buildInitialRemoteLayoutItems();
+      final itemA = defaults.firstWhere((item) => item.id == LayoutItemId.power);
+      final itemB = defaults.firstWhere((item) => item.id == LayoutItemId.menu);
+      expect(itemA.width, 1);
+      expect(itemA.height, 1);
+      expect(itemB.width, 1);
+      expect(itemB.height, 1);
+
+      // Pre-seed a saved layout with A and B swapped — exactly what a real
+      // grid-to-grid swap in the live editor would have persisted.
+      await layoutRepository.saveLayout(
+        deviceId: activeDevice.id,
+        positionsByItemId: {
+          itemA.id: LayoutPosition(
+            col: itemB.col,
+            row: itemB.row,
+            zone: LayoutZone.grid,
+          ),
+          itemB.id: LayoutPosition(
+            col: itemA.col,
+            row: itemA.row,
+            zone: LayoutZone.grid,
+          ),
+        },
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: deviceRepository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: layoutRepository,
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      // Loading the device runs _loadLayoutForDevice, which restores the
+      // saved swap into _layoutItems.
+      await tester.pumpAndSettle();
+
+      // Re-save whatever the restore produced by entering and exiting edit
+      // mode without touching anything, so the restored in-memory state
+      // becomes observable through the same real repository — if restore
+      // silently reverted to defaults, this write-back proves it.
+      await tester.tap(find.byIcon(Icons.edit_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.check));
+      await tester.pumpAndSettle();
+
+      final restored = await layoutRepository.loadLayout(
+        deviceId: activeDevice.id,
+      );
+      expect(restored[itemA.id]?.col, itemB.col);
+      expect(restored[itemA.id]?.row, itemB.row);
+      expect(restored[itemB.id]?.col, itemA.col);
+      expect(restored[itemB.id]?.row, itemA.row);
+    },
+  );
+
+  // NOTE on what this does and doesn't prove: this guards general
+  // corruption-safety (no crash, no lingering overlap on genuinely
+  // duplicate/stale saved cells) — it is NOT specific to the restore-order
+  // fix above. Confirmed by running it against the pre-fix single-pass
+  // implementation, where it still passed: two items claiming the exact
+  // same cell already resolved safely under the old code too (whichever is
+  // processed first stakes the cell; the second one collides with the
+  // first, not with a stale default, and falls back). The swap test above
+  // is the one that actually distinguishes old vs. new behavior.
+  testWidgets(
+    'restoring stale saved data with a genuine overlap falls back safely',
+    (WidgetTester tester) async {
+      _useTallTestSurface(tester);
+      SharedPreferences.setMockInitialValues({});
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final deviceRepository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'samsung-living-room',
+        displayName: 'Living Room TV',
+        brand: TvBrand.samsung,
+        capabilities: {
+          DeviceCapability.keyCommands,
+          DeviceCapability.powerControl,
+        },
+      );
+      await deviceRepository.saveDevice(activeDevice);
+      await deviceRepository.setLastUsedDevice(activeDevice.id);
+      final commandService = InMemoryRemoteCommandService();
+      final layoutRepository = _InMemoryLayoutRepository();
+
+      final defaults = buildInitialRemoteLayoutItems();
+      final itemA = defaults.firstWhere((item) => item.id == LayoutItemId.power);
+      final itemB = defaults.firstWhere((item) => item.id == LayoutItemId.menu);
+
+      // Simulates stale/corrupted saved data — both items claim the exact
+      // same cell, which the live editor's swap-aware drop resolver would
+      // never produce itself (e.g. leftover data from a layout definition
+      // that's since changed). (0, 8) is unused by any default item.
+      await layoutRepository.saveLayout(
+        deviceId: activeDevice.id,
+        positionsByItemId: {
+          itemA.id: const LayoutPosition(col: 0, row: 8, zone: LayoutZone.grid),
+          itemB.id: const LayoutPosition(col: 0, row: 8, zone: LayoutZone.grid),
+        },
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: deviceRepository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: layoutRepository,
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      // Must not throw despite the overlapping saved data.
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.edit_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.check));
+      await tester.pumpAndSettle();
+
+      final restored = await layoutRepository.loadLayout(
+        deviceId: activeDevice.id,
+      );
+      final aPos = restored[itemA.id];
+      final bPos = restored[itemB.id];
+      final bothAtDisputedCell =
+          aPos?.col == 0 && aPos?.row == 8 && bPos?.col == 0 && bPos?.row == 8;
+      expect(bothAtDisputedCell, isFalse);
     },
   );
 }

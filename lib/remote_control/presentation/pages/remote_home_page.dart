@@ -1129,7 +1129,12 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   /// Every saved position is applied unconditionally first, then the fully
   /// restored layout is validated and only items still genuinely invalid
   /// (out of bounds, or truly overlapping another item in the final
-  /// arrangement) fall back to their default cell.
+  /// arrangement — e.g. stale data from a layout definition that's since
+  /// changed) fall back to their default cell. On the happy path this
+  /// validation never rejects anything: [saved] is always a full snapshot
+  /// of every item (see `_persistLayoutForActiveDevice`) taken from a live
+  /// layout the editor already kept collision-free via
+  /// [RemoteLayoutDropResolver], so it's self-consistent by construction.
   ///
   /// This must be a two-pass restore, not a single pass that validates each
   /// item as it's applied: `_layoutItems` starts at default positions, so
@@ -1139,6 +1144,11 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   /// two items, where each one's saved cell is exactly the other's default
   /// cell. Applying every saved position first means every item is at its
   /// true final position by the time anything gets validated.
+  ///
+  /// Validation itself uses a cell-occupancy map built once — same
+  /// technique as [RemoteLayoutDropResolver]'s `occupancyByCell` — so the
+  /// whole restore is O(n) instead of the O(n²) an all-pairs-per-item scan
+  /// would need.
   void _restoreSavedPositions(Map<String, LayoutPosition> saved) {
     final defaultPositionById = <String, LayoutPosition>{
       for (final item in _layoutItems)
@@ -1155,6 +1165,14 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       item.row = position.row;
     }
 
+    final occupancyByCell = <String, String>{
+      for (final item in _layoutItems)
+        if (item.zone == LayoutZone.grid)
+          for (var row = item.row; row < item.row + item.height; row++)
+            for (var col = item.col; col < item.col + item.width; col++)
+              '$col:$row': item.id,
+    };
+
     for (final item in _layoutItems) {
       if (saved[item.id] == null || item.zone != LayoutZone.grid) {
         continue;
@@ -1163,7 +1181,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
         item: item,
         col: item.col,
         row: item.row,
-        ignoreIds: {item.id},
+        occupancyByCell: occupancyByCell,
       )) {
         continue;
       }
@@ -1228,11 +1246,16 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     await _persistLayoutForActiveDevice();
   }
 
+  /// Whether [item] can occupy [col]/[row] given a cell-occupancy map built
+  /// from the current `_layoutItems` state (see [_restoreSavedPositions]).
+  /// A cell is fine if it's unclaimed or already claimed by [item] itself —
+  /// so the map must be built with [item] already at ([col], [row]) for
+  /// this to correctly treat that as "no conflict."
   bool _canPlaceItem({
     required LayoutEditItem item,
     required int col,
     required int row,
-    Set<String> ignoreIds = const {},
+    required Map<String, String> occupancyByCell,
   }) {
     if (col < 0 || row < 0) {
       return false;
@@ -1242,19 +1265,12 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       return false;
     }
 
-    for (final other in _layoutItems) {
-      if (other.id == item.id ||
-          ignoreIds.contains(other.id) ||
-          other.zone != LayoutZone.grid) {
-        continue;
-      }
-      final overlaps =
-          col < other.col + other.width &&
-          col + item.width > other.col &&
-          row < other.row + other.height &&
-          row + item.height > other.row;
-      if (overlaps) {
-        return false;
+    for (var r = row; r < row + item.height; r++) {
+      for (var c = col; c < col + item.width; c++) {
+        final occupant = occupancyByCell['$c:$r'];
+        if (occupant != null && occupant != item.id) {
+          return false;
+        }
       }
     }
     return true;
