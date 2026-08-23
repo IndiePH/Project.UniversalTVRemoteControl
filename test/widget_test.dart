@@ -1507,6 +1507,148 @@ void main() {
       expect(lastUsed?.id, activeDevice.id);
     },
   );
+
+  testWidgets(
+    'exiting layout edit mode persists the current layout to the repository',
+    (WidgetTester tester) async {
+      _useTallTestSurface(tester);
+      SharedPreferences.setMockInitialValues({});
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final deviceRepository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'samsung-living-room',
+        displayName: 'Living Room TV',
+        brand: TvBrand.samsung,
+        capabilities: {
+          DeviceCapability.keyCommands,
+          DeviceCapability.powerControl,
+        },
+      );
+      await deviceRepository.saveDevice(activeDevice);
+      await deviceRepository.setLastUsedDevice(activeDevice.id);
+      final commandService = InMemoryRemoteCommandService();
+      final layoutRepository = _InMemoryLayoutRepository();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: deviceRepository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: layoutRepository,
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        await layoutRepository.loadLayout(deviceId: activeDevice.id),
+        isEmpty,
+      );
+
+      await tester.tap(find.byIcon(Icons.edit_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.check));
+      await tester.pumpAndSettle();
+
+      final saved = await layoutRepository.loadLayout(
+        deviceId: activeDevice.id,
+      );
+      expect(saved, isNotEmpty);
+    },
+  );
+
+  // NOTE on what this does and doesn't prove: WidgetsBindingObserver's
+  // didChangeAppLifecycleState is declared `void`, and Flutter's binding
+  // doesn't await it — so no widget test can observe from the outside
+  // whether the `paused` branch actually awaited a pending save before
+  // returning. What this test does verify: pausing while a layout save is
+  // genuinely still in flight doesn't throw, and that save still reaches the
+  // repository once it resolves. It is not a guard against someone deleting
+  // the `await _pendingLayoutSave;` line — confirmed by temporarily removing
+  // that line and re-running this test, which still passed.
+  testWidgets(
+    'pausing while a layout save is in flight does not crash and the save '
+    'still lands',
+    (WidgetTester tester) async {
+      _useTallTestSurface(tester);
+      SharedPreferences.setMockInitialValues({});
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final deviceRepository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'samsung-living-room',
+        displayName: 'Living Room TV',
+        brand: TvBrand.samsung,
+        capabilities: {
+          DeviceCapability.keyCommands,
+          DeviceCapability.powerControl,
+        },
+      );
+      await deviceRepository.saveDevice(activeDevice);
+      await deviceRepository.setLastUsedDevice(activeDevice.id);
+      final commandService = InMemoryRemoteCommandService();
+      final layoutRepository = _DelayedLayoutRepository();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            interstitialAdController: _buildInterstitialAdController(),
+            commandService: commandService,
+            deviceRepository: deviceRepository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: layoutRepository,
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.edit_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.check));
+      await tester.pump();
+
+      // The save is deliberately gated open — it hasn't reached the
+      // repository yet, proving what follows genuinely races an in-flight
+      // write rather than a save that already completed.
+      expect(
+        await layoutRepository.loadLayout(deviceId: activeDevice.id),
+        isEmpty,
+      );
+
+      // Must not throw even though a save is still pending — see the NOTE
+      // above this test for what this call can and can't prove.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      layoutRepository.releasePendingSave();
+      await tester.pump();
+      await tester.pump();
+
+      final saved = await layoutRepository.loadLayout(
+        deviceId: activeDevice.id,
+      );
+      expect(saved, isNotEmpty);
+    },
+  );
 }
 
 class _InMemoryLayoutRepository implements LayoutRepository {
@@ -1524,6 +1666,39 @@ class _InMemoryLayoutRepository implements LayoutRepository {
     required String deviceId,
     required Map<String, LayoutPosition> positionsByItemId,
   }) async {
+    _layoutByDeviceId[deviceId] = Map<String, LayoutPosition>.from(
+      positionsByItemId,
+    );
+  }
+}
+
+/// Like [_InMemoryLayoutRepository], but [saveLayout] blocks on a [Completer]
+/// until [releasePendingSave] is called — lets a test observe app-pause
+/// behavior while a save is genuinely still in flight, rather than one that
+/// happened to already resolve.
+class _DelayedLayoutRepository implements LayoutRepository {
+  final Map<String, Map<String, LayoutPosition>> _layoutByDeviceId = {};
+  Completer<void>? _gate;
+
+  void releasePendingSave() {
+    _gate?.complete();
+  }
+
+  @override
+  Future<Map<String, LayoutPosition>> loadLayout({
+    required String deviceId,
+  }) async {
+    return _layoutByDeviceId[deviceId] ?? <String, LayoutPosition>{};
+  }
+
+  @override
+  Future<void> saveLayout({
+    required String deviceId,
+    required Map<String, LayoutPosition> positionsByItemId,
+  }) async {
+    final gate = Completer<void>();
+    _gate = gate;
+    await gate.future;
     _layoutByDeviceId[deviceId] = Map<String, LayoutPosition>.from(
       positionsByItemId,
     );

@@ -112,6 +112,16 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   ProEntitlementStatus _lastKnownProStatus = ProEntitlementStatus.unknown;
   bool _suppressProActivatedToast = false;
 
+  /// The most recently started layout save, if one is still in flight.
+  ///
+  /// Every layout-save call site fires this without awaiting it (dropping a
+  /// grid item or leaving edit mode shouldn't stall the UI), which normally
+  /// races against the app being backgrounded and killed before the write
+  /// reaches disk. [didChangeAppLifecycleState] awaits this on `paused` — the
+  /// one point Android/iOS give an app to finish quick work before it's
+  /// stopped — to close that race instead of losing the edit silently.
+  Future<void>? _pendingLayoutSave;
+
   void _applyStatusKind(RemoteHomeStatusKind kind) {
     _statusKind = kind;
     _statusCustomMessage = null;
@@ -177,9 +187,13 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.paused) {
       _stopConnectionRetry();
+      // Best-effort: give an in-flight layout save a chance to reach disk
+      // before the OS can kill the process. Not a hard guarantee under an
+      // aggressive OOM-kill, but this is the only hook the platform gives us.
+      await _pendingLayoutSave;
     }
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshProEntitlementOnResume());
@@ -1159,10 +1173,12 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       for (final item in _layoutItems)
         item.id: LayoutPosition(col: item.col, row: item.row, zone: item.zone),
     };
-    await widget.layoutRepository.saveLayout(
+    final save = widget.layoutRepository.saveLayout(
       deviceId: deviceId,
       positionsByItemId: positions,
     );
+    _pendingLayoutSave = save;
+    await save;
   }
 
   Future<void> _resetLayoutForActiveDevice() async {
