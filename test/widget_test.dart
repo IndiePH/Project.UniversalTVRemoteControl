@@ -1680,7 +1680,9 @@ void main() {
       // test doesn't rot if RemoteLayoutDefaults changes — power and menu
       // are both plain 1x1 items with no special footprint.
       final defaults = buildInitialRemoteLayoutItems();
-      final itemA = defaults.firstWhere((item) => item.id == LayoutItemId.power);
+      final itemA = defaults.firstWhere(
+        (item) => item.id == LayoutItemId.power,
+      );
       final itemB = defaults.firstWhere((item) => item.id == LayoutItemId.menu);
       expect(itemA.width, 1);
       expect(itemA.height, 1);
@@ -1779,7 +1781,9 @@ void main() {
       final layoutRepository = _InMemoryLayoutRepository();
 
       final defaults = buildInitialRemoteLayoutItems();
-      final itemA = defaults.firstWhere((item) => item.id == LayoutItemId.power);
+      final itemA = defaults.firstWhere(
+        (item) => item.id == LayoutItemId.power,
+      );
       final itemB = defaults.firstWhere((item) => item.id == LayoutItemId.menu);
 
       // Simulates stale/corrupted saved data — both items claim the exact
