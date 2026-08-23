@@ -2,6 +2,8 @@ import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_status.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/free_tier_saved_device_cleanup.dart';
+import 'package:one_remote/remote_control/application/layout_deletion_repository.dart';
+import 'package:one_remote/remote_control/application/layout_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
@@ -42,7 +44,11 @@ final class FreeTierDevicePolicy {
     required List<TvDevice> savedDevices,
     required RemoteCommandService commandService,
     required DeviceRepository deviceRepository,
+    LayoutRepository? layoutRepository,
   }) async {
+    final layoutDeleter = layoutRepository is LayoutDeletionRepository
+        ? layoutRepository as LayoutDeletionRepository
+        : null;
     final removed =
         await FreeTierSavedDeviceCleanup.removeNonActiveSavedDevices(
           isFreeTier: isFreeTier,
@@ -50,6 +56,7 @@ final class FreeTierDevicePolicy {
           savedDevices: savedDevices,
           commandService: commandService,
           deviceRepository: deviceRepository,
+          layoutDeleter: layoutDeleter,
         );
     if (!removed) {
       return FreeTierSavedDeviceCleanupOutcome(
@@ -74,6 +81,7 @@ final class FreeTierDevicePolicy {
     required List<TvDevice> savedDevices,
     required RemoteCommandService commandService,
     required DeviceRepository deviceRepository,
+    LayoutRepository? layoutRepository,
   }) {
     return replaceActiveDeviceBeforePairing(
       isFreeTier: !isPro,
@@ -82,6 +90,7 @@ final class FreeTierDevicePolicy {
       savedDevices: savedDevices,
       commandService: commandService,
       deviceRepository: deviceRepository,
+      layoutRepository: layoutRepository,
     );
   }
 
@@ -95,6 +104,7 @@ final class FreeTierDevicePolicy {
     required List<TvDevice> savedDevices,
     required RemoteCommandService commandService,
     required DeviceRepository deviceRepository,
+    LayoutRepository? layoutRepository,
   }) async {
     if (!isFreeTier ||
         activeDeviceId == null ||
@@ -113,6 +123,14 @@ final class FreeTierDevicePolicy {
     }
     await commandService.unpairDevice(device: activeDevice);
     await deviceRepository.removeSavedDevice(activeDevice.id);
+    final layoutDeleter = layoutRepository is LayoutDeletionRepository
+        ? layoutRepository as LayoutDeletionRepository
+        : null;
+    try {
+      await layoutDeleter?.deleteLayout(deviceId: activeDevice.id);
+    } catch (_) {
+      // Saved-device replacement remains complete if layout cleanup fails.
+    }
     return true;
   }
 }

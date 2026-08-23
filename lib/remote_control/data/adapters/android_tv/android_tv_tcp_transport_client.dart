@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:one_remote/remote_control/application/android_tv_stable_identity_resolver.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_certificate_store.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_exceptions.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_handshake_tracer.dart';
@@ -25,7 +26,7 @@ import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 /// note was incorrect).
 class AndroidTvTcpTransportClient
     with TransportEventEmitterMixin
-    implements AndroidTvTransportClient {
+    implements AndroidTvTransportClient, AndroidTvStableIdentityResolver {
   static const int _pairingPort = 6467;
   static const int _remotePort = 6466;
 
@@ -42,12 +43,14 @@ class AndroidTvTcpTransportClient
     required this._certStore,
     this._tracer,
     this.connectTimeout = const Duration(seconds: 8),
+    this.identityProbeTimeout = const Duration(seconds: 2),
   });
 
   final String Function(String deviceId) _hostResolver;
   final AndroidTvCertificateStore _certStore;
   final AndroidTvHandshakeTracer? _tracer;
   final Duration connectTimeout;
+  final Duration identityProbeTimeout;
 
   // Pairing state, keyed by deviceId
   final Map<String, SecureSocket> _pairingSockets = {};
@@ -214,6 +217,48 @@ class AndroidTvTcpTransportClient
     socket.destroy();
   }
 
+  /// Looks up an already-paired Android TV by its server certificate at
+  /// [host]. When found, the certificate is also stored under the new host so
+  /// subsequent remote connections can use the existing pairing.
+  ///
+  /// A TLS peer is accepted only when its certificate fingerprint is already
+  /// present in app storage. This prevents an unpaired TV from being treated
+  /// as a known device just because port 6466 is reachable.
+  @override
+  Future<String?> discoverStableIdAtHost(String host) async {
+    final normalizedHost = host.trim();
+    if (normalizedHost.isEmpty) return null;
+
+    SecureSocket? socket;
+    try {
+      final ctx = await _certStore.clientContext;
+      socket = await SecureSocket.connect(
+        normalizedHost,
+        _remotePort,
+        context: ctx,
+        onBadCertificate: (_) => true,
+        timeout: identityProbeTimeout,
+      );
+      final rawDer = socket.peerCertificate?.der;
+      if (rawDer == null) return null;
+
+      final der = Uint8List.fromList(rawDer);
+      final stableId = AndroidTvCertificateStore.stableIdFromServerCertificate(
+        der,
+      );
+      if (!await _certStore.hasStoredServerCertificate(stableId)) {
+        return null;
+      }
+
+      await _certStore.storeServerCert(normalizedHost, der);
+      return stableId;
+    } catch (_) {
+      return null;
+    } finally {
+      socket?.destroy();
+    }
+  }
+
   /// Unblocks any in-progress pairing handshake and tears down the pairing
   /// socket. Must call [_failPendingPairing] before [_cleanupPairing] so the
   /// awaited Completer resolves before its map entry is removed.
@@ -240,8 +285,10 @@ class AndroidTvTcpTransportClient
   }
 
   @override
-  Future<TvDeviceInfo> queryDeviceInfo({required String deviceId}) async =>
-      const TvDeviceInfo();
+  Future<TvDeviceInfo> queryDeviceInfo({required String deviceId}) async {
+    final stableId = await _certStore.stableIdForHost(_hostResolver(deviceId));
+    return TvDeviceInfo(stableId: stableId);
+  }
 
   // ---------------------------------------------------------------------------
   // Pairing flow (port 6467)

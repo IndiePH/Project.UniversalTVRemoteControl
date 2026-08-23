@@ -10,6 +10,9 @@ import 'package:one_remote/remote_control/data/data.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_certificate_store.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_handshake_tracer.dart';
 import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_tcp_transport_client.dart';
+import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
+import 'package:one_remote/remote_control/data/persistence/legacy/legacy_host_resolver.dart';
+import 'package:one_remote/remote_control/data/persistence/secure_device_scoped_secret_persistence.dart';
 import 'package:one_remote/remote_control/debug/fake_android_tv_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_hisense_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_roku_transport_client.dart';
@@ -39,7 +42,10 @@ import 'package:one_remote/remote_control/data/adapters/tcl_roku_adapter.dart';
 
 void _configureShared(GetIt sl) {
   sl.registerSingleton<AppDiagnosticsRecorder>(AppDiagnosticsRecorder());
-  sl.registerSingleton<DeviceRepository>(SharedPrefsDeviceRepository());
+  sl.registerSingleton<DeviceIdentityRegistry>(DeviceIdentityRegistry());
+  sl.registerSingleton<DeviceRepository>(
+    SharedPrefsDeviceRepository(identityRegistry: sl<DeviceIdentityRegistry>()),
+  );
   sl.registerSingleton<LayoutRepository>(SharedPrefsLayoutRepository());
   sl.registerSingleton<PrePairingStepsRegistry>(
     DefaultPrePairingStepsRegistry(localizedStrings: sl<LocalizedStrings>()),
@@ -68,6 +74,58 @@ final class RemoteControlDiConfig implements IDiConfig {
   @override
   void configure(GetIt sl, AppEnvironment env) {
     _configureShared(sl);
+    final resolveHost = _buildHostResolver(sl<DeviceIdentityRegistry>());
+    sl.registerSingleton<LgPairingKeyStore>(
+      LgPairingKeyStore(
+        identityRegistry: sl<DeviceIdentityRegistry>(),
+        devicePersistence: SecureDeviceScopedSecretPersistence(
+          keyPrefix: 'lg_client_key_dev_',
+        ),
+      ),
+    );
+    sl.registerSingleton<SamsungPairingTokenStore>(
+      SamsungPairingTokenStore(
+        identityRegistry: sl<DeviceIdentityRegistry>(),
+        devicePersistence: SecureDeviceScopedSecretPersistence(
+          keyPrefix: 'samsung_remote_token_dev_',
+        ),
+      ),
+    );
+    sl.registerSingleton<SamsungTransportClient>(
+      SamsungWebSocketTransportClient(
+        hostResolver: resolveHost,
+        pairingTokenStore: sl<SamsungPairingTokenStore>(),
+      ),
+    );
+    sl.registerSingleton<LgTransportClient>(
+      LgWebSocketTransportClient(
+        hostResolver: resolveHost,
+        keyStore: sl<LgPairingKeyStore>(),
+      ),
+    );
+    sl.registerSingleton<HisensePairingAuthStore>(
+      HisensePairingAuthStore(
+        identityRegistry: sl<DeviceIdentityRegistry>(),
+        devicePersistence: SecureDeviceScopedSecretPersistence(
+          keyPrefix: 'hisense_mqtt_paired_dev_',
+        ),
+      ),
+    );
+    sl.registerSingleton<HisenseTransportClient>(
+      HisenseMqttTransportClient(
+        hostResolver: resolveHost,
+        pairingAuthStore: sl<HisensePairingAuthStore>(),
+      ),
+    );
+    sl.registerSingleton<AndroidTvCertificateStore>(
+      AndroidTvCertificateStore(),
+    );
+    final androidTvTransport = AndroidTvTcpTransportClient(
+      hostResolver: resolveHost,
+      certStore: sl<AndroidTvCertificateStore>(),
+      tracer: env == AppEnvironment.debug ? AndroidTvHandshakeTracer() : null,
+    );
+    sl.registerSingleton<AndroidTvTransportClient>(androidTvTransport);
     sl.registerSingleton<DeviceDiscoveryService>(
       DiagnosticsRecordingDeviceDiscoveryService(
         delegate: CompositeDeviceDiscoveryService(
@@ -76,47 +134,17 @@ final class RemoteControlDiConfig implements IDiConfig {
             MdnsDeviceDiscoveryService(),
             RokuSsdpDiscoveryService(),
           ],
+          androidTvIdentityResolver: androidTvTransport,
         ),
         recorder: sl<AppDiagnosticsRecorder>(),
       ),
     );
-    sl.registerSingleton<LgPairingKeyStore>(LgPairingKeyStore());
-    sl.registerSingleton<SamsungPairingTokenStore>(SamsungPairingTokenStore());
-    sl.registerSingleton<SamsungTransportClient>(
-      SamsungWebSocketTransportClient(
-        hostResolver: _resolveHost,
-        pairingTokenStore: sl<SamsungPairingTokenStore>(),
-      ),
-    );
-    sl.registerSingleton<LgTransportClient>(
-      LgWebSocketTransportClient(
-        hostResolver: _resolveHost,
-        keyStore: sl<LgPairingKeyStore>(),
-      ),
-    );
-    sl.registerSingleton<HisensePairingAuthStore>(HisensePairingAuthStore());
-    sl.registerSingleton<HisenseTransportClient>(
-      HisenseMqttTransportClient(
-        hostResolver: _resolveHost,
-        pairingAuthStore: sl<HisensePairingAuthStore>(),
-      ),
-    );
-    sl.registerSingleton<AndroidTvCertificateStore>(
-      AndroidTvCertificateStore(),
-    );
-    sl.registerSingleton<AndroidTvTransportClient>(
-      AndroidTvTcpTransportClient(
-        hostResolver: _resolveHost,
-        certStore: sl<AndroidTvCertificateStore>(),
-        tracer: env == AppEnvironment.debug ? AndroidTvHandshakeTracer() : null,
-      ),
-    );
     sl.registerSingleton<RokuTransportClient>(
-      RokuHttpTransportClient(hostResolver: _resolveHost),
+      RokuHttpTransportClient(hostResolver: resolveHost),
     );
     if (_legacyTclEnabled) {
       sl.registerSingleton<TclLegacyTransportClient>(
-        TclLegacyTcpTransportClient(hostResolver: _resolveHost),
+        TclLegacyTcpTransportClient(hostResolver: resolveHost),
       );
     } else {
       sl.registerSingleton<TclLegacyTransportClient>(
@@ -135,6 +163,7 @@ final class RemoteControlDiConfig implements IDiConfig {
       adapters: adapters,
       variantRegistry: sl<VariantResolutionRegistry>(),
       localizedStrings: sl<LocalizedStrings>(),
+      identityRegistry: sl<DeviceIdentityRegistry>(),
     );
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
     sl.registerSingleton<RemoteCommandService>(
@@ -153,17 +182,21 @@ final class RemoteControlDiConfig implements IDiConfig {
     );
   }
 
-  static String _resolveHost(String deviceId) {
-    final explicitHost = _tvHostOverride.trim();
-    if (explicitHost.isNotEmpty) return explicitHost;
-    return _ipv4FromDeviceId(deviceId);
-  }
-
-  static String _ipv4FromDeviceId(String deviceId) {
-    final ipv4Regex = RegExp(r'(\d{1,3}(?:\.\d{1,3}){3})');
-    final match = ipv4Regex.firstMatch(deviceId);
-    if (match == null) return '';
-    return match.group(1) ?? '';
+  /// Builds a transport host resolver that prefers the identity registry's
+  /// current host for a stable id, falling back to the legacy IPv4-in-id regex
+  /// for IP-derived (legacy) device ids.
+  static String Function(String) _buildHostResolver(
+    DeviceIdentityRegistry identityRegistry,
+  ) {
+    return (String deviceId) {
+      final explicitHost = _tvHostOverride.trim();
+      if (explicitHost.isNotEmpty) return explicitHost;
+      final registryHost = identityRegistry.hostForStableId(deviceId);
+      if (registryHost != null && registryHost.isNotEmpty) {
+        return registryHost;
+      }
+      return LegacyHostResolver.hostFromDeviceId(deviceId);
+    };
   }
 }
 
@@ -209,6 +242,7 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
       adapters: adapters,
       variantRegistry: sl<VariantResolutionRegistry>(),
       localizedStrings: sl<LocalizedStrings>(),
+      identityRegistry: sl<DeviceIdentityRegistry>(),
     );
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
     sl.registerSingleton<RemoteCommandService>(

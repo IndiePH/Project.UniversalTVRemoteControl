@@ -11,6 +11,30 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-08-23
+
+### Fixed
+- `CompositeDeviceDiscoveryService.discoverDevices` now **awaits** Android TV identity
+  enrichment inside the try block. Returning `Future.wait` without `await` tripped
+  `unawaited_return_in_try_block` and released the Android multicast lock before
+  enrichment finished.
+
+### Changed
+- App version bump to `1.5.0+20` (`pubspec.yaml`; README and marketing release details synced).
+- Play Store release notes and listing copy for `1.5.0` now cover persistent TV identity
+  plus merged `main` work: command drawer (hide unused buttons) and unified command-payload
+  dispatch (more reliable app shortcuts / key sending). Per-variant default layouts remain
+  internal plumbing (`RemoteLayoutDefaults` map still empty) and are not claimed in store copy.
+
+### Docs
+- Updated `marketing_strategy.md` current release to `1.5.0` / versionCode `20`, What's new
+  paste, listing feature bullet, and operator checklist (identity + drawer + app-launch smoke).
+- Synced `product_specs.md`, `implementation_tasks.md`, README, identity goal docs, and
+  `app-initialization-and-remote-selection-flow.md` so command drawer is documented as shipped
+  and `goal-stable-device-identifier.md` is marked superseded.
+- README and `product_specs.md` discovery notes: Android multicast lock is held for the whole
+  `discoverDevices()` call, including identity enrichment.
+
 ## 2026-08-22
 
 ### Added
@@ -102,6 +126,46 @@ Keep entries short and append new updates at the top.
   catalog correctly hides it on the live grid and survives reset.
 
 ## 2026-08-21
+
+### Changed
+- App version bump to `1.4.1+19` (`pubspec.yaml`; README and marketing release details synced).
+- `feature/stable-device-identifier` now treats proven per-TV identifiers as
+  the internal `TvDevice.id`; the current LAN IP remains mutable host/display
+  data and is no longer the primary pairing key.
+- Discovery reconciliation updates saved hosts after IP changes and
+  conservatively migrates saved-device and layout state from legacy IP-derived
+  ids without removing legacy fallback data prematurely.
+- Pairing secrets prefer device-scoped storage while retaining legacy
+  host-scoped fallback for older app data and interrupted migrations.
+
+### Added
+- Android TV certificate-backed identity probing for already-paired TVs.
+- Persisted `lastSeenAt` tracking and a 30-day, confirmation-only cleanup flow
+  for stale non-active legacy records, including pairing-data and layout
+  deletion. Existing free-tier cleanup remains unchanged.
+- Legacy persistence/resolver namespace, identity reconciliation contracts,
+  migration tests, discovery enrichment tests, and Phase 5 orphan-cleanup
+  tests.
+
+### Compatibility
+- Older IP-keyed records remain usable when stable identity cannot be proven.
+- IP changes after stable identity discovery do not require re-pairing; the IP
+  continues to be available for display and transport resolution.
+
+### Docs
+- Synced branch status into `goal-persistent-device-identity.md`,
+  `persistent-device-identity.md`, `README.md`, `product_specs.md`, and
+  `implementation_tasks.md`.
+- Removed temporary copied references from the other branch once this goal's
+  own docs superseded them.
+- Updated Play Store release details in `marketing_strategy.md` for `1.4.1`
+  (release notes, listing feature bullet, operator checklist, Data safety note).
+
+### Verification
+- `flutter test` — 554 tests passed; 1 test skipped.
+- `flutter analyze` — no issues found.
+- Final Phase 6 router-reboot integration and interrupted-migration coverage
+  remains pending.
 
 ### Added
 - Command drawer (branch `feature/command-drawer`; full design/implementation log:

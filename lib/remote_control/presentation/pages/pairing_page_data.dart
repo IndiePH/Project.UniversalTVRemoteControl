@@ -1,8 +1,13 @@
 import 'package:intl/intl.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/remote_control/application/device_identity_migration_repository.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/discovered_device_support.dart';
+import 'package:one_remote/remote_control/application/layout_identity_migration_repository.dart';
+import 'package:one_remote/remote_control/application/layout_repository.dart';
+import 'package:one_remote/remote_control/data/device_reconciliation_service.dart';
+import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/domain/models/device_support_tier.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
@@ -50,6 +55,76 @@ final class PairingPageData {
       ..sort(DiscoveredDeviceSupport.compareForDiscoveryList);
   }
 
+  /// Reconciles freshly [discovered] devices against [saved] devices by stable
+  /// id and persists any saved device whose LAN host has changed, so a paired
+  /// TV that moved to a new IP (e.g. after a router reboot) keeps working
+  /// without re-pairing. Also re-registers the new `host -> stableId` binding
+  /// in [identityRegistry] so transports address the current IP this session.
+  ///
+  /// Best-effort: persistence failures are swallowed so a discovery scan never
+  /// breaks because a background re-key failed. No-op when no registry is
+  /// wired (degrades to legacy IP-derived behaviour). Legacy records are
+  /// migrated only when the repository exposes the optional migration
+  /// capability; ordinary test/in-memory repositories remain unchanged.
+  static Future<void> reconcileDiscovery({
+    required List<TvDevice> discovered,
+    required List<TvDevice> saved,
+    required DeviceIdentityRegistry? identityRegistry,
+    required DeviceRepository deviceRepository,
+    LayoutRepository? layoutRepository,
+  }) async {
+    if (identityRegistry == null) return;
+    final result = DeviceReconciliationService(
+      identityRegistry: identityRegistry,
+    ).reconcile(discovered: discovered, saved: saved);
+    for (final updated in result.updatedSavedDevices) {
+      try {
+        await deviceRepository.saveDevice(updated);
+      } catch (_) {
+        // Best-effort: a failed persist does not invalidate the scan. The
+        // in-session registry binding still lets transports reach the TV;
+        // the persisted host is corrected on a later successful reconcile.
+      }
+    }
+
+    final deviceMigrator = deviceRepository is DeviceIdentityMigrationRepository
+        ? deviceRepository as DeviceIdentityMigrationRepository
+        : null;
+    if (deviceMigrator == null) return;
+
+    final layoutMigrator = layoutRepository is LayoutIdentityMigrationRepository
+        ? layoutRepository as LayoutIdentityMigrationRepository
+        : null;
+    for (final rekey in result.legacyRekeys) {
+      var layoutCopied = false;
+      if (layoutMigrator != null) {
+        try {
+          layoutCopied = await layoutMigrator.migrateLayoutIdentity(
+            legacyDeviceId: rekey.legacy.id,
+            newDeviceId: rekey.migrated.id,
+          );
+        } catch (_) {
+          // Do not retire the legacy device if its layout could not be copied.
+          continue;
+        }
+      }
+      try {
+        final migrated = await deviceMigrator.migrateDeviceIdentity(
+          legacyId: rekey.legacy.id,
+          device: rekey.migrated,
+        );
+        if (migrated && layoutMigrator != null && layoutCopied) {
+          await layoutMigrator.completeLayoutIdentityMigration(
+            legacyDeviceId: rekey.legacy.id,
+          );
+        }
+      } catch (_) {
+        // Best-effort: the legacy record and its host-keyed secrets remain
+        // available if any part of this migration fails.
+      }
+    }
+  }
+
   static String? discoverySupportNoteForDevice({
     required TvDevice device,
     required AppLocalizations l10n,
@@ -80,6 +155,7 @@ final class PairingPageData {
         brand,
         protocolVariant,
       ),
+      host: ip,
     );
   }
 

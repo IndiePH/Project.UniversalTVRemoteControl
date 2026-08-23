@@ -1,10 +1,16 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:one_remote/remote_control/application/layout_identity_migration_repository.dart';
+import 'package:one_remote/remote_control/application/layout_deletion_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
 import 'package:one_remote/remote_control/domain/models/layout_position.dart';
 
-class SharedPrefsLayoutRepository implements LayoutRepository {
+class SharedPrefsLayoutRepository
+    implements
+        LayoutRepository,
+        LayoutIdentityMigrationRepository,
+        LayoutDeletionRepository {
   static const String _keyPrefix = 'remote_layout_v1_';
 
   @override
@@ -43,5 +49,46 @@ class SharedPrefsLayoutRepository implements LayoutRepository {
         entry.key: entry.value.toJson(),
     };
     await prefs.setString('$_keyPrefix$deviceId', jsonEncode(jsonMap));
+  }
+
+  @override
+  Future<void> deleteLayout({required String deviceId}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_keyPrefix$deviceId');
+  }
+
+  /// Copies a legacy layout to a stable device id without overwriting an
+  /// existing stable-id layout. The old key remains until the device identity
+  /// migration is complete, making an interrupted migration retryable without
+  /// losing the legacy layout.
+  @override
+  Future<bool> migrateLayoutIdentity({
+    required String legacyDeviceId,
+    required String newDeviceId,
+  }) async {
+    if (legacyDeviceId.isEmpty ||
+        newDeviceId.isEmpty ||
+        legacyDeviceId == newDeviceId) {
+      return false;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final oldKey = '$_keyPrefix$legacyDeviceId';
+    final newKey = '$_keyPrefix$newDeviceId';
+    final oldValue = prefs.getString(oldKey);
+    if (oldValue == null || oldValue.isEmpty) return false;
+
+    if (prefs.getString(newKey) == null) {
+      await prefs.setString(newKey, oldValue);
+    }
+    return true;
+  }
+
+  @override
+  Future<void> completeLayoutIdentityMigration({
+    required String legacyDeviceId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_keyPrefix$legacyDeviceId');
   }
 }

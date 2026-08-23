@@ -66,7 +66,7 @@ class PairingPageCoordinator {
     await _deviceRepository.saveDevice(deviceToSave);
     await _deviceRepository.setLastUsedDevice(deviceToSave.id);
     await _deviceRepository.setLastSuccessfulPairingAt(
-      deviceId: device.id,
+      deviceId: deviceToSave.id,
       timestamp: pairedAt,
     );
     _diagnosticsRecorder?.recordPairingSession(

@@ -394,6 +394,37 @@ void main() {
       },
     );
 
+    test(
+      'uses the enriched stable id for saved-device metadata keys',
+      () async {
+        final repo = _StubDeviceRepository();
+        const enrichedDevice = TvDevice(
+          id: 'samsung-udn-1',
+          displayName: 'Samsung TV',
+          brand: TvBrand.samsung,
+          capabilities: {DeviceCapability.keyCommands},
+          host: '192.168.1.10',
+        );
+        final coordinator = _makeCoordinator(
+          preparePairingResult: CommandDispatchResult.success(
+            'Approved',
+            device: enrichedDevice,
+          ),
+          deviceRepository: repo,
+        );
+
+        await coordinator.pairSelectedDevice(
+          device: nonPinDevice,
+          promptPin: (_, _) async => '1234',
+          onPinRejected: (_) {},
+        );
+
+        expect(repo.lastSavedDevice?.id, 'samsung-udn-1');
+        expect(repo.lastUsedDeviceId, 'samsung-udn-1');
+        expect(repo.lastSuccessfulPairingDeviceId, 'samsung-udn-1');
+      },
+    );
+
     test('persists manualIpToSave when provided on success', () async {
       final repo = _StubDeviceRepository();
       final coordinator = _makeCoordinator(

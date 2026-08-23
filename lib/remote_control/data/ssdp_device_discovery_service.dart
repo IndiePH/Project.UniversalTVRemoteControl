@@ -73,7 +73,12 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
         final ip =
             _extractHostFromLocation(headers['location']) ??
             datagram.address.address;
-        candidatesByIp[ip] = _DiscoveryCandidate(ip: ip, brand: brand);
+        final udn = udnFromSsdpHeaders(headers);
+        candidatesByIp[ip] = _DiscoveryCandidate(
+          ip: ip,
+          brand: brand,
+          udn: udn,
+        );
       });
 
       for (final target in _searchTargets) {
@@ -93,21 +98,22 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
       socket?.close();
     }
 
-    final devices =
-        candidatesByIp.values
-            .map(
-              (candidate) => TvDevice(
-                id: '${candidate.brand.name}-${candidate.ip}',
-                displayName:
-                    '${candidate.brand.displayName} TV (${candidate.ip})',
-                brand: candidate.brand,
-                capabilities: const TvCapabilities().capabilitiesFor(
-                  candidate.brand,
-                ),
-              ),
-            )
-            .toList()
-          ..sort((a, b) => a.displayName.compareTo(b.displayName));
+    final devices = candidatesByIp.values.map((candidate) {
+      // Android TV's canonical identity is the mTLS certificate
+      // fingerprint, not the SSDP UDN. The composite discovery
+      // service enriches it after a certificate-backed probe.
+      final stableId =
+          candidate.brand == TvBrand.androidTv || candidate.udn == null
+          ? null
+          : '${candidate.brand.name}-${candidate.udn}';
+      return TvDevice(
+        id: stableId ?? '${candidate.brand.name}-${candidate.ip}',
+        displayName: '${candidate.brand.displayName} TV (${candidate.ip})',
+        brand: candidate.brand,
+        capabilities: const TvCapabilities().capabilitiesFor(candidate.brand),
+        host: candidate.ip,
+      );
+    }).toList()..sort((a, b) => a.displayName.compareTo(b.displayName));
 
     return devices;
   }
@@ -156,8 +162,9 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
 }
 
 class _DiscoveryCandidate {
-  const _DiscoveryCandidate({required this.ip, required this.brand});
+  const _DiscoveryCandidate({required this.ip, required this.brand, this.udn});
 
   final String ip;
   final TvBrand brand;
+  final String? udn;
 }

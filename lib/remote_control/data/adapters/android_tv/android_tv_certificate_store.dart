@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:basic_utils/basic_utils.dart';
+import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pointycastle/asn1.dart';
 
@@ -126,6 +127,12 @@ class AndroidTvCertificateStore {
   static (BigInt, BigInt)? extractRsaFromDer(Uint8List der) =>
       _rsaFromCertDer(der);
 
+  /// Returns the stable identity derived from a server certificate.
+  static String stableIdFromServerCertificate(Uint8List der) {
+    final digest = sha256.convert(der);
+    return 'androidtv-${digest.toString()}';
+  }
+
   /// Removes all stored server certificate files for [host].
   Future<void> clearServerCert(String host) async {
     final dir = await getApplicationDocumentsDirectory();
@@ -150,6 +157,51 @@ class AndroidTvCertificateStore {
       BigInt.parse(rsa['m'] as String, radix: 16),
       BigInt.parse(rsa['e'] as String, radix: 16),
     );
+  }
+
+  /// Returns the stable per-device identifier for [host]: the SHA-256 of the
+  /// stored server certificate DER, formatted as `androidtv-<sha256hex>`. Null
+  /// when no server cert has been stored yet (i.e. before first pairing
+  /// completes). Used as [TvDevice.id] so the device can be re-keyed off its
+  /// IP-derived id onto this stable value.
+  Future<String?> stableIdForHost(String host) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File(
+      '${dir.path}/android_tv_server_${_hostTag(host)}.cert.der',
+    );
+    if (!file.existsSync()) return null;
+    final der = await file.readAsBytes();
+    return stableIdFromServerCertificate(der);
+  }
+
+  /// Returns whether [stableId] matches any server certificate already stored
+  /// by this app, regardless of the host used when it was saved.
+  ///
+  /// This is intentionally certificate-backed: a TLS peer is not treated as
+  /// an already-paired TV merely because it exposes the Android TV port.
+  Future<bool> hasStoredServerCertificate(String stableId) async {
+    final expected = stableId.trim();
+    if (expected.isEmpty) return false;
+
+    final dir = await getApplicationDocumentsDirectory();
+    try {
+      await for (final entity in dir.list()) {
+        if (entity is! File || !entity.path.endsWith('.cert.der')) {
+          continue;
+        }
+        try {
+          final der = await entity.readAsBytes();
+          if (stableIdFromServerCertificate(der) == expected) {
+            return true;
+          }
+        } catch (_) {
+          // Ignore malformed or concurrently removed certificate files.
+        }
+      }
+    } catch (_) {
+      // Treat an unavailable certificate directory as an unknown identity.
+    }
+    return false;
   }
 
   static String _hostTag(String host) =>

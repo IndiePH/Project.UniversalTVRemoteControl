@@ -10,7 +10,9 @@ import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
+import 'package:one_remote/remote_control/application/layout_repository.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
+import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/data/fake_device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
@@ -47,6 +49,7 @@ final class RemoteHomeActions {
     required RemoteCommandService commandService,
     required DeviceDiscoveryService discoveryService,
     required DeviceRepository deviceRepository,
+    LayoutRepository? layoutRepository,
     required ProEntitlementService proEntitlementService,
     required String? activeDeviceId,
   }) async {
@@ -81,6 +84,10 @@ final class RemoteHomeActions {
           reachabilityService: GetIt.instance<TvReachabilityService>(),
           proEntitlementService: proEntitlementService,
           activeDeviceId: activeDeviceId,
+          identityRegistry: sl.isRegistered<DeviceIdentityRegistry>()
+              ? sl<DeviceIdentityRegistry>()
+              : null,
+          layoutRepository: layoutRepository,
         ),
       ),
     );

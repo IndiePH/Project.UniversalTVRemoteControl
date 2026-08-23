@@ -229,6 +229,10 @@
       "deviceName": {"type": "String"}
     }
   },
+  "pairingLegacyCleanupTitle": "Old saved TVs found",
+  "pairingLegacyCleanupBody": "Some saved TVs have not been found for 30 days. Remove them and their custom layouts?",
+  "pairingLegacyCleanupRemove": "Remove old TVs",
+  "pairingLegacyDevicesRemoved": "Old saved TVs removed.",
   "pairingSectionPaired": "Paired",
   "pairingSectionAvailable": "Available",
 

@@ -214,9 +214,20 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [x] Firebase Functions predeploy path fix (`4846b70`, **TVREMOTE-67**): `firebase.json` `$RESOURCE_DIR` so deploy runners expand the functions directory correctly
 - [x] Interstitial presentation-block gating (`b65f094`, **TVREMOTE-63** / **TVREMOTE-66**): `InterstitialAdController.acquirePresentationBlock` / `releasePresentationBlock` suppresses `maybeShow` and late async show while PIN dialog, remote keyboard sheet, or feedback sheet is open; wired from `PairingPageDialogs` and `RemoteHomePage`; tests in `interstitial_ad_controller_test.dart`, `interstitial_ad_policy_test.dart`
 - [x] Per-host pairing credential persistence across app restarts (`54861ee`, **TVREMOTE-36** child lanes):
-  - [x] `HostScopedSecretPersistence` + `SecureHostScopedSecretPersistence` via `flutter_secure_storage`
+  - [x] Originally `HostScopedSecretPersistence` + `SecureHostScopedSecretPersistence` via `flutter_secure_storage` (now under `persistence/legacy/` as the migration fallback)
   - [x] Samsung `SamsungPairingTokenStore`, Hisense `HisensePairingAuthStore`, LG `LgPairingKeyStore` migrated to host-scoped secure storage
   - [x] Tests: `samsung_pairing_token_store_test.dart`, `hisense_pairing_auth_store_test.dart`, `lg_pairing_key_store_test.dart`
+- [x] Persistent device identity across IP changes (`feature/stable-device-identifier`, 2026-08-21; goal `references/goals/goal-persistent-device-identity.md`):
+  - [x] `TvDevice.id` is the proven stable per-TV identity; mutable `host` / display IP is transport-only
+  - [x] Device-scoped secret persistence preferred (`DeviceScopedSecretPersistence` + gateway); legacy host-scoped secrets retained as fallback
+  - [x] Discovery reconciliation updates hosts, conservatively re-keys saved-device/layout records, Android TV cert-backed identity probe
+  - [x] Legacy orphan cleanup: persisted `lastSeenAt`, 30-day grace, confirmation-only removal including layout
+  - [x] Tests: reconciliation, secret gateway, identity registry, layout/device migration, orphan detector, discovery enrichment
+  - [ ] Remaining Phase 6 validation: explicit router-reboot integration scenario + interrupted-migration fallback coverage
+- [x] Command drawer + unified command-payload dispatch (merged from `main`, 2026-08-23; release `1.5.0+20`):
+  - [x] Layout editor drawer strip: park/restore buttons (`LayoutZone.grid` / `LayoutZone.drawer`); live remote hides parked items
+  - [x] `CommandPayload` sealed dispatch (`KeySequence` / `AppLink` / `VidaaLaunch`) on brand adapters
+  - [x] `RemoteLayoutDefaults` plumbing for per-`(brand, variant)` defaults — map still empty; not claimed in store copy
 - [x] Connection state + device policy centralization (`34788d0`, partial **TVREMOTE-24**; extends **TVREMOTE-19**):
   - [x] `TvConnectionStateService` + `MultiplexedTvConnectionStateService` — one upstream transport subscription per device id
   - [x] Home active-device UI uses live transport connection state (`TvConnectionStateIndicator`, `connection_state_presentation.dart`); select-a-remote / pairing-list rows use `TvReachabilityService` TCP probes again (`e1af1b9`)
