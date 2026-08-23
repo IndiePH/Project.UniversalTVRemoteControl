@@ -13,7 +13,7 @@
 
 - Saved-device entry unreachable under old `id`.
 - Pairing secrets keyed by host IP (legacy host-scoped secure storage) unreachable → forced re-pair.
-- Layout/drawer state keyed by `deviceId` would vanish with it (affects unbuilt command-drawer / variant-layout goals).
+- Layout/drawer state keyed by `deviceId` would vanish with it (command drawer is now shipped; variant default layouts remain plumbing).
 - Free-tier 1-device limit: the orphan counts against the slot, blocking the "new" device.
 
 The retry timer (`remote_home_page.dart:377-389`) retries the dead address forever; no reconciliation exists. Verified facts live in the analysis doc.
@@ -70,8 +70,9 @@ The stable id is **not secret** (observable on LAN); it replaces the *identity* 
 
 ## Verification baseline
 
-- `flutter test` — 554 tests passed; 1 test skipped.
+- `flutter test` — 576 tests passed; 1 test skipped (after merging `main` + this goal).
 - `flutter analyze` — no issues found.
+- App version for this release: `1.5.0+20`.
 - The broad suite is green; the remaining Phase 6 gap is explicit router-reboot
   integration and interrupted-migration fallback coverage.
 
@@ -90,7 +91,7 @@ The stable id is **not secret** (observable on LAN); it replaces the *identity* 
 
 ## Sequencing vs. other goals
 
-Unbuilt command-drawer / variant-layout goals key persisted layout state off `deviceId`. **This goal first** → they inherit a stable key for free. Doing it after would mean retrofitting migration onto already-shipped layout/drawer state.
+Command-drawer and variant-layout work key persisted layout state off `deviceId`. **This goal first** → they inherit a stable key for free. The command drawer is now shipped on `main` (merged into this branch); per-variant default layouts are still an empty `RemoteLayoutDefaults` map. Doing identity after those would have meant retrofitting migration onto already-shipped layout/drawer state.
 
 ---
 

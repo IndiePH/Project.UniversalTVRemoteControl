@@ -19,7 +19,7 @@ com.vorithstudio.smarttvremote
 
 # 2. 📄 Play Store Listing
 
-**Last updated:** 2026-08-21 · **Target audience:** 13+ · **Listed brands:** Samsung, LG, Hisense, Chromecast with Google TV only (no Roku/TCL until validated).
+**Last updated:** 2026-08-23 · **Target audience:** 13+ · **Listed brands:** Samsung, LG, Hisense, Chromecast with Google TV only (no Roku/TCL until validated).
 
 ## 🔹 Short Description (80 chars max)
 
@@ -61,6 +61,7 @@ Key features
 • On-screen keyboard for search and text entry where the TV supports it
 • Save paired TVs and reconnect quickly
 • Keeps paired TVs after a router reboot / new IP when the TV can be identified again (no re-pair in the common case)
+• Hide unused remote buttons in a drawer (Pro layout editor) without losing their place
 • Optional in-app feedback to report issues (category + message; see Privacy Policy)
 
 Free and Pro
@@ -105,9 +106,9 @@ Download OneRemote and control your Smart TV from your phone.
 
 ## 🔹 Release details (AAB — Google Play)
 
-**Current release:** `1.4.1` · **versionCode:** `19` · **Track:** Internal testing → Production (promote same artifact when validated)
+**Current release:** `1.5.0` · **versionCode:** `20` · **Track:** Internal testing → Production (promote same artifact when validated)
 
-**Focus for this release:** Persistent TV identity — paired TVs, layouts, and pairing credentials survive DHCP / IP changes when the TV can be re-identified. No Play Console Data safety form change (stable ids and pairing secrets stay on-device; no new data leaves the device).
+**Focus for this release:** Persistent TV identity (paired TVs, layouts, and pairing credentials survive DHCP / IP changes when the TV can be re-identified) plus the command drawer (hide unused buttons) and more reliable brand command dispatch from `main`. No Play Console Data safety form change (stable ids and pairing secrets stay on-device; no new data leaves the device).
 
 **Build (signed AAB with production dart-defines):**
 
@@ -125,12 +126,13 @@ Requires `android/release_dart_defines.properties` (gitignored) with `FEEDBACK_W
 Paste under **Release → Release notes** (Internal testing or Production). Adjust length if Console limits apply.
 
 ```
-What's new in 1.4.1
+What's new in 1.5.0
 
 • Paired TVs stay connected after a router reboot or new IP when the TV can be identified again — no re-pair needed in the common case
 • Saved layouts and pairing stay with the TV across IP changes
+• Hide unused remote buttons in the layout editor drawer (Pro) without losing their place
+• More reliable app shortcuts and button commands across supported TV brands
 • Feedback can include saved TV brand/model (when known) to help support — disclosed before send; no IP addresses or pairing secrets
-• Stability and reconnect improvements
 
 Thank you for using OneRemote!
 ```
@@ -140,7 +142,8 @@ Thank you for using OneRemote!
 ```
 • Paired TVs keep working after router reboot / new IP (no re-pair in common cases)
 • Saved layouts and pairing survive IP changes
-• Stability improvements
+• Hide unused buttons in the layout editor drawer (Pro)
+• More reliable commands and app shortcuts
 ```
 
 ### Operator checklist (this AAB)
@@ -155,7 +158,9 @@ Thank you for using OneRemote!
 | Upload AAB to **Internal testing** | ☐ |
 | Verify: pair TV, Pro purchase/restore, ads, feedback row in Sheet | ☐ |
 | Verify: reboot router / change TV IP, rediscover, reconnect without re-pair when identity is known | ☐ |
-| Update Main store listing full description with the IP-resilience feature bullet | ☐ |
+| Verify: layout editor drawer — park a button, confirm it leaves the live remote, restore it | ☐ |
+| Verify: app shortcuts / launch commands still work on Samsung and Hisense | ☐ |
+| Update Main store listing full description (IP-resilience + drawer bullets) | ☐ |
 | Promote to **Production** (staged rollout recommended) | ☐ |
 
 ---

@@ -20,7 +20,9 @@ String ssdpDiscoveryProbeText(Map<String, String> headers) {
 String? udnFromSsdpHeaders(Map<String, String> headers) {
   final usn = headers['usn'];
   if (usn == null || usn.isEmpty) return null;
-  final match = RegExp(r'uuid:([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})').firstMatch(usn);
+  final match = RegExp(
+    r'uuid:([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})',
+  ).firstMatch(usn);
   return match?.group(1);
 }
 

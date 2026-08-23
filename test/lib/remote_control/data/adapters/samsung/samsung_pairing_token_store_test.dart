@@ -115,12 +115,11 @@ void main() {
       LegacyInMemoryHostScopedSecretPersistence host,
       InMemoryDeviceScopedSecretPersistence device,
       DeviceIdentityRegistry registry,
-    ) =>
-        SamsungPairingTokenStore(
-          persistence: host,
-          devicePersistence: device,
-          identityRegistry: registry,
-        );
+    ) => SamsungPairingTokenStore(
+      persistence: host,
+      devicePersistence: device,
+      identityRegistry: registry,
+    );
 
     test('setTokenForHost persists under stableId when registered', () async {
       final host = LegacyInMemoryHostScopedSecretPersistence();

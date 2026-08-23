@@ -12,12 +12,11 @@ LgPairingKeyStore _storeWithRegistry(
   LegacyInMemoryHostScopedSecretPersistence host,
   InMemoryDeviceScopedSecretPersistence device,
   DeviceIdentityRegistry registry,
-) =>
-    LgPairingKeyStore(
-      persistence: host,
-      devicePersistence: device,
-      identityRegistry: registry,
-    );
+) => LgPairingKeyStore(
+  persistence: host,
+  devicePersistence: device,
+  identityRegistry: registry,
+);
 
 void main() {
   setUp(() {
@@ -36,7 +35,9 @@ void main() {
     });
 
     test('keyForHost returns null when no key is stored', () async {
-      final store = _store(persistence: LegacyInMemoryHostScopedSecretPersistence());
+      final store = _store(
+        persistence: LegacyInMemoryHostScopedSecretPersistence(),
+      );
       expect(await store.keyForHost('192.168.1.99'), isNull);
     });
 
@@ -94,7 +95,9 @@ void main() {
       SharedPreferences.setMockInitialValues({
         'lg_client_key_$host': 'old-key',
       });
-      final store = _store(persistence: LegacyInMemoryHostScopedSecretPersistence());
+      final store = _store(
+        persistence: LegacyInMemoryHostScopedSecretPersistence(),
+      );
       await store.storeKeyForHost(host, 'new-key');
 
       final prefs = await SharedPreferences.getInstance();

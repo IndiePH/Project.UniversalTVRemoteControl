@@ -89,7 +89,7 @@ The registrations relevant to device selection and remotes, in order:
 
 1. Reads `deviceRepository.getSavedDevices()` and `deviceRepository.getLastUsedDevice()`.
 2. **No last-used device** → clears text/connection subscriptions, resets the layout to computed defaults, and the screen renders its empty "connect a TV" state. Nothing auto-navigates to pairing — the user has to tap an explicit action.
-3. **Last-used device exists** → sets it as `_activeDevice`, subscribes to text-input-ready and connection-state streams, calls `_loadLayoutForDevice(lastUsed)` (the layout-resolution flow documented in `goal-variant-remote-layout.md`/`goal-command-drawer.md`) — matches `product_specs.md`'s "returning users auto-connect to last used device."
+3. **Last-used device exists** → sets it as `_activeDevice`, subscribes to text-input-ready and connection-state streams, calls `_loadLayoutForDevice(lastUsed)` (capability filtering + saved layout including command-drawer `LayoutZone`; per-variant defaults in `goal-variant-remote-layout.md` are still an empty map) — matches `product_specs.md`'s "returning users auto-connect to last used device."
 
 ## Phase 5 — Pairing a device (`pairing_page.dart` + `pairing_page_coordinator.dart` + `pairing_page_data.dart`)
 
@@ -97,7 +97,7 @@ Triggered from `remote_home_actions.dart`, which pushes `PairingPage` via `Navig
 
 `PairingPage.initState()` (`:86-94`) kicks off, concurrently: `_scanDevices()` (calls `DeviceDiscoveryService.discover()` — runs SSDP + mDNS + Roku SSDP together, per Phase 2a #2), `_loadRecentManualIps()`, and `_loadPairingMetadata()`.
 
-The user either taps a discovered result, or types a manual IP (built into a `TvDevice` by `pairing_page_data.dart:74-75`, id format `'${brand.name}-$protocolVariant-$ip'` — same IP-derived weakness as automated discovery, see `goal-stable-device-identifier.md`).
+The user either taps a discovered result, or types a manual IP (built into a `TvDevice` by `pairing_page_data.dart`). Discovery/pairing now prefer a proven stable `id` with mutable `host` when identity can be established (`goal-persistent-device-identity.md`); IP-derived ids remain the fallback when it cannot.
 
 Selecting a device runs **`PairingPageCoordinator.pairSelectedDevice()`** (`pairing_page_coordinator.dart:24-77`):
 
@@ -119,16 +119,16 @@ The caller in `remote_home_actions.dart` receives the returned device and calls 
 
 1. Sets `_activeDevice`, marks status `ready`, clears any pairing-hint UI state.
 2. Subscribes to text-input-ready and connection-state streams for this device.
-3. `_loadLayoutForDevice(device)` — resolves which buttons show and where (capability filtering today; see the two layout goal docs for the proposed per-`(brand,variant)` extension and the command-drawer proposal).
+3. `_loadLayoutForDevice(device)` — resolves which buttons show and where (capability filtering, saved positions, command-drawer zone). Per-`(brand,variant)` default overrides are wired but the defaults map is still empty.
 
 From here, every button press runs `_send(command)` → `commandService.sendCommand(device, command)` → `BrandRoutedRemoteCommandService._adapterFor(brand, variant)` → that adapter's protocol-specific transport client.
 
 ---
 
-## Where the in-flight goal docs plug into this flow
+## Where related goal docs plug into this flow
 
-- **`goal-variant-remote-layout.md`** changes one call inside Phase 4/6's `_loadLayoutForDevice` — the layout-default source, nothing about discovery or pairing.
-- **`goal-command-drawer.md`** changes the same call plus adds UI state to the layout editor — also downstream of Phase 6, not discovery/pairing.
-- **`goal-stable-device-identifier.md`** concerns exactly the `id` values created during Phase 2a discovery-service construction and Phase 5's manual-IP path — the root of the fragility both other goals inherit.
+- **`goal-variant-remote-layout.md`** — `_loadLayoutForDevice` default source; `_map` still empty.
+- **Command drawer** — shipped: same load path plus layout-editor UI (`LayoutZone.drawer`).
+- **`goal-persistent-device-identity.md`** — `id` / `host` created during discovery and Phase 5 pairing (supersedes `goal-stable-device-identifier.md`).
 
 ---

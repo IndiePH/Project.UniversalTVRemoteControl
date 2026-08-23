@@ -28,6 +28,5 @@ class SecureDeviceScopedSecretPersistence
       _storage.write(key: _key(stableId), value: value);
 
   @override
-  Future<void> delete(String stableId) =>
-      _storage.delete(key: _key(stableId));
+  Future<void> delete(String stableId) => _storage.delete(key: _key(stableId));
 }

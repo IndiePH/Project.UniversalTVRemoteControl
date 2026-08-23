@@ -21,12 +21,14 @@ class HisensePairingAuthStore {
     DeviceScopedSecretPersistence? devicePersistence,
     DeviceIdentityRegistry? identityRegistry,
   }) : _gateway = DeviceScopedSecretGateway(
-          hostPersistence:
-              persistence ??
-              LegacySecureHostScopedSecretPersistence(keyPrefix: 'hisense_mqtt_paired_'),
-          devicePersistence: devicePersistence,
-          identityRegistry: identityRegistry,
-        );
+         hostPersistence:
+             persistence ??
+             LegacySecureHostScopedSecretPersistence(
+               keyPrefix: 'hisense_mqtt_paired_',
+             ),
+         devicePersistence: devicePersistence,
+         identityRegistry: identityRegistry,
+       );
 
   static const String _pairedMarker = '1';
 

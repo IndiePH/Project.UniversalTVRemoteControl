@@ -21,12 +21,14 @@ class LgPairingKeyStore {
     DeviceScopedSecretPersistence? devicePersistence,
     DeviceIdentityRegistry? identityRegistry,
   }) : _gateway = DeviceScopedSecretGateway(
-          hostPersistence:
-              persistence ??
-              LegacySecureHostScopedSecretPersistence(keyPrefix: 'lg_client_key_'),
-          devicePersistence: devicePersistence,
-          identityRegistry: identityRegistry,
-        );
+         hostPersistence:
+             persistence ??
+             LegacySecureHostScopedSecretPersistence(
+               keyPrefix: 'lg_client_key_',
+             ),
+         devicePersistence: devicePersistence,
+         identityRegistry: identityRegistry,
+       );
 
   static const String _legacyKeyPrefix = 'lg_client_key_';
 

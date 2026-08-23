@@ -105,6 +105,7 @@ MVP implementation priority (current baseline)—same **platform** stance as §1
 
 * Settings access on remote screen toggles an in-place layout editor
 * Grid-based layout customization (`5x8`) with drag-and-drop repositioning (bottom row reserved for the banner ad overlay)
+* Command drawer (Pro layout editor): park unused buttons off the live remote without deleting them; drag back to restore
 * When a drop overlaps another control, the editor attempts a **swap**: the dragged control lands at the dropped cell; the displaced control is placed using **footprint-aware** rules (validation footprints: d-pad `3x3`, channel/volume rockers `1x3`, others from control size) so unrelated controls are not overlapped. If no valid placement exists, the drop is **rejected**
 * Multi-cell control support:
     * D-pad occupies `3x3`
@@ -381,6 +382,7 @@ Lean **product** scope (platform/release: §1):
     * Save and auto-reconnect last used device
     * Persistent per-TV identity (stable id + mutable LAN host) so saved pairing, layout, and reconnect survive DHCP/IP changes when identity is proven
     * Settings access with per-device editable grid layout persistence
+    * Command drawer in the layout editor (Pro) to hide unused buttons without losing their place
     * In-app user feedback in settings (category + message; HTTPS webhook to operator Sheet — see `references/compliance-and-release-requirements.md` §1.5)
 
 Explicitly out of **initial lean** milestone:

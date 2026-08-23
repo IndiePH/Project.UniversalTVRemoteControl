@@ -2,7 +2,7 @@
 
 Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — use either label interchangeably in docs). Control smart TVs over Wi‑Fi from Android or iOS.
 
-**Version:** `1.4.1+19` (see `pubspec.yaml`)
+**Version:** `1.5.0+20` (see `pubspec.yaml`)
 
 ## Overview
 
@@ -68,6 +68,7 @@ On a phone and TV on the same LAN: open the app → pair (scan or manual IP) →
   - Pairing / saved-device rows use `TvReachabilityService` TCP reachability probes
   - Pairing credentials persist across restarts (`flutter_secure_storage`); preferred key is the proven per-TV stable id, with legacy host-keyed fallback during migration
   - After a router/DHCP IP change, rediscovery updates the saved TV's mutable `host` so reconnect does not require re-pairing when stable identity is known
+  - Layout editor (Pro): unused buttons can be parked in a command drawer and restored later without losing their grid slot
 - Optional fake transport mode for all brand adapters (single switch):
   - run with `--dart-define=USE_FAKE_TRANSPORTS=true`
   - also switches discovery to fake scan data (includes a mock Hisense TV)

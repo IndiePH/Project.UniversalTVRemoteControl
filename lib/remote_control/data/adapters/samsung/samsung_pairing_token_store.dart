@@ -36,12 +36,14 @@ class SamsungPairingTokenStore {
     DeviceScopedSecretPersistence? devicePersistence,
     DeviceIdentityRegistry? identityRegistry,
   }) : _gateway = DeviceScopedSecretGateway(
-          hostPersistence:
-              persistence ??
-              LegacySecureHostScopedSecretPersistence(keyPrefix: 'samsung_remote_token_'),
-          devicePersistence: devicePersistence,
-          identityRegistry: identityRegistry,
-        );
+         hostPersistence:
+             persistence ??
+             LegacySecureHostScopedSecretPersistence(
+               keyPrefix: 'samsung_remote_token_',
+             ),
+         devicePersistence: devicePersistence,
+         identityRegistry: identityRegistry,
+       );
 
   final DeviceScopedSecretGateway _gateway;
   final Map<String, String> _tokenByHost = <String, String>{};

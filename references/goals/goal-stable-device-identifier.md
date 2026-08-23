@@ -1,7 +1,9 @@
 # Goal: Unique, Stable Device Identifier
 
+> **Superseded.** Implemented as `references/goals/goal-persistent-device-identity.md` on `feature/stable-device-identifier` (Phases 0–5; shipping in `1.5.0+20`). Keep this file only as the original analysis transcript.
+
 **Branch:** `feature/command-drawer` (current)
-**Status:** proposed — analysis only, **NOT FINALIZED**
+**Status:** proposed — analysis only, **NOT FINALIZED** — **superseded by `goal-persistent-device-identity.md`**
 **Related:** `references/goals/goal-command-drawer.md`, `references/goals/goal-variant-remote-layout.md` (both key persisted state off `deviceId`, and both inherit whatever this goal decides)
 **Origin:** surfaced while explaining `LayoutRepository` — its `deviceId` key turned out to be IP-derived, not a stable device identity.
 

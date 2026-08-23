@@ -11,6 +11,22 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-08-23
+
+### Changed
+- App version bump to `1.5.0+20` (`pubspec.yaml`; README and marketing release details synced).
+- Play Store release notes and listing copy for `1.5.0` now cover persistent TV identity
+  plus merged `main` work: command drawer (hide unused buttons) and unified command-payload
+  dispatch (more reliable app shortcuts / key sending). Per-variant default layouts remain
+  internal plumbing (`RemoteLayoutDefaults` map still empty) and are not claimed in store copy.
+
+### Docs
+- Updated `marketing_strategy.md` current release to `1.5.0` / versionCode `20`, What's new
+  paste, listing feature bullet, and operator checklist (identity + drawer + app-launch smoke).
+- Synced `product_specs.md`, `implementation_tasks.md`, README, identity goal docs, and
+  `app-initialization-and-remote-selection-flow.md` so command drawer is documented as shipped
+  and `goal-stable-device-identifier.md` is marked superseded.
+
 ## 2026-08-22
 
 ### Added

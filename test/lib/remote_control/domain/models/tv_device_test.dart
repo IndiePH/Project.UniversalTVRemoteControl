@@ -280,17 +280,20 @@ void main() {
       expect(device.resolvedHost, equals('192.168.1.50'));
     });
 
-    test('resolvedHost returns empty string when host is null and id has no IPv4', () {
-      const device = TvDevice(
-        id: 'roku-YX00AB123456',
-        displayName: 'Roku TV',
-        brand: TvBrand.roku,
-        capabilities: {DeviceCapability.keyCommands},
-      );
+    test(
+      'resolvedHost returns empty string when host is null and id has no IPv4',
+      () {
+        const device = TvDevice(
+          id: 'roku-YX00AB123456',
+          displayName: 'Roku TV',
+          brand: TvBrand.roku,
+          capabilities: {DeviceCapability.keyCommands},
+        );
 
-      expect(device.host, isNull);
-      expect(device.resolvedHost, equals(''));
-    });
+        expect(device.host, isNull);
+        expect(device.resolvedHost, equals(''));
+      },
+    );
 
     test('toJson includes host and fromJson round-trips it', () {
       const original = TvDevice(

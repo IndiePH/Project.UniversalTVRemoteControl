@@ -32,12 +32,11 @@ void main() {
       LegacyInMemoryHostScopedSecretPersistence host,
       InMemoryDeviceScopedSecretPersistence device,
       DeviceIdentityRegistry registry,
-    ) =>
-        HisensePairingAuthStore(
-          persistence: host,
-          devicePersistence: device,
-          identityRegistry: registry,
-        );
+    ) => HisensePairingAuthStore(
+      persistence: host,
+      devicePersistence: device,
+      identityRegistry: registry,
+    );
 
     test('markHostPaired persists under stableId when registered', () async {
       final host = LegacyInMemoryHostScopedSecretPersistence();

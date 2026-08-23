@@ -3,13 +3,15 @@ import 'package:one_remote/remote_control/data/persistence/device_identity_regis
 
 void main() {
   group('DeviceIdentityRegistry', () {
-    test('register binds host to stableId and resolves via stableIdForHost',
-        () {
-      final registry = DeviceIdentityRegistry();
-      registry.register('192.168.1.10', 'samsung-uuid-1');
+    test(
+      'register binds host to stableId and resolves via stableIdForHost',
+      () {
+        final registry = DeviceIdentityRegistry();
+        registry.register('192.168.1.10', 'samsung-uuid-1');
 
-      expect(registry.stableIdForHost('192.168.1.10'), 'samsung-uuid-1');
-    });
+        expect(registry.stableIdForHost('192.168.1.10'), 'samsung-uuid-1');
+      },
+    );
 
     test('stableIdForHost is case- and whitespace-insensitive on host', () {
       final registry = DeviceIdentityRegistry();

@@ -71,7 +71,9 @@ void main() {
 
     test('extracts the UUID from a bare uuid USN', () {
       expect(
-        udnFromSsdpHeaders({'usn': 'uuid:abcdef12-3456-7890-abcd-ef1234567890'}),
+        udnFromSsdpHeaders({
+          'usn': 'uuid:abcdef12-3456-7890-abcd-ef1234567890',
+        }),
         'abcdef12-3456-7890-abcd-ef1234567890',
       );
     });
@@ -91,17 +93,11 @@ void main() {
     });
 
     test('returns null when USN has no uuid token', () {
-      expect(
-        udnFromSsdpHeaders({'usn': 'upnp:rootdevice'}),
-        isNull,
-      );
+      expect(udnFromSsdpHeaders({'usn': 'upnp:rootdevice'}), isNull);
     });
 
     test('returns null for a malformed UUID', () {
-      expect(
-        udnFromSsdpHeaders({'usn': 'uuid:not-a-uuid'}),
-        isNull,
-      );
+      expect(udnFromSsdpHeaders({'usn': 'uuid:not-a-uuid'}), isNull);
     });
   });
 }

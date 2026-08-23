@@ -117,10 +117,9 @@ class TvDevice {
       // Backfill host from the legacy IP-derived id when absent, so persisted
       // blobs written before host was stored load with a usable host.
       final hostRaw = (json['host'] as String?)?.trim();
-      final effectiveHost =
-          (hostRaw != null && hostRaw.isNotEmpty)
-              ? hostRaw
-              : _ipv4.firstMatch(id)?.group(1);
+      final effectiveHost = (hostRaw != null && hostRaw.isNotEmpty)
+          ? hostRaw
+          : _ipv4.firstMatch(id)?.group(1);
       final capabilityNames =
           (json['capabilities'] as List<dynamic>?)?.cast<String>() ?? [];
       final parsed = capabilityNames

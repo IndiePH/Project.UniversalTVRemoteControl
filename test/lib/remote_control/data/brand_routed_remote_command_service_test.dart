@@ -146,7 +146,10 @@ void main() {
         host: '192.168.1.10',
       );
 
-      await expectLater(service.preparePairing(device: deviceWithHost), completes);
+      await expectLater(
+        service.preparePairing(device: deviceWithHost),
+        completes,
+      );
     });
   });
 

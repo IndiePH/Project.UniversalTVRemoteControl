@@ -224,6 +224,10 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Legacy orphan cleanup: persisted `lastSeenAt`, 30-day grace, confirmation-only removal including layout
   - [x] Tests: reconciliation, secret gateway, identity registry, layout/device migration, orphan detector, discovery enrichment
   - [ ] Remaining Phase 6 validation: explicit router-reboot integration scenario + interrupted-migration fallback coverage
+- [x] Command drawer + unified command-payload dispatch (merged from `main`, 2026-08-23; release `1.5.0+20`):
+  - [x] Layout editor drawer strip: park/restore buttons (`LayoutZone.grid` / `LayoutZone.drawer`); live remote hides parked items
+  - [x] `CommandPayload` sealed dispatch (`KeySequence` / `AppLink` / `VidaaLaunch`) on brand adapters
+  - [x] `RemoteLayoutDefaults` plumbing for per-`(brand, variant)` defaults — map still empty; not claimed in store copy
 - [x] Connection state + device policy centralization (`34788d0`, partial **TVREMOTE-24**; extends **TVREMOTE-19**):
   - [x] `TvConnectionStateService` + `MultiplexedTvConnectionStateService` — one upstream transport subscription per device id
   - [x] Home active-device UI uses live transport connection state (`TvConnectionStateIndicator`, `connection_state_presentation.dart`); select-a-remote / pairing-list rows use `TvReachabilityService` TCP probes again (`e1af1b9`)

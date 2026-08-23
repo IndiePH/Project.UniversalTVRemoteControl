@@ -37,8 +37,7 @@ class DeviceScopedSecretGateway {
   bool get _deviceScopedEnabled =>
       _devicePersistence != null && _identityRegistry != null;
 
-  String? _stableIdFor(String host) =>
-      _identityRegistry?.stableIdForHost(host);
+  String? _stableIdFor(String host) => _identityRegistry?.stableIdForHost(host);
 
   Future<String?> read(String host) async {
     final normalized = _normalizeHost(host);
