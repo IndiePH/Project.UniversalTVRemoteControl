@@ -5,6 +5,14 @@ import java.util.Properties
 // via Firebase Remote Config (`test_ads_enabled`) in Dart — see AdConfig.
 val productionAdMobAppId = "ca-app-pub-4297882562709937~9516353394"
 
+// personal-build branch only — see references/guide-personal-build.md.
+// Firebase Analytics/Crashlytics auto-init before Dart's main() runs, so the
+// --dart-define=PERSONAL_BUILD flag (Dart-only, invisible to Gradle) can't stop
+// their native pre-init collection window. This env var closes that gap at the
+// manifest level. Defaults to false, so a plain `flutter build apk --release`
+// (no env var) is byte-for-byte the same as `main` — must NEVER be merged there.
+val personalBuild = (System.getenv("PERSONAL_BUILD") ?: "false").toBoolean()
+
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
@@ -36,6 +44,8 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders["admobAppId"] = productionAdMobAppId
+        manifestPlaceholders["analyticsCollectionDeactivated"] = personalBuild.toString()
+        manifestPlaceholders["crashlyticsCollectionEnabled"] = (!personalBuild).toString()
     }
 
     signingConfigs {

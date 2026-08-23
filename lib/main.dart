@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:get_it/get_it.dart';
@@ -49,7 +50,12 @@ Future<void> main() async {
 
   await Firebase.initializeApp();
   if (AppBuildConfig.personalBuildUnlock) {
+    // Personal sideload builds: stop the native SDKs from phoning home.
+    // Best-effort — Crashlytics' native init runs before this line executes,
+    // so a negligible pre-init handshake window is unavoidable without a
+    // build-time (Gradle) toggle.
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
+    await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(false);
   }
 
   final env = AppBuildConfig.environmentForMain();
@@ -60,7 +66,7 @@ Future<void> main() async {
   final proEntitlementService = GetIt.instance<ProEntitlementService>();
   await proEntitlementService.applyLastKnownStatusFromCache();
   await proEntitlementService.refreshFromStore(isDebugBuild: kDebugMode);
-  if (_supportsMobileAds()) {
+  if (_supportsMobileAds() && !AppBuildConfig.personalBuildUnlock) {
     await AdConsentCoordinator.prepareForAds();
     if (AdConsentCoordinator.canRequestAds) {
       await MobileAds.instance.initialize();

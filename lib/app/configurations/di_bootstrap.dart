@@ -3,6 +3,7 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/app_localized_strings.dart';
+import 'package:one_remote/app/configurations/app_build_config.dart';
 import 'package:one_remote/app/configurations/app_di_config.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/app_monetization_di_config.dart';
@@ -61,7 +62,9 @@ final class DiBootstrap {
 
     final resolvedAdRemoteConfig =
         adRemoteConfig ?? AdRemoteConfigService.withDefaults();
-    if (adRemoteConfig == null && AdConfig.supportsMobileAds) {
+    if (adRemoteConfig == null &&
+        AdConfig.supportsMobileAds &&
+        !AppBuildConfig.personalBuildUnlock) {
       await resolvedAdRemoteConfig.fetchAndActivate();
     }
 

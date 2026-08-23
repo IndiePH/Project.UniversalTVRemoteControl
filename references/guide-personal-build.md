@@ -4,6 +4,12 @@
 **Purpose:** a build for **one specific device**, sideloaded outside the Play Store, with Pro
 entitlement forced on and telemetry reporting disabled. Not for distribution.
 
+> **This branch must NEVER be merged into `main`.** Everything below — the entitlement
+> bypass, the telemetry suppression, the `PERSONAL_BUILD` env var and manifest
+> placeholders — exists solely for one sideloaded personal device. None of it belongs in
+> a Play Store release. Merge `main` *into* `personal-build` (step 3 below), never the
+> reverse.
+
 ---
 
 ## Steps: update and rebuild
@@ -30,7 +36,7 @@ step 9 otherwise.
    ```
 
 4. **Resolve conflicts, if any.** Git will stop and tell you which files conflict. Expect
-   conflicts only in the 4 files this branch touches (see the table under "How it works"
+   conflicts only in the files this branch touches (see the table under "How it works"
    below) — only if `main` happened to change the same lines. Open each conflicted file,
    keep the `PERSONAL_BUILD` flag guard intact while merging in whatever `main` changed
    around it, then:
@@ -74,8 +80,12 @@ step 9 otherwise.
 
 9. **Build.**
    ```bash
-   flutter build apk --release --dart-define=PERSONAL_BUILD=true
+   PERSONAL_BUILD=true flutter build apk --release --dart-define=PERSONAL_BUILD=true
    ```
+   Both flags are required — the `PERSONAL_BUILD` env var and the `--dart-define` gate
+   different layers (Gradle/manifest vs. Dart) and neither can see the other. See "How it
+   works" below.
+
    Output: `build/app/outputs/flutter-apk/app-release.apk`
 
 10. **Verify it's signed with the expected keystore.** Compare the APK's certificate
@@ -109,7 +119,9 @@ Two things were requested that don't belong on `main`:
 1. **Pro unlocked without a store purchase.** Normal builds resolve entitlement through
    `StoreProEntitlementRepository` (real Google Play Billing + server-side receipt
    validation via `verifyProAndroidPurchase`, see `references/goals/goal-pro-receipt-validation-remote-setup.md`).
-2. **No telemetry.** Firebase Analytics events and Crashlytics reports are suppressed.
+2. **No network activity unrelated to remote-control functionality.** Firebase Analytics,
+   Crashlytics, Firebase Remote Config, and the AdMob/UMP consent+init flow are all
+   suppressed — see "How it works" below for what's disabled and how completely.
 
 **Play Integrity / Firebase App Check was not stripped, because it was never implemented.**
 Checked at the time this branch was created — no references anywhere in the codebase
@@ -121,8 +133,10 @@ from `main` (step 6 above) — if it's been added, this branch needs a new bypas
 
 ## How it works
 
-Everything is gated behind a single compile-time flag, following the project's existing
-`--dart-define` convention (see README "Current Runtime Modes") rather than a Gradle flavor:
+This branch is gated behind **two** build-time signals, not one — this is the one
+deliberate exception to the project's `--dart-define`-only convention (see README
+"Current Runtime Modes"), and it exists because Dart-layer flags are invisible to
+Gradle/the Android manifest:
 
 ```dart
 // lib/app/configurations/app_build_config.dart
@@ -132,21 +146,58 @@ static const bool personalBuildUnlock = bool.fromEnvironment(
 );
 ```
 
-Defaults to `false`, so a normal `flutter build apk --release` (no dart-define) is
-byte-for-byte the same code path as `main`. It only changes behavior when built with
-`--dart-define=PERSONAL_BUILD=true`.
+```kotlin
+// android/app/build.gradle.kts
+val personalBuild = (System.getenv("PERSONAL_BUILD") ?: "false").toBoolean()
+```
 
-**Files that branch on the flag** (these are the ones most likely to conflict on merge):
+Both default to `false`/off, so a normal `flutter build apk --release` (no env var, no
+dart-define) is byte-for-byte the same code path as `main`. Both must be set — see the
+build command in step 9 — because they gate different layers and neither can see the
+other:
 
-| File | What changes when `PERSONAL_BUILD=true` |
-|---|---|
-| `lib/app/configurations/app_monetization_di_config.dart` | `_buildRepository()` returns `FakeProEntitlementRepository(initialStatus: entitled)` instead of the real store repository. Skips constructing `ProReceiptValidationService` entirely (`_needsReceiptValidation`). |
-| `lib/main.dart` | Calls `FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false)` at startup, and skips `recordFlutterFatalError` / `recordError` in the two error handlers (belt-and-suspenders — collection-disable timing isn't guaranteed mid-session on every SDK version). |
-| `lib/app/analytics/analytics_service.dart` | `_tryAnalytics()` returns `null` when the flag is set, so `logEvent` becomes a no-op. |
-| `lib/app/configurations/app_build_config.dart` | Declares the flag itself. |
+- `--dart-define=PERSONAL_BUILD=true` gates app-level Dart behavior (entitlement, ad
+  display, explicit analytics calls, Remote Config fetch).
+- `PERSONAL_BUILD=true` (the env var) gates two `AndroidManifest.xml` meta-data values via
+  Gradle `manifestPlaceholders`, so Firebase Analytics/Crashlytics never auto-collect in
+  the first place — see "Why two flags" below for why the Dart one alone isn't enough.
+
+**Files that branch on one flag or the other** (these are the ones most likely to conflict
+on merge):
+
+| File | Flag | What changes when set |
+|---|---|---|
+| `lib/app/configurations/app_monetization_di_config.dart` | dart-define | `_buildRepository()` returns `FakeProEntitlementRepository(initialStatus: entitled)` instead of the real store repository. Skips constructing `ProReceiptValidationService` entirely (`_needsReceiptValidation`) — so `firebase_auth`/`cloud_functions` are never touched. |
+| `lib/main.dart` | dart-define | Calls `FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false)` and `FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(false)` at startup (belt-and-suspenders on top of the manifest values below); skips `recordFlutterFatalError`/`recordError` in the two error handlers; skips the whole AdMob/UMP consent-gathering + `MobileAds.instance.initialize()` block entirely (ads never show for a forced-Pro user anyway). |
+| `lib/app/configurations/di_bootstrap.dart` | dart-define | Skips `AdRemoteConfigService.fetchAndActivate()` — no Firebase Remote Config network fetch on launch. |
+| `lib/app/analytics/analytics_service.dart` | dart-define | `_tryAnalytics()` returns `null`, so `logEvent` becomes a no-op. |
+| `lib/app/configurations/app_build_config.dart` | dart-define | Declares the Dart flag itself. |
+| `android/app/build.gradle.kts` | env var | Declares `personalBuild`; sets `analyticsCollectionDeactivated`/`crashlyticsCollectionEnabled` manifest placeholders. |
+| `android/app/src/main/AndroidManifest.xml` | env var (via placeholder) | `firebase_analytics_collection_deactivated` / `firebase_crashlytics_collection_enabled` meta-data — read by the native SDKs before any Dart code runs. |
 
 `Firebase.initializeApp()` itself is **not** skipped — `AdRemoteConfigService` depends on
-Firebase being initialized for ad test-mode detection, and disabling it would break ads.
+Firebase being initialized (even though its fetch is now skipped for personal builds), and
+some plugin init paths assume it's been called.
+
+### Why two flags — the pre-Dart-init gap
+
+Firebase Analytics and Crashlytics auto-initialize via a native Android `ContentProvider`
+the instant the app process starts — before Flutter's engine attaches and before `main()`
+runs. A Dart-only flag (`setAnalyticsCollectionEnabled(false)` /
+`setCrashlyticsCollectionEnabled(false)` in `main.dart`) can only act *after* that native
+auto-init has already happened, leaving a small window where the SDK could collect before
+being told to stop. The manifest meta-data closes that window — the SDKs read
+`firebase_analytics_collection_deactivated` / `firebase_crashlytics_collection_enabled`
+from their own `ContentProvider.onCreate()`, before Dart ever runs. Remote Config and
+AdMob/UMP don't have this problem — they only make network calls when a Dart-level
+function (`fetchAndActivate()`, `MobileAds.instance.initialize()`) is explicitly called, so
+skipping that call in Dart is already a complete fix for those two.
+
+Verified by inspecting the merged manifest baked into each APK variant
+(`aapt2 dump xmltree ... --file AndroidManifest.xml`):
+`PERSONAL_BUILD=true` → `analytics_collection_deactivated=true`,
+`crashlytics_collection_enabled=false`; no env var → `false`/`true` (Firebase's own
+defaults, i.e. unchanged from `main`).
 
 ---
 
@@ -173,3 +224,13 @@ There is no CI or test coverage specific to `PERSONAL_BUILD=true` — `flutter a
 Merge `main` in periodically (don't let it drift for months) — the longer it diverges, the
 more likely a real conflict shows up in `app_monetization_di_config.dart` if that file gets
 refactored upstream.
+
+Two things worth remembering about the Gradle/manifest piece specifically:
+
+- Forgetting the `PERSONAL_BUILD=` env var at build time (step 9) silently falls back to
+  the production manifest values — the APK still builds and installs fine, it just quietly
+  keeps Analytics/Crashlytics on. Rerun step 9 with the env var if in doubt; you can confirm
+  either way with the `aapt2 dump xmltree` check described under "How it works" above.
+- This is the one place this branch's changes live outside `lib/` — if `main` ever adds its
+  own `manifestPlaceholders` entries in `android/app/build.gradle.kts`, that's a merge
+  conflict to resolve carefully rather than something `flutter analyze` will catch.
