@@ -20,9 +20,10 @@ class CompositeDeviceDiscoveryService implements DeviceDiscoveryService {
 
   @override
   Future<List<TvDevice>> discoverDevices() async {
-    // On Android the Wi-Fi multicast lock must be held for the entire scan
-    // window. Acquiring it here prevents any individual service from releasing
-    // it early while sibling services are still listening.
+    // On Android the Wi-Fi multicast lock must be held until discoverDevices
+    // fully completes, including Android TV identity enrichment after merge.
+    // Await every Future in this try so finally does not release the lock
+    // while enrichment (or sibling scans) is still running.
     final multicastLock = FlutterMulticastLock();
     if (Platform.isAndroid) {
       await multicastLock.acquireMulticastLock();
@@ -41,7 +42,7 @@ class CompositeDeviceDiscoveryService implements DeviceDiscoveryService {
       final merged = DiscoveryResultMerger.mergeByHost(
         results.expand((list) => list).toList(),
       );
-      return Future.wait(merged.map(_enrichAndroidTvIdentity));
+      return await Future.wait(merged.map(_enrichAndroidTvIdentity));
     } finally {
       if (Platform.isAndroid) {
         try {

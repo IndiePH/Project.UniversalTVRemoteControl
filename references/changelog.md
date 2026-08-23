@@ -13,6 +13,12 @@ Keep entries short and append new updates at the top.
 
 ## 2026-08-23
 
+### Fixed
+- `CompositeDeviceDiscoveryService.discoverDevices` now **awaits** Android TV identity
+  enrichment inside the try block. Returning `Future.wait` without `await` tripped
+  `unawaited_return_in_try_block` and released the Android multicast lock before
+  enrichment finished.
+
 ### Changed
 - App version bump to `1.5.0+20` (`pubspec.yaml`; README and marketing release details synced).
 - Play Store release notes and listing copy for `1.5.0` now cover persistent TV identity
@@ -26,6 +32,8 @@ Keep entries short and append new updates at the top.
 - Synced `product_specs.md`, `implementation_tasks.md`, README, identity goal docs, and
   `app-initialization-and-remote-selection-flow.md` so command drawer is documented as shipped
   and `goal-stable-device-identifier.md` is marked superseded.
+- README and `product_specs.md` discovery notes: Android multicast lock is held for the whole
+  `discoverDevices()` call, including identity enrichment.
 
 ## 2026-08-22
 

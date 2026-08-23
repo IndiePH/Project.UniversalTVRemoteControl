@@ -63,7 +63,7 @@ MVP implementation priority (current baseline)—same **platform** stance as §1
 * **Wi-Fi Mode**
 
     * Scan local network for TVs
-    * Current MVP implementation uses SSDP-based discovery on local network (with manual IP fallback); on Android, discovery uses a Wi‑Fi multicast lock for the scan window so multicast responses are delivered reliably where the OS would otherwise filter them
+    * Current MVP implementation uses SSDP-based discovery on local network (with manual IP fallback); on Android, discovery holds a Wi‑Fi multicast lock for the full `discoverDevices()` call (parallel scans and Android TV identity enrichment) so multicast responses are delivered reliably where the OS would otherwise filter them
     * Pairing UX behavior (current baseline):
         * selecting a TV starts a blocking pairing state on the pairing page
         * the app does not return to the remote screen until pairing succeeds
