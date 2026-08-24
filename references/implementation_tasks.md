@@ -107,6 +107,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Updated remote keyboard behavior so IME overlays remote screen instead of pushing layout upward
   - [x] Added settings-driven grid layout editor with drag/drop + swap behavior
   - [x] Added layout persistence and default-layout reset flow
+  - [x] Grid placement regression ([PR #25](https://github.com/IndiePH/Project.UniversalTVRemoteControl/pull/25), shipping `1.5.1+21`): atomic restore of saved positions (swap no longer reverts to defaults); flush in-flight layout save on `paused`
   - [x] Fixed multi-cell drag anchor behavior for d-pad (grab-point independent)
   - [x] Added search-input composite layout item and updated it to `5x1` (`4x1` text + right icon action)
   - [x] Restored channel/volume rocker controls and aligned play/pause visual as compact `1x1` control (left play icon + right pause icon)
