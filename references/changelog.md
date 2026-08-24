@@ -13,6 +13,52 @@ Keep entries short and append new updates at the top.
 
 ## 2026-08-24
 
+### Added
+- Sony TV brand, Sub-goal A (branch `feature/sony-adapter`; design/research log
+  `references/goals/goal-sony-adapter.md`): `TvBrand.sony` selectable alongside the existing
+  brands, paired via the same Android TV Remote protocol `AndroidTvAdapter`/`TclGoogleTvAdapter`
+  already speak — Sony's entire 2021+ lineup runs Google TV (confirmed via external research,
+  not assumed). `SonyAdapter` is a thin wrapper reusing the shared `AndroidTvTransportClient` +
+  `AndroidTvKeyMapper` directly, with **no app-link override map** (TCL needed one for 4
+  commands; Sony's Google TV builds are assumed compatible with the default `https://` App Link
+  URIs until on-device testing says otherwise). `protocolVariant` is
+  `SonyProtocolVariants.defaultVariant` (new `sony_protocol_variants.dart`, mirrors
+  `AndroidTvProtocolVariants`/`SamsungProtocolVariants`'s single-variant pattern). Registered:
+  variant-resolution catch-all, `TvCapabilities` entry (same set as `androidTv`:
+  `keyCommands`/`powerControl`/`pinPairing`/`textInput`, `PinFormat.sixCharHex`), both DI
+  adapters-list locations (`remote_control_di_config.dart`, release + debug), and the two
+  `TvBrand`-exhaustive switches this broke (`discovered_device_support.dart`'s tier/priority,
+  `runtime_flags_template_debug.dart`). No UI brand-picker edit needed — it already iterates
+  `TvBrand.values` generically; confirmed (not assumed) that no per-brand icon system exists
+  anywhere in this app for any brand.
+- Sony pairing hint/step copy: `pairingSonyProgressHint`/`pairingSonyPreStep0`/`pairingSonyPreStep1`
+  wired as `(TvBrand.sony, TvDevice.defaultProtocolVariant)` entries in
+  `pairing_progress_hint_registry.dart`/`pre_pairing_steps_registry.dart` — **keyed by variant, not
+  just brand**, since Sub-goal C's future Bravia variant will need its own distinct copy (a
+  genuinely different PSK/PIN-over-REST pairing flow, not this protocol's on-screen 6-character
+  code). Copy reuses the Android TV strings verbatim (brand name swapped only) after real web
+  research (Sony support pages, Google's Google TV help, Home Assistant's `androidtv_remote`
+  integration/`tronikos/androidtvremote2`) found no verified Sony-specific pairing difference —
+  see the goal doc's Decisions log for full citations and confidence levels per claim.
+- Tests: `sony_test_lane_test.dart` (new — mirrors `android_tv_test_lane_test.dart`, the actual
+  established per-brand convention; no brand has a `*_adapter_test.dart` file in this repo), a
+  Sony case in `variant_resolution_registry_test.dart`, and a new
+  `remote_control_di_config_test.dart` (no test existed for this DI config file before) that
+  calls the real `configure()` on a fresh `GetIt` and asserts `TvReachabilityService` resolves a
+  working adapter for `TvBrand.sony` — a regression guard against `SonyAdapter` ever being
+  dropped from either adapters-list literal. `pairing_progress_hint_registry_test.dart`/
+  `pre_pairing_steps_registry_test.dart` each get one Sony spot-check (matching the existing
+  LG/Samsung per-brand convention, not exhaustive brand coverage).
+- Not yet done on this branch: A6 (`sony_validation_matrix.md` + on-device pairing/reliability
+  runbook — held pending access to real Sony hardware) and Sub-goals B/C (Bravia IP Control
+  research + implementation — separate, later work, not required for this brand to work on
+  2021+ Sony TVs).
+
+### Verification
+- Sony adapter Sub-goal A (A1–A5 + pairing-hint follow-up): `dart analyze` — 0 issues
+  project-wide at every step. `flutter test` full suite — 590 passed, 0 failed (up from 588
+  pre-existing before this branch's test additions), 1 pre-existing skip, 0 regressions.
+
 ### Changed
 - App version bump to `1.5.1+21` (`pubspec.yaml`; README and marketing release details synced).
 - Play Store release notes for `1.5.1` cover the grid-placement regression fix from

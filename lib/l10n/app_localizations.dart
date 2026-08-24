@@ -454,6 +454,24 @@ abstract class AppLocalizations {
   /// **'A PIN will appear on your TV screen — enter it when prompted.'**
   String get pairingAndroidTvPreStep1;
 
+  /// No description provided for @pairingSonyProgressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A PIN will appear on your TV screen — enter it when prompted.'**
+  String get pairingSonyProgressHint;
+
+  /// No description provided for @pairingSonyPreStep0.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Sony TV is ON and on the same Wi-Fi.'**
+  String get pairingSonyPreStep0;
+
+  /// No description provided for @pairingSonyPreStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'A PIN will appear on your TV screen — enter it when prompted.'**
+  String get pairingSonyPreStep1;
+
   /// No description provided for @pairingRokuProgressHint.
   ///
   /// In en, this message translates to:

@@ -43,6 +43,12 @@ class TvCapabilities {
       DeviceCapability.keyCommands,
       DeviceCapability.powerControl,
     },
+    (TvBrand.sony, TvDevice.defaultProtocolVariant): {
+      DeviceCapability.keyCommands,
+      DeviceCapability.powerControl,
+      DeviceCapability.pinPairing,
+      DeviceCapability.textInput,
+    },
     (TvBrand.tcl, TclProtocolVariants.legacyWifi): {
       DeviceCapability.keyCommands,
       DeviceCapability.powerControl,
@@ -67,6 +73,7 @@ class TvCapabilities {
 
   PinFormat pinFormatFor(TvBrand brand, [String? variant]) => switch (brand) {
     TvBrand.androidTv => PinFormat.sixCharHex,
+    TvBrand.sony => PinFormat.sixCharHex,
     TvBrand.hisense => PinFormat.fourDigitNumeric,
     _ => throw StateError(
       'PIN format not configured for ${brand.name} — '

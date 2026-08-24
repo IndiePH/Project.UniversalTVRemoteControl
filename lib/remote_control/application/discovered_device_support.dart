@@ -16,6 +16,7 @@ final class DiscoveredDeviceSupport {
         DeviceSupportTier.limited,
       (TvBrand.androidTv, _) => DeviceSupportTier.experimental,
       (TvBrand.tcl, _) => DeviceSupportTier.experimental,
+      (TvBrand.sony, _) => DeviceSupportTier.experimental,
     };
   }
 
@@ -34,5 +35,6 @@ final class DiscoveredDeviceSupport {
     TvBrand.roku => 3,
     TvBrand.androidTv => 4,
     TvBrand.tcl => 5,
+    TvBrand.sony => 6,
   };
 }

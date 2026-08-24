@@ -45,6 +45,14 @@ class FakeLocalizedStrings implements LocalizedStrings {
   String get pairingAndroidTvPreStep1 =>
       'A PIN will appear on your TV screen — enter it when prompted.';
   @override
+  String get pairingSonyProgressHint =>
+      'A PIN will appear on your TV screen — enter it when prompted.';
+  @override
+  String get pairingSonyPreStep0 => 'Your Sony TV is ON and on the same Wi-Fi.';
+  @override
+  String get pairingSonyPreStep1 =>
+      'A PIN will appear on your TV screen — enter it when prompted.';
+  @override
   String get pairingRokuProgressHint =>
       'Make sure mobile control is enabled in Roku settings.';
   @override

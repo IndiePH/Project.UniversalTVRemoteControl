@@ -44,5 +44,15 @@ void main() {
         TvDevice.defaultProtocolVariant,
       );
     });
+
+    test('resolves Sony to the default protocol variant', () {
+      expect(
+        registry.resolve(
+          brand: TvBrand.sony,
+          info: const TvDeviceInfo(modelIdentifier: 'BRAVIA XR'),
+        ),
+        TvDevice.defaultProtocolVariant,
+      );
+    });
   });
 }

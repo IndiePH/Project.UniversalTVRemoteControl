@@ -31,6 +31,7 @@ import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_websocket_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/sony_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/roku_http_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/roku_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_legacy_tcp_transport_client.dart';
@@ -156,6 +157,7 @@ final class RemoteControlDiConfig implements IDiConfig {
       LgAdapter(transportClient: sl<LgTransportClient>()),
       HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
       AndroidTvAdapter(transportClient: sl<AndroidTvTransportClient>()),
+      SonyAdapter(transportClient: sl<AndroidTvTransportClient>()),
       TclRokuAdapter(transportClient: sl<RokuTransportClient>()),
       TclLegacyWifiAdapter(transportClient: sl<TclLegacyTransportClient>()),
     ];
@@ -235,6 +237,7 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
       LgAdapter(transportClient: sl<LgTransportClient>()),
       HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
       AndroidTvAdapter(transportClient: sl<AndroidTvTransportClient>()),
+      SonyAdapter(transportClient: sl<AndroidTvTransportClient>()),
       TclRokuAdapter(transportClient: sl<RokuTransportClient>()),
       TclLegacyWifiAdapter(transportClient: sl<TclLegacyTransportClient>()),
     ];

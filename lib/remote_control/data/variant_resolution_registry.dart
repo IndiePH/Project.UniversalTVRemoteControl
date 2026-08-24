@@ -48,6 +48,11 @@ class DefaultVariantResolutionRegistry implements VariantResolutionRegistry {
       matches: (_) => true,
       variant: TvDevice.defaultProtocolVariant,
     ),
+    _VariantResolutionEntry(
+      brand: TvBrand.sony,
+      matches: (_) => true,
+      variant: TvDevice.defaultProtocolVariant,
+    ),
     // ── TCL (legacy Wi-Fi only; no default-variant adapter registered) ───────
     _VariantResolutionEntry(
       brand: TvBrand.tcl,
