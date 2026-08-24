@@ -11,6 +11,25 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-08-24
+
+### Changed
+- App version bump to `1.5.1+21` (`pubspec.yaml`; README and marketing release details synced).
+- Play Store release notes for `1.5.1` cover the grid-placement regression fix from
+  [PR #25](https://github.com/IndiePH/Project.UniversalTVRemoteControl/pull/25)
+  (`fix/grid-placement-regression`, merged 2026-08-23).
+
+### Fixed
+- Layout editor: await in-flight layout saves on `AppLifecycleState.paused` so a
+  backgrounded (or shortly killed) process is less likely to drop a custom grid.
+- Layout restore: apply all saved grid positions atomically, then validate — swapping
+  two buttons no longer silently reverts both to defaults on reload.
+- Layout restore validation is O(n) via a cell-occupancy map (same corruption fallback).
+
+### Docs
+- Updated `marketing_strategy.md` current release to `1.5.1` / versionCode `21`, What's new
+  paste, listing feature bullet, and operator checklist (swap-restore + pause-while-save).
+
 ## 2026-08-23
 
 ### Fixed

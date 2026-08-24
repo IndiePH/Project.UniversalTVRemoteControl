@@ -19,7 +19,7 @@ com.vorithstudio.smarttvremote
 
 # 2. 📄 Play Store Listing
 
-**Last updated:** 2026-08-23 · **Target audience:** 13+ · **Listed brands:** Samsung, LG, Hisense, Chromecast with Google TV only (no Roku/TCL until validated).
+**Last updated:** 2026-08-24 · **Target audience:** 13+ · **Listed brands:** Samsung, LG, Hisense, Chromecast with Google TV only (no Roku/TCL until validated).
 
 ## 🔹 Short Description (80 chars max)
 
@@ -62,6 +62,7 @@ Key features
 • Save paired TVs and reconnect quickly
 • Keeps paired TVs after a router reboot / new IP when the TV can be identified again (no re-pair in the common case)
 • Hide unused remote buttons in a drawer (Pro layout editor) without losing their place
+• Custom button positions restore correctly after swaps; layout edits are saved when you leave the app
 • Optional in-app feedback to report issues (category + message; see Privacy Policy)
 
 Free and Pro
@@ -106,9 +107,9 @@ Download OneRemote and control your Smart TV from your phone.
 
 ## 🔹 Release details (AAB — Google Play)
 
-**Current release:** `1.5.0` · **versionCode:** `20` · **Track:** Internal testing → Production (promote same artifact when validated)
+**Current release:** `1.5.1` · **versionCode:** `21` · **Track:** Internal testing → Production (promote same artifact when validated)
 
-**Focus for this release:** Persistent TV identity (paired TVs, layouts, and pairing credentials survive DHCP / IP changes when the TV can be re-identified) plus the command drawer (hide unused buttons) and more reliable brand command dispatch from `main`. No Play Console Data safety form change (stable ids and pairing secrets stay on-device; no new data leaves the device).
+**Focus for this release:** Grid placement / layout persistence ([PR #25](https://github.com/IndiePH/Project.UniversalTVRemoteControl/pull/25)): swapped buttons restore to their saved cells, and in-flight layout saves are flushed when the app is backgrounded. No Play Console Data safety form change (no new data collected or shared).
 
 **Build (signed AAB with production dart-defines):**
 
@@ -126,13 +127,12 @@ Requires `android/release_dart_defines.properties` (gitignored) with `FEEDBACK_W
 Paste under **Release → Release notes** (Internal testing or Production). Adjust length if Console limits apply.
 
 ```
-What's new in 1.5.0
+What's new in 1.5.1
 
-• Paired TVs stay connected after a router reboot or new IP when the TV can be identified again — no re-pair needed in the common case
-• Saved layouts and pairing stay with the TV across IP changes
+• Custom remote layouts restore correctly after you swap buttons — saved positions no longer snap back to defaults
+• Layout edits are saved when you leave the app, so custom grids are less likely to be lost
+• Paired TVs still reconnect after a router reboot or new IP when the TV can be identified again
 • Hide unused remote buttons in the layout editor drawer (Pro) without losing their place
-• More reliable app shortcuts and button commands across supported TV brands
-• Feedback can include saved TV brand/model (when known) to help support — disclosed before send; no IP addresses or pairing secrets
 
 Thank you for using OneRemote!
 ```
@@ -140,10 +140,9 @@ Thank you for using OneRemote!
 **Shorter variant (if character limit is tight):**
 
 ```
-• Paired TVs keep working after router reboot / new IP (no re-pair in common cases)
-• Saved layouts and pairing survive IP changes
-• Hide unused buttons in the layout editor drawer (Pro)
-• More reliable commands and app shortcuts
+• Swapped remote buttons keep their saved positions after reload
+• Layout edits save when you leave the app
+• Paired TVs still survive router reboot / new IP in the common case
 ```
 
 ### Operator checklist (this AAB)
@@ -159,8 +158,10 @@ Thank you for using OneRemote!
 | Verify: pair TV, Pro purchase/restore, ads, feedback row in Sheet | ☐ |
 | Verify: reboot router / change TV IP, rediscover, reconnect without re-pair when identity is known | ☐ |
 | Verify: layout editor drawer — park a button, confirm it leaves the live remote, restore it | ☐ |
+| Verify: swap two grid buttons, kill/reopen app — both stay in swapped cells | ☐ |
+| Verify: edit layout, background the app immediately, reopen — last positions persisted | ☐ |
 | Verify: app shortcuts / launch commands still work on Samsung and Hisense | ☐ |
-| Update Main store listing full description (IP-resilience + drawer bullets) | ☐ |
+| Update Main store listing full description (layout restore / save-on-background bullets) | ☐ |
 | Promote to **Production** (staged rollout recommended) | ☐ |
 
 ---
