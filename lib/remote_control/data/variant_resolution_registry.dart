@@ -2,6 +2,12 @@ import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variant
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
+/// Resolves a device's behavioral protocol variant (which dialect within an
+/// already-fixed transport) from a live adapter probe, post-first-contact.
+///
+/// See also discovery_variant_resolution_registry.dart's
+/// DiscoveryVariantResolutionRegistry, which resolves the structural variant
+/// (which transport/adapter) from discovery source, pre-first-contact.
 abstract interface class VariantResolutionRegistry {
   String? resolve({required TvBrand brand, required TvDeviceInfo? info});
 }
