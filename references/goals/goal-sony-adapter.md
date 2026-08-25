@@ -2,7 +2,7 @@
 
 **Branch:** `feature/sony-adapter` (current)
 **Status:** planning — no implementation started
-**Related:** `references/guide-protocol-variants.md` (variant mechanism this goal partly relies on, partly may not fit — see Open questions), `references/guide-android-tv-remote-protocol.md` (the shared protocol Sub-goal A reuses)
+**Related:** `references/guide-protocol-variants.md` (variant mechanism this goal partly relies on, partly may not fit — see Open questions), `references/guide-tv-remote-protocols.md` (the shared Android TV Remote Protocol v2 section Sub-goal A reuses; Sub-goal C's BRAVIA IP Control gets its own section there once it ships — see B3)
 
 > ⚠️ **This document has not been verified or approved by the user beyond the initial
 > breakdown.** Sub-goal A's design is grounded in a direct source read of
@@ -321,21 +321,21 @@ remaining open questions before any Bravia code is written.
       Produce a written recommendation.
       Deps: B1. Risk: LOW (research/design only). Skills: system-design, ux-constraints-awareness,
       abstraction-domain-modeling.
-- [ ] **B3. Write findings into a reference doc — target doc OPEN, decide at B3 time.**
-      Originally scoped as a new Sony/Bravia-only doc (`references/guide-sony-bravia-ip-control.md`).
-      2026-08-25: user questioned whether that's still the right shape, since the actual
-      routing/flow logic now lives in code + this goal doc's Decisions log, not in a
-      findings doc — proposed instead folding Bravia's protocol details (B1's `actRegister`/
-      PIN-over-Basic-Auth/cookie findings) into a general **all-brands-and-variants TV protocol
-      reference** so there's one place to return to for any brand's wire protocol, not just
-      Sony's. Note for whoever resolves this at B3: no such combined doc exists today — the
-      closest precedent is `guide-android-tv-remote-protocol.md`, which is scoped to one
-      protocol, not all brands (Samsung/LG/Hisense/Roku have no dedicated protocol guide at
-      all, only validation matrices). Decide then: extend that precedent (a new
-      `guide-sony-bravia-protocol.md`, one-per-protocol like Android TV's) vs. the user's
-      combined-doc idea (bigger, first-of-its-kind artifact, would also mean backfilling or
-      cross-referencing the brands that currently have none) — **decision checkpoint: present
-      to the user for sign-off before any Sub-goal C task starts.**
+- [ ] **B3. Write findings into a reference doc.** Originally scoped as a new
+      Sony/Bravia-only doc (`references/guide-sony-bravia-ip-control.md`); doc-shape
+      decision **resolved 2026-08-25**: `references/guide-android-tv-remote-protocol.md`
+      renamed to `references/guide-tv-remote-protocols.md` and restructured as a combined,
+      multi-protocol reference — a top-level `## Contents` ToC pointing to one `##` section
+      per genuinely distinct protocol (today: `## Android TV Remote Protocol v2`, which
+      Sony's Google TV path already shares — no separate section needed for that path).
+      Scope confirmed with the user: no placeholder sections for Samsung/LG/Hisense (which
+      have no dedicated protocol guide, only validation matrices) — the ToC only lists what's
+      actually documented. **Still open, not yet done:** writing BRAVIA IP Control's own `##`
+      section (B1's `actRegister`/PIN-over-Basic-Auth/cookie findings, endpoints, auth modes)
+      into that file — deferred until Sub-goal C actually builds `SonyBraviaAdapter`, so the
+      guide keeps describing shipped behavior rather than a proposal (this codebase's guides
+      are written as "how does this work today," not speculative design). Do that write-up as
+      part of C6 (or earlier in Sub-goal C once the adapter shape is settled), not now.
       Deps: B1, B2. Risk: LOW. Skills: documentation-knowledge-transfer.
 
 ## Sub-goal C — Implement Sony BRAVIA IP Control adapter (placeholder, contingent on B)

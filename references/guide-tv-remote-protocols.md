@@ -1,17 +1,41 @@
-# Guide: Android TV / Google TV Remote Protocol
+# Guide: TV Remote Protocols
 
-This document covers the platform distinction between Android TV and Google TV,
-the remote control protocol they share, and how the adapter fits into this
-project's architecture.
+A reference for each distinct wire protocol this app speaks to a TV, one section per
+protocol. Add a new `##` section here whenever an adapter is built around a genuinely
+different protocol — a brand that reuses an existing protocol (e.g. Sony's Google TV
+models reusing the Android TV Remote Protocol) doesn't need its own section, just a
+mention under the protocol it shares.
 
-**Status: implemented.** `AndroidTvAdapter` and `TclGoogleTvAdapter` both ship today
-(`references/product_specs.md` §6/§implementation — "Adapter shipped... experimental
-support tier"). The sections below describe the current, real implementation, not a
-future one.
+## Contents
+
+- [Android TV Remote Protocol v2](#android-tv-remote-protocol-v2)
+  - [Scope and naming — what this adapter is NOT](#scope-and-naming--what-this-adapter-is-not)
+  - [Platform distinction](#platform-distinction)
+  - [Remote control protocol](#remote-control-protocol)
+  - [Comparison with existing adapters](#comparison-with-existing-adapters)
+  - [Why one adapter covers Android TV, Google TV, and Chromecast](#why-one-adapter-covers-android-tv-google-tv-and-chromecast)
+  - [Adapter architecture fit](#adapter-architecture-fit)
+  - [Open-source reference implementations](#open-source-reference-implementations)
+  - [ADB alternative (not recommended for production)](#adb-alternative-not-recommended-for-production)
+  - [Implementation status](#implementation-status)
+  - [Sources](#sources)
 
 ---
 
-## Scope and naming — what this adapter is NOT
+## Android TV Remote Protocol v2
+
+This section covers the platform distinction between Android TV and Google TV,
+the remote control protocol they share, and how the adapter fits into this
+project's architecture.
+
+**Status: implemented.** `AndroidTvAdapter`, `TclGoogleTvAdapter`, and `SonyAdapter`
+all ship today (`references/product_specs.md` §6/§implementation — "Adapter
+shipped... experimental support tier"). The sections below describe the current,
+real implementation, not a future one.
+
+---
+
+### Scope and naming — what this adapter is NOT
 
 "Android TV" is an overloaded term. It refers to two separate things:
 
@@ -32,7 +56,9 @@ TvBrandAdapter (abstract)
   ├── SamsungAdapter     ← Tizen WebSocket + JSON
   ├── LgAdapter          ← webOS WebSocket + JSON
   ├── HisenseAdapter     ← VIDAA protocol
-  └── AndroidTvAdapter   ← Android TV Remote Protocol (protobuf, TCP TLS)  ← this guide
+  ├── AndroidTvAdapter   ← Android TV Remote Protocol (protobuf, TCP TLS)  ← this guide
+  └── SonyAdapter        ← same protocol as AndroidTvAdapter (reuses AndroidTvKeyMapper
+                            + AndroidTvTransportClient) — see "Adapter architecture fit"
 ```
 
 Hisense is the one overlapping case: some Hisense TVs run Android TV (and use
@@ -41,7 +67,7 @@ separate brands/protocols at pairing time.
 
 ---
 
-## Platform distinction
+### Platform distinction
 
 | | Android TV | Google TV |
 |---|---|---|
@@ -56,7 +82,7 @@ is a Google TV device and requires no separate adapter.
 
 ---
 
-## Remote control protocol
+### Remote control protocol
 
 Android TV devices expose the **Android TV Remote Service** on the local network.
 This is the same protocol used by Google's official Google TV Remote app (the one bundled
@@ -67,7 +93,7 @@ with Chromecast with Google TV and available on Android / iOS).
 > called **Android TV Remote Protocol v2** (service name `androidtvremote2`). They are
 > different things.
 
-### Protocol versions
+#### Protocol versions
 
 | Version | When used | Notes |
 |---|---|---|
@@ -78,14 +104,14 @@ You can check the service version on a TV at: *Settings → Apps → See all app
 A future adapter should detect or negotiate which version to use — this is the primary
 split that would require a protocol variant in this project.
 
-### Discovery
+#### Discovery
 
 mDNS service type: `_androidtvremote2._tcp`
 
 The device announces itself on the local network. Same discovery mechanism already used
 for Samsung and LG (SSDP / mDNS scanning).
 
-### Transport
+#### Transport
 
 | Property | Value |
 |---|---|
@@ -100,7 +126,7 @@ and the app exchanges its certificate — after that the client certificate is t
 and reconnection is certificate-only (no PIN re-entry), analogous to Samsung's token
 and LG's client-cert flow.
 
-### Key codes
+#### Key codes
 
 Commands are sent as **Android `KeyEvent` key codes** (integer constants). These are
 defined by the Android OS, not by the manufacturer — so the same codes work across
@@ -132,7 +158,7 @@ END_LONG          = 2   ← end of long press
 SHORT             = 3   ← normal tap/press — used for every standard button send
 ```
 
-### App launch (Netflix, YouTube, Prime Video, Disney+, ...)
+#### App launch (Netflix, YouTube, Prime Video, Disney+, ...)
 
 Sent as `RemoteAppLinkLaunchRequest` (field 90 on `RemoteMessage`), carrying a single
 `app_link` string. The TV resolves this via `Intent.parseUri()`, so it must be a URI the
@@ -143,7 +169,7 @@ is no longer reliable on current Android TV/Google TV builds; it's kept only as 
 `VariantKeyMap` override on `TclGoogleTvAdapter` until verified against the `https://`
 alternative on real TCL hardware.
 
-### Text input
+#### Text input
 
 Text input is supported by sending individual key events for each character, or via
 the `RemoteImeBatchEdit` message in the protobuf schema, which delivers a string
@@ -152,7 +178,7 @@ directly to the focused text field. The required sub-fields (`RemoteEditInfo`,
 `send_text_command` implementation in `tronikos/androidtvremote2` before changing
 `sendText` in `android_tv_tcp_transport_client.dart`.
 
-### Pairing handshake
+#### Pairing handshake
 
 All pairing messages wrap in `OuterMessage` (`polo.proto`), exchanged over port 6467:
 
@@ -188,7 +214,7 @@ the full DER-encoded public key.
 
 ---
 
-## Comparison with existing adapters
+### Comparison with existing adapters
 
 | Aspect | Samsung | LG | Android TV |
 |---|---|---|---|
@@ -201,7 +227,7 @@ the full DER-encoded public key.
 The structural pattern is the same: TLS transport with a one-time pairing ceremony that
 produces a persisted credential (token / certificate), and then stateless command dispatch.
 
-## Why one adapter covers Android TV, Google TV, and Chromecast
+### Why one adapter covers Android TV, Google TV, and Chromecast
 
 The protocol is implemented at the **Android TV OS level by Google** as the
 "Android TV Remote Service" system app — not by the device manufacturer. Sony, TCL,
@@ -222,7 +248,7 @@ The protocol variants system in this project handles the real differences:
 
 ---
 
-## Adapter architecture fit
+### Adapter architecture fit
 
 ```
 lib/remote_control/data/adapters/
@@ -230,6 +256,12 @@ lib/remote_control/data/adapters/
   tcl_google_tv_adapter.dart               ← TvBrandAdapter implementation (TvBrand.tcl,
                                               protocolVariant googleTv) — reuses AndroidTvKeyMapper
                                               via VariantKeyMap for its app-launch overrides
+  sony_adapter.dart                        ← TvBrandAdapter implementation (TvBrand.sony) —
+                                              composes AndroidTvTransportClient + AndroidTvKeyMapper
+                                              directly, no overrides; covers Sony's Google TV
+                                              lineup (2021+). Sony's separate BRAVIA IP Control
+                                              protocol (REST/PSK) is a different protocol, not yet
+                                              built — will get its own section here once it ships.
   android_tv/
     android_tv_key_mapper.dart            ← RemoteCommand → CommandPayload (KeySequence/AppLink)
     android_tv_protocol_variants.dart     ← variant constants + predicates
@@ -245,12 +277,13 @@ lib/remote_control/data/adapters/
 `TvBrand.androidTv` covers Android TV. Because Google TV runs on Android TV, it does not
 get its own `TvBrand` value — `TclGoogleTvAdapter` instead reports `TvBrand.tcl` with a
 distinct `protocolVariant`, since TCL also ships a non-Google-TV line under the same
-brand. Any other Google TV device (e.g. a Sony Bravia) would use `AndroidTvAdapter`
-directly rather than needing a brand-specific subclass.
+brand. Sony's Google TV lineup gets its own `TvBrand.sony` (not folded into `androidTv`)
+because Sony also has a second, genuinely different protocol (BRAVIA IP Control) that
+will need to be selectable under the same brand — see `goal-sony-adapter.md`.
 
 ---
 
-## Open-source reference implementations
+### Open-source reference implementations
 
 The protocol has been fully reverse-engineered. Existing implementations to use as
 protocol references:
@@ -275,7 +308,7 @@ and should be treated as the authoritative reference.
 
 ---
 
-## ADB alternative (not recommended for production)
+### ADB alternative (not recommended for production)
 
 Android TV also exposes **ADB over TCP** on port `5555`, which allows sending key events
 via `adb shell input keyevent <code>`. This works but requires the user to enable
@@ -283,10 +316,11 @@ developer mode on the TV — not a viable UX for a consumer app. Avoid this path
 
 ---
 
-## Implementation status
+### Implementation status
 
-Shipped — `AndroidTvAdapter` and `TclGoogleTvAdapter` are both live, listed in
-`references/product_specs.md` §6 as "Adapter shipped... experimental support tier."
+Shipped — `AndroidTvAdapter`, `TclGoogleTvAdapter`, and `SonyAdapter` are all live,
+listed in `references/product_specs.md` §6 as "Adapter shipped... experimental support
+tier."
 
 `AndroidTvKeyMapper`'s `https://` App Link URIs (`android_tv_key_mapper.dart`) are
 hardware-confirmed working on real hardware for Prime Video, Disney+, and YouTube.
@@ -298,7 +332,7 @@ links) can be dropped once TCL is verified.
 
 ---
 
-## Sources
+### Sources
 
 Protocol details, port numbers, mDNS service type, and device compatibility in this
 document were verified against the following sources (May 2026):
