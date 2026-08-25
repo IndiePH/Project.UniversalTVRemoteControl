@@ -103,11 +103,14 @@ independently of the higher-uncertainty research-and-build path (B → C).
         -d '{"id":20,"method":"PowerOff","version":"1.0","params":[]}' \
         http://192.168.0.98/sony/system
       ```
-    - PIN/challenge mode: client calls a pairing/register endpoint, TV shows an on-screen
-      PIN, client resubmits with the PIN to get an auth cookie. Conceptually confirmed via
-      `pybravia`'s `pair()`/`connect(pin=...)` API, but **exact endpoint names (e.g.
-      `actRegister`) and cookie shape are unverified** — Sony's own spec page was
-      inaccessible this session.
+    - PIN/challenge mode — **resolved 2026-08-24, see Decisions log**: `POST
+      /sony/accessControl`, JSON-RPC method `actRegister` v1.0. Pairing-initiation and
+      PIN-confirmation are the *same* call shape; the PIN itself travels as HTTP Basic Auth
+      (`Authorization: Basic base64(":"+pin)`), not in the JSON body. On success the TV
+      returns a `Set-Cookie` header, but the client must keep **both** the cookie *and* the
+      original Basic-Auth header attached to every subsequent request for the life of the
+      session — cookie-only was a wrong assumption, corrected via direct source read of
+      `pybravia` (high confidence).
 11. **High confidence command catalog:** power (`getPowerStatus`/`setPowerStatus`),
     volume/mute, input switching (`setPlayContent` + HDMI URI), app list/launch
     (`getApplicationList`/`setActiveApp`), remote-key emulation via IRCC base64 codes,
@@ -160,19 +163,26 @@ independently of the higher-uncertainty research-and-build path (B → C).
 
 ## Open questions (unresolved — do not start Sub-goal C until these are answered)
 
-1. **How does a user actually select/pair a Bravia-path Sony device, given neither protocol
-   is silently auto-detectable?** Both require the user to have already done TV-side setup
-   (accept an on-screen pairing prompt for Android TV Remote; or dig into network settings
-   and set a PSK for BRAVIA IP Control). The existing `queryDeviceInfo()`-predicate variant
-   mechanism (`guide-adding-protocol-variant.md`) was designed for silent model/firmware
-   detection, not "which feature did the user manually enable." **Leaning:** this likely
-   needs to be a user-facing choice at add-device time (closer to TCL's 3
-   separately-selectable adapters) rather than an auto-resolved protocol variant — but this
-   is a recommendation, not a decision, and should be confirmed with the user before Sub-goal
-   C starts.
-2. **Exact PIN-pairing endpoint/cookie shape for BRAVIA REST** is unverified — Sony's own
-   docs were unreachable this session. Needs a direct retry (different network/tool) or
-   cross-checking against `pybravia`'s actual source before implementation.
+1. ~~**How does a user actually select/pair a Bravia-path Sony device...**~~ —
+   **resolved 2026-08-24 (B2), pending user sign-off**, see Decisions log for the full
+   writeup. Summary: Sony BRAVIA IS independently SSDP-discoverable
+   (`urn:schemas-sony-com:service:ScalarWebAPI:1`), so this isn't purely a manual-entry
+   problem. But `TvDeviceInfo`/the predicate registry is structurally the wrong place to
+   pick between the two protocols — `BrandRoutedRemoteCommandService.preparePairing`
+   (`brand_routed_remote_command_service.dart:60`) selects the adapter via
+   `device.protocolVariant` **before** `queryDeviceInfo()` is ever called, so the variant
+   must already be correct at `TvDevice` construction time (i.e. stamped by the discovery
+   scanner itself), not resolved afterward. ~~Leaning: closer to TCL's 3
+   separately-selectable adapters~~ — **correction:** TCL has no real multi-variant picker;
+   `pairing_page.dart:534-536` shows manual-add hardcodes
+   `brand == TvBrand.tcl ? legacyWifi : default` — a ternary, not a UI selector. There is
+   **no existing precedent** for a user manually choosing between two live variants of one
+   brand; Sony's manual-add path needs genuinely new UI.
+2. ~~**Exact PIN-pairing endpoint/cookie shape for BRAVIA REST** is unverified~~ —
+   **resolved 2026-08-24 (B1)**, see verified fact #10 and Decisions log. Sony's own docs
+   (pro-bravia.sony.net) are still blocked (403) as of this pass, including a Wayback Machine
+   attempt (tool-blocked, not just unsuccessful) — resolved instead via direct read of
+   `pybravia`'s source, cross-checked against Home Assistant's `braviatv` integration.
 3. **Should Simple IP Control (legacy TCP/20060) be in scope at all**, given the FOSS
    ecosystem has largely abandoned it in favor of REST/IRCC-IP? Leaning no — recommend
    scoping Sub-goal C to REST/IRCC-IP only unless a concrete need for pre-2013-era Sony sets
@@ -297,10 +307,13 @@ exactly.
 Builds on the research already done this session (verified facts #9-13); resolves the
 remaining open questions before any Bravia code is written.
 
-- [ ] **B1. Resolve the unverified protocol details**: retry fetching Sony's own
-      pro-bravia.sony.net docs (different network/tool/UA), or failing that, read
-      `pybravia`'s actual source to pin down the exact PIN-pairing endpoint/cookie shape
-      (open question #2).
+- [x] **B1. Resolve the unverified protocol details** — done 2026-08-24.
+      pro-bravia.sony.net retried, still 403 (Wayback Machine attempt also blocked at the
+      tool level). Resolved instead via direct read of `pybravia`'s source (`Drafteed/pybravia`,
+      confirmed via GitHub API + PyPI as the actual package HA's `braviatv` integration
+      imports), cross-checked against that integration's `config_flow.py`. See verified fact
+      #10 and Decisions log for the full endpoint/auth-shape writeup, including a correction
+      to this doc's prior "cookie-only" assumption.
       Deps: none. Risk: LOW (research only). Skills: api-design, dependency-safety-integration.
 - [ ] **B2. Resolve the architecture/UX fit question** (open question #1): decide, with the
       user, how a Bravia-path Sony device gets selected/paired given neither protocol is
@@ -340,6 +353,182 @@ to TCL's model).**
 
 ## Decisions log
 
+- 2026-08-25: **Map-grouped `_entries` implemented** — the "Performance shape" bullet below is
+  now done. `DefaultVariantResolutionRegistry._entriesByBrand` is declared directly as a
+  `Map<TvBrand, List<_VariantResolutionEntry>>` literal (no intermediate flat list or grouping
+  helper — written as a map from the start, one entry-list per brand), and `resolve()` does an
+  O(1) brand lookup before its short per-brand scan instead of scanning every entry regardless
+  of brand. Since the map key now carries the brand, `_VariantResolutionEntry.brand` was dead
+  weight (nothing read it after grouping) and was dropped — entries now only carry `matches` and
+  `variant`. Interface (`resolve({brand, info})`) and behavior are unchanged — verified via
+  `flutter analyze` (clean) and the existing `variant_resolution_registry_test.dart` +
+  `brand_routed_remote_command_service_test.dart` suites (61 tests, all passing), so no
+  call-site or test updates were needed. Everything else in the entry below (`discoverySource`
+  field, `resolveFromDiscovery`, the nullable `String?` return-type fix) is **still not
+  implemented** — this only closes the performance sub-point.
+- 2026-08-25: **Discovery-time variant resolution — design settled through iteration, NOT YET
+  IMPLEMENTED.** This refines/supersedes the B2 recommendation below with a design worked out
+  interactively (not yet coded — recording in full so the design survives even if the coding
+  session that resumes this forgets the reasoning):
+  - `TvDevice` gets a new `discoverySource` field (`enum DiscoverySource { ssdp, mdns, roku }`,
+    nullable) — **transient, not persisted to `SharedPreferences`/JSON.** Each discovery
+    scanner (`ssdp_device_discovery_service.dart`, `mdns_device_discovery_service.dart`) stamps
+    its own provenance with zero brand-variant knowledge — no scanner ever imports a
+    `*ProtocolVariants` class.
+  - `VariantResolutionRegistry` gets a **second, separate method** rather than widening the
+    existing `matches` predicate signature — rejected adding `DiscoverySource` as a parameter
+    to `bool Function(TvDeviceInfo info) matches` because `TvDeviceInfo` (adapter-probe output,
+    only available post-first-contact) and `DiscoverySource` (scanner output, only available
+    pre-first-contact) are never live at the same time — cramming both into one predicate
+    signature would leave every existing predicate carrying a parameter it never uses:
+    ```dart
+    abstract interface class VariantResolutionRegistry {
+      String? resolve({required TvBrand brand, required TvDeviceInfo? info});             // ← changes to nullable, see below
+      String? resolveFromDiscovery({required TvBrand brand, required DiscoverySource? source}); // new
+    }
+    ```
+  - **Rejected putting `discoverySource` inside `TvDeviceInfo` itself** — `TvDeviceInfo` has one
+    documented provenance (`guide-adding-protocol-variant.md`'s field table: "Source:
+    `queryDeviceInfo` → adapter"), meaning after an adapter is already selected and already
+    communicating. `discoverySource` exists before any adapter is chosen at all. Merging them
+    would reproduce, one level deeper, the exact same conflation this whole design exercise
+    exists to fix (see next bullet).
+  - **The actual root problem, restated precisely:** `TvDevice.protocolVariant` conflates a
+    **structural** decision (which adapter/transport — must be correct before first contact,
+    since `BrandRoutedRemoteCommandService.preparePairing` selects the adapter via
+    `device.protocolVariant` *before* calling `queryDeviceInfo()`,
+    `brand_routed_remote_command_service.dart:60`) with a **behavioral** decision (which dialect
+    within an already-fixed transport — safely refinable after first contact, e.g. a
+    hypothetical Samsung Frame case). The existing `VariantResolutionRegistry.resolve()` was
+    built only for the behavioral job. Fixing this without a full field-split migration (real
+    cost: the guide explicitly warns the variant string is persisted to `SharedPreferences` and
+    must never be renamed once shipped) means: resolve the structural half at discovery time
+    (new `resolveFromDiscovery`, called once per device from a new post-merge step in
+    `CompositeDeviceDiscoveryService`, sibling to the existing `_enrichAndroidTvIdentity`), and
+    leave the behavioral half (`resolve(info:)`) exactly where and how it already runs, inside
+    `preparePairing()`.
+  - **Performance shape, addressed but not the main point:** `resolve()`'s existing `_entries`
+    is a flat list scanned linearly regardless of brand — restructuring to
+    `Map<TvBrand, List<_VariantResolutionEntry>>` (grouped once, looked up O(1), then a short
+    per-brand scan) removes wasted cross-brand comparisons. `resolveFromDiscovery`'s table
+    doesn't need predicates or `_VariantResolutionEntry` at all — `DiscoverySource` is a small
+    closed enum (exact match only, never a pattern like `model.startsWith(...)`), so it's a
+    flat `Map<(TvBrand, DiscoverySource?), String>` lookup. Both are internal to
+    `DefaultVariantResolutionRegistry` — callers only ever see the abstract interface, so this
+    is a zero-ripple internal change.
+  - **Open, unresolved smell — do not implement the naive version:** `preparePairing()` calls
+    `resolve(info:)` *after* discovery already set a structural variant via
+    `resolveFromDiscovery` — e.g. Sony resolved to `braviaIpControl` at discovery time. Sony's
+    only entry in the info-based table is the plain catch-all
+    (`variant: TvDevice.defaultProtocolVariant`), so a naive second call would silently reset
+    the device back to the default (Android TV) variant on every pairing attempt, undoing the
+    discovery-time resolution. A same-turn fix using value-equality
+    (`refined == TvDevice.defaultProtocolVariant ? device.protocolVariant : refined`) was
+    proposed and **rejected as smelly**: it overloads a real domain constant
+    (`TvDevice.defaultProtocolVariant`) to also mean "no match found," which is exactly the
+    ambiguity nullable types exist to avoid — a future brand that legitimately needs "explicitly
+    resolved to default" to mean something different from "nothing matched" would silently
+    break with no compiler warning. **Correct fix, not yet implemented:** change
+    `resolve()`'s return type to `String?` (`null` = no match), so
+    `preparePairing()` becomes `_variantRegistry.resolve(brand: device.brand, info: info) ??
+    device.protocolVariant` — an honest optional instead of a sentinel-value hack. This is a
+    real interface-signature change (return type, not just a call-site tweak) and needs its own
+    deliberate pass, including updating every existing call site/test that currently expects a
+    non-nullable `String` back from `resolve()`.
+  - **Status: fully designed through iteration, zero code written yet.** Files that will need
+    touching when this is implemented: `tv_device.dart` (new field),
+    `ssdp_device_discovery_service.dart`, `mdns_device_discovery_service.dart` (stamp
+    provenance), `variant_resolution_registry.dart` (map-grouped entries, new method, nullable
+    return type), `composite_device_discovery_service.dart` (new post-merge step + registry
+    injected into its constructor + the one DI call site), `brand_routed_remote_command_service.dart`
+    (`preparePairing()`'s `??` fix) — plus tests for the new discovery-based lookup, the
+    grouped-map behavior, and the non-clobbering composition of the two `resolve` calls.
+- 2026-08-24: **B2 — architecture/UX fit for Bravia-path selection, pending user sign-off**
+  (open question #1). Research + direct code reads:
+  - **Medium-high confidence:** Sony BRAVIA IP Control is independently SSDP-discoverable —
+    Home Assistant's `braviatv` integration matches on manufacturer `Sony Corporation` +
+    search-target `urn:schemas-sony-com:service:ScalarWebAPI:1`
+    (`homeassistant/components/braviatv/manifest.json`,
+    https://github.com/home-assistant/core/blob/dev/homeassistant/components/braviatv/manifest.json).
+    This app's own `inferSsdpTvBrand` (`ssdp_brand_inference.dart:30-49`) has no Sony
+    fingerprint yet — only roku/samsung/lg/hisense/androidtvremote are matched.
+  - **Low confidence, unresolved:** whether the TV's SSDP responder is active before the
+    user enables "IP Control" in TV settings, or only after. No primary source found either
+    way this session — a real caveat for how reliable SSDP-only discovery is in practice.
+  - **High confidence, direct code read:** the existing `queryDeviceInfo →
+    VariantResolutionRegistry.resolve` mechanism (`guide-adding-protocol-variant.md`) cannot
+    be used to choose between Sony's two protocols. `BrandRoutedRemoteCommandService
+    .preparePairing` (`brand_routed_remote_command_service.dart:57-68`) resolves the adapter
+    via `_adapterFor(device.brand, device.protocolVariant)` **before** calling
+    `adapter.queryDeviceInfo()` — so by the time `TvDeviceInfo` exists, an adapter (and
+    therefore a transport/protocol) has already been invoked. `TvDevice.protocolVariant`
+    defaults to `defaultProtocolVariant` in the model constructor
+    (`tv_device.dart:32`) and neither `SsdpDeviceDiscoveryService` nor
+    `MdnsDeviceDiscoveryService` overrides it today — every discovered device gets the
+    default variant regardless of discovery source. **Conclusion: the discovery-protocol
+    signal must be stamped onto `TvDevice.protocolVariant` by the scanner itself, at
+    construction time** — not routed through `TvDeviceInfo` (rejects the user's alternative
+    proposal of adding a network-protocol field to `TvDeviceInfo`, since that data arrives
+    one step too late in the pipeline to influence adapter selection).
+  - **Recommendation (pending sign-off):**
+    1. Add a Sony fingerprint to `inferSsdpTvBrand` (`ScalarWebAPI`/`Sony Corporation`
+       match) that stamps `protocolVariant = SonyProtocolVariants.braviaIpControl` (new
+       constant) directly when constructing the `TvDevice`, bypassing the predicate
+       registry for this one case. mDNS-found Sony devices keep going through Sub-goal A's
+       existing path (`androidtvremote2` → `androidTv` brand, unchanged).
+    2. Merge-by-host collision (both protocols on one physical TV): no code change needed.
+       `DiscoveredDeviceSupport.brandIdentificationPriority` already ranks
+       `androidTv => 4` below `sony => 6` (`discovered_device_support.dart:31-39`), so
+       `androidTv` wins the dedup automatically whenever both are found at the same IP —
+       confirmed correct per the user's own reasoning this session, and matches the doc's
+       already-stated intended default (Google TV path as primary).
+    3. Manual add-by-IP: since no existing per-brand multi-variant UI precedent exists
+       (TCL correction above), Sony's manual-add needs new UI — most likely two
+       distinct selectable entries ("Sony (Google TV)" / "Sony (BRAVIA)") at the
+       manual-add sheet level only (no `TvBrand` enum change), each hardcoding its
+       respective variant the same way TCL's ternary does today. This is a real UX
+       decision, not just an engineering default.
+  - **Open per this recommendation:** exact UI copy/placement for #3, and whether SSDP's
+    on/off-before-enabling-IP-Control gap (above) means manual add-by-IP is a required
+    fallback (likely yes, until proven otherwise) or a nice-to-have.
+- 2026-08-24: **B1 — BRAVIA PIN-pairing protocol resolved via direct source read of
+  `pybravia`** (open question #2 closed). Findings:
+  - **High confidence, direct source read:** pairing is `POST /sony/accessControl`,
+    JSON-RPC method `actRegister`, version `"1.0"`:
+    ```json
+    {"method":"actRegister","params":[{"clientid":"<id>","nickname":"<name>","level":"private"},[{"value":"yes","function":"WOL"}]],"id":1,"version":"1.0"}
+    ```
+    — https://raw.githubusercontent.com/Drafteed/pybravia/master/pybravia/client.py
+    (`register()`), const `SERVICE_ACCESS_CONTROL = "accessControl"` in
+    https://raw.githubusercontent.com/Drafteed/pybravia/master/pybravia/const.py
+  - **High confidence:** pairing-initiation and PIN-confirmation are the *same* call.
+    Initiation sends a hardcoded dummy PIN (`"0000"`) purely to trigger the TV's on-screen
+    PIN display, suppressing the resulting auth error; the real PIN is then sent via an
+    identical second call. — same file, `pair()`/`register()`.
+  - **High confidence — corrects this doc's prior assumption:** the PIN travels as **HTTP
+    Basic Auth** (`Authorization: Basic base64(":"+pin)`), not in the JSON body. On success
+    the TV returns a `Set-Cookie` header, but the client must keep sending **both** the
+    cookie *and* the original Basic-Auth header on every subsequent request for the session's
+    lifetime (only cleared on disconnect or switch to PSK) — verified in `send_req()`, same
+    file. There is also a known non-RFC-compliant cookie quirk requiring manual normalization
+    (`normalize_cookies()` in
+    https://raw.githubusercontent.com/Drafteed/pybravia/master/pybravia/util.py, see
+    https://github.com/Drafteed/pybravia/issues/1#issuecomment-1237452709).
+  - **Medium confidence:** no protocol-generation branching exists for `actRegister` itself.
+    The only generation-sensitive quirk found is IRCC endpoint casing (`/sony/IRCC` vs
+    `/sony/ircc`, auto-detected on 404) — a display-model quirk, unrelated to pairing/auth.
+  - **Low confidence, explicitly unconfirmed — do not build against this:** a web-search
+    summary (not source code) claimed newer Bravia XR models reject `actRegister` v1.0.
+    Searched pybravia's issues/repo directly and found no corroborating evidence. Flagged,
+    not acted on.
+  - **Cross-check, high confidence:** Home Assistant's `braviatv` integration calls
+    pybravia's `pair()`/`connect(pin=...)` directly with no protocol reimplementation,
+    confirming this is the shipped production flow, not a one-off implementation detail. —
+    https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/braviatv/config_flow.py
+  - **Still unresolved:** pro-bravia.sony.net remains blocked (403) as a primary source;
+    a Wayback Machine retry was blocked at the tool level this session (not attempted, not
+    just unsuccessful) — worth a retry from a different environment if Sony's own spec
+    language is ever needed verbatim (e.g. for edge-case error codes).
 - 2026-08-24: **Sony pairing hint/step copy researched and wired in, ahead of A6.**
   Research (real web search — Sony support pages, Google's Google TV help, Home Assistant's
   `androidtv_remote` integration docs and its upstream `tronikos/androidtvremote2` library;
