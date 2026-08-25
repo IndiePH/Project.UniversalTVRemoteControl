@@ -17,12 +17,12 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - **Testing** tasks under TVREMOTE-37: **TVREMOTE-49** (Samsung; **In Progress**), **TVREMOTE-50** (LG; **Done** in Jira), **TVREMOTE-51** (Hisense; **In Progress**). **TVREMOTE-13** — Samsung approval timeout/rejection + recovery regression tests (**Done** in Jira; parent **TVREMOTE-37**): `samsung_test_lane_test.dart`, `samsung_pairing_token_store_test.dart` (21 tests; 2026-05-22). Unsupported-flow test scope from former **TVREMOTE-16** is folded into those three lanes.
 - **TVREMOTE-12** — Pairing success/failure path tests (**In Progress** in Jira; coordinator coverage shipped in `pairing_page_coordinator_test.dart`; parent **TVREMOTE-2**).
 - Umbrella issues superseded by this split (historical, **Done** in Jira): **TVREMOTE-25**, **TVREMOTE-21**, **TVREMOTE-9**, **TVREMOTE-10**, **TVREMOTE-16**.
-- **TVREMOTE-63** — Bottom banner + interstitial AdMob scaffold; UMP/ATT consent gating in app code (**Done**; Firebase Remote Config `test_ads_enabled` runtime ad-unit toggle shipped `4af3cdc`; resilient fetch + 1-minute release interval `05aca51`; production app IDs at build time on Android + iOS; full SKAdNetwork list + store-listing privacy URL still **TVREMOTE-26**).
+- **TVREMOTE-63** — Free-tier ads: Unity LevelPlay banner (`unity_levelplay_mediation` 9.2.0, app key `27c78d0ad`, unit `20azo5e9eecpv182`) replaced the AdMob/UMP scaffold (**Done** in repo on `ads-rework`; interstitial not wired). Full SKAdNetwork list for extra mediated networks still **TVREMOTE-26**.
 - **TVREMOTE-66** — Pro (remove ads) IAP: multi-product catalog, entitlement service + Android receipt validation client, upgrade/settings UI, gates banner + interstitial + layout editor (**In Progress**; E2E blocked by **TVREMOTE-67**).
 - **TVREMOTE-67** — Pro IAP store products + sandbox/device validation; Android server-side receipt validation callable shipped in repo (`functions/src/handlers/verify-pro-android-purchase.ts` + `functions/src/android/` / `functions/src/pro/` modules; thin `functions/src/index.ts`); `functions/lib/` gitignored; Firebase `predeploy` build (`b65f094`); portable `$RESOURCE_DIR` in `firebase.json` (`4846b70`); operator deploy still pending per `references/goals/goal-pro-receipt-validation-remote-setup.md` (**To Do** for E2E; parent **TVREMOTE-2**).
 - **TVREMOTE-68** — In-app user feedback: settings sheet + Apps Script webhook (**Done** in Jira; parent **TVREMOTE-2**).
 - **TVREMOTE-69** — Production feedback webhook token + privacy-policy disclosure (**To Do** in Jira; parent **TVREMOTE-2**).
-- **TVREMOTE-26** — Legal/compliance release gate (**In Progress** in Jira): ATT/UMP + in-app privacy link scaffold landed; in-app legal WebView on mobile; Firebase Analytics/Crashlytics wired; production AdMob app IDs at build time (iOS `Info.plist`, Android manifest placeholder `4af3cdc`); Firebase Remote Config `test_ads_enabled` for runtime test vs live ad units (resilient fetch `05aca51`); Android edge-to-edge for SDK 35 (`4af3cdc`); settings About section with installed app version (`05aca51`); app feedback **TVREMOTE-68** Done; release ops **TVREMOTE-69** pending; live policy URL, full SKAdNetwork list, and device validation pending.
+- **TVREMOTE-26** — Legal/compliance release gate (**In Progress** in Jira): iOS ATT via LevelPlay `ATTrackingManager` before SDK init; in-app privacy link + legal WebView on mobile; Firebase Analytics/Crashlytics wired; Android edge-to-edge for SDK 35; settings About section with installed app version; app feedback **TVREMOTE-68** Done; release ops **TVREMOTE-69** pending. Google UMP was removed with AdMob — EU/CCPA CMP still required before ads go live in those regions. Live policy URL, full SKAdNetwork list for extra networks, and device validation pending.
 - **TVREMOTE-29** — Telemetry/diagnostics recorder + settings export (Task C1 **shipped** in repo; **Done** in Jira, 2026-05-22): `AppDiagnosticsRecorder`, discovery/command decorators, `DiagnosticsSummaryPanel` + copy report in debug settings; `app_diagnostics_recorder_test.dart` verified 2026-05-22.
 - **TVREMOTE-28** — Interaction polish: press-scale + haptic on remote controls (**In Progress**).
 - **TVREMOTE-41** — Samsung IME watch stream no eager `connect`; probe path explicit (**In Progress** in Jira).
@@ -50,7 +50,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Repo-wide `dart format` baseline applied so the format gate passes
   - [x] `AppBuildConfig` / `AppBuildProfile` centralize debug vs release → `AppEnvironment`; `main.dart` uses `environmentForMain()`
   - [x] README documents CI commands, intentional Gradle product-flavor gap, and `AppEnvironment.development` reservation
-  - [x] `AdConsentCoordinator.isPrivacyOptionsRequired` timeout + fallback so settings sheet opens under widget tests (simulated Android / no Mobile Ads plugin)
+  - [x] Settings sheet opens under widget tests without a Mobile Ads plugin (UMP privacy-options form removed with AdMob)
   - [x] Widget tests: fake-transport discovery via prefs; one copy-transport sheet test skipped pending modal scroll/hit-test harness
 - [x] Milestone 0 / Task 0.3:
   - [x] Added core entities and contracts:
@@ -125,20 +125,19 @@ Living plan derived from `references/product_specs.md`—update both when scope 
   - [x] Presentation theming: remote/pairing/layout-editor widgets under `presentation/` no longer use ad-hoc `Colors.*` / hex for remote chrome; values live on `AppColors` (`remoteGlyphOnRemote`, `remotePowerFill`, `remoteActionSuccess*`, `layoutEditorDrop*`, `pairingModalBarrier`, `pairingBusyOnCard`, etc.) with dark-theme literals aligned to prior behavior
   - [x] **SRP Refactor Checklist (Tracked)** is fully complete (all items checked)
   - [x] Presentation metrics consolidation: `lib/remote_control/presentation/metrics/` now owns header height (`remote_layout_header_metrics.dart`), header/in-grid button geometry + play/pause pill ratios (`remote_layout_button_metrics.dart`), and the cross-fade duration shared by the pairing-hint switcher and status-panel blur overlay (`remote_pairing_hint_metrics.dart`); shared `RemoteHeaderIconButton` widget keeps the home-view pair button and editor reset button visually identical
-  - [x] Remote home bottom banner ad integrated (free-tier monetization scaffold; production AdMob unit IDs still pending — see `references/marketing_strategy.md`):
-  - [x] Free-tier interstitial ad scaffold (`InterstitialAdController`, engagement policy, Pro + consent gating; **TVREMOTE-63** / **TVREMOTE-66**)
-  - [x] Ad consent bootstrap (`AdConsentCoordinator`: UMP + iOS ATT before `MobileAds.initialize()`; **TVREMOTE-26** partial)
-  - [x] Settings sheet: platform store-account hints, privacy-policy link, UMP privacy-options when required, About section with installed app version (`05aca51`, **TVREMOTE-26**), diagnostics summary + copy report, in-app feedback (category + message → webhook) (**TVREMOTE-29** / **TVREMOTE-66** / **TVREMOTE-68**)
+  - [x] Remote home bottom banner ad integrated (free-tier Unity LevelPlay; **TVREMOTE-63**):
+  - [ ] Free-tier interstitial ads — not wired pending a LevelPlay interstitial unit
+  - [x] Ad SDK bootstrap (`LevelPlayAdsService`: iOS ATT then `LevelPlay.init`; **TVREMOTE-26** partial)
+  - [x] Settings sheet: platform store-account hints, privacy-policy link, About section with installed app version (`05aca51`, **TVREMOTE-26**), diagnostics summary + copy report, in-app feedback (category + message → webhook) (**TVREMOTE-29** / **TVREMOTE-66** / **TVREMOTE-68**)
   - [x] Telemetry/diagnostics (**TVREMOTE-29**): `AppDiagnosticsRecorder` + discovery/command decorators; `DiagnosticsSummaryPanel` + copy diagnostics report in debug settings; pairing session + unhandled-error recording; `app_diagnostics_recorder_test.dart`
   - [x] In-app user feedback (**TVREMOTE-68**): `FeedbackSubmissionSheet` from settings; `HttpFeedbackSubmissionService` POST JSON via `FeedbackConfig`; `AppPackageInfoSource` for `appVersion`; tests in `test/lib/app/feedback/` and `test/lib/app/package_info/` (see `references/feedback-collection-setup.md`, `references/compliance-and-release-requirements.md` §1.5; release token/policy **TVREMOTE-69**)
   - [x] Remote interaction polish: `RemotePressFeedback` + command haptics on grid/d-pad/rockers (**TVREMOTE-28**)
   - [x] Multi-device management (**TVREMOTE-19**): save/rename/remove on pairing; `setLastUsedDevice` on pair, saved-device tap, and switcher; `RemoteHomeDeviceSwitcherSheet` + header affordance (Pro switch, free-tier lock); `FreeTierSavedDeviceCleanup`
   - [x] Samsung/LG `watchRemoteTextInputReady` — no adapter-side `connect()`; use `probeRemoteTextInputReady` for explicit probe (**TVREMOTE-41**, **TVREMOTE-42**)
-    - [x] new `lib/app/ads/` module (`AdConfig`, `BottomBannerAd`, `BottomBannerAdPlacement`) using `google_mobile_ads ^8.0.0`; env-aware unit IDs via `--dart-define=ADMOB_BANNER_ANDROID` / `ADMOB_BANNER_IOS` with Google's test IDs as fallback
-    - [x] `MobileAds.initialize()` runs only on Android/iOS; non-mobile/`kIsWeb` paths skip the overlay entirely so layout/tests are unaffected
-    - [x] Production AdMob app IDs at build time: Android `${admobAppId}` manifest placeholder (`build.gradle.kts`); iOS `GADApplicationIdentifier` in `Info.plist`; runtime test vs live **ad unit** IDs via Firebase Remote Config `test_ads_enabled` + `AdConfig.shouldUseTestAds` (`4af3cdc`)
-    - [x] Placeholder `SKAdNetworkItems` entry in `Info.plist` — **must be replaced with the full network-supplied SKAdNetwork list before iOS release**
-    - [x] Remote `AppBar` tightened (`toolbarHeight: 50`) with thin outline dividers; `RemoteHomePage.body` switched to `Stack(fit: StackFit.expand)` so `BottomBannerAdPlacement` overlays bottom-aligned without resizing the grid
+    - [x] `lib/app/ads/` module (`AdConfig`, `LevelPlayAdsService`, `BottomBannerAd`, `BottomBannerAdPlacement`) using `unity_levelplay_mediation ^9.2.0`; LevelPlay app key `27c78d0ad` and banner unit `20azo5e9eecpv182`
+    - [x] `LevelPlay.init()` runs after first frame on Android/iOS; non-mobile/`kIsWeb` paths skip the overlay
+    - [x] IronSource SKAdNetwork ID `su67r6k2v3.skadnetwork` in `Info.plist` — **expand to the full network-supplied SKAdNetwork list before iOS release if extra adapters are added**
+    - [x] Remote `AppBar` tightened (`toolbarHeight: 50`) with thin outline dividers; `RemoteHomePage.body` uses `Stack(fit: StackFit.expand)` so `BottomBannerAdPlacement` overlays bottom-aligned without resizing the grid
 - [x] Developer ergonomics:
   - [x] README project docs (2026-07-22): overview, supported brands, repo layout, developer quick start, connection/reconnect notes, expanded runtime flags, CI/build/APK, Firebase Pro pointer, documentation index; **Current Runtime Modes** covers real Samsung/LG/Hisense defaults, fake-transport opt-in, host overrides, Samsung log tag `samsung_transport`
   - [x] Implementation plan: **Brand transport defaults** section (real-by-default policy; do not regress)
@@ -203,7 +202,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [x] Firebase Analytics + Crashlytics (commit `bf5d103`): Firebase init + fatal error hooks in `main.dart`; `AnalyticsService` DI with Pro entitlement + startup locale events
 - [x] Crashlytics startup zone mismatch (`c1d5a2f`, 2026-08-15): `runApp` in the same zone as `WidgetsFlutterBinding.ensureInitialized()`; `runZonedGuarded` removed. Uncaught async errors stay on `PlatformDispatcher.instance.onError` (+ diagnostics / `StreamUnhandledErrorSource`)
 - [x] Android TV protobuf 6 compatibility (`ef8386b`): `PbList.createRepeated` → `List` in Android TV remote/pairing message types
-- [x] AdMob runtime test/live toggle + Android edge-to-edge (`4af3cdc` / `05aca51`, **TVREMOTE-63** / **TVREMOTE-26**):
+- [x] AdMob runtime test/live toggle + Android edge-to-edge (`4af3cdc` / `05aca51`, **TVREMOTE-63** / **TVREMOTE-26**; **superseded 2026-08-25** by LevelPlay — Remote Config/`AdRemoteConfigService` and AdMob IDs removed):
   - [x] `AdRemoteConfigService` — Firebase Remote Config `test_ads_enabled`; fail-safe default prefers test ad units; split settings/defaults from fetch; fetch failures keep last activated value; release `minimumFetchInterval` 1 minute (`05aca51`)
   - [x] `AdConfig.shouldUseTestAds` — debug always test; release follows Remote Config; banner/interstitial unit IDs wired through `BottomBannerAdPlacement` and `InterstitialAdController`
   - [x] Production AdMob app ID constants; Android manifest placeholder; DI fetch at bootstrap
@@ -472,14 +471,13 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [x] No unresolved **copyleft** obligations in direct runtime dependencies (**TVREMOTE-32**); manufacturer API ToS and brand marks remain separate gates (**TVREMOTE-26** / compliance §2.1).
 - [ ] **Store submission blockers** (expanded checklist: `references/compliance-and-release-requirements.md`):
   - [ ] Privacy policy at a live public URL; linked in App Store Connect and Play Console (in-app link scaffold only until URL is live).
-  - [x] iOS: App Tracking Transparency integrated in app code; prompt before first ad SDK init (`AdConsentCoordinator`).
-  - [x] EU/California: UMP consent integrated in app code before ad load; device/regional validation still required.
+  - [x] iOS: App Tracking Transparency requested via LevelPlay `ATTrackingManager` before SDK init.
+  - [ ] EU/California: CMP/consent not yet re-integrated after removing Google UMP; required before ads go live in those regions.
   - [x] Pro: IAP via Apple IAP + Google Play Billing only (`in_app_purchase`) supporting multi-product subscriptions + lifetime (`ProProductIds` catalog); override via `--dart-define=PRO_PRODUCT_ID=...` (see `lib/app/configurations/app_monetization_di_config.dart`); Android server-side receipt validation callable in repo (`functions/src/index.ts` — deploy per `references/goals/goal-pro-receipt-validation-remote-setup.md`).
   - [ ] Play Store listing: short + full description per `references/marketing_strategy.md` §2 (brands, ads, Pro, privacy URLs).
-  - [ ] Developer accounts and signing: Apple Developer Program, Google Play developer account, AdMob as needed before ads go live.
-  - [x] Production AdMob **app IDs** at build time (`4af3cdc`): Android `${admobAppId}` placeholder; iOS `GADApplicationIdentifier` in `Info.plist`.
-  - [ ] Replace placeholder `SKAdNetworkItems` array (currently `cstr6suwn9.skadnetwork` only) with the full Apple-required SKAdNetwork list before iOS release.
-  - [ ] Flip Firebase Remote Config `test_ads_enabled` to `false` (and/or confirm `--dart-define=ADMOB_*` overrides) before serving live ad units in production.
+  - [ ] Developer accounts and signing: Apple Developer Program, Google Play developer account, Unity LevelPlay account as needed before ads go live.
+  - [x] Production LevelPlay app key and banner unit in `AdConfig` (`27c78d0ad` / `20azo5e9eecpv182`).
+  - [ ] Expand `SKAdNetworkItems` beyond IronSource (`su67r6k2v3.skadnetwork`) when additional mediated networks are added.
 - [ ] **Physical-device validation:** Do not claim store support for a brand until pairing and core commands are verified on at least one real TV of that brand (complements the brand readiness matrix in `references/product_specs.md`).
 - [ ] **Deferred code-quality/security follow-ups** from the April 2026 lib review (no code until individually confirmed): `references/goal-oneremote-lib-review.md`.
 

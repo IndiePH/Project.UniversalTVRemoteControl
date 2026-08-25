@@ -1,10 +1,6 @@
 import java.io.FileInputStream
 import java.util.Properties
 
-// AdMob app ID is build-time config. Test vs live ad units are toggled at runtime
-// via Firebase Remote Config (`test_ads_enabled`) in Dart — see AdConfig.
-val productionAdMobAppId = "ca-app-pub-4297882562709937~9516353394"
-
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
@@ -35,7 +31,6 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["admobAppId"] = productionAdMobAppId
     }
 
     signingConfigs {
@@ -77,4 +72,8 @@ flutter {
 dependencies {
     // Play Console edge-to-edge: enableEdgeToEdge() on FlutterFragmentActivity.
     implementation("androidx.activity:activity-ktx:1.10.1")
+    // Required by Unity LevelPlay (unity_levelplay_mediation).
+    implementation("com.google.android.gms:play-services-appset:16.0.2")
+    implementation("com.google.android.gms:play-services-ads-identifier:18.0.1")
+    implementation("com.google.android.gms:play-services-basement:18.3.0")
 }

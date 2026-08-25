@@ -11,6 +11,16 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-08-25
+
+### Changed
+- App version bump to `1.5.1+22` (`pubspec.yaml`; README and marketing versionCode synced).
+- Replaced Google AdMob (`google_mobile_ads`) with Unity LevelPlay (`unity_levelplay_mediation` 9.2.0). App key `27c78d0ad`; banner unit `20azo5e9eecpv182`. Interstitials are not wired until a LevelPlay interstitial unit is provided.
+- Removed UMP/`AdConsentCoordinator`, Firebase Remote Config ad-unit toggle, and AdMob platform app IDs. iOS ATT is requested via the LevelPlay plugin before SDK init.
+
+### Docs
+- Ads/consent docs synced to LevelPlay (banner-only): `README.md`; `references/marketing_strategy.md`; `references/implementation_tasks.md`; `references/compliance-and-release-requirements.md`; `references/product_specs.md`; `references/universal-tv-remote-info-and-req.md`; `references/third_party_licenses.md`; `docs/app-initialization-and-remote-selection-flow.md`.
+
 ## 2026-08-24
 
 ### Changed

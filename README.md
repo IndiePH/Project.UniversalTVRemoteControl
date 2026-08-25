@@ -2,7 +2,7 @@
 
 Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — use either label interchangeably in docs). Control smart TVs over Wi‑Fi from Android or iOS.
 
-**Version:** `1.5.1+21` (see `pubspec.yaml`)
+**Version:** `1.5.1+22` (see `pubspec.yaml`)
 
 ## Overview
 
@@ -96,7 +96,6 @@ On a phone and TV on the same LAN: open the app → pair (scan or manual IP) →
   - `--dart-define=TCL_LEGACY_WIFI_ENABLED=true`
 - Monetization / compliance overrides:
   - `--dart-define=PRO_PRODUCT_ID=<sku>` (default catalog in `lib/app/configurations/app_monetization_di_config.dart`)
-  - `--dart-define=ADMOB_BANNER_ANDROID=<id>` / `ADMOB_BANNER_IOS=<id>` (test IDs used when Remote Config `test_ads_enabled` or debug)
   - `--dart-define=PRIVACY_POLICY_URL=https://...`
 - In-app feedback webhook (default Apps Script URL in `FeedbackConfig`; optional overrides):
   - `--dart-define=FEEDBACK_WEBHOOK_URL=https://...`

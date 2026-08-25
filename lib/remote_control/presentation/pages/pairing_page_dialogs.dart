@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
-import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/domain/models/pin_format.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -63,11 +61,8 @@ final class PairingPageDialogs {
     required String pairingMessage,
     PinFormat pinFormat = PinFormat.fourDigitNumeric,
   }) async {
-    final interstitial = _interstitialControllerOrNull();
-    interstitial?.acquirePresentationBlock();
     final pinController = TextEditingController();
-    try {
-      return await showDialog<String>(
+    return showDialog<String>(
         context: context,
         barrierDismissible: false,
         builder: (context) {
@@ -154,17 +149,6 @@ final class PairingPageDialogs {
           );
         },
       );
-    } finally {
-      interstitial?.releasePresentationBlock();
-    }
-  }
-
-  static InterstitialAdController? _interstitialControllerOrNull() {
-    final sl = GetIt.instance;
-    if (!sl.isRegistered<InterstitialAdController>()) {
-      return null;
-    }
-    return sl<InterstitialAdController>();
   }
 
   static Future<void> showPairingOutcome({

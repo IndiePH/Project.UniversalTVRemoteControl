@@ -1,23 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:one_remote/app/ads/bottom_banner_ad_placement.dart';
-import 'package:one_remote/app/configurations/app_environment.dart';
 
 void main() {
   test('does not build overlay when ads are disabled by Pro', () {
     final overlay = BottomBannerAdPlacement.buildOverlay(
-      appEnvironment: AppEnvironment.production,
-      testAdsEnabled: false,
       showAds: false,
+      sdkReady: true,
     );
 
     expect(overlay, isNull);
   });
 
-  test('does not build overlay when regulatory consent blocks ads', () {
+  test('does not build overlay before LevelPlay is ready', () {
     final overlay = BottomBannerAdPlacement.buildOverlay(
-      appEnvironment: AppEnvironment.production,
-      testAdsEnabled: false,
       showAds: true,
+      sdkReady: false,
     );
 
     expect(overlay, isNull);
