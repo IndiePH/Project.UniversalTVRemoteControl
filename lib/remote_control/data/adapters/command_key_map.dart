@@ -68,9 +68,9 @@ abstract class CommandKeyMap {
 }
 
 /// Decorates a base [CommandKeyMap] with a small set of per-command overrides — see
-/// `guide-adding-diverging-remote-commands.md`. Falls through to [_base] for anything
-/// [_overrides] doesn't touch, so the base mapper's full command set stays live and
-/// current automatically.
+/// `guide-remote-command-dispatch.md`'s "Diverging a variant's commands" section. Falls
+/// through to [_base] for anything [_overrides] doesn't touch, so the base mapper's full
+/// command set stays live and current automatically.
 class VariantKeyMap extends CommandKeyMap {
   const VariantKeyMap(this._base, this._overrides);
   final CommandKeyMap _base;

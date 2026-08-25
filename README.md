@@ -184,6 +184,7 @@ Android Pro IAP receipt validation uses a Firebase callable in `functions/`. Dep
 | `references/compliance-and-release-requirements.md` | Store submission checklist |
 | `references/marketing_strategy.md` | Naming, positioning, ad strategy |
 | `references/guide-protocol-variants.md` | How protocol variants are determined, applied, and how to add a new one (or a per-variant remote layout) |
+| `references/guide-remote-command-dispatch.md` | The `CommandPayload` dispatch contract, and how to diverge a variant's commands |
 | `references/guide-android-tv-remote-protocol.md` | Android TV protocol notes |
 | `references/feedback-collection-setup.md` | In-app feedback webhook setup |
 | `references/third_party_licenses.md` | OSS and manufacturer API license audit |

@@ -8,8 +8,10 @@
 design"). The problem statement and verified facts below are unchanged by the revision.
 **Related:** none of the other `references/goals/` docs touch this surface directly; this is
 an independent adapter/keymapper-layer cleanup, not coupled to the layout/drawer work. See also
-`references/guide-command-payload-dispatch.md`, an implementation-guide companion to this
-document describing the target `CommandPayload` contract in worked-example form.
+`references/guide-remote-command-dispatch.md`, an implementation-guide companion to this
+document describing the (now-live) `CommandPayload` contract in worked-example form — despite
+this goal doc's own status banner still saying "proposed," the guide reflects what's actually
+built.
 **Origin:** surfaced during a design review of how `RemoteCommand.netflix` / `.primeVideo` /
 `.disneyPlus` / `.youtube` / `.web` ("app-launch commands") are dispatched across the seven
 `TvBrandAdapter` implementations.
