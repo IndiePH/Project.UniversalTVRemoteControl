@@ -3,8 +3,11 @@
 **Branch:** `feature/variant-remote-layout` (current)
 **Status:** partially implemented — see "Implementation status" below (2026-08-22)
 **Related:** `references/goals/goal-command-drawer.md` (same underlying data model — likely built together); `references/goals/goal-stable-device-identifier.md` (this goal's persisted state inherits that goal's `deviceId` fragility, not a blocker)
-**Protocol variant guide:** `references/guide-adding-protocol-variant.md`
-**Layout override guide:** `references/guide-adding-variant-remote-layout.md` (proposed — companion doc, not the protocol guide itself, per the earlier design-review recommendation)
+**Protocol variant guide:** `references/guide-protocol-variants.md` — 2026-08-25: the layout
+override guide (`guide-adding-variant-remote-layout.md`, previously a separate companion doc
+per the earlier design-review recommendation) was merged into this one as its "Adding a
+variant remote layout" section, since it's the same `(TvBrand, String)`-keyed
+variant-resolution shape, just for layout instead of adapter selection.
 **Analysis session:** `references/goals/goal-command-drawer-and-variant-layouts.md`
 
 > ⚠️ **This document has not been verified or approved by the user.** Every claim under
@@ -30,13 +33,14 @@ The mechanism this goal describes is now built and tested on `feature/variant-re
   id-keyed lookup at render time, ignoring whatever `RemoteLayoutDefaults` entry actually built
   the item. Fixed by carrying `imageIconSize`/`brandColor` on `LayoutEditItem` itself (grid) and
   by a variant-aware `resolveItemDefinitionsById(brand, variant)` (editor) — see
-  `guide-adding-variant-remote-layout.md` for detail.
+  `guide-protocol-variants.md`'s "Adding a variant remote layout" section for detail.
 - Confirmed by real-device test (Android TV, `channel` filtered out of the default-variant entry):
   the override correctly excludes `channel` from the live grid, and reset respects it too.
 - **A real gap found in testing, accepted as-is for now:** omitting an id from an override entry
   removes it entirely rather than just deprioritizing it to the drawer — a pre-existing saved
   customization positioning that id becomes silently orphaned (never re-applied, never surfaced).
-  See `guide-adding-variant-remote-layout.md`'s "When does an item actually show up?" section.
+  See `guide-protocol-variants.md`'s "When does an item actually show up?" subsection (under
+  "Adding a variant remote layout").
 - **Not yet done:** no real per-variant entry has been committed (only a local test entry); the
   regression tests Design Review finding #3 called for (`_buildLayoutDefaultsForDevice`/
   `buildFilteredRemoteLayoutItems`) still don't exist.
@@ -92,7 +96,7 @@ catalog. *(Recorded as read — correct if a different split was intended.)*
 
 Recommendation (not decided):
 
-- **`LayoutRepository` stays `deviceId`-only** — do not add a `variant` parameter to `loadLayout`/`saveLayout`. `deviceId` already implies a fixed `(brand, protocolVariant)`, stamped once at pairing time and stored on `TvDevice` itself (per `guide-adding-protocol-variant.md:19,94-96`). Re-deriving variant inside the repository would duplicate what's already resolved, contradicting the same reasoning the variant guide gives for why `TvCapabilities` does a direct map lookup instead of re-running predicates (`guide-adding-protocol-variant.md:256-259`).
+- **`LayoutRepository` stays `deviceId`-only** — do not add a `variant` parameter to `loadLayout`/`saveLayout`. `deviceId` already implies a fixed `(brand, protocolVariant)`, resolved and stored on `TvDevice` itself (per `guide-protocol-variants.md:1-7,211-213`). Re-deriving variant inside the repository would duplicate what's already resolved, contradicting the same reasoning the variant guide gives for why `TvCapabilities` does a direct map lookup instead of re-running predicates (`guide-protocol-variants.md:387-390`).
 - **Add a new `(brand, variant)`-keyed default-layout source**, structurally a sibling of `TvCapabilities` — e.g. `RemoteLayoutDefaults` in `domain/models/`, same `Map<(TvBrand, String), ...>` + fallback-to-`defaultVariant` shape as `tv_capabilities.dart:20-61`.
 - **Full resolution order, corrected (2026-08-20) — a 0th, higher-priority tier was missing:** the chain below (`_map[(brand,variant)] ?? _map[(brand, defaultVariant)] ?? kRemoteLayoutItemDefinitions`) only produces the *default starting point*. The user's own saved/customized layout — keyed by `deviceId`, Pro-gated, already implemented (`_loadLayoutForDevice`'s `saved` overlay, `remote_home_page.dart:1083-1122`, verified fact #9 above) — sits **above** all of it and wins whenever present:
   - **Tier 0 (highest — overrides everything below):** user's saved layout for this `deviceId`, if one exists and the user is Pro.
@@ -124,7 +128,7 @@ Findings from a follow-up review pass (2026-08-20), each grounded in cited sourc
 2. **DA-5 (avoid overengineering) — resolved.** Concrete justification for per-variant *position* differences (not just inclusion): whatever arrangement makes the most sense for that brand+variant in the app's own UI — informed by, but not bound to replicate, that device's real physical remote. Not overengineering — real, stated business requirement, just not a strict-parity one.
 3. **Refactoring — verify test coverage on `_buildLayoutDefaultsForDevice`/`_loadLayoutForDevice` (`remote_home_page.dart`) before extending them.** The refactoring skill's precondition (adequate coverage before structural change) hasn't been explicitly confirmed for these two methods specifically, even though adjacent layout tests exist (`remote_layout_drop_resolver_test.dart`, `shared_prefs_layout_repository_test.dart`, etc., per `changelog.md` 2026-05-22 entry).
 4. **Clean-code-solid / OCP — `requiredCommandsForLayoutItemId`/`commandForLayoutItemId` (`remote_layout_item_definitions.dart:170-209`) are switch statements over item-id strings.** Adding a new layout item (e.g. `youtube`, planned in `goal-command-drawer.md`) means editing a switch — an OCP smell (extension requires modification). Since the drawer work already touches every entry, that's the opportune moment to move `requiredCommands`/`primaryCommand` onto `RemoteLayoutItemDefinition` as declarative fields instead — see sequencing decision above.
-5. **Abstraction-domain-modeling — `RemoteLayoutDefaults` is a legitimate domain concept but creates an undocumented maintenance coupling to `guide-adding-protocol-variant.md`.** That guide's checklist doesn't know this class will exist; recommend adding a step to it (mirroring its existing optional "Capability override" step) once implemented, so new variants don't silently miss a layout entry.
+5. **Abstraction-domain-modeling — `RemoteLayoutDefaults` is a legitimate domain concept but creates an undocumented maintenance coupling to `guide-protocol-variants.md`.** That guide's checklist doesn't know this class will exist; recommend adding a step to it (mirroring its existing optional "Capability override" step) once implemented, so new variants don't silently miss a layout entry. **Resolved 2026-08-25:** the coupling is now moot — the layout guide was merged into `guide-protocol-variants.md` as its "Adding a variant remote layout" section, in the same file rather than a separate one that could drift out of sync.
 6. **Architecture-consistency — confirmed CONSISTENT, not a new precedent.** Verified `TvCapabilities` is already instantiated directly from presentation-layer code (`pairing_page_data.dart:79`), not only from `data`/`domain` — so calling a new `domain/models` lookup directly from `remote_home_page.dart` matches an existing pattern rather than introducing one.
 
 correctness-validation / TQ-1 / MF-1 (test coverage, no-behavior-change, regression) aren't triggered yet — no code has changed; this remains a planning document.

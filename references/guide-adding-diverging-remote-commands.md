@@ -8,7 +8,7 @@ handful of `RemoteCommand` → payload mappings for a variant, without duplicati
 brand's whole `CommandKeyMap` or its whole adapter.
 
 **Prerequisite:** the protocol variant itself must already exist — see
-`references/guide-adding-protocol-variant.md`. This guide does not create variants; it
+`references/guide-protocol-variants.md`. This guide does not create variants; it
 only refines that guide's **Step 3 (create a variant-specific adapter)** for the common
 case where the variant's adapter needs to change *what a command sends*, not *how the
 device is connected to, paired with, or read from*. Everything else in that guide's
@@ -25,17 +25,18 @@ unchanged — read it first if you haven't already.
 BrandRoutedRemoteCommandService
   └─ _adapters[(device.brand, device.protocolVariant)]   → exact-match lookup, no fallback
        └─ adapter.sendCommand(device, command)
-            └─ _keyMapper.keyCodesFor(command)            → List<String> (payload)
+            └─ _keyMapper.payloadFor(command)             → CommandPayload? (payload)
 ```
 
 `BrandRoutedRemoteCommandService` builds its lookup map from `(a.brand, a.protocolVariant)`
-for every adapter passed in at DI time (`brand_routed_remote_command_service.dart:18`) and
-resolves by exact key — there is no fallback from a variant to its brand's default adapter.
-That means the **adapter** is the unit the router selects by, so a new variant always needs
-its own adapter instance in that list. What varies between adapters, though, does not have
-to be an entire reimplementation — `TvBrandAdapter`'s connection, pairing, and lifecycle
-methods can be inherited verbatim; only the mapping from `RemoteCommand` to outgoing payload
-needs to change, and that mapping already lives behind its own abstraction.
+for every adapter passed in at DI time (`brand_routed_remote_command_service.dart:20`) and
+resolves by exact key (`_adapterFor`, `brand_routed_remote_command_service.dart:303`) — there
+is no fallback from a variant to its brand's default adapter. That means the **adapter** is
+the unit the router selects by, so a new variant always needs its own adapter instance in
+that list. What varies between adapters, though, does not have to be an entire
+reimplementation — `TvBrandAdapter`'s connection, pairing, and lifecycle methods can be
+inherited verbatim; only the mapping from `RemoteCommand` to outgoing payload needs to
+change, and that mapping already lives behind its own abstraction.
 
 ### CommandKeyMap
 
@@ -45,15 +46,18 @@ needs to change, and that mapping already lives behind its own abstraction.
 abstract class CommandKeyMap {
   const CommandKeyMap();
 
-  List<String> keyCodesFor(RemoteCommand command);
-
-  String? primaryKeyCodeFor(RemoteCommand command) { ... }
+  /// Returns the payload for [command], or `null` if this brand/variant doesn't support it.
+  CommandPayload? payloadFor(RemoteCommand command);
 }
 ```
 
-Every brand adapter holds a `CommandKeyMap` and calls `keyCodesFor(command)` to get the
+See `guide-command-payload-dispatch.md` for the full `CommandPayload` contract
+(`KeySequence`/`AppLink`/`VidaaLaunch`) — this guide only covers the seam built on top of it
+for diverging a handful of commands per variant, not the contract itself.
+
+Every brand adapter holds a `CommandKeyMap` and calls `payloadFor(command)` to get the
 payload it sends over the transport (see `SamsungAdapter.sendCommand`,
-`samsung_adapter.dart:104-116`). The base adapter already accepts one as an **optional
+`samsung_adapter.dart:109-128`). The base adapter already accepts one as an **optional
 constructor parameter**, defaulting to the brand's own mapper:
 
 ```dart
@@ -62,44 +66,52 @@ SamsungAdapter({required this._transportClient, CommandKeyMap? keyMapper})
   : _keyMapper = keyMapper ?? const SamsungKeyMapper();
 ```
 
+(The named constructor argument at call sites is `transportClient:`, not `_transportClient:`
+— Dart drops the leading underscore from a field-formal parameter's external name even
+though the field itself is private.)
+
 That optional parameter is the seam this guide uses. A variant adapter doesn't need to
 supply a whole new `CommandKeyMap` implementation — it needs to supply the *same* mapper
 with a *few entries swapped*.
 
 ### VariantKeyMap
 
-A generic decorator over `CommandKeyMap` does exactly that, and is reused across every
-brand and every variant — it is not brand-specific and not written once per variant:
+A generic decorator over `CommandKeyMap`, already defined once in `command_key_map.dart`
+(not something you write per variant) and reused across every brand and every variant:
 
 ```dart
 class VariantKeyMap extends CommandKeyMap {
   const VariantKeyMap(this._base, this._overrides);
   final CommandKeyMap _base;
-  final Map<RemoteCommand, List<String>> _overrides;
+  final Map<RemoteCommand, CommandPayload> _overrides;
 
   @override
-  List<String> keyCodesFor(RemoteCommand command) =>
-      _overrides[command] ?? _base.keyCodesFor(command);
+  CommandPayload? payloadFor(RemoteCommand command) =>
+      _overrides[command] ?? _base.payloadFor(command);
 }
 ```
 
-`keyCodesFor` checks the override map first and falls through to the base mapper for every
+`payloadFor` checks the override map first and falls through to the base mapper for every
 command the variant doesn't touch. The base mapper's full command set stays live and
 current automatically — if the brand's default mapper later adds support for a new
 command, every variant built on `VariantKeyMap` picks it up for free, with zero edits.
+`TclGoogleTvAdapter` is a real, live example of this pattern — it composes
+`VariantKeyMap(AndroidTvKeyMapper(), _tclLegacyAppLinkOverrides)` to keep the legacy
+`market://launch?id=...` app-link scheme for four commands while inheriting everything
+else from `AndroidTvKeyMapper` unchanged (`tcl_google_tv_adapter.dart:17-35`).
 
 ---
 
 ## Step-by-step: diverging one command for a variant
 
 The example below gives a hypothetical `Samsung Frame` variant (per the example already
-used in `guide-adding-protocol-variant.md`) a region-specific Disney+ app id, while leaving
+used in `guide-protocol-variants.md`) a region-specific Disney+ app id, while leaving
 every other Samsung command mapping untouched.
 
 ### Step 1 — Confirm the variant already exists
 
 Verify the variant's constant, predicate, and registry entry are already in place per
-`guide-adding-protocol-variant.md`'s checklist:
+`guide-protocol-variants.md`'s checklist:
 
 ```dart
 // samsung_protocol_variants.dart
@@ -116,14 +128,12 @@ adapter does once it can already be resolved and routed to.
 ### Step 2 — Build the override map
 
 Identify exactly which `RemoteCommand`s the variant needs to differ on, and write only
-those as a `Map<RemoteCommand, List<String>>`. Do not re-list commands that are unchanged
+those as a `Map<RemoteCommand, CommandPayload>`. Do not re-list commands that are unchanged
 — that's what `VariantKeyMap`'s fallback to `_base` is for.
 
 ```dart
-const _frameOverrides = <RemoteCommand, List<String>>{
-  RemoteCommand.disneyPlus: [
-    '$samsungLaunchPrefix:region-specific-disney-app-id',
-  ],
+const _frameOverrides = <RemoteCommand, CommandPayload>{
+  RemoteCommand.disneyPlus: AppLink('region-specific-disney-app-id'),
 };
 ```
 
@@ -141,9 +151,7 @@ class SamsungFrameAdapter extends SamsungAdapter {
   SamsungFrameAdapter({required super.transportClient})
     : super(
         keyMapper: VariantKeyMap(const SamsungKeyMapper(), const {
-          RemoteCommand.disneyPlus: [
-            '$samsungLaunchPrefix:region-specific-disney-app-id',
-          ],
+          RemoteCommand.disneyPlus: AppLink('region-specific-disney-app-id'),
         }),
       );
 
@@ -157,7 +165,7 @@ plumbing — all of it comes from `SamsungAdapter` unchanged.
 
 ### Step 4 — Register the adapter in DI
 
-This is the same DI step `guide-adding-protocol-variant.md` already documents — nothing
+This is the same DI step `guide-protocol-variants.md` already documents — nothing
 new here beyond adding the one new instance alongside the brand's default adapter:
 
 ```dart
@@ -170,6 +178,8 @@ final commandService = BrandRoutedRemoteCommandService(
     HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
   ],
   variantRegistry: sl<VariantResolutionRegistry>(),
+  localizedStrings: sl<LocalizedStrings>(),
+  identityRegistry: sl<DeviceIdentityRegistry>(),
 );
 ```
 
@@ -177,14 +187,14 @@ final commandService = BrandRoutedRemoteCommandService(
 
 ## Checklist
 
-- [ ] Confirmed the protocol variant already exists per `guide-adding-protocol-variant.md` (constant, predicate, registry entry)
+- [ ] Confirmed the protocol variant already exists per `guide-protocol-variants.md` (constant, predicate, registry entry)
 - [ ] Identified exactly which `RemoteCommand`s diverge for this variant — no unchanged commands re-listed in the override map
 - [ ] Variant adapter class **extends** the brand's existing adapter (not `TvBrandAdapter` directly)
 - [ ] Adapter overrides only `protocolVariant` and composes a `VariantKeyMap` through the base adapter's `keyMapper` constructor parameter
-- [ ] Adapter registered in DI config alongside the brand's default adapter, per `guide-adding-protocol-variant.md`'s Step 3/DI registration
+- [ ] Adapter registered in DI config alongside the brand's default adapter, per `guide-protocol-variants.md`'s Step 3/DI registration
 - [ ] If the variant also adds or removes which commands are supported (not just their payload), `supportedCommands` is explicitly overridden in the same subclass
-- [ ] Test: `keyCodesFor` returns the overridden payload for the diverging command(s)
-- [ ] Test: `keyCodesFor` falls through to the base mapper's payload for every non-overridden command
+- [ ] Test: `payloadFor` returns the overridden payload for the diverging command(s)
+- [ ] Test: `payloadFor` falls through to the base mapper's payload for every non-overridden command
 - [ ] Test: `sendCommand` on the variant adapter produces the correct transport payload end-to-end
 
 ---
@@ -203,7 +213,7 @@ commands it doesn't touch.
 **Why does a new variant still need its own adapter class — isn't that the same
 duplication problem?**  
 No — it's a different axis. `BrandRoutedRemoteCommandService` selects by the exact key
-`(brand, protocolVariant)` (`brand_routed_remote_command_service.dart:18`), so the adapter
+`(brand, protocolVariant)` (`brand_routed_remote_command_service.dart:20`), so the adapter
 *is* the unit of routing; one adapter instance per resolvable variant is required by that
 design, not incidental to it. What makes this cheap is that the adapter subclass carries no
 new behavior — `SamsungFrameAdapter` overrides a getter that returns a different string and
@@ -225,7 +235,7 @@ variant is not, and would just be the duplication problem restated.
 sent?** `VariantKeyMap` only changes the payload for commands the adapter already attempts
 to send — it has no effect on `TvBrandAdapter.supportedCommands`, which is a separate,
 independently-declared getter (see `SamsungAdapter.supportedCommands`,
-`samsung_adapter.dart:51`). If a variant genuinely supports a different command set than
+`samsung_adapter.dart:55`). If a variant genuinely supports a different command set than
 its brand's default — not just different payloads for the same commands — override
 `supportedCommands` explicitly in the same adapter subclass. There is no automatic
 mechanism today that keeps `supportedCommands` and the key-map overrides in sync; that's a

@@ -70,7 +70,7 @@ The registrations relevant to device selection and remotes, in order:
 2. `DeviceDiscoveryService` → `DiagnosticsRecordingDeviceDiscoveryService` wrapping a `CompositeDeviceDiscoveryService` that runs three discovery services together: `SsdpDeviceDiscoveryService`, `MdnsDeviceDiscoveryService`, `RokuSsdpDiscoveryService`.
 3. Per-brand pairing/token stores and transport clients: `LgPairingKeyStore`, `SamsungPairingTokenStore`, `SamsungWebSocketTransportClient`, `LgWebSocketTransportClient`, `HisensePairingAuthStore`, `HisenseMqttTransportClient`, `AndroidTvCertificateStore`, `AndroidTvTcpTransportClient`, `RokuHttpTransportClient`, `TclLegacyTransportClient` (real or fake, gated by `TCL_LEGACY_WIFI_ENABLED`).
 4. Six adapters constructed and collected into a list (`:126-133`): `SamsungAdapter`, `LgAdapter`, `HisenseAdapter`, `AndroidTvAdapter`, `TclRokuAdapter`, `TclLegacyWifiAdapter`.
-5. That adapter list feeds `BrandRoutedRemoteCommandService(adapters, variantRegistry, localizedStrings)` — this is the router every command/pairing call goes through (`_adapterFor(brand, variant)`, per `guide-adding-protocol-variant.md`).
+5. That adapter list feeds `BrandRoutedRemoteCommandService(adapters, variantRegistry, localizedStrings)` — this is the router every command/pairing call goes through (`_adapterFor(brand, variant)`, per `guide-protocol-variants.md`).
 6. `RemoteCommandService` → `DiagnosticsRecordingRemoteCommandService` wrapping that router.
 7. `TvConnectionStateService` → `MultiplexedTvConnectionStateService(commandService)`.
 8. `TvReachabilityService` → `AdapterTvReachabilityService(adapters)`.
@@ -101,7 +101,7 @@ The user either taps a discovered result, or types a manual IP (built into a `Tv
 
 Selecting a device runs **`PairingPageCoordinator.pairSelectedDevice()`** (`pairing_page_coordinator.dart:24-77`):
 
-1. `commandService.preparePairing(device)` → `BrandRoutedRemoteCommandService.preparePairing()` (`brand_routed_remote_command_service.dart:54-100`), which is exactly the flow `guide-adding-protocol-variant.md` documents:
+1. `commandService.preparePairing(device)` → `BrandRoutedRemoteCommandService.preparePairing()` (`brand_routed_remote_command_service.dart:54-100`), which is exactly the flow `guide-protocol-variants.md` documents:
    - Resolves the adapter for `(device.brand, device.protocolVariant)` — at this point `protocolVariant` is still whatever default the discovery service stamped, not yet the real resolved variant.
    - `adapter.preparePairing(device)` — protocol-specific handshake start.
    - `adapter.queryDeviceInfo(device)` → `TvDeviceInfo?`.

@@ -1,26 +1,39 @@
 # Guide: The `CommandPayload` Dispatch Contract
 
-> ⚠️ **Status: describes a proposed design, not the current codebase.** Today,
-> `CommandKeyMap.keyCodesFor(RemoteCommand) -> List<String>` is the live contract — see
-> `guide-adding-diverging-remote-commands.md` for how to work with it as it exists right now.
-> This guide documents the target shape proposed in
-> `references/goals/goal-app-launch-dispatch-unification.md`: nothing in `lib/` implements
-> `CommandPayload` or `payloadFor` yet. Once that goal doc's Phase 0 lands, this guide describes
-> the real contract; until then, treat every code sample below as a worked example of the
-> destination, not a description of what exists.
+> **Status: this is the live contract.** `CommandKeyMap.payloadFor(RemoteCommand) ->
+> CommandPayload?` (`lib/remote_control/data/adapters/command_key_map.dart`) is what every
+> adapter — Samsung, LG, AndroidTv, TclGoogleTv, TclRoku, TclLegacyWifi, Hisense, Sony — uses
+> today. There is no `keyCodesFor`/`List<String>` contract left anywhere in `lib/`; it was fully
+> replaced by this one. `references/goals/goal-app-launch-dispatch-unification.md` is the
+> historical planning record for how this migration was designed — useful for the reasoning
+> behind specific choices (e.g. why LG still uses a sentinel, below), but its own status banner
+> and phase markers still say "proposed," which is stale — verify against the code, not that
+> doc's banner, if you need to know what's actually built.
 
 ## Why this exists
 
-Today, five brands each dispatch "app-launch" commands (Netflix, Disney+, Prime Video, YouTube,
-web) through a different mechanism: Samsung/LG hide a `LAUNCH:`-prefixed sentinel string inside
-the key mapper and let the *transport client* `startsWith`-sniff it; AndroidTv/TclGoogleTv keep
-a second map on the adapter, checked before the keymapper; Hisense keeps a tuple-returning
-switch on the adapter with the keymapper deliberately left empty for those commands. Three
-different shapes for the same underlying idea: "this command doesn't send a raw key code, it
-launches an app, and needs different data and a different transport call to do it."
+Before this was unified, six adapters dispatched "app-launch" commands (Netflix, Disney+, Prime
+Video, YouTube, web) through three different shapes: Samsung and LG hid a `LAUNCH:`-prefixed
+sentinel string inside the key mapper and let the *transport client* `startsWith`-sniff it;
+AndroidTv and TclGoogleTv kept a second, byte-for-byte duplicated map on the adapter (checked
+before the keymapper), and TclRoku kept its own separate map in that same shape; Hisense kept a
+tuple-returning switch on the adapter with the keymapper deliberately left empty for those
+commands. Three shapes for the same underlying idea: "this command doesn't send a raw key code,
+it launches an app, and needs different data and a different transport call to do it."
 
-`CommandPayload` collapses those three shapes into one: every command's dispatch information
-— both the data to send and *how* to send it — lives in exactly one place, the key map.
+`CommandPayload` collapsed those three shapes into one: every command's dispatch information —
+both the data to send and *how* to send it — lives in exactly one place, the key map. Samsung's
+`LAUNCH:` sentinel is gone entirely (its app-launch commands are plain `AppLink` entries now);
+AndroidTv/TclGoogleTv's adapter-level `_appLinks` map is gone (folded into the keymapper, via
+`VariantKeyMap` for TclGoogleTv's `market://` override — see
+"Diverging one command for a variant" below); TclRoku's `_appIds` map is gone the same way
+(`TclRokuKeyMapper`'s four launch commands are now plain `AppLink` entries carrying Roku channel
+ids); Hisense's keymapper carries real `VidaaLaunch` entries instead of being left empty. The
+one deliberate holdout is LG: its app-launch commands
+still dispatch as a `KeySequence` carrying a `LAUNCH:`-prefixed string, sniffed by
+`LgWebSocketTransportClient` — not a leftover, but a scope decision (see "Adding a
+brand-specific payload type" below for why a brand keeping a sentinel doesn't need a new
+`CommandPayload` subclass).
 
 ## The contract
 
@@ -30,7 +43,7 @@ sealed class CommandPayload {
 }
 
 /// Dispatched via `sendKey`. One or more ordered fallback key-code aliases to try in order —
-/// the same meaning `keyCodesFor`'s `List<String>` already carries today.
+/// the same meaning the old `keyCodesFor`'s `List<String>` used to carry.
 final class KeySequence extends CommandPayload {
   const KeySequence(this.codes);
   final List<String> codes;
@@ -60,6 +73,12 @@ abstract class CommandKeyMap {
 }
 ```
 
+Each concrete subclass also overrides `==`/`hashCode` (by field, e.g. `KeySequence`'s compares
+its `codes` list element-by-element) — omitted above for brevity, but real, and required: without
+it, two separately-constructed payloads with identical data wouldn't compare equal, and the
+`expect(mapper.payloadFor(...), const AppLink(...))`-style assertions in "Testing" below would
+fail even when the mapping is correct.
+
 **The rule that makes this work:** one `CommandPayload` subclass per **transport method**, never
 per data shape. `KeySequence` covers "one code" and "five fallback codes" identically — arity is
 a detail *inside* the subclass, not a reason for a new one. A new subclass is only warranted when
@@ -74,21 +93,24 @@ RemoteCommand.power: const KeySequence(['KEY_POWER']),
 ```
 
 A command with several fallback aliases the device might recognize (order matters — first match
-wins, exactly like `keyCodesFor`'s existing fallback-list behavior):
+wins):
 
 ```dart
 RemoteCommand.back: const KeySequence(['KEY_RETURNS', 'KEY_RETURN', 'KEY_BACK']),
 ```
 
-An app-launch command — note there's no prefix, no sentinel, nothing to parse downstream:
+An app-launch command — note there's no prefix, no sentinel, nothing to parse downstream. Prefer
+an `https://` App Link URI over the legacy `market://launch?id=...` scheme (Android TV/Google TV
+builds have been dropping support for the latter — see `android_tv_key_mapper.dart`; `market://`
+still shows up as `TclGoogleTvAdapter`'s explicit, hardware-unverified override, not as the
+default to copy for a new brand):
 
 ```dart
-RemoteCommand.netflix: const AppLink('market://launch?id=com.netflix.ninja'),
+RemoteCommand.netflix: const AppLink('https://www.netflix.com/title'),
 ```
 
 A command this brand/variant doesn't support at all — omit the entry; `payloadFor` returns
-`null` for any key missing from the underlying map, exactly like `keyCodesFor` returns `[]`
-today.
+`null` for any key missing from the underlying map.
 
 ## Writing `sendCommand`
 
@@ -215,6 +237,6 @@ test('netflix resolves to the Tizen app id as an AppLink', () {
 });
 ```
 
-Compare this to testing the current `LAUNCH:`-prefix convention, which requires the test to
-hardcode the exact sentinel string (`'LAUNCH:3201907018807'`) and knowledge of where it gets
+Compare this to testing Samsung's old `LAUNCH:`-prefix convention, which required the test to
+hardcode the exact sentinel string (`'LAUNCH:3201907018807'`) and knowledge of where it got
 parsed — `payloadFor` needs neither.

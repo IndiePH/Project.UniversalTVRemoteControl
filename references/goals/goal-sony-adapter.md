@@ -2,7 +2,7 @@
 
 **Branch:** `feature/sony-adapter` (current)
 **Status:** planning — no implementation started
-**Related:** `references/guide-adding-protocol-variant.md` (variant mechanism this goal partly relies on, partly may not fit — see Open questions), `references/guide-android-tv-remote-protocol.md` (the shared protocol Sub-goal A reuses)
+**Related:** `references/guide-protocol-variants.md` (variant mechanism this goal partly relies on, partly may not fit — see Open questions), `references/guide-android-tv-remote-protocol.md` (the shared protocol Sub-goal A reuses)
 
 > ⚠️ **This document has not been verified or approved by the user beyond the initial
 > breakdown.** Sub-goal A's design is grounded in a direct source read of
@@ -321,9 +321,21 @@ remaining open questions before any Bravia code is written.
       Produce a written recommendation.
       Deps: B1. Risk: LOW (research/design only). Skills: system-design, ux-constraints-awareness,
       abstraction-domain-modeling.
-- [ ] **B3. Write findings into a new reference doc**
-      (`references/guide-sony-bravia-ip-control.md`) — **decision checkpoint: present to the
-      user for sign-off before any Sub-goal C task starts.**
+- [ ] **B3. Write findings into a reference doc — target doc OPEN, decide at B3 time.**
+      Originally scoped as a new Sony/Bravia-only doc (`references/guide-sony-bravia-ip-control.md`).
+      2026-08-25: user questioned whether that's still the right shape, since the actual
+      routing/flow logic now lives in code + this goal doc's Decisions log, not in a
+      findings doc — proposed instead folding Bravia's protocol details (B1's `actRegister`/
+      PIN-over-Basic-Auth/cookie findings) into a general **all-brands-and-variants TV protocol
+      reference** so there's one place to return to for any brand's wire protocol, not just
+      Sony's. Note for whoever resolves this at B3: no such combined doc exists today — the
+      closest precedent is `guide-android-tv-remote-protocol.md`, which is scoped to one
+      protocol, not all brands (Samsung/LG/Hisense/Roku have no dedicated protocol guide at
+      all, only validation matrices). Decide then: extend that precedent (a new
+      `guide-sony-bravia-protocol.md`, one-per-protocol like Android TV's) vs. the user's
+      combined-doc idea (bigger, first-of-its-kind artifact, would also mean backfilling or
+      cross-referencing the brands that currently have none) — **decision checkpoint: present
+      to the user for sign-off before any Sub-goal C task starts.**
       Deps: B1, B2. Risk: LOW. Skills: documentation-knowledge-transfer.
 
 ## Sub-goal C — Implement Sony BRAVIA IP Control adapter (placeholder, contingent on B)
@@ -342,6 +354,18 @@ to TCL's model).**
       MEDIUM. Skills: language-specific-implementation, framework-mastery.
 - [ ] **C4. Register variant-resolution entry (or equivalent) + DI wiring.** Deps: C1, C3.
       Risk: LOW. Skills: language-specific-implementation.
+- [ ] **C4b. Build `ManualAddVariantProbe`** per the "B2 recommendation #3 superseded" decision
+      log entry — derives candidates from the DI-built `List<TvBrandAdapter>` (already the source
+      of truth for "which variants exist," see the "single source of truth" decision log entry —
+      do not add a new static table), probes each candidate for `brand` via `probeConnection` in
+      an explicit try-order still TBD (`brandIdentificationPriority` does NOT apply here — it's
+      keyed by `TvBrand` only, and both of Sony's variants report `TvBrand.sony`, so it cannot
+      order between a brand's own variants; needs its own small ordering, e.g. a private ordered
+      list inside `ManualAddVariantProbe` itself), first success wins, `?? TvDevice.defaultProtocolVariant`
+      if none respond; short-circuits to the single known variant (no I/O) for every brand except
+      Sony. Wire into `_addManualDevice` (`pairing_page.dart:530`) above
+      `PairingPageData.buildManualDevice(...)`. Deps: C3 (needs `SonyBraviaAdapter` to exist as a
+      second candidate). Risk: MEDIUM. Skills: design-pattern-selection, api-design.
 - [ ] **C5. `TvCapabilities` override if capabilities differ** from the Google TV path
       (e.g. Bravia's richer input-switching/app-launch catalog per verified fact #11). Deps:
       C3. Risk: LOW. Skills: abstraction-domain-modeling.
@@ -353,6 +377,138 @@ to TCL's model).**
 
 ## Decisions log
 
+- 2026-08-25: **B2 recommendation #3 superseded — probe-resolve at manual-add instead of a new
+  UI; confirmed gap in `_addManualDevice` first.** Verified the actual current behavior (it was
+  an assumption, not yet confirmed, when recommendation #3 below was written): `_addManualDevice`
+  (`pairing_page.dart:530-543`) picks `protocolVariant` via a static switch (TCL's one hardcoded
+  exception, else always `TvDevice.defaultProtocolVariant`) with **zero network I/O**, then hands
+  the device straight to `_pairSelectedDevice` → `preparePairing` → `_adapterFor(brand, variant)`.
+  For a manually-added Sony device today this always resolves to `SonyAdapter` (Google TV path) —
+  there is no path by which a Bravia-only TV could ever be reached this way. Confirmed real gap,
+  not specific to Sony (any future brand with >1 variant would hit the same thing).
+  - **Rejected fix: a brand+variant picker UI** (the original recommendation #3). Superseded
+    because there's a safer alternative that needs no new UI at all.
+  - **Chosen fix: probe, don't ask.** Every `TvBrandAdapter` already implements
+    `probeConnection({required TvDevice device})` (`tv_brand_adapter.dart:26`), and every existing
+    implementation (`android_tv_tcp_transport_client.dart:211-218`, shared by
+    AndroidTv/Sony/LG/Samsung/Hisense) is a **raw TCP connect + immediate close, 3s timeout** — no
+    protocol handshake, no registration call, no PIN triggered. This is already relied on in
+    production via `AdapterTvReachabilityService.isReachable` (`adapter_tv_reachability_service.dart`).
+    B1's research established that Bravia's PIN display is triggered specifically by the
+    `actRegister` call, not by opening a TCP connection — so a bare-connect probe for the future
+    `SonyBraviaAdapter` is safe by the same reasoning already relied on for every other brand.
+  - **New component, not bolted onto either existing resolver:**
+    ```dart
+    abstract interface class ManualAddVariantProbe {
+      Future<String> resolve({required TvBrand brand, required String host});
+    }
+    ```
+    Candidates for `brand` come from the DI-built `List<TvBrandAdapter>` (already the source of
+    truth for "which variants exist" — every real variant needs an adapter to do anything, so the
+    adapter list already declares them; see the "single source of truth" entry below), filtered to
+    `adapters.where((a) => a.brand == brand)`. **Correction, 2026-08-25:** try-order between a
+    brand's own variants is NOT `DiscoveredDeviceSupport.brandIdentificationPriority` — that
+    function is keyed by `TvBrand` only (`discovered_device_support.dart:31-39`), and both of
+    Sony's variants report `brand => TvBrand.sony`, so it returns one number for both and cannot
+    order between them. It only orders *different brands* colliding on one host during discovery
+    dedup — unrelated to this problem. Nothing in the codebase encodes intra-brand variant
+    preference today; this needs its own small explicit ordering (e.g. a private ordered list
+    inside `ManualAddVariantProbe` itself — Google TV path before Bravia is the likely choice, but
+    not yet decided). `probeConnection` is called on a throwaway `TvDevice` per candidate in that
+    order; first success wins; `?? TvDevice.defaultProtocolVariant` if none respond. Called from
+    `_addManualDevice`, directly above `PairingPageData.buildManualDevice(...)`, same shape as the
+    other two resolvers' `final variant = ... ?? fallback` call sites.
+  - **Rejected: bolting this onto `DiscoveryVariantResolutionRegistry` or `VariantResolutionRegistry`.**
+    Neither fits — `DiscoveryVariantResolutionRegistry` is a pure synchronous lookup with zero I/O
+    (load-bearing to its contract, see its class doc), and `VariantResolutionRegistry.resolve`
+    needs a live `TvDeviceInfo` that doesn't exist yet at manual-add time. This is a third,
+    genuinely distinct resolution moment (see the "three resolvers, one concern" entry above this
+    one for why keeping them separate is correct, not a smell).
+  - **Guardrail: only probe when a brand actually has >1 known variant.** For every brand except
+    Sony (once Bravia ships), there's exactly one candidate — probing unconditionally would add
+    real network latency to manual-add for brands with nothing to disambiguate, a behavior change
+    nobody asked for. `ManualAddVariantProbe` must short-circuit to the single known variant (no
+    I/O) when there's only one, mirroring `DefaultVariantResolutionRegistry._entriesByBrand`'s
+    "no entry needed for brands with nothing special" rule.
+  - **Honest caveat:** a bare TCP-connect probe confirms "something is listening on this port,"
+    not "this exact protocol is behind it" — same class of risk `probeConnection` already accepts
+    everywhere else in the app today (not a new risk category). Worth a deliberate look at C2 to
+    make sure Bravia's probe target doesn't collide with an unrelated service on typical home
+    networks.
+  - **Status: designed, not yet implemented** — planning only, per the user's explicit instruction
+    this session. Implementation is a Sub-goal C task (see task list): needs `SonyBraviaAdapter`
+    (C3) to exist as a second candidate before there's anything to probe against.
+- 2026-08-25: **Three variant-resolution mechanisms confirmed as correct, not a smell to fix.**
+  The user raised, and asked to resolve if possible: `DiscoveryVariantResolutionRegistry`
+  (discovery-time, sync, zero I/O, keyed by discovery source), `VariantResolutionRegistry`
+  (behavioral, sync, keyed by live `TvDeviceInfo` post-first-contact), and the new
+  `ManualAddVariantProbe` above (async, does its own I/O, keyed by active per-IP protocol probing)
+  are three separate interfaces answering what sounds like one question — "what's this device's
+  `protocolVariant`?" — and asked whether clean-code/SOLID/design-pattern reasoning supports
+  merging them into one source of truth.
+  - **Conclusion: no, merging would violate the same principles that justified splitting them in
+    the first place.** Each has a genuinely different input, timing, and mechanism — not an
+    accidental duplication:
+    | Resolver | When | Input | Mechanism |
+    |---|---|---|---|
+    | `DiscoveryVariantResolutionRegistry` | at discovery scan time, pre-first-contact | `(TvBrand, DiscoverySource?)` | sync map lookup, zero I/O |
+    | `VariantResolutionRegistry` | at pairing time, post-first-contact | `(TvBrand, TvDeviceInfo?)` | sync predicate match against already-fetched data |
+    | `ManualAddVariantProbe` | at manual-add time, pre-first-contact | `(TvBrand, host)` | async, does its own network I/O per candidate |
+    A single merged interface would force every caller to depend on parameters and code paths it
+    never uses (ISP violation) and give the merged class three unrelated reasons to change (SRP
+    violation — a new discovery-source enum value, a new info-based dialect rule, and a probe
+    timeout tweak are orthogonal concerns). This is the same reasoning that already justified
+    keeping `DiscoveryVariantResolutionRegistry` separate from `VariantResolutionRegistry`
+    earlier this session — `ManualAddVariantProbe` is a third instance of the same principle, not
+    a new problem.
+  - **Corrected, 2026-08-25: the "which variants exist for a brand" catalog already exists — no
+    new shared file needed.** Initially proposed a new pure-data table (`TvBrand -> List<String>`)
+    as the one shared reference point; on reflection this was wrong, because that fact is already
+    single-sourced. The DI-built `List<TvBrandAdapter>` (`remote_control_di_config.dart:164-172`)
+    already is that catalog — every real variant requires an adapter to do anything at all, so an
+    adapter's `(brand, protocolVariant)` pair already declares "this variant exists."
+    `BrandRoutedRemoteCommandService` already builds its dispatch map straight from that list
+    (`{for (final a in adapters) (a.brand, a.protocolVariant): a}`); `ManualAddVariantProbe` should
+    do the same (`adapters.where((a) => a.brand == brand)`) rather than introduce a second,
+    parallel list that could drift out of sync with what's actually registered. Note: this list is
+    not currently a registered `sl` singleton — it's a local variable built inline in the DI
+    config and passed once to `BrandRoutedRemoteCommandService`; reusing it for
+    `ManualAddVariantProbe` means constructing both from that same local variable in the same DI
+    block, not adding a new singleton type. Confirmed separately: discovery does **not** need this
+    list at all — `SsdpDeviceDiscoveryService`/`MdnsDeviceDiscoveryService`/
+    `RokuSsdpDiscoveryService`/`CompositeDeviceDiscoveryService` take zero adapter dependencies,
+    only `discoveryVariantRegistry` (pure config) — discovery-time resolution only needs to answer
+    "what string goes into `protocolVariant`," which never required the adapter's actual behavior.
+    The one thing that genuinely doesn't exist anywhere yet, and is the only new data actually
+    needed: **preference order between a brand's own variants** (see the correction in the entry
+    above — `brandIdentificationPriority` can't do this, it's keyed by brand only). That's small
+    enough to live as a private ordered list inside `ManualAddVariantProbe` itself, same as
+    `_entriesByBrand`/`_discoveryEntries` are each self-contained inside their own resolver — not
+    worth its own file. Decide the actual ordering at C4b time (Google TV path before Bravia is
+    the likely default, matching the existing "Google TV path as primary" intent elsewhere in this
+    doc, but not yet a firm decision).
+  - **Rejected: a coordinator/facade over all three resolvers.** No call site today is confused
+    about which of the three to call — each already calls exactly one, at exactly one moment
+    (scanners call discovery-time, `preparePairing` calls behavioral, `_addManualDevice` will call
+    the prober). A facade would solve a problem that doesn't exist, purely to make "three things"
+    look like "one thing" — overengineering, not simplification.
+- 2026-08-25: **B2 recommendation #1 superseded — no bypass needed, it's a plain data addition.**
+  The original B2 recommendation (below, 2026-08-24) said the Sony SSDP fingerprint should stamp
+  `protocolVariant = SonyProtocolVariants.braviaIpControl` "directly when constructing the
+  `TvDevice`, bypassing the predicate registry for this one case." That predated the discovery-time
+  variant resolution mechanism (IMPLEMENTED entry below) and is now wrong: there is no bypass.
+  Once Sub-goal C adds (a) a Sony fingerprint to `inferSsdpTvBrand` and (b) the actual
+  `SonyProtocolVariants.braviaIpControl` constant + `SonyBraviaAdapter`, wiring the resolution is
+  exactly one line added to `DefaultDiscoveryVariantResolutionRegistry._discoveryEntries`
+  (`discovery_variant_resolution_registry.dart:28`):
+  ```dart
+  (TvBrand.sony, DiscoverySource.ssdp): SonyProtocolVariants.braviaIpControl,
+  ```
+  `SsdpDeviceDiscoveryService` already calls `discoveryVariantRegistry.resolveFromDiscovery(brand:
+  candidate.brand, source: DiscoverySource.ssdp)` for every candidate, Sony included — no
+  brand-specific special-casing in the scanner itself, same as every other brand. This is exactly
+  the "pure data addition, zero ripple" property the mechanism was built for. Confirmed by the
+  user; no other B2 recommendation changed by this entry.
 - 2026-08-25: **Discovery-time variant resolution — IMPLEMENTED**, per the finalized design in
   the entry below. All six points shipped as designed, with one correction found during
   implementation:
@@ -589,7 +745,7 @@ to TCL's model).**
     }
     ```
   - **Rejected putting `discoverySource` inside `TvDeviceInfo` itself** — `TvDeviceInfo` has one
-    documented provenance (`guide-adding-protocol-variant.md`'s field table: "Source:
+    documented provenance (`guide-protocol-variants.md`'s field table: "Source:
     `queryDeviceInfo` → adapter"), meaning after an adapter is already selected and already
     communicating. `discoverySource` exists before any adapter is chosen at all. Merging them
     would reproduce, one level deeper, the exact same conflation this whole design exercise
@@ -658,7 +814,7 @@ to TCL's model).**
     user enables "IP Control" in TV settings, or only after. No primary source found either
     way this session — a real caveat for how reliable SSDP-only discovery is in practice.
   - **High confidence, direct code read:** the existing `queryDeviceInfo →
-    VariantResolutionRegistry.resolve` mechanism (`guide-adding-protocol-variant.md`) cannot
+    VariantResolutionRegistry.resolve` mechanism (`guide-protocol-variants.md`) cannot
     be used to choose between Sony's two protocols. `BrandRoutedRemoteCommandService
     .preparePairing` (`brand_routed_remote_command_service.dart:57-68`) resolves the adapter
     via `_adapterFor(device.brand, device.protocolVariant)` **before** calling
