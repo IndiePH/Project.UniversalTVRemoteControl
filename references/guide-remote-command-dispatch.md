@@ -12,6 +12,7 @@ on top of it.
 ## Contents
 
 - [The `CommandPayload` contract](#the-commandpayload-contract)
+- [Why this design, not a marker set](#why-this-design-not-a-marker-set)
 - [Writing a key mapper](#writing-a-key-mapper)
 - [Writing `sendCommand`](#writing-sendcommand)
 - [Writing `supportedCommands`](#writing-supportedcommands)
@@ -30,11 +31,7 @@ on top of it.
 > CommandPayload?` (`lib/remote_control/data/adapters/command_key_map.dart`) is what every
 > adapter — Samsung, LG, AndroidTv, TclGoogleTv, TclRoku, TclLegacyWifi, Hisense, Sony — uses
 > today. There is no `keyCodesFor`/`List<String>` contract left anywhere in `lib/`; it was fully
-> replaced by this one. `references/goals/goal-app-launch-dispatch-unification.md` is the
-> historical planning record for how this migration was designed — useful for the reasoning
-> behind specific choices (e.g. why LG still uses a sentinel, below), but its own status banner
-> and phase markers still say "proposed," which is stale — verify against the code, not that
-> doc's banner, if you need to know what's actually built.
+> replaced by this one.
 
 ### Why this exists
 
@@ -111,6 +108,21 @@ per data shape. `KeySequence` covers "one code" and "five fallback codes" identi
 a detail *inside* the subclass, not a reason for a new one. A new subclass is only warranted when
 a genuinely new transport method needs data no existing subclass can carry (see "Adding a
 brand-specific payload type" below).
+
+### Why this design, not a marker set
+
+The first draft added a `Set<RemoteCommand> appLinkCommands` per adapter, checked before calling
+the keymap, instead of changing what the keymap returns. It was dropped for two reasons: the
+`Set` and the keymap were two independent collections that had to be kept in sync by hand — a
+command listed in one but not the other was a real, easy-to-make mistake — and nothing about a
+`Set` gave a way to return Hisense's two-piece `(displayName, url)` data. Making `payloadFor`'s
+return type itself carry the dispatch decision removes the second collection entirely: the
+payload and the "how to send it" decision are the same value, so they can't disagree. This is
+also why the method was renamed from `keyCodesFor` to `payloadFor` in the same change rather
+than kept and renamed later — the return type was changing regardless, so the rename happened
+in the same pass instead of a second migration over the same call sites. (Full historical
+detail lives in the 2026-08-22 `changelog.md` entry — this section covers the load-bearing
+reasoning only.)
 
 ---
 

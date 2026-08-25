@@ -15,7 +15,9 @@ const String lgPointerPrefix = 'POINTER:';
 /// can't be removed. Since that branch has to stay regardless, the app-launch
 /// commands keep using it too rather than gaining a separate direct-dispatch
 /// method that would just duplicate the same underlying SSAP call. See
-/// `references/goals/goal-app-launch-dispatch-unification.md` Phase 3.
+/// `references/goals/goal-lg-remote-command-convention-consolidation.md` for the
+/// plan to remove this sentinel (and `lgPointerPrefix`/the `TOGGLE:` keys below)
+/// entirely.
 const String lgLaunchPrefix = 'LAUNCH:';
 
 /// Sentinel for the power toggle — transport resolves to turnOn or turnOff based on tracked state.

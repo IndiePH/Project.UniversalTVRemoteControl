@@ -3,12 +3,12 @@
 **Branch:** `refactor/lg-remote-command-convention-consolidation` (planned; not yet created)
 **Status:** proposed — planning only, not yet approved for implementation. Nothing in `lib/`
 has been touched to produce this document.
-**Related:** `references/goals/goal-app-launch-dispatch-unification.md` — the original
-`CommandPayload` migration. That migration finished for every adapter except LG: LG's
-app-launch commands were deliberately left on the old sentinel convention (see that goal doc's
-Phase 3), and its `POINTER:`/`TOGGLE:` sentinels were explicitly out of scope for that phase.
-This goal finishes what that one left unfinished, for LG only. See also
-`references/guide-remote-command-dispatch.md`, the live contract this goal extends.
+**Related:** The original `CommandPayload` migration (see `references/guide-remote-command-dispatch.md`'s
+"Why this exists" and "Why this design, not a marker set") finished for every adapter except
+LG: LG's app-launch commands were deliberately left on the old sentinel convention, and its
+`POINTER:`/`TOGGLE:` sentinels were never in scope for that migration at all. This goal finishes
+what that one left unfinished, for LG only. `references/guide-remote-command-dispatch.md` is
+also the live contract this goal extends.
 **Origin:** surfaced while auditing `guide-remote-command-dispatch.md`'s note that "LG still
 uses a sentinel" for app-launch — closer inspection of `LgWebSocketTransportClient` found the
 sentinel convention is broader than just app-launch: four more behaviors use the same trick.
@@ -75,8 +75,8 @@ matches, sniffed with `startsWith`/`==` at dispatch time — precisely the SRP l
 
 ## Proposed target design
 
-Reuse `AppLink` for the launch case (as the original migration always intended for LG, per
-`goal-app-launch-dispatch-unification.md`'s Phase 3 — just never executed). Add two new
+Reuse `AppLink` for the launch case (as the original `CommandPayload` migration always intended
+for LG — just never executed). Add two new
 `CommandPayload` subclasses for the two genuinely new transport methods this uncovers:
 
 ```dart

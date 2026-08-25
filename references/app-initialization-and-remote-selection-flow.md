@@ -89,7 +89,7 @@ The registrations relevant to device selection and remotes, in order:
 
 1. Reads `deviceRepository.getSavedDevices()` and `deviceRepository.getLastUsedDevice()`.
 2. **No last-used device** → clears text/connection subscriptions, resets the layout to computed defaults, and the screen renders its empty "connect a TV" state. Nothing auto-navigates to pairing — the user has to tap an explicit action.
-3. **Last-used device exists** → sets it as `_activeDevice`, subscribes to text-input-ready and connection-state streams, calls `_loadLayoutForDevice(lastUsed)` (capability filtering + saved layout including command-drawer `LayoutZone`; per-variant defaults in `goal-variant-remote-layout.md` are still an empty map) — matches `product_specs.md`'s "returning users auto-connect to last used device."
+3. **Last-used device exists** → sets it as `_activeDevice`, subscribes to text-input-ready and connection-state streams, calls `_loadLayoutForDevice(lastUsed)` (capability filtering + saved layout including command-drawer `LayoutZone`; per-`(brand, variant)` layout overrides per `guide-protocol-variants.md` — no real override authored yet, so this resolves to the global baseline for every device today) — matches `product_specs.md`'s "returning users auto-connect to last used device."
 
 ## Phase 5 — Pairing a device (`pairing_page.dart` + `pairing_page_coordinator.dart` + `pairing_page_data.dart`)
 
@@ -127,7 +127,7 @@ From here, every button press runs `_send(command)` → `commandService.sendComm
 
 ## Where related goal docs plug into this flow
 
-- **`goal-variant-remote-layout.md`** — `_loadLayoutForDevice` default source; `_map` still empty.
+- **Per-variant remote layout** (`guide-protocol-variants.md`, "Adding a variant remote layout") — shipped: `_loadLayoutForDevice`'s default source; no real override authored yet, so it resolves to the global baseline for every device today.
 - **Command drawer** — shipped: same load path plus layout-editor UI (`LayoutZone.drawer`).
 - **`goal-persistent-device-identity.md`** — `id` / `host` created during discovery and Phase 5 pairing (supersedes `goal-stable-device-identifier.md`).
 

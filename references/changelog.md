@@ -103,9 +103,9 @@ Keep entries short and append new updates at the top.
 ## 2026-08-22
 
 ### Added
-- `CommandPayload` dispatch contract (branch `refactor/command-and-adapters`; design doc
-  `references/goals/goal-app-launch-dispatch-unification.md`, guide
-  `references/guide-command-payload-dispatch.md`): `CommandKeyMap.keyCodesFor(RemoteCommand) ->
+- `CommandPayload` dispatch contract (branch `refactor/command-and-adapters`; guide
+  `references/guide-remote-command-dispatch.md` — see that guide's "Why this design, not a
+  marker set" for the rejected alternative): `CommandKeyMap.keyCodesFor(RemoteCommand) ->
   List<String>` replaced with `payloadFor(RemoteCommand) -> CommandPayload?`, a sealed type with
   three cases — `KeySequence(codes)` (dispatched via `sendKey`/`sendFrame`), `AppLink(uri)`
   (dispatched via a brand's app-link method), `VidaaLaunch(displayName, url)` (Hisense-only, via
@@ -146,7 +146,7 @@ Keep entries short and append new updates at the top.
   removing it for the five real app-launch commands would just duplicate the same SSAP call
   through a second code path for no benefit. Documented on `lgLaunchPrefix`'s doc comment and in
   the guide.
-- `guide-command-payload-dispatch.md`'s "Writing `sendCommand`" section now spells out that a new
+- `guide-remote-command-dispatch.md`'s "Writing `sendCommand`" section now spells out that a new
   dispatch case requires editing both the transport-client interface and its concrete
   implementation, and that any test-local or debug fake using `implements` (not `extends`) needs
   the new method added by hand — `implements` never inherits a default method body.

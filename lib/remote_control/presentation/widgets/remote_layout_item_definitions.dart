@@ -251,10 +251,10 @@ RemoteCommand? commandForLayoutItemId(String itemId) {
 /// Whether [itemId] starts on the grid or parked in the drawer.
 ///
 /// `defaultPositionedIds` is the set of ids considered "on by default" for the current
-/// device — today that's `null` everywhere (no narrower-than-full-catalog default set
-/// exists yet; see `goal-variant-remote-layout.md`), which this treats as "everything is
-/// default" so every eligible item still starts on the grid. Once a real default set exists,
-/// passing it here is the only change needed — this function doesn't need to change shape.
+/// device — today no caller passes a narrower-than-full-catalog set, so this is always
+/// `null` in practice, which this treats as "everything is default" so every eligible item
+/// still starts on the grid. If a narrower default set is ever introduced, passing it here
+/// is the only change needed — this function doesn't need to change shape.
 LayoutZone resolveDefaultLayoutItemZone({
   required String itemId,
   required Set<String>? defaultPositionedIds,

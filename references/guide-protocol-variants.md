@@ -454,17 +454,16 @@ variant)` its own layout; it does not create variants.
 > `_buildLayoutDefaultsForDevice` sources the item *list* from `layoutFor(device.brand,
 > device.protocolVariant)` (`remote_home_page.dart`), and the rendering plumbing
 > (`resolveItemDefinitionsById`, plus `imageIconSize`/`brandColor` on `LayoutEditItem`) is
-> wired for both the live grid and the layout editor. `_map` itself is still empty (verified
-> directly in the file) — the step-by-step below is the only remaining work, per brand+variant.
-> This section documents the design agreed in `references/goals/goal-variant-remote-layout.md`;
-> `goal-command-drawer.md` (referenced below) exists on the separate `feature/command-drawer`
-> branch, not this one. Cross-check against the actual code before following this as a spec.
+> wired for both the live grid and the layout editor. `_map` itself is empty by design, not by
+> gap — most brand+variants never need an override; the step-by-step below only applies to the
+> ones that do. The command drawer (`LayoutZone.grid`/`LayoutZone.drawer`) is also live on this
+> branch, not a future dependency — see Step 6 below.
 
 ### How the layout-default system works
 
 `RemoteLayoutDefaults` only ever computes a **default starting point**. It is not the top of
 the resolution order — the user's own saved/customized layout, keyed by `deviceId` and already
-implemented (`_loadLayoutForDevice`, `remote_home_page.dart:1100-1122`), sits above it and wins
+implemented (`_loadLayoutForDevice`, `remote_home_page.dart:1100-1124`), sits above it and wins
 whenever present. This section only covers the default; it never overrides an existing user
 customization.
 
@@ -519,8 +518,10 @@ entry generally isn't const-constructible (unlike `TvCapabilities._map`'s `Set<D
 entries), so don't copy the `const` keyword into a new entry without checking it compiles.
 
 Instantiated inline at the call site (`const RemoteLayoutDefaults()`), same as
-`const TvCapabilities()` is today (`tv_capabilities.dart:68`, called directly from
-presentation code at `pairing_page_data.dart:154`) — no DI registration needed.
+`const TvCapabilities()` is today (const constructor at `tv_capabilities.dart:13`, called
+directly from presentation code at `pairing_page_data.dart:154`, and from half a dozen other
+call sites across `data/` — e.g. `brand_routed_remote_command_service.dart:85`) — no DI
+registration needed.
 
 #### When does an item actually show up?
 
@@ -618,10 +619,10 @@ entry (tier 2) or the global baseline (tier 3), not accidentally pick up this ov
 #### Step 6 — No separate drawer step
 
 Commands the adapter supports but that don't appear in this entry's item list automatically
-start in the drawer on a fresh pairing (per `goal-command-drawer.md`, on the separate
-`feature/command-drawer` branch — not present on this branch yet: no entry for a command in
-the positions map means it's not positioned, and the drawer is `supportedCommands` minus
-positioned items) — no additional wiring needed here.
+start in the drawer on a fresh pairing — no entry for a command in the positions map means
+it's not positioned, and the drawer is `supportedCommands` minus positioned items
+(`resolveDefaultLayoutItemZone`, `remote_layout_item_definitions.dart`) — no additional wiring
+needed here.
 
 ### Adding Variant Remote Layout Checklist
 
@@ -639,10 +640,9 @@ positioned items) — no additional wiring needed here.
 ### Adding Variant Remote Layout Design notes
 
 **Why does `RemoteLayoutDefaults` only hold exceptions, not every brand+variant?**  
-Per `goal-variant-remote-layout.md`'s DA-5 review: adding an entry has a real cost (research
-or design judgment) and only pays off when there's an actual reason to diverge. Seeding
-every key with a duplicate of the baseline was considered and rejected — it adds maintenance
-surface with no behavioral difference.
+Adding an entry has a real cost (research or design judgment) and only pays off when there's
+an actual reason to diverge. Seeding every key with a duplicate of the baseline was considered
+and rejected — it adds maintenance surface with no behavioral difference.
 
 **Why a three-tier fallback instead of `TvCapabilities`' two-tier pattern?**  
 `TvCapabilities._map` falls back to `{}` (empty) when nothing matches, which is fine for a
