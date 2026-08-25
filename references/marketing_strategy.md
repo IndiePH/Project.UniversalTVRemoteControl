@@ -107,7 +107,7 @@ Download OneRemote and control your Smart TV from your phone.
 
 ## 🔹 Release details (AAB — Google Play)
 
-**Current release:** `1.5.1` · **versionCode:** `22` · **Track:** Internal testing → Production (promote same artifact when validated)
+**Current release:** `1.5.1` · **versionCode:** `23` · **Track:** Closed testing → Production (promote same artifact when validated)
 
 **Focus for this release:** Grid placement / layout persistence ([PR #25](https://github.com/IndiePH/Project.UniversalTVRemoteControl/pull/25)): swapped buttons restore to their saved cells, and in-flight layout saves are flushed when the app is backgrounded. No Play Console Data safety form change (no new data collected or shared).
 
@@ -154,7 +154,7 @@ Thank you for using OneRemote!
 | Privacy policy live (pairedModels §2.1) | ☐ |
 | Data safety form unchanged (no new collected/shared data for this release) | ☐ |
 | LevelPlay banner loads on free tier (app key `27c78d0ad`, unit `20azo5e9eecpv182`) | ☐ |
-| Upload AAB to **Internal testing** | ☐ |
+| Upload AAB to **Closed testing** | ☐ |
 | Verify: pair TV, Pro purchase/restore, ads, feedback row in Sheet | ☐ |
 | Verify: reboot router / change TV IP, rediscover, reconnect without re-pair when identity is known | ☐ |
 | Verify: layout editor drawer — park a button, confirm it leaves the live remote, restore it | ☐ |

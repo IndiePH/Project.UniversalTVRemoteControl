@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:developer' as developer;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:unity_levelplay_mediation/unity_levelplay_mediation.dart';
@@ -15,6 +18,7 @@ final class LevelPlayAdsService implements LevelPlayInitListener {
   Future<void> initialize() async {
     if (!AdConfig.supportsMobileAds) {
       isReady.value = false;
+      _log('ads skipped: platform does not support mobile ads');
       return;
     }
     if (_nativeInitialized) {
@@ -32,24 +36,28 @@ final class LevelPlayAdsService implements LevelPlayInitListener {
       final initRequest = LevelPlayInitRequest.builder(AdConfig.appKey).build();
       await LevelPlay.init(initRequest: initRequest, initListener: this);
     } on MissingPluginException catch (error) {
-      debugPrint('LevelPlay plugin unavailable: $error');
+      _log('plugin unavailable: $error');
     } on PlatformException catch (error) {
-      debugPrint('LevelPlay init failed: $error');
+      _log('init failed: $error');
     } on Object catch (error) {
-      debugPrint('LevelPlay init failed: $error');
+      _log('init failed: $error');
     }
   }
 
   @override
   void onInitFailed(LevelPlayInitError error) {
     isReady.value = false;
-    debugPrint('LevelPlay init failed: $error');
+    _log('init failed: $error');
   }
 
   @override
   void onInitSuccess(LevelPlayConfiguration configuration) {
     _nativeInitialized = true;
     isReady.value = true;
+    _log('init success');
+    if (kDebugMode) {
+      unawaited(LevelPlay.validateIntegration());
+    }
   }
 
   void dispose() {
@@ -63,7 +71,15 @@ final class LevelPlayAdsService implements LevelPlayInitListener {
         await ATTrackingManager.requestTrackingAuthorization();
       }
     } on Object catch (error) {
-      debugPrint('LevelPlay ATT request skipped: $error');
+      _log('ATT request skipped: $error');
     }
+  }
+
+  static void _log(String message) {
+    if (!kDebugMode) {
+      return;
+    }
+    developer.log(message, name: 'OneRemote.LevelPlay');
+    debugPrint('OneRemote/LevelPlay: $message');
   }
 }

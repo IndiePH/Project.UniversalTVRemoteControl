@@ -34,11 +34,13 @@ class _BottomBannerAdState extends State<BottomBannerAd>
   }
 
   @override
-  void onAdLoaded(LevelPlayAdInfo adInfo) {}
+  void onAdLoaded(LevelPlayAdInfo adInfo) {
+    debugPrint('OneRemote/LevelPlay: banner loaded');
+  }
 
   @override
   void onAdLoadFailed(LevelPlayAdError error) {
-    debugPrint('LevelPlay banner failed to load: $error');
+    debugPrint('OneRemote/LevelPlay: banner failed to load: $error');
   }
 
   @override

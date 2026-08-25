@@ -1348,7 +1348,9 @@ class _RemoteHomePageState extends State<RemoteHomePage>
             _isLayoutEditMode || (_activeDevice != null && isPro);
         final showLayoutLockedOnPress =
             !canToggleLayout && _activeDevice != null && !isPro;
-        final showAds = proStatus == ProEntitlementStatus.notEntitled;
+        // Match free-tier UI (`!isPro`): unknown must still show ads. Waiting for
+        // `notEntitled` hid the banner while Play Billing was resolving.
+        final showAds = proStatus != ProEntitlementStatus.entitled;
         final adsService = GetIt.instance.isRegistered<LevelPlayAdsService>()
             ? GetIt.instance<LevelPlayAdsService>()
             : null;

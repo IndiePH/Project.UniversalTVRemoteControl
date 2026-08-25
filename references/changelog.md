@@ -14,12 +14,15 @@ Keep entries short and append new updates at the top.
 ## 2026-08-25
 
 ### Changed
-- App version bump to `1.5.1+22` (`pubspec.yaml`; README and marketing versionCode synced).
+- App version bump to `1.5.1+23` for Play closed testing (`pubspec.yaml`; README and marketing versionCode synced).
+- Free-tier banner overlay follows `!isPro` (including unresolved Play Billing), not only `notEntitled`.
+- Release AAB includes LevelPlay/ironSource R8 keep rules so minification does not strip ads.
 - Replaced Google AdMob (`google_mobile_ads`) with Unity LevelPlay (`unity_levelplay_mediation` 9.2.0). App key `27c78d0ad`; banner unit `20azo5e9eecpv182`. Interstitials are not wired until a LevelPlay interstitial unit is provided.
 - Removed UMP/`AdConsentCoordinator`, Firebase Remote Config ad-unit toggle, and AdMob platform app IDs. iOS ATT is requested via the LevelPlay plugin before SDK init.
+- Cleared live Firebase Remote Config (`test_ads_enabled`) on `oneremote-497701` and removed `remoteconfig.template.json` / `firebase.json` Remote Config deploy target. Analytics, Crashlytics, Auth, and Functions are unchanged.
 
 ### Docs
-- Ads/consent docs synced to LevelPlay (banner-only): `README.md`; `references/marketing_strategy.md`; `references/implementation_tasks.md`; `references/compliance-and-release-requirements.md`; `references/product_specs.md`; `references/universal-tv-remote-info-and-req.md`; `references/third_party_licenses.md`; `docs/app-initialization-and-remote-selection-flow.md`.
+- Ads/consent docs synced to LevelPlay (banner-only): `README.md`; `references/marketing_strategy.md`; `references/implementation_tasks.md`; `references/compliance-and-release-requirements.md`; `references/product_specs.md`; `references/universal-tv-remote-info-and-req.md`; `references/third_party_licenses.md`; `references/app-initialization-and-remote-selection-flow.md`. Live Firebase Remote Config `test_ads_enabled` cleared; `firebase.json` no longer deploys Remote Config.
 
 ## 2026-08-24
 
