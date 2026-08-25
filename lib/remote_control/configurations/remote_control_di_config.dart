@@ -59,6 +59,9 @@ void _configureShared(GetIt sl) {
   sl.registerSingleton<VariantResolutionRegistry>(
     const DefaultVariantResolutionRegistry(),
   );
+  sl.registerSingleton<DiscoveryVariantResolutionRegistry>(
+    const DefaultDiscoveryVariantResolutionRegistry(),
+  );
 }
 
 final class RemoteControlDiConfig implements IDiConfig {
@@ -131,9 +134,15 @@ final class RemoteControlDiConfig implements IDiConfig {
       DiagnosticsRecordingDeviceDiscoveryService(
         delegate: CompositeDeviceDiscoveryService(
           services: [
-            SsdpDeviceDiscoveryService(),
-            MdnsDeviceDiscoveryService(),
-            RokuSsdpDiscoveryService(),
+            SsdpDeviceDiscoveryService(
+              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+            ),
+            MdnsDeviceDiscoveryService(
+              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+            ),
+            RokuSsdpDiscoveryService(
+              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+            ),
           ],
           androidTvIdentityResolver: androidTvTransport,
         ),
@@ -214,9 +223,15 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
       DiagnosticsRecordingDeviceDiscoveryService(
         delegate: CompositeDeviceDiscoveryService(
           services: [
-            SsdpDeviceDiscoveryService(),
-            MdnsDeviceDiscoveryService(),
-            RokuSsdpDiscoveryService(),
+            SsdpDeviceDiscoveryService(
+              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+            ),
+            MdnsDeviceDiscoveryService(
+              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+            ),
+            RokuSsdpDiscoveryService(
+              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+            ),
           ],
         ),
         recorder: sl<AppDiagnosticsRecorder>(),

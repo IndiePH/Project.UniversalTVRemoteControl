@@ -4,14 +4,20 @@ import 'dart:io';
 
 import 'package:flutter_multicast_lock/flutter_multicast_lock.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/remote_control/data/discovery_variant_resolution_registry.dart';
+import 'package:one_remote/remote_control/domain/models/discovery_source.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 
 class RokuSsdpDiscoveryService implements DeviceDiscoveryService {
-  RokuSsdpDiscoveryService({this.timeout = const Duration(seconds: 3)});
+  RokuSsdpDiscoveryService({
+    required this.discoveryVariantRegistry,
+    this.timeout = const Duration(seconds: 3),
+  });
 
   final Duration timeout;
+  final DiscoveryVariantResolutionRegistry discoveryVariantRegistry;
 
   @override
   Future<List<TvDevice>> discoverDevices() async {
@@ -71,6 +77,10 @@ class RokuSsdpDiscoveryService implements DeviceDiscoveryService {
             id: 'roku-$ip',
             displayName: 'Roku TV ($ip)',
             brand: TvBrand.roku,
+            protocolVariant: discoveryVariantRegistry.resolveFromDiscovery(
+              brand: TvBrand.roku,
+              source: DiscoverySource.roku,
+            ),
             capabilities: const TvCapabilities().capabilitiesFor(TvBrand.roku),
             host: ip,
           ),

@@ -66,7 +66,7 @@ class BrandRoutedRemoteCommandService
     try {
       await adapter.preparePairing(device: device);
       final info = await adapter.queryDeviceInfo(device: device);
-      final variant = _variantRegistry.resolve(brand: device.brand, info: info);
+      final variant = _variantRegistry.resolve(brand: device.brand, info: info) ?? device.protocolVariant;
       final capabilities = const TvCapabilities().capabilitiesFor(
         device.brand,
         variant,

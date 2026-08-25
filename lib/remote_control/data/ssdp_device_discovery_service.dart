@@ -4,7 +4,9 @@ import 'dart:io';
 
 import 'package:flutter_multicast_lock/flutter_multicast_lock.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/remote_control/data/discovery_variant_resolution_registry.dart';
 import 'package:one_remote/remote_control/data/ssdp_brand_inference.dart';
+import 'package:one_remote/remote_control/domain/models/discovery_source.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -15,9 +17,13 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 /// UDP is held open with [FlutterMulticastLock] so M-SEARCH responses are not
 /// dropped by the Wi‑Fi stack.
 class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
-  SsdpDeviceDiscoveryService({this.timeout = const Duration(seconds: 3)});
+  SsdpDeviceDiscoveryService({
+    required this.discoveryVariantRegistry,
+    this.timeout = const Duration(seconds: 3),
+  });
 
   final Duration timeout;
+  final DiscoveryVariantResolutionRegistry discoveryVariantRegistry;
 
   static const List<String> _searchTargets = <String>[
     'ssdp:all',
@@ -110,6 +116,10 @@ class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
         id: stableId ?? '${candidate.brand.name}-${candidate.ip}',
         displayName: '${candidate.brand.displayName} TV (${candidate.ip})',
         brand: candidate.brand,
+        protocolVariant: discoveryVariantRegistry.resolveFromDiscovery(
+          brand: candidate.brand,
+          source: DiscoverySource.ssdp,
+        ),
         capabilities: const TvCapabilities().capabilitiesFor(candidate.brand),
         host: candidate.ip,
       );

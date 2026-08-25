@@ -353,6 +353,203 @@ to TCL's model).**
 
 ## Decisions log
 
+- 2026-08-25: **Discovery-time variant resolution — IMPLEMENTED**, per the finalized design in
+  the entry below. All six points shipped as designed, with one correction found during
+  implementation:
+  - **Correction: `discoveryVariantRegistry` is a `required` named parameter on all three
+    scanners (`SsdpDeviceDiscoveryService`, `MdnsDeviceDiscoveryService`,
+    `RokuSsdpDiscoveryService`), not defaulted to
+    `const DefaultDiscoveryVariantResolutionRegistry()`** as the design entry's code sketch
+    originally showed. Grepped every construction site before implementing and confirmed the
+    default would have been dead code — both DI graphs (`remote_control_di_config.dart`) already
+    pass it explicitly, and no test constructs any of these three scanners bare. Keeping an
+    unused default while also forcing explicit DI everywhere was redundant and inconsistent with
+    how `VariantResolutionRegistry` is already injected into `BrandRoutedRemoteCommandService`
+    (`required this.variantRegistry`, no default) — injected collaborators are `required` in
+    this codebase, only scalar config like `timeout` gets a default.
+  - `RokuSsdpDiscoveryService` also got the same treatment (stamps `DiscoverySource.roku`),
+    for consistency — the design entry only explicitly walked through Ssdp/Mdns.
+  - `_discoveryEntries` in `DefaultDiscoveryVariantResolutionRegistry` shipped **empty**. Sony's
+    `(TvBrand.sony, DiscoverySource.ssdp) → braviaIpControl` mapping used throughout the design
+    discussion was illustrative, not real yet — there's no SSDP fingerprint for Sony in
+    `inferSsdpTvBrand` and no Bravia adapter registered (Sub-goal C, not started), so adding that
+    entry now would be dead/unreachable code with no backing implementation. The mechanism is
+    fully wired and tested; the first real entry lands with Sub-goal C.
+  - Verified: `flutter analyze` clean, `dart format` clean, full suite passes (592 tests, 0
+    failures) after updating `variant_resolution_registry_test.dart`'s now-null-returning
+    expectations and `brand_routed_remote_command_service_test.dart`'s `_StubVariantRegistry`
+    signature; added `discovery_variant_resolution_registry_test.dart` for the new class.
+  - Files actually touched: new `discovery_source.dart`, new
+    `discovery_variant_resolution_registry.dart`, `data.dart` (barrel export),
+    `ssdp_device_discovery_service.dart`, `mdns_device_discovery_service.dart`,
+    `roku_ssdp_discovery_service.dart`, `variant_resolution_registry.dart`,
+    `brand_routed_remote_command_service.dart`, `remote_control_di_config.dart`, plus the three
+    test files above. `tv_device.dart` and `composite_device_discovery_service.dart` untouched,
+    as designed.
+- 2026-08-25: **Discovery-time variant resolution — design FINALIZED (supersedes three points in
+  the "design settled through iteration" entry below), still NOT IMPLEMENTED.** The root-cause
+  diagnosis, the rejection of embedding `DiscoverySource` in `TvDeviceInfo`, and the "structural
+  vs. behavioral" framing in the entry below all still stand — only the *shape* of the fix
+  changed, via further live code-level review of that entry's own snippets:
+  1. **Two separate interfaces, not one interface with two methods.** The entry below deliberately
+     kept `resolveFromDiscovery` as a second method on the existing `VariantResolutionRegistry`
+     rather than a new interface, to avoid ceremony. Re-examined: no consumer ever needs both
+     methods (`preparePairing()` only calls `resolve(info:)`; discovery only calls
+     `resolveFromDiscovery`) — forcing them onto one interface is a real ISP violation, not just
+     ceremony-avoidance, and it's the same structural/behavioral split that motivated this whole
+     redesign, applied one level deeper to the resolvers themselves:
+     ```dart
+     abstract interface class VariantResolutionRegistry {
+       String? resolve({required TvBrand brand, required TvDeviceInfo? info});
+     }
+     abstract interface class DiscoveryVariantResolutionRegistry {
+       String resolveFromDiscovery({required TvBrand brand, required DiscoverySource? source}); // non-nullable — see #2
+     }
+     ```
+  2. **`resolveFromDiscovery` returns non-nullable `String`, baking in the
+     `TvDevice.defaultProtocolVariant` fallback internally** — the opposite of `resolve(info:)`,
+     deliberately. `resolve(info:)` had to go nullable because it's a *second write*: it can run
+     on a device whose `protocolVariant` already holds something meaningful from discovery, so it
+     needs a way to say "no opinion, don't touch what's there." `resolveFromDiscovery` is the
+     *first write* — at the point it runs, `protocolVariant` is always still the constructor
+     default, so "no rule matched" and "resolved to default" produce the identical outcome. No
+     caller-side ambiguity exists to protect against, so there's no reason to make the caller
+     handle a null case that can never carry meaning here:
+     ```dart
+     @override
+     String resolveFromDiscovery({required TvBrand brand, required DiscoverySource? source}) =>
+         _discoveryEntries[(brand, source)] ?? TvDevice.defaultProtocolVariant;
+     ```
+  3. **Resolution happens inline at scanner construction time, not a post-merge step in
+     `CompositeDeviceDiscoveryService`.** The entry below modeled the new step as a sibling to
+     `_enrichAndroidTvIdentity`, but that existing step is post-merge specifically *because it
+     needs a live network probe* and wants to avoid probing pre-dedup duplicates — a constraint
+     that doesn't apply here. `resolveFromDiscovery` is a pure, synchronous lookup over data each
+     scanner already has at construction time (its own brand guess + its own fixed source), so
+     there's no reason to defer it. It also matches the pattern already used one line above it in
+     every scanner: `capabilities: const TvCapabilities().capabilitiesFor(candidate.brand)`.
+     ```dart
+     // ssdp_device_discovery_service.dart
+     class SsdpDeviceDiscoveryService implements DeviceDiscoveryService {
+       SsdpDeviceDiscoveryService({
+         required this.discoveryVariantRegistry, // required, not defaulted — see implementation entry above
+         this.timeout = const Duration(seconds: 3),
+       });
+       final DiscoveryVariantResolutionRegistry discoveryVariantRegistry;
+       // ...
+       TvDevice(
+         // ...
+         protocolVariant: discoveryVariantRegistry.resolveFromDiscovery(
+           brand: candidate.brand,
+           source: DiscoverySource.ssdp,
+         ),
+         capabilities: const TvCapabilities().capabilitiesFor(candidate.brand),
+         host: candidate.ip,
+       );
+     }
+     ```
+     Same shape in `MdnsDeviceDiscoveryService` (`source: DiscoverySource.mdns`).
+  4. **Consequence: `TvDevice.discoverySource` is no longer needed at all — dropped from the
+     plan.** That field's only purpose in the entry below was to carry "which scanner found this"
+     forward from scanner-time to a later post-merge step. Once resolution happens inline, each
+     scanner already knows its own source (a hardcoded constant per class) and never needs to
+     stash it for a later stage to read back. Confirmed no other consumer needs it either — the
+     diagnostics wrapper (`DiagnosticsRecordingDeviceDiscoveryService`) only logs aggregate counts,
+     not per-device provenance. This removes `tv_device.dart` and
+     `composite_device_discovery_service.dart` from the touch-list entirely.
+  5. **`brand_routed_remote_command_service.dart`'s `preparePairing()` — the one line that
+     actually fixes the original clobbering bug.** Everything else in this design exists to make
+     this one substitution safe. Before (current code, `brand_routed_remote_command_service.dart:69`):
+     ```dart
+     final variant = _variantRegistry.resolve(brand: device.brand, info: info);
+     ```
+     After:
+     ```dart
+     final refined = _variantRegistry.resolve(brand: device.brand, info: info);
+     final variant = refined ?? device.protocolVariant;
+     ```
+     (`refined` and `variant` are just names for the intermediate nullable result and the final
+     fallback-applied value — functionally identical to writing it as one inlined line.)
+     No other line in this method changes — `_adapterFor(device.brand, device.protocolVariant)`
+     at line 60 (top of the method) is untouched, since by the time `preparePairing()` runs, the
+     adapter selection already happened using whatever `protocolVariant` discovery (or manual-add)
+     already assigned; this line only affects what gets persisted going forward via `enriched`.
+     Ripple effect: `VariantResolutionRegistry.resolve()`'s signature itself changes to `String?`
+     (point 1 above), so every existing test double implementing that interface
+     (`variant_resolution_registry_test.dart`,
+     `brand_routed_remote_command_service_test.dart` fakes) needs its `resolve` override's return
+     type updated from `String` to `String?` too, or the build breaks at the implementation site,
+     not silently.
+  6. **`variant_resolution_registry.dart` itself — the other half of point 5's fix, spelled out in
+     full (this is what makes `?? device.protocolVariant` safe to rely on).** Nullable return type
+     on both the interface and impl, `resolve()`'s body returns `null` instead of
+     `TvDevice.defaultProtocolVariant` at every "no match" branch, and — since "no entry" and
+     "resolves to null" now mean the same thing — every brand whose only job was restating the
+     constructor default (`lg`, `samsung`, `hisense`, `androidTv`, `roku`, `sony`) drops out of
+     `_entriesByBrand` entirely. TCL is the one exception that stays, since `TclGoogleTvAdapter`
+     isn't registered and `default` has no adapter for that brand — its catch-all is load-bearing,
+     not decorative:
+     ```dart
+     abstract interface class VariantResolutionRegistry {
+       String? resolve({required TvBrand brand, required TvDeviceInfo? info});
+     }
+
+     class DefaultVariantResolutionRegistry implements VariantResolutionRegistry {
+       const DefaultVariantResolutionRegistry();
+
+       // Only brands with a genuine info-based dialect rule need an entry. No entry
+       // ("no opinion") is correct for every other brand — the caller falls back to
+       // device.protocolVariant, which is already correct (constructor default, or
+       // whatever discovery-time resolution already stamped).
+       static final Map<TvBrand, List<_VariantResolutionEntry>> _entriesByBrand = {
+         // ── TCL (legacy Wi-Fi only; no default-variant adapter registered) ─────
+         TvBrand.tcl: [
+           _VariantResolutionEntry(
+             matches: TclProtocolVariants.isLegacyWifi,
+             variant: TclProtocolVariants.legacyWifi,
+           ),
+           _VariantResolutionEntry(
+             matches: (_) => true,
+             variant: TclProtocolVariants.legacyWifi,
+           ),
+         ],
+       };
+
+       @override
+       String? resolve({required TvBrand brand, required TvDeviceInfo? info}) {
+         if (info == null) return null;
+         final entries = _entriesByBrand[brand];
+         if (entries == null) return null;
+         for (final entry in entries) {
+           if (entry.matches(info)) return entry.variant;
+         }
+         return null;
+       }
+     }
+     ```
+     `_VariantResolutionEntry` itself is unchanged from the already-implemented map-grouping pass
+     (see the "Map-grouped `_entries` implemented" entry below) — only `resolve()`'s return
+     statements and `_entriesByBrand`'s brand list change here.
+  - **Updated file list for implementation:** new file(s) for the `DiscoverySource` enum
+    (`{ ssdp, mdns, roku }`) and `DiscoveryVariantResolutionRegistry` /
+    `DefaultDiscoveryVariantResolutionRegistry`; `ssdp_device_discovery_service.dart`;
+    `mdns_device_discovery_service.dart`; `variant_resolution_registry.dart` (nullable
+    `resolve()` return type — already map-grouped, see entry below — plus deleting the now-dead
+    catch-all entries for every brand except TCL, whose catch-all is load-bearing since
+    `TclGoogleTvAdapter` isn't registered and `default` has no adapter for that brand);
+    `brand_routed_remote_command_service.dart` (`preparePairing()` becomes
+    `_variantRegistry.resolve(brand: device.brand, info: info) ?? device.protocolVariant`);
+    `remote_control_di_config.dart` — register `DiscoveryVariantResolutionRegistry` as a
+    singleton (mirrors `VariantResolutionRegistry`'s existing registration at lines 59-60) and
+    inject it explicitly into both `SsdpDeviceDiscoveryService(...)`/
+    `MdnsDeviceDiscoveryService(...)`/`RokuSsdpDiscoveryService(...)` construction call sites
+    (there are two — a real-build graph and a debug-build graph, both previously constructing
+    these scanners with no args) — the scanner constructors take it as a `required` named
+    parameter, not a defaulted one, matching how `VariantResolutionRegistry` is already injected
+    into `BrandRoutedRemoteCommandService` (no default there either); a default was considered
+    and rejected during implementation, see the entry above — plus tests. `tv_device.dart` and
+    `composite_device_discovery_service.dart` need **no changes**.
+  - **Status: IMPLEMENTED — see the entry above.**
 - 2026-08-25: **Map-grouped `_entries` implemented** — the "Performance shape" bullet below is
   now done. `DefaultVariantResolutionRegistry._entriesByBrand` is declared directly as a
   `Map<TvBrand, List<_VariantResolutionEntry>>` literal (no intermediate flat list or grouping
@@ -367,14 +564,18 @@ to TCL's model).**
   field, `resolveFromDiscovery`, the nullable `String?` return-type fix) is **still not
   implemented** — this only closes the performance sub-point.
 - 2026-08-25: **Discovery-time variant resolution — design settled through iteration, NOT YET
-  IMPLEMENTED.** This refines/supersedes the B2 recommendation below with a design worked out
+  IMPLEMENTED.** ⚠️ **Partially superseded by the entry above** (two interfaces instead of one,
+  non-nullable `resolveFromDiscovery`, construction-time instead of post-merge, no
+  `discoverySource` field) — the root-cause diagnosis and the `TvDeviceInfo`-rejection reasoning
+  below still stand, but skip the `discoverySource` field and the post-merge-step code sketch,
+  they're stale. This refines/supersedes the B2 recommendation below with a design worked out
   interactively (not yet coded — recording in full so the design survives even if the coding
   session that resumes this forgets the reasoning):
-  - `TvDevice` gets a new `discoverySource` field (`enum DiscoverySource { ssdp, mdns, roku }`,
+  - ~~`TvDevice` gets a new `discoverySource` field (`enum DiscoverySource { ssdp, mdns, roku }`,
     nullable) — **transient, not persisted to `SharedPreferences`/JSON.** Each discovery
     scanner (`ssdp_device_discovery_service.dart`, `mdns_device_discovery_service.dart`) stamps
     its own provenance with zero brand-variant knowledge — no scanner ever imports a
-    `*ProtocolVariants` class.
+    `*ProtocolVariants` class.~~ — superseded, see entry above (#4): no field needed at all.
   - `VariantResolutionRegistry` gets a **second, separate method** rather than widening the
     existing `matches` predicate signature — rejected adding `DiscoverySource` as a parameter
     to `bool Function(TvDeviceInfo info) matches` because `TvDeviceInfo` (adapter-probe output,
@@ -435,14 +636,15 @@ to TCL's model).**
     real interface-signature change (return type, not just a call-site tweak) and needs its own
     deliberate pass, including updating every existing call site/test that currently expects a
     non-nullable `String` back from `resolve()`.
-  - **Status: fully designed through iteration, zero code written yet.** Files that will need
+  - ~~**Status: fully designed through iteration, zero code written yet.** Files that will need
     touching when this is implemented: `tv_device.dart` (new field),
     `ssdp_device_discovery_service.dart`, `mdns_device_discovery_service.dart` (stamp
     provenance), `variant_resolution_registry.dart` (map-grouped entries, new method, nullable
     return type), `composite_device_discovery_service.dart` (new post-merge step + registry
     injected into its constructor + the one DI call site), `brand_routed_remote_command_service.dart`
     (`preparePairing()`'s `??` fix) — plus tests for the new discovery-based lookup, the
-    grouped-map behavior, and the non-clobbering composition of the two `resolve` calls.
+    grouped-map behavior, and the non-clobbering composition of the two `resolve` calls.~~ —
+    **stale, see the finalized file list in the entry above.**
 - 2026-08-24: **B2 — architecture/UX fit for Bravia-path selection, pending user sign-off**
   (open question #1). Research + direct code reads:
   - **Medium-high confidence:** Sony BRAVIA IP Control is independently SSDP-discoverable —
