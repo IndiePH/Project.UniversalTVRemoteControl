@@ -66,13 +66,13 @@ final class PointerCommand extends CommandPayload {
 }
 
 /// The three stateful toggle behaviors LG's transport tracks per device.
-enum LgToggleKind { power, playPause, mute }
+enum ToggleKind { power, playPause, mute }
 
 /// Dispatched via LG's `sendToggle`. [kind] tells the transport which tracked
 /// state to flip and which pair of SSAP calls to choose between.
 final class ToggleCommand extends CommandPayload {
   const ToggleCommand(this.kind);
-  final LgToggleKind kind;
+  final ToggleKind kind;
 
   @override
   bool operator ==(Object other) => other is ToggleCommand && other.kind == kind;

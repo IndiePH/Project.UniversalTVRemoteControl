@@ -14,14 +14,14 @@ class LgKeyMapper extends CommandKeyMap {
 }
 
 const Map<RemoteCommand, CommandPayload> _payloads = {
-  RemoteCommand.power: ToggleCommand(LgToggleKind.power),
+  RemoteCommand.power: ToggleCommand(ToggleKind.power),
   RemoteCommand.volumeUp: KeySequence(['ssap://audio/volumeUp']),
   RemoteCommand.volumeDown: KeySequence(['ssap://audio/volumeDown']),
-  RemoteCommand.mute: ToggleCommand(LgToggleKind.mute),
+  RemoteCommand.mute: ToggleCommand(ToggleKind.mute),
   RemoteCommand.channelUp: KeySequence(['ssap://tv/channelUp']),
   RemoteCommand.channelDown: KeySequence(['ssap://tv/channelDown']),
   RemoteCommand.home: PointerCommand('HOME'),
-  RemoteCommand.playPause: ToggleCommand(LgToggleKind.playPause),
+  RemoteCommand.playPause: ToggleCommand(ToggleKind.playPause),
   RemoteCommand.input: KeySequence(['ssap://tv/switchInput']),
   RemoteCommand.dpadUp: PointerCommand('UP'),
   RemoteCommand.dpadDown: PointerCommand('DOWN'),

@@ -54,15 +54,15 @@ void main() {
   test('LgKeyMapper: power, mute, and playPause return ToggleCommand', () {
     expect(
       mapper.payloadFor(RemoteCommand.power),
-      const ToggleCommand(LgToggleKind.power),
+      const ToggleCommand(ToggleKind.power),
     );
     expect(
       mapper.payloadFor(RemoteCommand.mute),
-      const ToggleCommand(LgToggleKind.mute),
+      const ToggleCommand(ToggleKind.mute),
     );
     expect(
       mapper.payloadFor(RemoteCommand.playPause),
-      const ToggleCommand(LgToggleKind.playPause),
+      const ToggleCommand(ToggleKind.playPause),
     );
   });
 

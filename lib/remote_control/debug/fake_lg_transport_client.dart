@@ -105,7 +105,7 @@ class FakeLgTransportClient
   @override
   Future<void> sendToggle({
     required String deviceId,
-    required LgToggleKind kind,
+    required ToggleKind kind,
   }) async {
     await _ensureConnected(deviceId);
     emitTransportEvent(

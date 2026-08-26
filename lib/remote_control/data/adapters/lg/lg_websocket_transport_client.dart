@@ -78,7 +78,7 @@ class LgWebSocketTransportClient
   final Set<String> _registeredDevices = {};
 
   // Mute defaults false; power defaults true (WebSocket implies TV is on); playPause defaults true.
-  final Map<String, Map<LgToggleKind, Object?>> _remoteStates = {};
+  final Map<String, Map<ToggleKind, Object?>> _remoteStates = {};
 
   // IME subscription state for watchRemoteTextInputReady.
   final Map<String, StreamController<bool>> _imeReadyControllers = {};
@@ -218,32 +218,32 @@ class LgWebSocketTransportClient
   @override
   Future<void> sendToggle({
     required String deviceId,
-    required LgToggleKind kind,
+    required ToggleKind kind,
   }) async {
     switch (kind) {
-      case LgToggleKind.mute:
+      case ToggleKind.mute:
         final newMute =
-            !(_remoteStates[deviceId]?[LgToggleKind.mute] as bool? ?? false);
-        (_remoteStates[deviceId] ??= {})[LgToggleKind.mute] = newMute;
+            !(_remoteStates[deviceId]?[ToggleKind.mute] as bool? ?? false);
+        (_remoteStates[deviceId] ??= {})[ToggleKind.mute] = newMute;
         await _sendSsap(
           deviceId: deviceId,
           uri: 'ssap://audio/setMute',
           payload: {'mute': newMute},
         );
-      case LgToggleKind.power:
+      case ToggleKind.power:
         final newPower =
-            !(_remoteStates[deviceId]?[LgToggleKind.power] as bool? ?? true);
-        (_remoteStates[deviceId] ??= {})[LgToggleKind.power] = newPower;
+            !(_remoteStates[deviceId]?[ToggleKind.power] as bool? ?? true);
+        (_remoteStates[deviceId] ??= {})[ToggleKind.power] = newPower;
         await _sendSsap(
           deviceId: deviceId,
           uri: newPower ? 'ssap://system/turnOn' : 'ssap://system/turnOff',
           payload: const {},
         );
-      case LgToggleKind.playPause:
+      case ToggleKind.playPause:
         final nowPlaying =
-            !(_remoteStates[deviceId]?[LgToggleKind.playPause] as bool? ??
+            !(_remoteStates[deviceId]?[ToggleKind.playPause] as bool? ??
                 true);
-        (_remoteStates[deviceId] ??= {})[LgToggleKind.playPause] = nowPlaying;
+        (_remoteStates[deviceId] ??= {})[ToggleKind.playPause] = nowPlaying;
         await _sendSsap(
           deviceId: deviceId,
           uri: nowPlaying

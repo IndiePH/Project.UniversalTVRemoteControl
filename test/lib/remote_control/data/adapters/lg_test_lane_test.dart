@@ -377,7 +377,7 @@ class _SlowLgTransportClient
   @override
   Future<void> sendToggle({
     required String deviceId,
-    required LgToggleKind kind,
+    required ToggleKind kind,
   }) async {}
 
   @override
@@ -514,7 +514,7 @@ class _TimeoutLgTransportClient
   @override
   Future<void> sendToggle({
     required String deviceId,
-    required LgToggleKind kind,
+    required ToggleKind kind,
   }) async {}
 
   @override
@@ -590,7 +590,7 @@ class _ErrorOnSendLgTransportClient
   @override
   Future<void> sendToggle({
     required String deviceId,
-    required LgToggleKind kind,
+    required ToggleKind kind,
   }) async {}
 
   @override
@@ -674,7 +674,7 @@ class _ReconnectTrackingLgTransportClient
   @override
   Future<void> sendToggle({
     required String deviceId,
-    required LgToggleKind kind,
+    required ToggleKind kind,
   }) async {}
 
   @override
@@ -748,7 +748,7 @@ class _ImeRejectingLgTransportClient
   @override
   Future<void> sendToggle({
     required String deviceId,
-    required LgToggleKind kind,
+    required ToggleKind kind,
   }) async {}
 
   @override
@@ -828,7 +828,7 @@ class _ClearPairingTrackingLgTransportClient
   @override
   Future<void> sendToggle({
     required String deviceId,
-    required LgToggleKind kind,
+    required ToggleKind kind,
   }) async {}
 
   @override
@@ -904,7 +904,7 @@ class _TextInputReadyLgTransportClient
   @override
   Future<void> sendToggle({
     required String deviceId,
-    required LgToggleKind kind,
+    required ToggleKind kind,
   }) async {}
 
   @override
@@ -982,7 +982,7 @@ class _StaleKeyLgTransportClient
   @override
   Future<void> sendToggle({
     required String deviceId,
-    required LgToggleKind kind,
+    required ToggleKind kind,
   }) async {}
 
   @override

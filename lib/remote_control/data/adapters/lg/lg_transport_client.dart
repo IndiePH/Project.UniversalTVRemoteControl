@@ -28,7 +28,7 @@ abstract class LgTransportClient
   Future<void> sendAppLink({required String deviceId, required String appLink});
 
   /// Flips the tracked state for [kind] and sends the resulting SSAP call.
-  Future<void> sendToggle({required String deviceId, required LgToggleKind kind});
+  Future<void> sendToggle({required String deviceId, required ToggleKind kind});
 
   Future<void> sendText({required String deviceId, required String text});
 
