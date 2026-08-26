@@ -24,8 +24,9 @@ class RemoteLayoutDefaults {
     //  ],
     //
     // Omitting an id like this removes it from the catalog entirely — see
-    // "When does an item actually show up?" in guide-adding-variant-remote-layout.md
-    // for what that means for a device with a pre-existing saved customization.
+    // "When does an item actually show up?" in guide-protocol-variants.md's "Adding a
+    // variant remote layout" section for what that means for a device with a
+    // pre-existing saved customization.
   };
 
   List<RemoteLayoutItemDefinition> layoutFor(TvBrand brand, [String? variant]) {

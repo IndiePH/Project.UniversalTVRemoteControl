@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
+import 'package:one_remote/remote_control/data/manual_add_variant_probe.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
@@ -38,6 +39,7 @@ class PairingPage extends StatefulWidget {
     this.activeDeviceId,
     this.identityRegistry,
     this.layoutRepository,
+    this.manualAddVariantProbe,
   });
 
   final RemoteCommandService commandService;
@@ -48,6 +50,13 @@ class PairingPage extends StatefulWidget {
   final TvReachabilityService reachabilityService;
   final ProEntitlementService proEntitlementService;
   final String? activeDeviceId;
+
+  /// Optional variant probe for manual add-by-IP (see `ManualAddVariantProbe`).
+  /// Null (e.g. in unit tests) falls back to the default variant — safe
+  /// because in production this is always provided, and every brand except
+  /// Sony resolves to its one known variant via the probe's own
+  /// single-candidate short-circuit (no I/O) anyway.
+  final ManualAddVariantProbe? manualAddVariantProbe;
 
   /// Optional identity registry. When wired, discovery reconciles saved
   /// devices to discovered ones by stable id and persists refreshed hosts so
@@ -531,9 +540,9 @@ class _PairingPageState extends State<PairingPage> {
     required TvBrand brand,
     required String ip,
   }) async {
-    final variant = brand == TvBrand.tcl
-        ? TclProtocolVariants.legacyWifi
-        : TvDevice.defaultProtocolVariant;
+    final variant =
+        await widget.manualAddVariantProbe?.resolve(brand: brand, host: ip) ??
+        _fallbackVariantWithoutProbe(brand);
     final device = PairingPageData.buildManualDevice(
       brand: brand,
       ip: ip,
@@ -541,6 +550,21 @@ class _PairingPageState extends State<PairingPage> {
     );
     await _pairSelectedDevice(device: device, manualIpToSave: ip);
   }
+
+  /// Used only when [PairingPage.manualAddVariantProbe] is null (e.g. a test
+  /// that doesn't wire one). Must mirror what `DefaultManualAddVariantProbe`
+  /// would resolve to for each brand's actually-registered default adapter —
+  /// not just return `TvDevice.defaultProtocolVariant` unconditionally,
+  /// since `_adapterFor` does a direct, no-fallback `(brand, variant)` map
+  /// lookup: a wrong variant string here means "no adapter found," not a
+  /// harmless default. Today only TCL's registered adapter
+  /// (`TclLegacyWifiAdapter`) uses a non-default variant string; every other
+  /// brand's default adapter already uses `TvDevice.defaultProtocolVariant`
+  /// itself, so no other case is needed here.
+  String _fallbackVariantWithoutProbe(TvBrand brand) => switch (brand) {
+    TvBrand.tcl => TclProtocolVariants.legacyWifi,
+    _ => TvDevice.defaultProtocolVariant,
+  };
 
   void _showManualAddSheet() {
     showModalBottomSheet<void>(
