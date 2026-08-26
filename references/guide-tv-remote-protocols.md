@@ -25,6 +25,7 @@ mention under the protocol it shares.
   - [Command catalog](#command-catalog)
   - [Discovery](#discovery)
   - [Relationship to the Android TV Remote Protocol](#relationship-to-the-android-tv-remote-protocol)
+  - [Adapter architecture fit](#adapter-architecture-fit-1)
   - [Open questions](#open-questions)
   - [Sources](#sources-1)
 
@@ -424,20 +425,46 @@ Two auth modes, both over the same REST endpoints:
 
 ### Command catalog
 
-High confidence — power (`getPowerStatus`/`setPowerStatus`), volume/mute, input
-switching (`setPlayContent` + HDMI URI), app list/launch (`getApplicationList`/
-`setActiveApp`), remote-key emulation via IRCC base64 codes, plus system/network/reboot
-endpoints.
+The research found a broad REST catalog — power (`getPowerStatus`/`setPowerStatus`),
+volume/mute, input switching (`setPlayContent` + HDMI URI), app list/launch
+(`getApplicationList`/`setActiveApp`), remote-key emulation via IRCC base64 codes, plus
+system/network/reboot endpoints — but `SonyBraviaAdapter`'s actual implementation is
+narrower and simpler than that full catalog:
+
+- **Power, volume, mute, d-pad, channel, home, back, menu** are all dispatched through
+  **IRCC-by-name**, not the distinct REST verbs (`setPowerStatus`, `setAudioVolume`, ...)
+  the catalog above lists. A deliberate simplification made while building the adapter:
+  IRCC already covers every physical remote button, so there was no need for a second
+  dispatch mechanism just for a handful of commands. REST's `getRemoteControllerInfo` is
+  still used, but only once per device to fetch the name→code table `sendKey` resolves
+  against at runtime — see `sony_bravia_key_mapper.dart` for the exact command names
+  (`'Up'`, `'VolumeUp'`, `'Power'`/`'TvPower'` as ordered aliases, etc.).
+- **App launch** (Netflix, YouTube, Prime Video, Disney+) uses the REST
+  `getApplicationList`/`setActiveApp` pair, matching by app title (exact match first, then
+  substring) against a fetched-once-per-device list — see `SonyBraviaAdapter._appLaunchTitles`.
+  Netflix and YouTube are confirmed real titles from community device dumps; Prime Video
+  and Disney+ are best-guess substrings pending on-device confirmation.
+- **Not mapped at all**: `playPause` (no single toggle code exists — `Play` and `Pause`
+  are different actions, not firmware-naming variants of one action, so aliasing them
+  would send the wrong one half the time) and `web`/browser (no evidence found of a
+  generic browser app during research). `menu` is mapped to the IRCC name `'Options'`,
+  the one name two independent source dumps agreed on — `'TopMenu'`/`'AndroidMenu'` were
+  the other candidates seen and remain unconfirmed.
+- Input switching, volume-as-percentage, and the other REST-only capabilities in the
+  broader catalog above are **not wired up** — only what a normal remote-control button
+  layout needs.
 
 ### Discovery
 
 Medium-high confidence: Sony BRAVIA IP Control is independently SSDP-discoverable —
 manufacturer `Sony Corporation`, search-target `urn:schemas-sony-com:service:ScalarWebAPI:1`
 (confirmed via Home Assistant's `braviatv` integration manifest). This app's own
-`inferSsdpTvBrand` (`ssdp_brand_inference.dart:30-49`) has no Sony fingerprint yet — only
-`samsung`/`lg`/`hisense`/`roku`/`androidtvremote` are matched today. Low confidence,
-unresolved: whether the TV's SSDP responder is active before the user enables "IP
-Control" in TV settings, or only afterward — no primary source found either way.
+`inferSsdpTvBrand` (`ssdp_brand_inference.dart`) matches on the `scalarwebapi` substring
+only, not bare `sony` — that same URN is also used by Sony's non-TV "Songpal" audio
+gear, and a bare `sony` match would additionally catch cameras and other Sony devices
+with no relation to this protocol at all. Low confidence, unresolved: whether the TV's
+SSDP responder is active before the user enables "IP Control" in TV settings, or only
+afterward — no primary source found either way.
 
 ### Relationship to the Android TV Remote Protocol
 
@@ -445,21 +472,47 @@ These are independent systems that can be active simultaneously on the same TV �
 Bravia unit can answer both the Android TV Remote Service (used by `SonyAdapter` today)
 and BRAVIA IP Control at once. Since neither protocol is silently auto-detectable from a
 bare IP address, `goal-sony-adapter.md`'s Sub-goal B settled on a **probe, don't ask**
-design: a planned `ManualAddVariantProbe` (see `guide-protocol-variants.md`'s mechanism
-#3) will TCP-probe each of Sony's known variants and take whichever responds, rather than
-asking the user to pick a protocol by hand. For discovery (not manual-add), a `sony`
-SSDP fingerprint plus one entry in `DiscoveryVariantResolutionRegistry` is enough — no
-bypass needed, since when both protocols answer at the same host, the existing
+design, built as `ManualAddVariantProbe` (see `guide-protocol-variants.md`'s mechanism
+#3): it TCP-probes each of Sony's known variants and takes whichever responds, rather
+than asking the user to pick a protocol by hand. For discovery (not manual-add), a
+`sony` SSDP fingerprint plus one entry in `DiscoveryVariantResolutionRegistry` is enough
+— no bypass needed, since when both protocols answer at the same host, the existing
 brand-priority dedup already favors the Android TV Remote path.
+
+### Adapter architecture fit
+
+```
+lib/remote_control/data/adapters/
+  sony_adapter.dart                          ← Android TV Remote Protocol v2 path (above)
+  sony_bravia_adapter.dart                   ← TvBrandAdapter implementation, this protocol
+                                                (TvBrand.sony, protocolVariant braviaIpControl)
+  sony/
+    sony_protocol_variants.dart              ← braviaIpControl variant constant
+    sony_bravia_transport_client.dart        ← abstract transport interface
+    sony_bravia_http_transport_client.dart   ← real transport (REST/JSON-RPC + IRCC-by-name)
+    sony_bravia_pairing_session_store.dart   ← persists the Basic-Auth header + session cookie
+    sony_bravia_key_mapper.dart              ← RemoteCommand → IRCC command name (KeySequence)
+  debug/
+    fake_sony_bravia_transport_client.dart   ← keeps the real PIN gate alive (fixed fake PIN)
+```
+
+`SonyBraviaAdapter` is a sibling of `SonyAdapter`, not a subclass or variant of it — the two
+share only the `TvBrand.sony` value and nothing else (different transport, different key
+mapper, different pairing flow). `ManualAddVariantProbe`
+(`lib/remote_control/data/manual_add_variant_probe.dart`) is what lets a manually-added
+Sony device end up at the right one of the two.
 
 ### Open questions
 
 - **Whether Simple IP Control (legacy TCP/20060) is worth building at all.** Leaning no —
   the FOSS ecosystem has standardized on REST/IRCC-IP, and no surveyed library falls back
-  to Simple IP Control. Recommend scoping the eventual `SonyBraviaAdapter` to REST/IRCC-IP
-  only unless a concrete need for pre-2013 Sony sets surfaces.
+  to Simple IP Control. Recommend keeping `SonyBraviaAdapter` scoped to REST/IRCC-IP only
+  unless a concrete need for pre-2013 Sony sets surfaces.
 - **Whether the TV's SSDP responder requires "IP Control" to be manually enabled first** —
   unresolved, affects how reliable discovery-based detection will be in practice.
+- **PSK static-key auth is unbuilt** — needs a new manual-entry UI with no precedent
+  elsewhere in this app (existing pairing dialogs only handle a live, TV-displayed PIN).
+  Deferred to a later pass; see `references/goals/goal-sony-adapter.md`.
 
 ### Sources
 
