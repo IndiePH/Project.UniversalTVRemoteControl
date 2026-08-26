@@ -78,11 +78,7 @@ class SonyBraviaHttpTransportClient
 
   @override
   Future<void> probe(String host) async {
-    final socket = await Socket.connect(
-      host,
-      80,
-      timeout: _requestTimeout,
-    );
+    final socket = await Socket.connect(host, 80, timeout: _requestTimeout);
     socket.destroy();
   }
 
@@ -93,8 +89,7 @@ class SonyBraviaHttpTransportClient
       throw StateError('Sony BRAVIA host missing for deviceId: $deviceId');
     }
     final clientId = await _clientId();
-    final authHeader =
-        'Basic ${base64Encode(utf8.encode(':${pin ?? ''}'))}';
+    final authHeader = 'Basic ${base64Encode(utf8.encode(':${pin ?? ''}'))}';
     final client = HttpClient();
     try {
       final request = await client
@@ -175,7 +170,10 @@ class SonyBraviaHttpTransportClient
       final request = await client
           .postUrl(Uri.parse('http://$host/sony/IRCC'))
           .timeout(_requestTimeout);
-      request.headers.set(HttpHeaders.contentTypeHeader, 'text/xml; charset=UTF-8');
+      request.headers.set(
+        HttpHeaders.contentTypeHeader,
+        'text/xml; charset=UTF-8',
+      );
       request.headers.set(
         'SOAPACTION',
         '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"',

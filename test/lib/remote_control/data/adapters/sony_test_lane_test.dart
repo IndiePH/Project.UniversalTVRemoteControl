@@ -69,10 +69,7 @@ void main() {
     'SonyAdapter: no app-link override — uses AndroidTvKeyMapper default https:// links',
     () {
       final adapter = SonyAdapter(transportClient: _SpySonyTransportClient());
-      expect(
-        adapter.supportedCommands.contains(RemoteCommand.netflix),
-        isTrue,
-      );
+      expect(adapter.supportedCommands.contains(RemoteCommand.netflix), isTrue);
     },
   );
 }

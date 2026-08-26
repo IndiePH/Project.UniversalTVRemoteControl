@@ -168,5 +168,8 @@ class _FakeAdapter extends TvBrandAdapter {
   }) async {}
 
   @override
-  Future<void> sendText({required TvDevice device, required String text}) async {}
+  Future<void> sendText({
+    required TvDevice device,
+    required String text,
+  }) async {}
 }

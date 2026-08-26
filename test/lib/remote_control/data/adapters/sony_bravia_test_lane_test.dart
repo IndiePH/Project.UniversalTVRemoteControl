@@ -21,7 +21,9 @@ void main() {
   );
 
   test('SonyBraviaAdapter: brand and protocolVariant identify Sony BRAVIA', () {
-    final adapter = SonyBraviaAdapter(transportClient: _SpyBraviaTransportClient());
+    final adapter = SonyBraviaAdapter(
+      transportClient: _SpyBraviaTransportClient(),
+    );
     expect(adapter.brand, TvBrand.sony);
     expect(adapter.protocolVariant, SonyProtocolVariants.braviaIpControl);
   });
@@ -60,7 +62,9 @@ void main() {
   test(
     'SonyBraviaAdapter: playPause has no mapping (Play/Pause are not aliases)',
     () async {
-      final adapter = SonyBraviaAdapter(transportClient: _SpyBraviaTransportClient());
+      final adapter = SonyBraviaAdapter(
+        transportClient: _SpyBraviaTransportClient(),
+      );
       await expectLater(
         adapter.sendCommand(device: device, command: RemoteCommand.playPause),
         throwsUnsupportedError,
@@ -78,13 +82,24 @@ void main() {
   test(
     'SonyBraviaAdapter: supportedCommands includes app-launch commands optimistically',
     () {
-      final adapter = SonyBraviaAdapter(transportClient: _SpyBraviaTransportClient());
+      final adapter = SonyBraviaAdapter(
+        transportClient: _SpyBraviaTransportClient(),
+      );
       expect(adapter.supportedCommands.contains(RemoteCommand.netflix), isTrue);
       expect(adapter.supportedCommands.contains(RemoteCommand.youtube), isTrue);
-      expect(adapter.supportedCommands.contains(RemoteCommand.primeVideo), isTrue);
-      expect(adapter.supportedCommands.contains(RemoteCommand.disneyPlus), isTrue);
+      expect(
+        adapter.supportedCommands.contains(RemoteCommand.primeVideo),
+        isTrue,
+      );
+      expect(
+        adapter.supportedCommands.contains(RemoteCommand.disneyPlus),
+        isTrue,
+      );
       // playPause is deliberately unmapped — see key mapper doc comment.
-      expect(adapter.supportedCommands.contains(RemoteCommand.playPause), isFalse);
+      expect(
+        adapter.supportedCommands.contains(RemoteCommand.playPause),
+        isFalse,
+      );
     },
   );
 

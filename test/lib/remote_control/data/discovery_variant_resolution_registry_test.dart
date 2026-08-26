@@ -16,14 +16,17 @@ void main() {
       );
     });
 
-    test('falls back to the default protocol variant for an unmapped brand/source pair', () {
-      for (final source in DiscoverySource.values) {
-        expect(
-          registry.resolveFromDiscovery(brand: TvBrand.roku, source: source),
-          TvDevice.defaultProtocolVariant,
-        );
-      }
-    });
+    test(
+      'falls back to the default protocol variant for an unmapped brand/source pair',
+      () {
+        for (final source in DiscoverySource.values) {
+          expect(
+            registry.resolveFromDiscovery(brand: TvBrand.roku, source: source),
+            TvDevice.defaultProtocolVariant,
+          );
+        }
+      },
+    );
 
     test('resolves Sony found via SSDP to the BRAVIA IP Control variant', () {
       expect(
@@ -35,13 +38,16 @@ void main() {
       );
     });
 
-    test('falls back to the default protocol variant for Sony found via other sources', () {
-      for (final source in [DiscoverySource.mdns, DiscoverySource.roku]) {
-        expect(
-          registry.resolveFromDiscovery(brand: TvBrand.sony, source: source),
-          TvDevice.defaultProtocolVariant,
-        );
-      }
-    });
+    test(
+      'falls back to the default protocol variant for Sony found via other sources',
+      () {
+        for (final source in [DiscoverySource.mdns, DiscoverySource.roku]) {
+          expect(
+            registry.resolveFromDiscovery(brand: TvBrand.sony, source: source),
+            TvDevice.defaultProtocolVariant,
+          );
+        }
+      },
+    );
   });
 }

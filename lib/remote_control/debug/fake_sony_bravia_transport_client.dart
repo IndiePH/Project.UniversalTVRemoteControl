@@ -118,9 +118,7 @@ class FakeSonyBraviaTransportClient
   Stream<ConnectionState> watchConnectionState(String deviceId) =>
       _connectionControllerFor(deviceId).stream;
 
-  StreamController<ConnectionState> _connectionControllerFor(
-    String deviceId,
-  ) {
+  StreamController<ConnectionState> _connectionControllerFor(String deviceId) {
     return _connectionControllers.putIfAbsent(
       deviceId,
       () => StreamController<ConnectionState>.broadcast(

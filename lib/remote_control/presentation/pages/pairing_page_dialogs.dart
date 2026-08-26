@@ -85,9 +85,8 @@ final class PairingPageDialogs {
                     ? null
                     : l10n.pairingPinErrorInvalid,
               // No fixed shape — Sony BRAVIA validates entirely server-side.
-              PinFormat.freeform => value.isNotEmpty
-                  ? null
-                  : l10n.pairingPinErrorInvalid,
+              PinFormat.freeform =>
+                value.isNotEmpty ? null : l10n.pairingPinErrorInvalid,
             };
           }
 

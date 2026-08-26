@@ -77,16 +77,17 @@ class TvCapabilities {
     return base;
   }
 
-  PinFormat pinFormatFor(TvBrand brand, [String? variant]) =>
-      switch ((brand, variant)) {
-        (TvBrand.sony, SonyProtocolVariants.braviaIpControl) =>
-          PinFormat.freeform,
-        (TvBrand.androidTv, _) => PinFormat.sixCharHex,
-        (TvBrand.sony, _) => PinFormat.sixCharHex,
-        (TvBrand.hisense, _) => PinFormat.fourDigitNumeric,
-        _ => throw StateError(
-          'PIN format not configured for ${brand.name} — '
-          'add an entry in TvCapabilities.pinFormatFor',
-        ),
-      };
+  PinFormat pinFormatFor(TvBrand brand, [String? variant]) => switch ((
+    brand,
+    variant,
+  )) {
+    (TvBrand.sony, SonyProtocolVariants.braviaIpControl) => PinFormat.freeform,
+    (TvBrand.androidTv, _) => PinFormat.sixCharHex,
+    (TvBrand.sony, _) => PinFormat.sixCharHex,
+    (TvBrand.hisense, _) => PinFormat.fourDigitNumeric,
+    _ => throw StateError(
+      'PIN format not configured for ${brand.name} — '
+      'add an entry in TvCapabilities.pinFormatFor',
+    ),
+  };
 }

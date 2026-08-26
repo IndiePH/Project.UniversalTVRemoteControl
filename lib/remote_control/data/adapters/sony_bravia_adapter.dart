@@ -130,7 +130,9 @@ class SonyBraviaAdapter implements TvBrandAdapter {
   }) async {
     final payload = _keyMap.payloadFor(command);
     if (payload == null) {
-      throw UnsupportedError('No Sony BRAVIA key mapping for command: $command');
+      throw UnsupportedError(
+        'No Sony BRAVIA key mapping for command: $command',
+      );
     }
     switch (payload) {
       case KeySequence(:final codes):

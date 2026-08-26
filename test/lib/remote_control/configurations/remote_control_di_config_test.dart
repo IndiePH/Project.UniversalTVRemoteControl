@@ -38,10 +38,7 @@ void main() {
     displayName: 'Sony BRAVIA DI Smoke Test',
     brand: TvBrand.sony,
     protocolVariant: SonyProtocolVariants.braviaIpControl,
-    capabilities: {
-      DeviceCapability.keyCommands,
-      DeviceCapability.powerControl,
-    },
+    capabilities: {DeviceCapability.keyCommands, DeviceCapability.powerControl},
     host: '192.168.1.41',
   );
 

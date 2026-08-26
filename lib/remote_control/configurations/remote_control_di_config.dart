@@ -140,13 +140,16 @@ final class RemoteControlDiConfig implements IDiConfig {
         delegate: CompositeDeviceDiscoveryService(
           services: [
             SsdpDeviceDiscoveryService(
-              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
             ),
             MdnsDeviceDiscoveryService(
-              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
             ),
             RokuSsdpDiscoveryService(
-              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
             ),
           ],
           androidTvIdentityResolver: androidTvTransport,
@@ -247,13 +250,16 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
         delegate: CompositeDeviceDiscoveryService(
           services: [
             SsdpDeviceDiscoveryService(
-              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
             ),
             MdnsDeviceDiscoveryService(
-              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
             ),
             RokuSsdpDiscoveryService(
-              discoveryVariantRegistry: sl<DiscoveryVariantResolutionRegistry>(),
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
             ),
           ],
         ),
