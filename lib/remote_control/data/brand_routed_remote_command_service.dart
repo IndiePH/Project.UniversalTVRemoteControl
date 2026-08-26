@@ -113,7 +113,10 @@ class BrandRoutedRemoteCommandService
       // Adapter explicitly signalled that a PIN is required (e.g. Hisense).
       return CommandDispatchResult.pinRequired(
         error.message,
-        pinFormat: const TvCapabilities().pinFormatFor(device.brand),
+        pinFormat: const TvCapabilities().pinFormatFor(
+          device.brand,
+          device.protocolVariant,
+        ),
       );
     } catch (error) {
       return CommandDispatchResult.failure(

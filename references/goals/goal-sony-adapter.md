@@ -315,27 +315,27 @@ remaining open questions before any Bravia code is written.
       #10 and Decisions log for the full endpoint/auth-shape writeup, including a correction
       to this doc's prior "cookie-only" assumption.
       Deps: none. Risk: LOW (research only). Skills: api-design, dependency-safety-integration.
-- [ ] **B2. Resolve the architecture/UX fit question** (open question #1): decide, with the
+- [x] **B2. Resolve the architecture/UX fit question** (open question #1): decide, with the
       user, how a Bravia-path Sony device gets selected/paired given neither protocol is
       silently auto-detectable — user-facing choice vs. some form of probe-based detection.
       Produce a written recommendation.
       Deps: B1. Risk: LOW (research/design only). Skills: system-design, ux-constraints-awareness,
       abstraction-domain-modeling.
-- [ ] **B3. Write findings into a reference doc.** Originally scoped as a new
-      Sony/Bravia-only doc (`references/guide-sony-bravia-ip-control.md`); doc-shape
-      decision **resolved 2026-08-25**: `references/guide-android-tv-remote-protocol.md`
+- [x] **B3. Write findings into a reference doc.** Done 2026-08-25. Originally scoped
+      as a new Sony/Bravia-only doc (`references/guide-sony-bravia-ip-control.md`);
+      doc-shape decision resolved 2026-08-25: `references/guide-android-tv-remote-protocol.md`
       renamed to `references/guide-tv-remote-protocols.md` and restructured as a combined,
       multi-protocol reference — a top-level `## Contents` ToC pointing to one `##` section
-      per genuinely distinct protocol (today: `## Android TV Remote Protocol v2`, which
-      Sony's Google TV path already shares — no separate section needed for that path).
-      Scope confirmed with the user: no placeholder sections for Samsung/LG/Hisense (which
-      have no dedicated protocol guide, only validation matrices) — the ToC only lists what's
-      actually documented. **Still open, not yet done:** writing BRAVIA IP Control's own `##`
-      section (B1's `actRegister`/PIN-over-Basic-Auth/cookie findings, endpoints, auth modes)
-      into that file — deferred until Sub-goal C actually builds `SonyBraviaAdapter`, so the
-      guide keeps describing shipped behavior rather than a proposal (this codebase's guides
-      are written as "how does this work today," not speculative design). Do that write-up as
-      part of C6 (or earlier in Sub-goal C once the adapter shape is settled), not now.
+      per genuinely distinct protocol. Scope confirmed with the user: no placeholder
+      sections for Samsung/LG/Hisense (which have no dedicated protocol guide, only
+      validation matrices) — the ToC only lists what's actually documented.
+      BRAVIA IP Control's own `## Sony BRAVIA IP Control` section (B1's `actRegister`/
+      PIN-over-Basic-Auth/cookie findings, endpoints, auth modes, command catalog,
+      discovery, open questions) written into that file the same day, per the user's
+      explicit instruction to write it now rather than deferring to Sub-goal C — marked
+      with its own "Status: planned — not yet implemented" banner (same convention
+      `guide-protocol-variants.md` already uses for its not-yet-built `ManualAddVariantProbe`
+      section) so it reads as documented research, not as a claim that the adapter exists.
       Deps: B1, B2. Risk: LOW. Skills: documentation-knowledge-transfer.
 
 ## Sub-goal C — Implement Sony BRAVIA IP Control adapter (placeholder, contingent on B)

@@ -1,3 +1,4 @@
+import 'package:one_remote/remote_control/data/adapters/sony/sony_protocol_variants.dart';
 import 'package:one_remote/remote_control/domain/models/discovery_source.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -21,11 +22,9 @@ class DefaultDiscoveryVariantResolutionRegistry
     implements DiscoveryVariantResolutionRegistry {
   const DefaultDiscoveryVariantResolutionRegistry();
 
-  // No brand currently needs a discovery-time override — Sony's
-  // SSDP-discoverable BRAVIA path has no scanner fingerprint or adapter yet
-  // (Sub-goal C, not started). Add entries here once both exist, e.g.
-  // (TvBrand.sony, DiscoverySource.ssdp): SonyProtocolVariants.braviaIpControl.
-  static const Map<(TvBrand, DiscoverySource?), String> _discoveryEntries = {};
+  static const Map<(TvBrand, DiscoverySource?), String> _discoveryEntries = {
+    (TvBrand.sony, DiscoverySource.ssdp): SonyProtocolVariants.braviaIpControl,
+  };
 
   @override
   String resolveFromDiscovery({

@@ -19,6 +19,14 @@ mention under the protocol it shares.
   - [ADB alternative (not recommended for production)](#adb-alternative-not-recommended-for-production)
   - [Implementation status](#implementation-status)
   - [Sources](#sources)
+- [Sony BRAVIA IP Control](#sony-bravia-ip-control)
+  - [Two protocol generations](#two-protocol-generations)
+  - [Transport and auth](#transport-and-auth)
+  - [Command catalog](#command-catalog)
+  - [Discovery](#discovery)
+  - [Relationship to the Android TV Remote Protocol](#relationship-to-the-android-tv-remote-protocol)
+  - [Open questions](#open-questions)
+  - [Sources](#sources-1)
 
 ---
 
@@ -353,3 +361,111 @@ document were verified against the following sources (May 2026):
   Go implementation reference
 - [androidtvremote2 — PyPI](https://pypi.org/project/androidtvremote2/) —
   Release history confirming active maintenance
+
+---
+
+## Sony BRAVIA IP Control
+
+**Status: planned — not yet implemented.** This section documents research findings only
+(Sub-goal B of `references/goals/goal-sony-adapter.md`); no `SonyBraviaAdapter` or
+transport client exists yet (that's Sub-goal C). It's written up here now, ahead of the
+implementation, because the underlying research is already done and stable, and keeping
+it only in the goal doc's Decisions log made it harder to find. Treat every claim below at
+the confidence level stated — none of it comes from Sony's own developer docs
+(`pro-bravia.sony.net` returned 403/429 to every fetch attempt during this research), only
+from third-party integrations and community sources.
+
+This is a **second, independent protocol** for Sony TVs — separate from the Android TV
+Remote Protocol v2 section above, which Sony's Google TV models already speak via
+`SonyAdapter`. BRAVIA IP Control is Sony's own proprietary control surface, present on
+Sony TVs going back further than Google TV, and can be active on the same physical TV at
+the same time as the Android TV Remote Service.
+
+### Two protocol generations
+
+- **Simple IP Control (SSIP)** — legacy, plaintext binary protocol over TCP, fixed port
+  `20060`, fixed 24-byte packets. Medium confidence: corroborated only via third-party
+  AV-integrator docs (Crestron/RTI), not Sony's own pages. The FOSS ecosystem has largely
+  moved past it — no library surveyed here (`pybravia`, `braviaproapi`, `irccip-go`)
+  implements a fallback to it.
+- **BRAVIA REST API / IRCC-IP** — JSON-RPC over **HTTP, port 80**, endpoints under
+  `/sony/<service>` (`system`, `avContent`, `appControl`, `audio`, ...), plus a
+  SOAP/base64 sub-path (`/sony/IRCC`) for raw key-press emulation. High confidence —
+  confirmed via a working `curl` example and Sony's own end-user help page (both fetched
+  successfully, unlike the developer docs).
+- Medium confidence, and counterintuitive: REST/IRCC-IP is documented as available on
+  Sony TVs **"2013 and newer"** — i.e. a *broader* device range than the Android TV
+  Remote Protocol, not a legacy-only fallback for older sets. Google TV/Android TV is the
+  newer, narrower-range protocol of the two.
+
+### Transport and auth
+
+Two auth modes, both over the same REST endpoints:
+
+- **PSK mode** (high confidence) — a pre-shared key configured in TV settings, sent on
+  every request as an `X-Auth-PSK` header:
+  ```
+  curl -H "X-Auth-PSK: your_key" -X POST \
+    -d '{"id":20,"method":"PowerOff","version":"1.0","params":[]}' \
+    http://192.168.0.98/sony/system
+  ```
+- **PIN mode** (medium confidence) — `POST /sony/accessControl`, JSON-RPC method
+  `actRegister` v1.0. Pairing-initiation and PIN-confirmation are the *same* call shape;
+  the PIN itself travels as HTTP Basic Auth (`Authorization: Basic base64(":"+pin)`), not
+  in the JSON body. On success the TV returns a `Set-Cookie` header — the client must keep
+  **both** that cookie *and* the original Basic-Auth header on every subsequent request
+  for the life of the session. (Cookie-only was an earlier, wrong assumption in this
+  research, corrected by reading `pybravia`'s source directly.)
+
+### Command catalog
+
+High confidence — power (`getPowerStatus`/`setPowerStatus`), volume/mute, input
+switching (`setPlayContent` + HDMI URI), app list/launch (`getApplicationList`/
+`setActiveApp`), remote-key emulation via IRCC base64 codes, plus system/network/reboot
+endpoints.
+
+### Discovery
+
+Medium-high confidence: Sony BRAVIA IP Control is independently SSDP-discoverable —
+manufacturer `Sony Corporation`, search-target `urn:schemas-sony-com:service:ScalarWebAPI:1`
+(confirmed via Home Assistant's `braviatv` integration manifest). This app's own
+`inferSsdpTvBrand` (`ssdp_brand_inference.dart:30-49`) has no Sony fingerprint yet — only
+`samsung`/`lg`/`hisense`/`roku`/`androidtvremote` are matched today. Low confidence,
+unresolved: whether the TV's SSDP responder is active before the user enables "IP
+Control" in TV settings, or only afterward — no primary source found either way.
+
+### Relationship to the Android TV Remote Protocol
+
+These are independent systems that can be active simultaneously on the same TV — a
+Bravia unit can answer both the Android TV Remote Service (used by `SonyAdapter` today)
+and BRAVIA IP Control at once. Since neither protocol is silently auto-detectable from a
+bare IP address, `goal-sony-adapter.md`'s Sub-goal B settled on a **probe, don't ask**
+design: a planned `ManualAddVariantProbe` (see `guide-protocol-variants.md`'s mechanism
+#3) will TCP-probe each of Sony's known variants and take whichever responds, rather than
+asking the user to pick a protocol by hand. For discovery (not manual-add), a `sony`
+SSDP fingerprint plus one entry in `DiscoveryVariantResolutionRegistry` is enough — no
+bypass needed, since when both protocols answer at the same host, the existing
+brand-priority dedup already favors the Android TV Remote path.
+
+### Open questions
+
+- **Whether Simple IP Control (legacy TCP/20060) is worth building at all.** Leaning no —
+  the FOSS ecosystem has standardized on REST/IRCC-IP, and no surveyed library falls back
+  to Simple IP Control. Recommend scoping the eventual `SonyBraviaAdapter` to REST/IRCC-IP
+  only unless a concrete need for pre-2013 Sony sets surfaces.
+- **Whether the TV's SSDP responder requires "IP Control" to be manually enabled first** —
+  unresolved, affects how reliable discovery-based detection will be in practice.
+
+### Sources
+
+- [pybravia — GitHub (`Drafteed/pybravia`)](https://github.com/Drafteed/pybravia) —
+  async Python implementation backing Home Assistant's `braviatv` integration; source of
+  the PIN/cookie/Basic-Auth findings above
+- [Kalle Ström's BRAVIA IRCC-IP gist](https://gist.github.com/kalleth/e10e8f3b8b7cb1bac21463b0073a65fb) —
+  working PSK example
+- [Sony end-user help guide — IP Control](https://helpguide.sony.net/tv/gusltnr1/v1/en-us/07-02_17.html) —
+  one of the few Sony-hosted pages that didn't 403
+- [home-assistant/core `braviatv` manifest](https://github.com/home-assistant/core/blob/dev/homeassistant/components/braviatv/manifest.json) —
+  SSDP manufacturer/search-target strings
+- `references/goals/goal-sony-adapter.md` — full research trail, confidence notes, and
+  the Decisions log entries this section summarizes
