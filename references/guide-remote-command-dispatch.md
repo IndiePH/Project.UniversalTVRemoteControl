@@ -15,6 +15,7 @@ on top of it.
 - [Why this design, not a marker set](#why-this-design-not-a-marker-set)
 - [Writing a key mapper](#writing-a-key-mapper)
 - [Writing `sendCommand`](#writing-sendcommand)
+  - [Why `sealed`, and why `default:`](#why-sealed-and-why-default)
 - [Writing `supportedCommands`](#writing-supportedcommands)
 - [Diverging a variant's commands](#diverging-a-variants-commands)
 - [Step-by-step: diverging one command for a variant](#step-by-step-diverging-one-command-for-a-variant)
@@ -51,11 +52,10 @@ AndroidTv/TclGoogleTv's adapter-level `_appLinks` map is gone (folded into the k
 `VariantKeyMap` for TclGoogleTv's `market://` override — see "Diverging a variant's commands"
 below); TclRoku's `_appIds` map is gone the same way (`TclRokuKeyMapper`'s four launch commands
 are now plain `AppLink` entries carrying Roku channel ids); Hisense's keymapper carries real
-`VidaaLaunch` entries instead of being left empty. The one deliberate holdout is LG: its
-app-launch commands still dispatch as a `KeySequence` carrying a `LAUNCH:`-prefixed string,
-sniffed by `LgWebSocketTransportClient` — not a leftover, but a scope decision (see "Adding a
-brand-specific payload type" below for why a brand keeping a sentinel doesn't need a new
-`CommandPayload` subclass).
+`VidaaLaunch` entries instead of being left empty. LG's `LAUNCH:`/`POINTER:`/`TOGGLE:` sentinels
+are gone too (`references/changelog.md`'s 2026-08-26 entry) — its app-launch commands are
+`AppLink` entries, pointer-socket input (`dpad*`/`home`/`back`) is `PointerCommand(button)`, and
+its three stateful toggles (`power`/`playPause`/`mute`) are `ToggleCommand(ToggleKind)`.
 
 ### The contract
 
@@ -167,29 +167,29 @@ Future<void> sendCommand({
   required TvDevice device,
   required RemoteCommand command,
 }) async {
+  final payload = _keyMap.payloadFor(command);
+  if (payload == null) {
+    throw UnsupportedError('No Brand key mapping for command: $command');
+  }
   await _transportClient.connect(deviceId: device.id);
-  switch (_keyMap.payloadFor(command)) {
-    case null:
-      throw UnsupportedError('No mapping for command: $command');
+  switch (payload) {
     case KeySequence(:final codes):
       for (final code in codes) {
         await _transportClient.sendKey(deviceId: device.id, keyCode: code);
       }
     case AppLink(:final uri):
       await _transportClient.sendAppLink(deviceId: device.id, appLink: uri);
-    case VidaaLaunch(:final displayName, :final url):
-      await _transportClient.launchVidaaApp(
-        deviceId: device.id,
-        displayName: displayName,
-        url: url,
+    default:
+      throw UnsupportedError(
+        'Brand has no dispatch path for ${payload.runtimeType}.',
       );
   }
 }
 ```
 
-Because `CommandPayload` is `sealed`, this `switch` is exhaustiveness-checked by the compiler.
-If a new subclass is ever added and a brand's `sendCommand` doesn't handle it, that adapter
-fails to compile — not silently drops the command at runtime.
+Real cases for whatever this brand actually dispatches, one `default:` at the end for
+everything else — see "Why `sealed`, and why `default:`" below for why it's shaped this way
+instead of one case per `CommandPayload` subclass.
 
 **Each `case` calls a real method on `_transportClient`.** If the dispatch you need doesn't
 have one yet — a brand's first `AppLink` command, or a payload shape that needs a transport
@@ -214,6 +214,35 @@ Don't add a new `CommandPayload` subclass just to get a new transport method, th
 first whether the dispatch you need is actually a `KeySequence` with unusual-looking codes
 (still just `sendKey`) before assuming it needs its own type. See "Adding a brand-specific
 payload type" below for when a new subclass is actually warranted.
+
+### Why `sealed`, and why `default:`
+
+`CommandPayload` is `sealed` so every `switch` over it is exhaustiveness-checked: Dart knows
+every direct subtype and can prove (or refuse to compile) that a given switch accounts for all
+of them. That's also why a brand-specific type like `VidaaLaunch` (Hisense-only) or
+`PointerCommand`/`ToggleCommand` (LG-only) lives here in `command_key_map.dart` rather than in
+a brand-specific file — `sealed` requires every direct subtype to be declared in the *same
+library* as the sealed class itself, so there's no way to split them out and keep them usable
+from `payloadFor`'s shared return type.
+
+A fully exhaustive switch — one explicit `case` per `CommandPayload` subtype, no `default` —
+was the original shape, and it has a real cost: every brand-specific type touches every adapter
+that doesn't support it, whether or not that adapter will ever produce it. Two LG-only types
+across six non-LG adapters was 12 near-identical throw-lines added in one PR for that reason.
+That's O(brands × types) growth with no ceiling as more brand-specific payload types get added.
+
+The current shape instead: real cases for whatever a brand actually dispatches, then one
+`default: throw UnsupportedError('$Brand has no dispatch path for ${payload.runtimeType}.')`
+for everything else — one line per adapter, not one line per (adapter, unsupported type) pair.
+The cost is real: `default:` gives up the compiler's guarantee. Adding a new `CommandPayload`
+subtype no longer forces every adapter to consciously decide whether it supports it — the code
+keeps compiling either way. What replaces that guarantee is
+`test/lib/remote_control/data/adapters/supported_commands_dispatch_test.dart`: for every command
+a brand's own key map claims to support (`payloadFor(command) != null`), it dispatches that
+command through a fake transport and fails if it hits `UnsupportedError`. That catches the
+specific failure mode `default:` reopens — a key map returning a payload type its own adapter's
+switch doesn't actually have a real case for — behaviorally, at test time, instead of
+structurally, at compile time.
 
 ---
 
@@ -467,8 +496,10 @@ whether the new brand's transport method can actually be expressed as an existin
 most "this brand is different" instincts turn out to be a `KeySequence` with an unusual string
 format (still just one code to send via `sendKey`) rather than a genuinely new transport method.
 Only add a new `CommandPayload` subclass when there's a real new method on the transport client
-it corresponds to, and update every adapter's `sendCommand` switch to handle it — the compiler
-will tell you which ones you missed.
+it corresponds to. Adding it doesn't force every other adapter's `sendCommand` to change — their
+`default:` case already covers it — so nothing will tell you if the brand you actually meant to
+support it on forgot a real `case` for it except `supported_commands_dispatch_test.dart`. See
+"Why `sealed`, and why `default:`" above.
 
 ---
 

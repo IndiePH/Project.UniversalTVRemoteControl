@@ -11,6 +11,70 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-08-26
+
+### Changed
+- LG command dispatch (PR [#28](https://github.com/IndiePH/Project.UniversalTVRemoteControl/pull/28),
+  branch `refactor/lg-remote-command-convention-consolidatio`; design/audit log
+  `references/goals/goal-lg-remote-command-convention-consolidation.md`): LG was the one brand
+  `CommandPayload`'s original migration left on string-sniffed sentinels
+  (`POINTER:`/`LAUNCH:`/`TOGGLE:` prefixes parsed by `LgWebSocketTransportClient`'s
+  `_LgCommandFactory`). `CommandPayload` gains two new cases — `PointerCommand(button)` and
+  `ToggleCommand(ToggleKind)` (`power`/`playPause`/`mute`) — and `LgTransportClient` gains real
+  `sendPointerCommand`/`sendAppLink`/`sendToggle` methods, promoted from private helpers
+  (`sendToggle` collapses what were three duplicated state-flip-and-send branches into one
+  `switch (kind)`). `LgKeyMapper`'s `lgPointerPrefix`/`lgLaunchPrefix`/`lgPowerToggleKey`/
+  `lgPlayPauseToggleKey` sentinel constants are deleted; every entry is now a real SSAP string or
+  a typed payload. `_LgCommandFactory`/`_LgTransportCommand` and the now-fully-unused
+  `TransportCommandFactory`/`TransportCommand` interfaces are deleted; `sendKey` calls `_sendSsap`
+  directly for the plain case.
+- `menu` is the one LG command that dispatches two unconditional, heterogeneous actions (a plain
+  settings key, then a settings-app launch) rather than one typed payload — handled as an
+  `LgAdapter`-local special case, not a new shared `CommandPayload` type. Git blame confirmed both
+  calls are deliberate cross-webOS-build coverage (added together in `553c321d`, not accidental
+  duplication), so both are still sent, same order, same payloads.
+- All 7 adapters' `sendCommand` switches now end in one `default: throw UnsupportedError('$Brand
+  has no dispatch path for ${payload.runtimeType}.')` instead of a hand-listed case per
+  unsupported `CommandPayload` type. Keeps each adapter's footprint at one line regardless of how
+  many brand-specific payload types exist (was starting to scale as O(brands × types) — this PR
+  alone added 2 new types × 6 non-LG adapters' worth of throw-cases before the `default:` pass
+  collapsed them back down). Trades away the sealed class's compiler-enforced exhaustiveness in
+  exchange for that scalability — see `guide-remote-command-dispatch.md`'s "Why `sealed`, and why
+  `default:`" for the reasoning and what replaces the lost guarantee.
+
+### Added
+- `supported_commands_dispatch_test.dart`: for every command each of the 7 adapters' own key map
+  claims to support (`payloadFor(command) != null`), dispatches it through that brand's fake
+  transport and fails only if it hits `UnsupportedError` — any other exception (pairing/auth
+  preconditions, etc.) is unrelated to payload-type dispatch and ignored. This is the check that
+  catches a key map drifting out of sync with its adapter's switch (a command marked supported
+  but not actually dispatchable), which is the exact gap the `default:` case above reopens now
+  that the compiler no longer catches it. Verified working, not just present: deliberately broke
+  Samsung's key map to produce that exact bug, confirmed the test failed with a precise message
+  naming the brand/command/type, then reverted.
+
+### Verification
+- Diffed the merged branch against pre-refactor `main` command-by-command: every SSAP URI,
+  payload shape, app-launch id, pointer button name, and toggle default (mute=`false`,
+  power=`true`, playPause=`true`) is unchanged — only how each is reached changed, not what gets
+  sent. `flutter analyze` — 0 issues. `flutter test` full suite — 721 passed, 0 failed (up from
+  580 pre-PR, the +141 being `supported_commands_dispatch_test.dart`'s generated cases across all
+  7 brands), 1 pre-existing skip, 0 regressions.
+
+### Docs
+- `references/goals/goal-lg-remote-command-convention-consolidation.md`'s plan has fully landed;
+  see `guide-remote-command-dispatch.md` for the live contract.
+
+### Changed (branch `feature/sony-adapter`, not yet merged to `main`)
+- Merged `main` into `feature/sony-adapter`, pulling in the LG dispatch refactor above. One real
+  conflict: `lg_key_mapper.dart`, where this branch still had the pre-refactor sentinel constants
+  — resolved by taking `main`'s version (confirmed via repo-wide grep that nothing on this branch
+  referenced those constants). The merge surfaced two adapters written before `PointerCommand`/
+  `ToggleCommand` existed and left non-exhaustive by them: `sony_adapter.dart` and
+  `sony_bravia_adapter.dart` each gained the same `default: throw UnsupportedError(...)` case used
+  everywhere else (confirmed Sony's key mappers never produce either type, same as every other
+  non-LG brand). `flutter analyze` 0 issues, full suite 753 passed post-merge.
+
 ## 2026-08-24
 
 ### Added
