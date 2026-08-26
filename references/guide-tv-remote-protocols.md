@@ -368,15 +368,17 @@ document were verified against the following sources (May 2026):
 
 **Status: implemented, experimental — PIN-mode auth only, no on-device validation yet.**
 `SonyBraviaAdapter` and `SonyBraviaHttpTransportClient` ship as of Sub-goal C
-(`references/goals/goal-sony-adapter.md`, C1–C4b). PSK static-key auth is not built (needs
-a new manual-entry UI with no precedent elsewhere in this app — deferred to a later pass).
-Command dispatch (IRCC key names, app-launch via `getApplicationList`/`setActiveApp`) is
-resolved per-device at runtime rather than hardcoded, since Sony assigns both per
-model/firmware — see "Command catalog" and "Discovery" below. Treat every protocol-level claim
-below at the confidence level stated — none of it comes from Sony's own developer docs
-(`pro-bravia.sony.net` returned 403/429 to every fetch attempt during this research), only
-from third-party integrations and community sources; this hasn't been confirmed against a
-real Bravia TV yet (Sub-goal C's C6 — tests and a validation matrix — is still open).
+(`references/goals/goal-sony-adapter.md`, C1–C6 — test coverage and
+`references/sony_bravia_validation_matrix.md` both landed with C6). PSK static-key auth is
+not built (needs a new manual-entry UI with no precedent elsewhere in this app — deferred
+to a later pass). Command dispatch (IRCC key names, app-launch via
+`getApplicationList`/`setActiveApp`) is resolved per-device at runtime rather than
+hardcoded, since Sony assigns both per model/firmware — see "Command catalog" and
+"Discovery" below. Treat every protocol-level claim below at the confidence level stated —
+none of it comes from Sony's own developer docs (`pro-bravia.sony.net` returned 403/429 to
+every fetch attempt during this research), only from third-party integrations and
+community sources; automated tests cover the adapter's own logic, but nothing here has
+been confirmed against a real Bravia TV yet — that's what the validation matrix is for.
 
 This is a **second, independent protocol** for Sony TVs — separate from the Android TV
 Remote Protocol v2 section above, which Sony's Google TV models already speak via

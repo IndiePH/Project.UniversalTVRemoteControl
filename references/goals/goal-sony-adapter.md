@@ -439,9 +439,32 @@ to TCL's model).**
       `device.protocolVariant`, since it was brand-only and Bravia would otherwise have
       silently inherited the Android TV path's six-char-hex format.
       Deps: C3. Risk: LOW. Skills: abstraction-domain-modeling.
-- [ ] **C6. Tests + validation matrix updates** for Bravia pairing (PSK entry flow, PIN
-      flow) and command dispatch. Deps: C3, C4, C5. Risk: MEDIUM. Skills:
-      test-creation-strategy, correctness-validation.
+- [x] **C6. Tests + validation matrix.** — **done 2026-08-26.** Scope note: PSK entry
+      flow doesn't apply — PSK auth was never built (Sub-goal C is PIN-mode only, see C2).
+      Added: `sony_bravia_test_lane_test.dart` (9 cases — brand/variant identity, key-alias
+      fallback on failure including the all-aliases-fail path, `playPause`'s deliberate
+      non-mapping, `probeConnection` host propagation, optimistic `supportedCommands`,
+      app-launch resolve+launch, and the no-matching-app failure path); two new
+      `remote_control_di_config_test.dart` cases (Bravia reachability, and
+      `ManualAddVariantProbe` actually receiving both Sony adapters as candidates — a
+      single-candidate brand wouldn't exercise any ordering at all, so this is a real
+      regression guard, not a duplicate of the existing Sony ATV case); a new
+      `manual_add_variant_probe_test.dart` (6 cases — single/zero-candidate zero-I/O
+      short circuits, try-order success, fall-through to the next candidate on failure,
+      full fallback when nothing responds, and brand isolation). `flutter analyze` clean;
+      full suite now 611 tests (was 594), 0 failures.
+      **Deliberately not added:** a widget-level test driving `PairingPage`'s manual-add
+      brand dropdown to TCL specifically. `pairing_page_test.dart`/`widget_test.dart` have
+      no existing precedent for dropdown interaction, and introducing one carries real
+      flakiness risk for marginal gain — the actual logic it would exercise
+      (`_fallbackVariantWithoutProbe`) is a 3-line switch already covered by direct
+      reasoning + the `DefaultManualAddVariantProbe` unit tests above, which exercise the
+      real production path (the probe is always non-null in the running app). Revisit if
+      that fallback logic ever grows past a trivial one-brand special case.
+      Also added: `references/sony_bravia_validation_matrix.md` (on-device runbook,
+      mirrors `tcl_validation_matrix.md`'s shape) and a README doc-index/brand-status-table
+      entry (no Sony row existed there at all before this).
+      Deps: C3, C4, C5. Risk: MEDIUM. Skills: test-creation-strategy, correctness-validation.
 
 ---
 
