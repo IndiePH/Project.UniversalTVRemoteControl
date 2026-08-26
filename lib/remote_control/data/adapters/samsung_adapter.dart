@@ -124,6 +124,10 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
         await _transportClient.launchApp(deviceId: device.id, appId: uri);
       case VidaaLaunch():
         throw UnsupportedError('Samsung has no VidaaLaunch dispatch path.');
+      case PointerCommand():
+        throw UnsupportedError('Samsung has no PointerCommand dispatch path.');
+      case ToggleCommand():
+        throw UnsupportedError('Samsung has no ToggleCommand dispatch path.');
     }
   }
 

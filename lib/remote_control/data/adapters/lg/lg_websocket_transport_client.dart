@@ -7,12 +7,11 @@ import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/application/text_compatibility_error.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/data/adapters/adapter_device_info_log_gate.dart';
+import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_exceptions.dart';
-import 'package:one_remote/remote_control/data/adapters/lg/lg_key_mapper.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_message_builder.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_pairing_key_store.dart';
-import 'package:one_remote/remote_control/data/adapters/transport_command.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 
@@ -78,8 +77,8 @@ class LgWebSocketTransportClient
   // Used by requestClientKey() to return immediately on reconnect.
   final Set<String> _registeredDevices = {};
 
-  // Mute defaults false; power defaults true (WebSocket implies TV is on); playing defaults true.
-  final Map<String, Map<_RemoteStateKey, Object?>> _remoteStates = {};
+  // Mute defaults false; power defaults true (WebSocket implies TV is on); playPause defaults true.
+  final Map<String, Map<LgToggleKind, Object?>> _remoteStates = {};
 
   // IME subscription state for watchRemoteTextInputReady.
   final Map<String, StreamController<bool>> _imeReadyControllers = {};
@@ -87,8 +86,6 @@ class LgWebSocketTransportClient
   // Keyed by SSAP request ID; invoked on every matching response (unlike _pendingRequests).
   final Map<String, void Function(Map<String, dynamic>)> _subscriptionHandlers =
       {};
-
-  late final _LgCommandFactory _commandFactory = _LgCommandFactory(this);
 
   final AdapterDeviceInfoLogGate _logGate = AdapterDeviceInfoLogGate();
   int _reqCounter = 0;
@@ -200,7 +197,62 @@ class LgWebSocketTransportClient
 
   @override
   Future<void> sendKey({required String deviceId, required String keyCode}) =>
-      _commandFactory.getCommand(deviceId, keyCode).execute();
+      _sendSsap(deviceId: deviceId, uri: keyCode, payload: const {});
+
+  @override
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  }) => _sendPointerCommand(deviceId: deviceId, button: button);
+
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) => _sendSsap(
+    deviceId: deviceId,
+    uri: 'ssap://system.launcher/launch',
+    payload: {'id': appLink},
+  );
+
+  @override
+  Future<void> sendToggle({
+    required String deviceId,
+    required LgToggleKind kind,
+  }) async {
+    switch (kind) {
+      case LgToggleKind.mute:
+        final newMute =
+            !(_remoteStates[deviceId]?[LgToggleKind.mute] as bool? ?? false);
+        (_remoteStates[deviceId] ??= {})[LgToggleKind.mute] = newMute;
+        await _sendSsap(
+          deviceId: deviceId,
+          uri: 'ssap://audio/setMute',
+          payload: {'mute': newMute},
+        );
+      case LgToggleKind.power:
+        final newPower =
+            !(_remoteStates[deviceId]?[LgToggleKind.power] as bool? ?? true);
+        (_remoteStates[deviceId] ??= {})[LgToggleKind.power] = newPower;
+        await _sendSsap(
+          deviceId: deviceId,
+          uri: newPower ? 'ssap://system/turnOn' : 'ssap://system/turnOff',
+          payload: const {},
+        );
+      case LgToggleKind.playPause:
+        final nowPlaying =
+            !(_remoteStates[deviceId]?[LgToggleKind.playPause] as bool? ??
+                true);
+        (_remoteStates[deviceId] ??= {})[LgToggleKind.playPause] = nowPlaying;
+        await _sendSsap(
+          deviceId: deviceId,
+          uri: nowPlaying
+              ? 'ssap://media.controls/play'
+              : 'ssap://media.controls/pause',
+          payload: const {},
+        );
+    }
+  }
 
   @override
   Future<void> sendText({
@@ -687,94 +739,3 @@ class LgWebSocketTransportClient
   }
 }
 
-// ---------------------------------------------------------------------------
-// Command dispatch
-// ---------------------------------------------------------------------------
-
-enum _RemoteStateKey { mute, power, playing }
-
-class _LgTransportCommand implements TransportCommand {
-  _LgTransportCommand(this._action);
-  final Future<void> Function() _action;
-
-  @override
-  Future<void> execute() => _action();
-}
-
-class _LgCommandFactory implements TransportCommandFactory {
-  _LgCommandFactory(this._client);
-  final LgWebSocketTransportClient _client;
-
-  @override
-  TransportCommand getCommand(String deviceId, String keyCode) {
-    if (keyCode.startsWith(lgPointerPrefix)) {
-      final button = keyCode.substring(lgPointerPrefix.length);
-      return _LgTransportCommand(
-        () => _client._sendPointerCommand(deviceId: deviceId, button: button),
-      );
-    }
-    if (keyCode.startsWith(lgLaunchPrefix)) {
-      final appId = keyCode.substring(lgLaunchPrefix.length);
-      return _LgTransportCommand(
-        () => _client._sendSsap(
-          deviceId: deviceId,
-          uri: 'ssap://system.launcher/launch',
-          payload: {'id': appId},
-        ),
-      );
-    }
-    if (keyCode == 'ssap://audio/setMute') {
-      return _LgTransportCommand(() async {
-        final newMute =
-            !(_client._remoteStates[deviceId]?[_RemoteStateKey.mute] as bool? ??
-                false);
-        (_client._remoteStates[deviceId] ??= {})[_RemoteStateKey.mute] =
-            newMute;
-        await _client._sendSsap(
-          deviceId: deviceId,
-          uri: keyCode,
-          payload: {'mute': newMute},
-        );
-      });
-    }
-    if (keyCode == lgPowerToggleKey) {
-      return _LgTransportCommand(() async {
-        final newPower =
-            !(_client._remoteStates[deviceId]?[_RemoteStateKey.power]
-                    as bool? ??
-                true);
-        (_client._remoteStates[deviceId] ??= {})[_RemoteStateKey.power] =
-            newPower;
-        await _client._sendSsap(
-          deviceId: deviceId,
-          uri: newPower ? 'ssap://system/turnOn' : 'ssap://system/turnOff',
-          payload: const {},
-        );
-      });
-    }
-    if (keyCode == lgPlayPauseToggleKey) {
-      return _LgTransportCommand(() async {
-        final nowPlaying =
-            !(_client._remoteStates[deviceId]?[_RemoteStateKey.playing]
-                    as bool? ??
-                true);
-        (_client._remoteStates[deviceId] ??= {})[_RemoteStateKey.playing] =
-            nowPlaying;
-        await _client._sendSsap(
-          deviceId: deviceId,
-          uri: nowPlaying
-              ? 'ssap://media.controls/play'
-              : 'ssap://media.controls/pause',
-          payload: const {},
-        );
-      });
-    }
-    return _LgTransportCommand(
-      () => _client._sendSsap(
-        deviceId: deviceId,
-        uri: keyCode,
-        payload: const {},
-      ),
-    );
-  }
-}

@@ -113,6 +113,14 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
         throw UnsupportedError(
           'TCL Google TV has no VidaaLaunch dispatch path.',
         );
+      case PointerCommand():
+        throw UnsupportedError(
+          'TCL Google TV has no PointerCommand dispatch path.',
+        );
+      case ToggleCommand():
+        throw UnsupportedError(
+          'TCL Google TV has no ToggleCommand dispatch path.',
+        );
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_source.dart';
 
@@ -16,6 +17,18 @@ abstract class LgTransportClient
   });
 
   Future<void> sendKey({required String deviceId, required String keyCode});
+
+  /// Sends a button press on the webOS pointer input socket (dpad/back/home).
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  });
+
+  /// Launches an app via `ssap://system.launcher/launch`.
+  Future<void> sendAppLink({required String deviceId, required String appLink});
+
+  /// Flips the tracked state for [kind] and sends the resulting SSAP call.
+  Future<void> sendToggle({required String deviceId, required LgToggleKind kind});
 
   Future<void> sendText({required String deviceId, required String text});
 

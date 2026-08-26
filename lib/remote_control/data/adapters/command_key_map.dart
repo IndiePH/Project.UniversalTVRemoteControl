@@ -51,6 +51,36 @@ final class VidaaLaunch extends CommandPayload {
   int get hashCode => Object.hash(displayName, url);
 }
 
+/// Dispatched via LG's `sendPointerCommand`. Carries the raw pointer-socket button
+/// name with no prefix to parse.
+final class PointerCommand extends CommandPayload {
+  const PointerCommand(this.button);
+  final String button;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PointerCommand && other.button == button;
+
+  @override
+  int get hashCode => button.hashCode;
+}
+
+/// The three stateful toggle behaviors LG's transport tracks per device.
+enum LgToggleKind { power, playPause, mute }
+
+/// Dispatched via LG's `sendToggle`. [kind] tells the transport which tracked
+/// state to flip and which pair of SSAP calls to choose between.
+final class ToggleCommand extends CommandPayload {
+  const ToggleCommand(this.kind);
+  final LgToggleKind kind;
+
+  @override
+  bool operator ==(Object other) => other is ToggleCommand && other.kind == kind;
+
+  @override
+  int get hashCode => kind.hashCode;
+}
+
 bool _listEquals(List<String> a, List<String> b) {
   if (a.length != b.length) return false;
   for (var i = 0; i < a.length; i++) {

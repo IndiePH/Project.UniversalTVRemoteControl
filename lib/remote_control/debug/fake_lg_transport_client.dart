@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
@@ -57,6 +58,66 @@ class FakeLgTransportClient
     );
     log(
       'LG fake transport sendKey: $deviceId -> $keyCode',
+      name: 'lg_transport',
+    );
+  }
+
+  @override
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  }) async {
+    await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'lg',
+        deviceId: deviceId,
+        type: 'pointer_sent',
+        message: button,
+      ),
+    );
+    log(
+      'LG fake transport sendPointerCommand: $deviceId -> $button',
+      name: 'lg_transport',
+    );
+  }
+
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {
+    await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'lg',
+        deviceId: deviceId,
+        type: 'app_link_sent',
+        message: appLink,
+      ),
+    );
+    log(
+      'LG fake transport sendAppLink: $deviceId -> $appLink',
+      name: 'lg_transport',
+    );
+  }
+
+  @override
+  Future<void> sendToggle({
+    required String deviceId,
+    required LgToggleKind kind,
+  }) async {
+    await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'lg',
+        deviceId: deviceId,
+        type: 'toggle_sent',
+        message: kind.name,
+      ),
+    );
+    log(
+      'LG fake transport sendToggle: $deviceId -> ${kind.name}',
       name: 'lg_transport',
     );
   }

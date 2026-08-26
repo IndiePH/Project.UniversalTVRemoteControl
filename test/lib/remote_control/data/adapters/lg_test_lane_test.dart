@@ -5,6 +5,7 @@ import 'package:one_remote/remote_control/application/command_dispatch_result.da
 import 'package:one_remote/remote_control/application/text_compatibility_error.dart';
 import 'package:one_remote/remote_control/application/text_input_compatibility_exception.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_exceptions.dart';
 import 'package:one_remote/remote_control/data/adapters/lg/lg_transport_client.dart';
@@ -193,18 +194,18 @@ void main() {
     },
   );
 
-  test('LG adapter: menu publishes fallback aliases in order', () async {
-    final transport = _ReconnectTrackingLgTransportClient();
-    final adapter = LgAdapter(transportClient: transport);
-    await adapter.sendCommand(device: lgDevice, command: RemoteCommand.menu);
-    expect(
-      transport.sentKeyCodes,
-      containsAllInOrder([
+  test(
+    'LG adapter: menu sends the settings key and launches the settings app',
+    () async {
+      final transport = _ReconnectTrackingLgTransportClient();
+      final adapter = LgAdapter(transportClient: transport);
+      await adapter.sendCommand(device: lgDevice, command: RemoteCommand.menu);
+      expect(transport.sentKeyCodes, [
         'ssap://com.webos.service.settings/launchSettings',
-        'LAUNCH:com.webos.app.settings',
-      ]),
-    );
-  });
+      ]);
+      expect(transport.sentAppLinks, ['com.webos.app.settings']);
+    },
+  );
 
   // --- T-06: submitPairingCode ---
 
@@ -362,6 +363,24 @@ class _SlowLgTransportClient
   }) async {}
 
   @override
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  }) async {}
+
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {}
+
+  @override
+  Future<void> sendToggle({
+    required String deviceId,
+    required LgToggleKind kind,
+  }) async {}
+
+  @override
   Future<void> sendText({
     required String deviceId,
     required String text,
@@ -481,6 +500,24 @@ class _TimeoutLgTransportClient
   }) async {}
 
   @override
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  }) async {}
+
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {}
+
+  @override
+  Future<void> sendToggle({
+    required String deviceId,
+    required LgToggleKind kind,
+  }) async {}
+
+  @override
   Future<void> sendText({
     required String deviceId,
     required String text,
@@ -539,6 +576,24 @@ class _ErrorOnSendLgTransportClient
   }
 
   @override
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  }) async {}
+
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {}
+
+  @override
+  Future<void> sendToggle({
+    required String deviceId,
+    required LgToggleKind kind,
+  }) async {}
+
+  @override
   Future<void> sendText({
     required String deviceId,
     required String text,
@@ -581,6 +636,7 @@ class _ReconnectTrackingLgTransportClient
     implements LgTransportClient {
   int connectCallCount = 0;
   final List<String> sentKeyCodes = [];
+  final List<String> sentAppLinks = [];
 
   @override
   Future<void> connect({required String deviceId}) async {
@@ -600,6 +656,26 @@ class _ReconnectTrackingLgTransportClient
   }) async {
     sentKeyCodes.add(keyCode);
   }
+
+  @override
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  }) async {}
+
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {
+    sentAppLinks.add(appLink);
+  }
+
+  @override
+  Future<void> sendToggle({
+    required String deviceId,
+    required LgToggleKind kind,
+  }) async {}
 
   @override
   Future<void> sendText({
@@ -655,6 +731,24 @@ class _ImeRejectingLgTransportClient
   Future<void> sendKey({
     required String deviceId,
     required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  }) async {}
+
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {}
+
+  @override
+  Future<void> sendToggle({
+    required String deviceId,
+    required LgToggleKind kind,
   }) async {}
 
   @override
@@ -720,6 +814,24 @@ class _ClearPairingTrackingLgTransportClient
   }) async {}
 
   @override
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  }) async {}
+
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {}
+
+  @override
+  Future<void> sendToggle({
+    required String deviceId,
+    required LgToggleKind kind,
+  }) async {}
+
+  @override
   Future<void> sendText({
     required String deviceId,
     required String text,
@@ -775,6 +887,24 @@ class _TextInputReadyLgTransportClient
   Future<void> sendKey({
     required String deviceId,
     required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  }) async {}
+
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {}
+
+  @override
+  Future<void> sendToggle({
+    required String deviceId,
+    required LgToggleKind kind,
   }) async {}
 
   @override
@@ -835,6 +965,24 @@ class _StaleKeyLgTransportClient
   Future<void> sendKey({
     required String deviceId,
     required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> sendPointerCommand({
+    required String deviceId,
+    required String button,
+  }) async {}
+
+  @override
+  Future<void> sendAppLink({
+    required String deviceId,
+    required String appLink,
+  }) async {}
+
+  @override
+  Future<void> sendToggle({
+    required String deviceId,
+    required LgToggleKind kind,
   }) async {}
 
   @override

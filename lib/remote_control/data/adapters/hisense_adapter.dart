@@ -110,6 +110,10 @@ class HisenseAdapter implements TvBrandAdapter {
         }
       case AppLink():
         throw UnsupportedError('Hisense has no AppLink dispatch path.');
+      case PointerCommand():
+        throw UnsupportedError('Hisense has no PointerCommand dispatch path.');
+      case ToggleCommand():
+        throw UnsupportedError('Hisense has no ToggleCommand dispatch path.');
       case VidaaLaunch(:final displayName, :final url):
         await _transportClient.launchVidaaApp(
           deviceId: device.id,

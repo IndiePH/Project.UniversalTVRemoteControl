@@ -91,6 +91,14 @@ class TclLegacyWifiAdapter implements TvBrandAdapter {
         throw UnsupportedError(
           'TCL legacy Wi-Fi has no VidaaLaunch dispatch path.',
         );
+      case PointerCommand():
+        throw UnsupportedError(
+          'TCL legacy Wi-Fi has no PointerCommand dispatch path.',
+        );
+      case ToggleCommand():
+        throw UnsupportedError(
+          'TCL legacy Wi-Fi has no ToggleCommand dispatch path.',
+        );
     }
   }
 

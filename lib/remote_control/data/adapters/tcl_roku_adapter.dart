@@ -85,6 +85,10 @@ class TclRokuAdapter implements TvBrandAdapter {
         await _transportClient.launchApp(deviceId: device.id, appId: uri);
       case VidaaLaunch():
         throw UnsupportedError('Roku has no VidaaLaunch dispatch path.');
+      case PointerCommand():
+        throw UnsupportedError('Roku has no PointerCommand dispatch path.');
+      case ToggleCommand():
+        throw UnsupportedError('Roku has no ToggleCommand dispatch path.');
     }
   }
 
