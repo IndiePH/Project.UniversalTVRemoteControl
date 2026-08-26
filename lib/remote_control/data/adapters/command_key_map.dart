@@ -75,7 +75,8 @@ final class ToggleCommand extends CommandPayload {
   final ToggleKind kind;
 
   @override
-  bool operator ==(Object other) => other is ToggleCommand && other.kind == kind;
+  bool operator ==(Object other) =>
+      other is ToggleCommand && other.kind == kind;
 
   @override
   int get hashCode => kind.hashCode;

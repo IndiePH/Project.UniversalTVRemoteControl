@@ -27,10 +27,7 @@ void main() {
   });
 
   test('LgKeyMapper: pointer commands return PointerCommand', () {
-    expect(
-      mapper.payloadFor(RemoteCommand.dpadUp),
-      const PointerCommand('UP'),
-    );
+    expect(mapper.payloadFor(RemoteCommand.dpadUp), const PointerCommand('UP'));
     expect(
       mapper.payloadFor(RemoteCommand.dpadDown),
       const PointerCommand('DOWN'),
@@ -86,16 +83,13 @@ void main() {
     );
   });
 
-  test(
-    'LgKeyMapper: menu returns the plain settings key (settings-app launch '
-    'is dispatched separately by LgAdapter)',
-    () {
-      expect(
-        mapper.payloadFor(RemoteCommand.menu),
-        const KeySequence(['ssap://com.webos.service.settings/launchSettings']),
-      );
-    },
-  );
+  test('LgKeyMapper: menu returns the plain settings key (settings-app launch '
+      'is dispatched separately by LgAdapter)', () {
+    expect(
+      mapper.payloadFor(RemoteCommand.menu),
+      const KeySequence(['ssap://com.webos.service.settings/launchSettings']),
+    );
+  });
 
   test('LgKeyMapper: all kCommonSupportedRemoteCommands are mapped', () {
     final unmapped = kCommonSupportedRemoteCommands

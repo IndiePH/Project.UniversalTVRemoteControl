@@ -241,8 +241,7 @@ class LgWebSocketTransportClient
         );
       case ToggleKind.playPause:
         final nowPlaying =
-            !(_remoteStates[deviceId]?[ToggleKind.playPause] as bool? ??
-                true);
+            !(_remoteStates[deviceId]?[ToggleKind.playPause] as bool? ?? true);
         (_remoteStates[deviceId] ??= {})[ToggleKind.playPause] = nowPlaying;
         await _sendSsap(
           deviceId: deviceId,
@@ -738,4 +737,3 @@ class LgWebSocketTransportClient
     throw SocketException('$host unreachable on LG ports');
   }
 }
-
