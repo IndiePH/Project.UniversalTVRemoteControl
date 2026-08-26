@@ -82,15 +82,9 @@ class AndroidTvAdapter implements TvBrandAdapter {
         }
       case AppLink(:final uri):
         await _transportClient.sendAppLink(deviceId: device.id, appLink: uri);
-      case VidaaLaunch():
-        throw UnsupportedError('Android TV has no VidaaLaunch dispatch path.');
-      case PointerCommand():
+      default:
         throw UnsupportedError(
-          'Android TV has no PointerCommand dispatch path.',
-        );
-      case ToggleCommand():
-        throw UnsupportedError(
-          'Android TV has no ToggleCommand dispatch path.',
+          'Android TV has no dispatch path for ${payload.runtimeType}.',
         );
     }
   }

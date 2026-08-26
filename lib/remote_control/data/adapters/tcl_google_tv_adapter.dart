@@ -109,17 +109,9 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
         }
       case AppLink(:final uri):
         await _transportClient.sendAppLink(deviceId: device.id, appLink: uri);
-      case VidaaLaunch():
+      default:
         throw UnsupportedError(
-          'TCL Google TV has no VidaaLaunch dispatch path.',
-        );
-      case PointerCommand():
-        throw UnsupportedError(
-          'TCL Google TV has no PointerCommand dispatch path.',
-        );
-      case ToggleCommand():
-        throw UnsupportedError(
-          'TCL Google TV has no ToggleCommand dispatch path.',
+          'TCL Google TV has no dispatch path for ${payload.runtimeType}.',
         );
     }
   }

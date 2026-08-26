@@ -125,8 +125,10 @@ class LgAdapter implements TvBrandAdapter {
         );
       case ToggleCommand(:final kind):
         await _transportClient.sendToggle(deviceId: device.id, kind: kind);
-      case VidaaLaunch():
-        throw UnsupportedError('LG has no VidaaLaunch dispatch path.');
+      default:
+        throw UnsupportedError(
+          'LG has no dispatch path for ${payload.runtimeType}.',
+        );
     }
   }
 
