@@ -1,8 +1,9 @@
 # Goal: Sony TV Adapter
 
 **Branch:** `feature/sony-adapter` (current)
-**Status:** planning — no implementation started
+**Status:** Sub-goal A shipped, merged, and hardware-confirmed (tested by the user against a real Chromecast device). Sub-goal B (research spike) done. Sub-goal C is implemented — `SonyBraviaAdapter` and `lib/remote_control/data/adapters/sony/` are fully wired into DI and unit-tested, `flutter analyze`/`flutter test` clean — but has never run against real Sony BRAVIA hardware; see `references/temporary-sony-implementation-info.md` ("Status in one paragraph") for the authoritative detail.
 **Related:** `references/guide-protocol-variants.md` (variant mechanism this goal partly relies on, partly may not fit — see Open questions), `references/guide-tv-remote-protocols.md` (the shared Android TV Remote Protocol v2 section Sub-goal A reuses; Sub-goal C's BRAVIA IP Control gets its own section there once it ships — see B3)
+**Retires when:** Sub-goal C is validated against real Sony BRAVIA hardware (every row of `references/sony_bravia_validation_matrix.md` checked) — at that point this doc's load-bearing content should be migrated into `references/guide-tv-remote-protocols.md` and this file deleted. Same trigger event as `references/temporary-sony-implementation-info.md`'s own stated retirement condition, so the two retire together.
 
 > ⚠️ **This document has not been verified or approved by the user beyond the initial
 > breakdown.** Sub-goal A's design is grounded in a direct source read of
