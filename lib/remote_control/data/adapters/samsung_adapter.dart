@@ -122,8 +122,10 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
         }
       case AppLink(:final uri):
         await _transportClient.launchApp(deviceId: device.id, appId: uri);
-      case VidaaLaunch():
-        throw UnsupportedError('Samsung has no VidaaLaunch dispatch path.');
+      default:
+        throw UnsupportedError(
+          'Samsung has no dispatch path for ${payload.runtimeType}.',
+        );
     }
   }
 
