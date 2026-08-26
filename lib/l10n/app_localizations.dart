@@ -598,6 +598,18 @@ abstract class AppLocalizations {
   /// **'No TVs found yet. Run a scan to discover devices.'**
   String get pairingNoDevicesFound;
 
+  /// No description provided for @pairingScanningSameNetworkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure your TV and phone are on the same Wi-Fi network.'**
+  String get pairingScanningSameNetworkHint;
+
+  /// No description provided for @pairingScanningTvSettingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Some TVs need a setting enabled to be discoverable.'**
+  String get pairingScanningTvSettingHint;
+
   /// No description provided for @pairingAddManuallyTooltip.
   ///
   /// In en, this message translates to:
