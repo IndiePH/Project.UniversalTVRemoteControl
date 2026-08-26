@@ -141,8 +141,10 @@ class SonyBraviaAdapter implements TvBrandAdapter {
         throw UnsupportedError(
           'Sony BRAVIA dispatches app launch via resolveAppUri, not AppLink.',
         );
-      case VidaaLaunch():
-        throw UnsupportedError('Sony BRAVIA has no VidaaLaunch dispatch path.');
+      default:
+        throw UnsupportedError(
+          'Sony BRAVIA has no dispatch path for ${payload.runtimeType}.',
+        );
     }
   }
 

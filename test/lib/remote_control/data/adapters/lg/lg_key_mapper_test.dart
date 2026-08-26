@@ -17,10 +17,6 @@ void main() {
       const KeySequence(['ssap://audio/volumeDown']),
     );
     expect(
-      mapper.payloadFor(RemoteCommand.power),
-      const KeySequence([lgPowerToggleKey]),
-    );
-    expect(
       mapper.payloadFor(RemoteCommand.channelUp),
       const KeySequence(['ssap://tv/channelUp']),
     );
@@ -30,74 +26,68 @@ void main() {
     );
   });
 
-  test('LgKeyMapper: pointer commands return POINTER: sentinel', () {
-    expect(
-      mapper.payloadFor(RemoteCommand.dpadUp),
-      const KeySequence(['${lgPointerPrefix}UP']),
-    );
+  test('LgKeyMapper: pointer commands return PointerCommand', () {
+    expect(mapper.payloadFor(RemoteCommand.dpadUp), const PointerCommand('UP'));
     expect(
       mapper.payloadFor(RemoteCommand.dpadDown),
-      const KeySequence(['${lgPointerPrefix}DOWN']),
+      const PointerCommand('DOWN'),
     );
     expect(
       mapper.payloadFor(RemoteCommand.dpadLeft),
-      const KeySequence(['${lgPointerPrefix}LEFT']),
+      const PointerCommand('LEFT'),
     );
     expect(
       mapper.payloadFor(RemoteCommand.dpadRight),
-      const KeySequence(['${lgPointerPrefix}RIGHT']),
+      const PointerCommand('RIGHT'),
     );
     expect(
       mapper.payloadFor(RemoteCommand.dpadOk),
-      const KeySequence(['${lgPointerPrefix}ENTER']),
+      const PointerCommand('ENTER'),
     );
-    expect(
-      mapper.payloadFor(RemoteCommand.back),
-      const KeySequence(['${lgPointerPrefix}BACK']),
-    );
-    expect(
-      mapper.payloadFor(RemoteCommand.home),
-      const KeySequence(['${lgPointerPrefix}HOME']),
-    );
+    expect(mapper.payloadFor(RemoteCommand.back), const PointerCommand('BACK'));
+    expect(mapper.payloadFor(RemoteCommand.home), const PointerCommand('HOME'));
   });
 
-  test('LgKeyMapper: power and playPause return toggle sentinels', () {
+  test('LgKeyMapper: power, mute, and playPause return ToggleCommand', () {
     expect(
       mapper.payloadFor(RemoteCommand.power),
-      const KeySequence([lgPowerToggleKey]),
+      const ToggleCommand(ToggleKind.power),
+    );
+    expect(
+      mapper.payloadFor(RemoteCommand.mute),
+      const ToggleCommand(ToggleKind.mute),
     );
     expect(
       mapper.payloadFor(RemoteCommand.playPause),
-      const KeySequence([lgPlayPauseToggleKey]),
+      const ToggleCommand(ToggleKind.playPause),
     );
   });
 
-  test('LgKeyMapper: app launches return LAUNCH: sentinel with app ID', () {
-    expect(
-      mapper.payloadFor(RemoteCommand.netflix),
-      const KeySequence(['${lgLaunchPrefix}netflix']),
-    );
+  test('LgKeyMapper: app launches return AppLink with app ID', () {
+    expect(mapper.payloadFor(RemoteCommand.netflix), const AppLink('netflix'));
     expect(
       mapper.payloadFor(RemoteCommand.primeVideo),
-      const KeySequence(['${lgLaunchPrefix}amazon']),
+      const AppLink('amazon'),
     );
     expect(
       mapper.payloadFor(RemoteCommand.disneyPlus),
-      const KeySequence(['${lgLaunchPrefix}disneyplus']),
+      const AppLink('disneyplus'),
+    );
+    expect(
+      mapper.payloadFor(RemoteCommand.youtube),
+      const AppLink('youtube.leanback.v4'),
     );
     expect(
       mapper.payloadFor(RemoteCommand.web),
-      const KeySequence(['${lgLaunchPrefix}com.webos.app.browser']),
+      const AppLink('com.webos.app.browser'),
     );
   });
 
-  test('LgKeyMapper: menu returns fallback settings entry points', () {
+  test('LgKeyMapper: menu returns the plain settings key (settings-app launch '
+      'is dispatched separately by LgAdapter)', () {
     expect(
       mapper.payloadFor(RemoteCommand.menu),
-      const KeySequence([
-        'ssap://com.webos.service.settings/launchSettings',
-        '${lgLaunchPrefix}com.webos.app.settings',
-      ]),
+      const KeySequence(['ssap://com.webos.service.settings/launchSettings']),
     );
   });
 

@@ -87,8 +87,10 @@ class SonyAdapter implements TvBrandAdapter {
         }
       case AppLink(:final uri):
         await _transportClient.sendAppLink(deviceId: device.id, appLink: uri);
-      case VidaaLaunch():
-        throw UnsupportedError('Sony has no VidaaLaunch dispatch path.');
+      default:
+        throw UnsupportedError(
+          'Sony has no dispatch path for ${payload.runtimeType}.',
+        );
     }
   }
 
