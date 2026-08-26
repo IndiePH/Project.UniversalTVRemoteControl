@@ -28,7 +28,7 @@ each one has access to different information and none of them can substitute for
 |---|---|---|---|
 | 1 | Discovery time | `DiscoveryVariantResolutionRegistry` | implemented |
 | 2 | Pairing time | `VariantResolutionRegistry` | implemented |
-| 3 | Manual add (by IP) | `ManualAddVariantProbe` | planned, not yet built |
+| 3 | Manual add (by IP) | `ManualAddVariantProbe` | implemented |
 
 ### 1. Discovery time (structural) — `DiscoveryVariantResolutionRegistry`
 
@@ -95,15 +95,16 @@ After pairing, `TvDevice.protocolVariant` is available on every call to `sendCom
 
 ### 3. Manual add, by IP (structural) — `ManualAddVariantProbe`
 
-**Status: planned, not yet built.** See `references/goals/goal-sony-adapter.md`'s Decisions
-log ("B2 recommendation #3 superseded" entry) for the full design trail.
+**Status: implemented.** **File:** `lib/remote_control/data/manual_add_variant_probe.dart`.
+See `references/goals/goal-sony-adapter.md`'s Decisions log ("B2 recommendation #3
+superseded" entry) for the full design trail.
 
 When a device is added by typing a brand + IP directly, no scanner ever ran — there is no
 `DiscoverySource` to look up (mechanism #1 doesn't apply), and no adapter has probed the TV
 yet either (mechanism #2 doesn't apply). Neither existing resolver has anything to key off.
-The planned fix: probe each of the brand's known variants directly. Every `TvBrandAdapter`
-already implements a safe, side-effect-free `probeConnection` (raw TCP connect + close, no
-protocol handshake, no pairing/PIN ever triggered — see `android_tv_tcp_transport_client.dart`'s
+The fix: probe each of the brand's known variants directly. Every `TvBrandAdapter` already
+implements a safe, side-effect-free `probeConnection` (raw TCP connect + close, no protocol
+handshake, no pairing/PIN ever triggered — see `android_tv_tcp_transport_client.dart`'s
 `probe()`, already relied on in production by `AdapterTvReachabilityService`), so the first
 candidate variant whose adapter is reachable wins, with `?? TvDevice.defaultProtocolVariant`
 if none respond:
@@ -114,9 +115,28 @@ abstract interface class ManualAddVariantProbe {
 }
 ```
 
-Candidates come from the DI-built `List<TvBrandAdapter>` (already the source of truth for
-"which variants exist" — see "Why three separate mechanisms, not one" below), not a new
-static table. This section will be filled in with the real implementation once it ships.
+`DefaultManualAddVariantProbe` derives candidates from the DI-built `List<TvBrandAdapter>`
+(already the source of truth for "which variants exist" — see "Why three separate
+mechanisms, not one" below), not a new static table. It short-circuits to the single known
+variant with zero I/O for every brand except Sony (today's only brand with two live
+variants), and probes in an explicit private try-order (`_variantTryOrder` — Google TV path
+before Bravia) since `DiscoveredDeviceSupport.brandIdentificationPriority` can't order
+between one brand's own variants (it's keyed by `TvBrand` only).
+
+Wired into `pairing_page.dart`'s `_addManualDevice` as an **optional** field on
+`PairingPage` (`manualAddVariantProbe`), not a required one — making it required would have
+broken every test constructing `PairingPage` directly. When the probe *is* provided (always
+true in production), TCL needs no special case at the call site: the probe's own
+single-candidate short-circuit already resolves it to `legacyWifi` (confirmed only one TCL
+adapter, `TclLegacyWifiAdapter`, is actually registered in DI — `TclRokuAdapter` reports
+`TvBrand.roku`, not `TvBrand.tcl`). When the probe is `null` (test convenience only), a
+bare `TvDevice.defaultProtocolVariant` fallback would silently reintroduce the exact bug
+the original hardcoded ternary existed to prevent — `_adapterFor` does a direct,
+no-fallback `(brand, variant)` map lookup, and `'default'` doesn't match what
+`TclLegacyWifiAdapter` actually reports, so a manually-added TCL device would resolve to no
+adapter at all. `_fallbackVariantWithoutProbe` (`pairing_page.dart`) keeps this one
+brand-specific case for exactly that reason — every other brand's default adapter already
+uses `TvDevice.defaultProtocolVariant` itself, so no other case is needed.
 
 ---
 
@@ -177,8 +197,8 @@ fact is already single-sourced by the DI-built `List<TvBrandAdapter>`
 (`remote_control_di_config.dart`) — every real variant requires an adapter to do anything at
 all, so an adapter's `(brand, protocolVariant)` pair already declares that the variant
 exists. `BrandRoutedRemoteCommandService` already builds its dispatch map straight from that
-list; `ManualAddVariantProbe` (once built) should filter the same list rather than introduce
-a second one that could drift out of sync. Discovery does **not** need this list at all —
+list; `ManualAddVariantProbe` filters that exact same list rather than introducing a second
+one that could drift out of sync. Discovery does **not** need this list at all —
 none of the three scanners nor `CompositeDeviceDiscoveryService` take any adapter dependency,
 since discovery-time resolution only has to answer "what string goes into `protocolVariant`,"
 a pure lookup that never needed the adapter's actual behavior.

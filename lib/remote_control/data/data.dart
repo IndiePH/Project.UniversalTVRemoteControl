@@ -5,6 +5,7 @@ export 'discovery_variant_resolution_registry.dart';
 export 'fake_device_discovery_service.dart';
 export 'in_memory_device_repository.dart';
 export 'in_memory_remote_command_service.dart';
+export 'manual_add_variant_probe.dart';
 export 'mdns_device_discovery_service.dart';
 export 'multiplexed_tv_connection_state_service.dart';
 export 'pairing_progress_hint_registry.dart';

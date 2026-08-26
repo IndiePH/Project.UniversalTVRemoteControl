@@ -345,30 +345,100 @@ architecture decision (e.g., C1 assumes the protocol-variant mechanism applies; 
 concludes it doesn't fit, this becomes a separate adapter/brand-selection path instead, closer
 to TCL's model).**
 
-- [ ] **C1. Add `sony_bravia` selection mechanism** per B2's decision (protocol-variant
-      constant, or alternate mechanism). Deps: B3. Risk: MEDIUM.
-      Skills: design-pattern-selection, abstraction-domain-modeling.
-- [ ] **C2. Build `SonyBraviaTransportClient`** (HTTP/REST, `X-Auth-PSK` + PIN auth per B1
-      findings). Deps: B3. Risk: MEDIUM. Skills: api-design, security, error-handling-resilience.
-- [ ] **C3. Build `SonyBraviaAdapter`** implementing `TvBrandAdapter`. Deps: C1, C2. Risk:
-      MEDIUM. Skills: language-specific-implementation, framework-mastery.
-- [ ] **C4. Register variant-resolution entry (or equivalent) + DI wiring.** Deps: C1, C3.
-      Risk: LOW. Skills: language-specific-implementation.
-- [ ] **C4b. Build `ManualAddVariantProbe`** per the "B2 recommendation #3 superseded" decision
-      log entry — derives candidates from the DI-built `List<TvBrandAdapter>` (already the source
-      of truth for "which variants exist," see the "single source of truth" decision log entry —
-      do not add a new static table), probes each candidate for `brand` via `probeConnection` in
-      an explicit try-order still TBD (`brandIdentificationPriority` does NOT apply here — it's
-      keyed by `TvBrand` only, and both of Sony's variants report `TvBrand.sony`, so it cannot
-      order between a brand's own variants; needs its own small ordering, e.g. a private ordered
-      list inside `ManualAddVariantProbe` itself), first success wins, `?? TvDevice.defaultProtocolVariant`
-      if none respond; short-circuits to the single known variant (no I/O) for every brand except
-      Sony. Wire into `_addManualDevice` (`pairing_page.dart:530`) above
-      `PairingPageData.buildManualDevice(...)`. Deps: C3 (needs `SonyBraviaAdapter` to exist as a
-      second candidate). Risk: MEDIUM. Skills: design-pattern-selection, api-design.
-- [ ] **C5. `TvCapabilities` override if capabilities differ** from the Google TV path
-      (e.g. Bravia's richer input-switching/app-launch catalog per verified fact #11). Deps:
-      C3. Risk: LOW. Skills: abstraction-domain-modeling.
+- [x] **C1. Add `sony_bravia` selection mechanism** per B2's decision (protocol-variant
+      constant, or alternate mechanism). — **done 2026-08-26** (commit `3ce7dfe`).
+      `SonyProtocolVariants.braviaIpControl` added; SSDP fingerprint added to
+      `inferSsdpTvBrand` (matches `scalarwebapi` only, not bare `sony` — that URN is
+      also used by Sony's non-TV Songpal audio gear); `(TvBrand.sony,
+      DiscoverySource.ssdp) -> braviaIpControl` added to
+      `DefaultDiscoveryVariantResolutionRegistry._discoveryEntries`, exactly the entry
+      the class's own comment already anticipated.
+      Deps: B3. Risk: MEDIUM. Skills: design-pattern-selection, abstraction-domain-modeling.
+- [x] **C2. Build `SonyBraviaTransportClient`** — **done 2026-08-26** (commit `3ce7dfe`),
+      **scope note: PIN-mode only this pass, not `X-Auth-PSK`** — PSK needs a new
+      "type in a permanent key" UI screen with no precedent anywhere in this app, so it's
+      deferred to a later pass (see the guide's Sony BRAVIA section). Built:
+      `SonyBraviaTransportClient`/`SonyBraviaHttpTransportClient` (the two-call
+      `actRegister` handshake, cookie + Basic-Auth session persistence via
+      `SonyBraviaPairingSessionStore`), `SonyBraviaKeyMapper`. Command dispatch is
+      IRCC-by-name only (no separate REST path for power/volume/etc., a simplification
+      from this task's original framing) — codes and app-launch URIs are both resolved
+      per-device at runtime (`getRemoteControllerInfo`/`getApplicationList`), never
+      hardcoded, since Sony assigns them per model/firmware. Caught and fixed during a
+      correctness re-check: a cookie-header bug that would have broken every request
+      after the first successful pairing (was replaying raw `Set-Cookie` attribute
+      strings instead of just `name=value`), and an exact-match-before-substring fix
+      for app-title lookups. Deps: B3. Risk: MEDIUM. Skills: api-design, security,
+      error-handling-resilience.
+- [x] **C3. Build `SonyBraviaAdapter`** implementing `TvBrandAdapter`. — **done 2026-08-26**
+      (commit `3ce7dfe`). App-launch (Netflix/YouTube confirmed titles, Prime Video/
+      Disney+ best-guess) is resolved via Sony's official `getApplicationList`/
+      `setActiveApp`, cached **per host inside the transport**, not via a shared
+      `CommandPayload`/`VariantKeyMap` override — that would leak one physical TV's app
+      URIs onto another, since this adapter is one shared instance across every paired
+      Bravia TV (confirmed via `brand_routed_remote_command_service.dart`'s
+      `(brand, variant) -> adapter` map — adapters are never per-device). `sendCommand`
+      decomposed into `_dispatchAppLaunch`/`_dispatchKeySequence`/`_sendFirstWorkingKey`
+      after a `clean-code-solid.md` check flagged the original single-method version for
+      mixing an if-branch and a switch at the same abstraction level.
+      Deps: C1, C2. Risk: MEDIUM. Skills: language-specific-implementation, framework-mastery.
+- [x] **C4. DI wiring.** — **done 2026-08-26.** The variant-resolution entry itself landed
+      with C1. This task was the remaining DI piece: `SonyBraviaPairingSessionStore` +
+      `SonyBraviaHttpTransportClient` registered in `RemoteControlDiConfig` (mirrors
+      `LgPairingKeyStore`/`SamsungPairingTokenStore`'s registration shape exactly,
+      reusing the shared `resolveHost` — confirmed this matters: the transport's
+      `hostResolver` defaults to a broken IP-regex-from-id fallback, so it must get the
+      real identity-aware resolver, same as every other host-resolving transport
+      client); `FakeSonyBraviaTransportClient` (new, mirrors `FakeHisenseTransportClient`
+      — keeps the real PIN gate alive with a fixed fake PIN so the pairing UX is
+      testable in debug builds) registered in `DebugRemoteControlDiConfig`.
+      `SonyBraviaAdapter` added to both adapter-list literals alongside `SonyAdapter`.
+      One pre-existing test needed updating:
+      `discovery_variant_resolution_registry_test.dart` used `TvBrand.sony` as its
+      "unmapped brand" example, which broke once C1's real Sony/SSDP entry landed —
+      fixed to use `TvBrand.roku` for the unmapped case and added explicit coverage for
+      the new Sony/SSDP mapping and Sony's still-unmapped other sources. `flutter
+      analyze` and the full `flutter test` suite (594 tests) are clean.
+      Deps: C1, C3. Risk: LOW. Skills: language-specific-implementation.
+- [x] **C4b. Build `ManualAddVariantProbe`** — **done 2026-08-26.** Built exactly per the
+      "B2 recommendation #3 superseded" decision log entry: `DefaultManualAddVariantProbe`
+      derives candidates from the DI-built `List<TvBrandAdapter>` (the same local `adapters`
+      var already passed to `BrandRoutedRemoteCommandService`, not a new list), short-circuits
+      to the single known variant with no I/O for every brand except Sony, and probes with an
+      explicit private try-order (`_variantTryOrder`, Google TV path before Bravia) since
+      `brandIdentificationPriority` can't order between one brand's own variants. Wired into
+      `_addManualDevice` (`pairing_page.dart`) — **as an optional field**, not required: making
+      it required would have broken every test that constructs `PairingPage` directly
+      (`pairing_page_test.dart`, `widget_test.dart`), so it follows the same
+      nullable-with-fallback pattern already established for `identityRegistry`/
+      `layoutRepository` on that same widget. When the probe *is* provided (always true in
+      production), TCL needs no special case — the probe's own single-candidate
+      short-circuit already resolves it to `legacyWifi`, since only one TCL adapter
+      (`TclLegacyWifiAdapter`) is actually registered in DI (`TclRokuAdapter` reports
+      `TvBrand.roku`, not `TvBrand.tcl`). **Correction, same day:** an earlier pass on this
+      task simplified the null-probe fallback to a bare `TvDevice.defaultProtocolVariant`,
+      reasoning no test exercised the gap — user caught that this silently reintroduces the
+      exact bug the original hardcoded ternary (`git log -S`-traced to `a9f75dda`) existed
+      to prevent: `_adapterFor` does a direct, no-fallback `(brand, variant)` map lookup, so
+      `'default'` resolves to *no adapter at all* for a manually-added TCL device, not a
+      harmless default. Fixed via `_fallbackVariantWithoutProbe` (`pairing_page.dart`), a
+      named helper keeping TCL's one brand-specific case for exactly that documented reason
+      — every other brand's default adapter already uses `TvDevice.defaultProtocolVariant`
+      itself. `flutter analyze` and the full `flutter test` suite (594 tests, unchanged
+      count — no existing test needed updating) are clean.
+      Deps: C3 (needed `SonyBraviaAdapter` to exist as a second candidate). Risk: MEDIUM.
+      Skills: design-pattern-selection, api-design, abstraction-domain-modeling.
+- [x] **C5. `TvCapabilities` override** — **done 2026-08-26** (commit `3ce7dfe`, built
+      alongside C3 since `preparePairing`'s dynamic PIN flow needed it to behave
+      correctly). Added `(sony, braviaIpControl) -> {keyCommands, powerControl,
+      pinPairing}` (no `textInput` — Bravia's REST API has no text-input endpoint found
+      this session); added `PinFormat.freeform` since Bravia's PIN has no fixed shape
+      (confirmed via `pybravia`/Home Assistant's `braviatv` config flow, neither
+      validates it client-side); fixed `pinFormatFor`'s only `PinRequiredException`
+      call site (`brand_routed_remote_command_service.dart`) to pass
+      `device.protocolVariant`, since it was brand-only and Bravia would otherwise have
+      silently inherited the Android TV path's six-char-hex format.
+      Deps: C3. Risk: LOW. Skills: abstraction-domain-modeling.
 - [ ] **C6. Tests + validation matrix updates** for Bravia pairing (PSK entry flow, PIN
       flow) and command dispatch. Deps: C3, C4, C5. Risk: MEDIUM. Skills:
       test-creation-strategy, correctness-validation.

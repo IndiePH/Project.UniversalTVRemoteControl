@@ -11,6 +11,7 @@ import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
+import 'package:one_remote/remote_control/data/manual_add_variant_probe.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
 import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
@@ -88,6 +89,9 @@ final class RemoteHomeActions {
               ? sl<DeviceIdentityRegistry>()
               : null,
           layoutRepository: layoutRepository,
+          manualAddVariantProbe: sl.isRegistered<ManualAddVariantProbe>()
+              ? sl<ManualAddVariantProbe>()
+              : null,
         ),
       ),
     );
