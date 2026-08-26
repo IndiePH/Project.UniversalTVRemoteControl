@@ -68,9 +68,15 @@ class DefaultManualAddVariantProbe implements ManualAddVariantProbe {
     if (order == null) {
       return candidates;
     }
-    return [
+    final ordered = <TvBrandAdapter>[
       for (final variant in order)
         ...candidates.where((a) => a.protocolVariant == variant),
     ];
+    // A candidate whose variant isn't listed in _variantTryOrder must still
+    // be tried (deprioritized, not dropped) — otherwise a third variant ever
+    // added to this brand without updating the map above would silently
+    // never get probed at all.
+    final unlisted = candidates.where((a) => !ordered.contains(a));
+    return [...ordered, ...unlisted];
   }
 }

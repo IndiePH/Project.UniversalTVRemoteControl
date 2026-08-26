@@ -395,6 +395,15 @@ class SonyBraviaHttpTransportClient
         );
       }
       final decoded = jsonDecode(body) as Map<String, dynamic>;
+      // Sony's REST API reports semantic failures ("app not found", "invalid
+      // params", etc.) as {"error": [code, message]} on an HTTP 200 — an
+      // HTTP-status-only check would silently treat this as success (e.g.
+      // launchApp would report success even when the TV refused).
+      if (decoded.containsKey('error')) {
+        throw HttpException(
+          'Sony BRAVIA $service.$method returned an error: ${decoded['error']}',
+        );
+      }
       return decoded['result'];
     } finally {
       client.close(force: true);

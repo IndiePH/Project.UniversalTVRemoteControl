@@ -129,6 +129,41 @@ void main() {
 
     expect(lg.probedDevices, isEmpty);
   });
+
+  test(
+    'still probes a candidate whose variant is missing from _variantTryOrder '
+    '(deprioritized, not silently dropped)',
+    () async {
+      final googleTvPath = _FakeAdapter(
+        brand: TvBrand.sony,
+        protocolVariant: SonyProtocolVariants.defaultVariant,
+        probeSucceeds: false,
+      );
+      final braviaPath = _FakeAdapter(
+        brand: TvBrand.sony,
+        protocolVariant: SonyProtocolVariants.braviaIpControl,
+        probeSucceeds: false,
+      );
+      // Not in _variantTryOrder[TvBrand.sony] at all — simulates a future
+      // third variant added to the adapters list before anyone remembered
+      // to update the try-order map.
+      final futurePath = _FakeAdapter(
+        brand: TvBrand.sony,
+        protocolVariant: 'sony_future_variant',
+      );
+      final probe = DefaultManualAddVariantProbe(
+        adapters: [futurePath, braviaPath, googleTvPath],
+      );
+
+      final variant = await probe.resolve(
+        brand: TvBrand.sony,
+        host: '10.0.0.7',
+      );
+
+      expect(variant, 'sony_future_variant');
+      expect(futurePath.probedDevices, hasLength(1));
+    },
+  );
 }
 
 class _FakeAdapter extends TvBrandAdapter {

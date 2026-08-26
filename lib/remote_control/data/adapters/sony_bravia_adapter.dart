@@ -153,7 +153,9 @@ class SonyBraviaAdapter implements TvBrandAdapter {
     required TvDevice device,
     required List<String> codes,
   }) async {
-    Object? lastError;
+    Object lastError = StateError(
+      'SonyBraviaKeyMapper returned an empty alias list for this command.',
+    );
     for (final code in codes) {
       try {
         await _transportClient.sendKey(deviceId: device.id, keyCode: code);
@@ -162,7 +164,7 @@ class SonyBraviaAdapter implements TvBrandAdapter {
         lastError = e;
       }
     }
-    throw lastError!;
+    throw lastError;
   }
 
   @override
