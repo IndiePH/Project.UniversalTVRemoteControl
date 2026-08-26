@@ -41,6 +41,12 @@ final class AppLocalizedStrings implements LocalizedStrings {
   @override
   String get pairingAndroidTvPreStep1 => _l10n.pairingAndroidTvPreStep1;
   @override
+  String get pairingSonyProgressHint => _l10n.pairingSonyProgressHint;
+  @override
+  String get pairingSonyPreStep0 => _l10n.pairingSonyPreStep0;
+  @override
+  String get pairingSonyPreStep1 => _l10n.pairingSonyPreStep1;
+  @override
   String get pairingRokuProgressHint => _l10n.pairingRokuProgressHint;
   @override
   String get pairingRokuPreStep0 => _l10n.pairingRokuPreStep0;

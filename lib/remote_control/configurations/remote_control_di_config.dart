@@ -31,12 +31,18 @@ import 'package:one_remote/remote_control/data/adapters/lg_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_websocket_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/sony/sony_bravia_http_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/sony/sony_bravia_pairing_session_store.dart';
+import 'package:one_remote/remote_control/data/adapters/sony/sony_bravia_transport_client.dart';
+import 'package:one_remote/remote_control/data/adapters/sony_adapter.dart';
+import 'package:one_remote/remote_control/data/adapters/sony_bravia_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/roku_http_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/roku_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_legacy_tcp_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_legacy_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_lg_transport_client.dart';
 import 'package:one_remote/remote_control/debug/fake_samsung_transport_client.dart';
+import 'package:one_remote/remote_control/debug/fake_sony_bravia_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl_legacy_wifi_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl_roku_adapter.dart';
 
@@ -57,6 +63,9 @@ void _configureShared(GetIt sl) {
   );
   sl.registerSingleton<VariantResolutionRegistry>(
     const DefaultVariantResolutionRegistry(),
+  );
+  sl.registerSingleton<DiscoveryVariantResolutionRegistry>(
+    const DefaultDiscoveryVariantResolutionRegistry(),
   );
 }
 
@@ -130,9 +139,18 @@ final class RemoteControlDiConfig implements IDiConfig {
       DiagnosticsRecordingDeviceDiscoveryService(
         delegate: CompositeDeviceDiscoveryService(
           services: [
-            SsdpDeviceDiscoveryService(),
-            MdnsDeviceDiscoveryService(),
-            RokuSsdpDiscoveryService(),
+            SsdpDeviceDiscoveryService(
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
+            ),
+            MdnsDeviceDiscoveryService(
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
+            ),
+            RokuSsdpDiscoveryService(
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
+            ),
           ],
           androidTvIdentityResolver: androidTvTransport,
         ),
@@ -141,6 +159,20 @@ final class RemoteControlDiConfig implements IDiConfig {
     );
     sl.registerSingleton<RokuTransportClient>(
       RokuHttpTransportClient(hostResolver: resolveHost),
+    );
+    sl.registerSingleton<SonyBraviaPairingSessionStore>(
+      SonyBraviaPairingSessionStore(
+        identityRegistry: sl<DeviceIdentityRegistry>(),
+        devicePersistence: SecureDeviceScopedSecretPersistence(
+          keyPrefix: 'sony_bravia_session_dev_',
+        ),
+      ),
+    );
+    sl.registerSingleton<SonyBraviaTransportClient>(
+      SonyBraviaHttpTransportClient(
+        sessionStore: sl<SonyBraviaPairingSessionStore>(),
+        hostResolver: resolveHost,
+      ),
     );
     if (_legacyTclEnabled) {
       sl.registerSingleton<TclLegacyTransportClient>(
@@ -156,9 +188,14 @@ final class RemoteControlDiConfig implements IDiConfig {
       LgAdapter(transportClient: sl<LgTransportClient>()),
       HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
       AndroidTvAdapter(transportClient: sl<AndroidTvTransportClient>()),
+      SonyAdapter(transportClient: sl<AndroidTvTransportClient>()),
+      SonyBraviaAdapter(transportClient: sl<SonyBraviaTransportClient>()),
       TclRokuAdapter(transportClient: sl<RokuTransportClient>()),
       TclLegacyWifiAdapter(transportClient: sl<TclLegacyTransportClient>()),
     ];
+    sl.registerSingleton<ManualAddVariantProbe>(
+      DefaultManualAddVariantProbe(adapters: adapters),
+    );
     final commandService = BrandRoutedRemoteCommandService(
       adapters: adapters,
       variantRegistry: sl<VariantResolutionRegistry>(),
@@ -212,9 +249,18 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
       DiagnosticsRecordingDeviceDiscoveryService(
         delegate: CompositeDeviceDiscoveryService(
           services: [
-            SsdpDeviceDiscoveryService(),
-            MdnsDeviceDiscoveryService(),
-            RokuSsdpDiscoveryService(),
+            SsdpDeviceDiscoveryService(
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
+            ),
+            MdnsDeviceDiscoveryService(
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
+            ),
+            RokuSsdpDiscoveryService(
+              discoveryVariantRegistry:
+                  sl<DiscoveryVariantResolutionRegistry>(),
+            ),
           ],
         ),
         recorder: sl<AppDiagnosticsRecorder>(),
@@ -230,14 +276,22 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
     sl.registerSingleton<TclLegacyTransportClient>(
       FakeTclLegacyTransportClient(),
     );
+    sl.registerSingleton<SonyBraviaTransportClient>(
+      FakeSonyBraviaTransportClient(),
+    );
     final adapters = [
       SamsungAdapter(transportClient: sl<SamsungTransportClient>()),
       LgAdapter(transportClient: sl<LgTransportClient>()),
       HisenseAdapter(transportClient: sl<HisenseTransportClient>()),
       AndroidTvAdapter(transportClient: sl<AndroidTvTransportClient>()),
+      SonyAdapter(transportClient: sl<AndroidTvTransportClient>()),
+      SonyBraviaAdapter(transportClient: sl<SonyBraviaTransportClient>()),
       TclRokuAdapter(transportClient: sl<RokuTransportClient>()),
       TclLegacyWifiAdapter(transportClient: sl<TclLegacyTransportClient>()),
     ];
+    sl.registerSingleton<ManualAddVariantProbe>(
+      DefaultManualAddVariantProbe(adapters: adapters),
+    );
     final commandService = BrandRoutedRemoteCommandService(
       adapters: adapters,
       variantRegistry: sl<VariantResolutionRegistry>(),

@@ -107,6 +107,12 @@
 
   "pairingAndroidTvPreStep1": "A PIN will appear on your TV screen — enter it when prompted.",
 
+  "pairingSonyProgressHint": "A PIN will appear on your TV screen — enter it when prompted.",
+
+  "pairingSonyPreStep0": "Your Sony TV is ON and on the same Wi-Fi.",
+
+  "pairingSonyPreStep1": "A PIN will appear on your TV screen — enter it when prompted.",
+
   "pairingRokuProgressHint": "Make sure mobile control is enabled in Roku settings.",
 
   "pairingRokuPreStep0": "On TV, open Settings > System > Advanced system settings.",
@@ -171,6 +177,8 @@
   "pairingDiscoveryFailed": "Discovery failed. Please try again.",
   "pairingNoTvConnected": "No TV connected",
   "pairingNoDevicesFound": "No TVs found yet. Run a scan to discover devices.",
+  "pairingScanningSameNetworkHint": "Make sure your TV and phone are on the same Wi-Fi network.",
+  "pairingScanningTvSettingHint": "Some TVs need a setting enabled to be discoverable.",
   "pairingAddManuallyTooltip": "Add manually",
   "pairingScanTooltip": "Scan for TVs",
   "pairingSelectRemoteTitle": "Select Remote",

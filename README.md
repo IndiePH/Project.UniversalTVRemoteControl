@@ -2,7 +2,7 @@
 
 Flutter app **OneRemote** (internal / working name: **Universal TV Remote** — use either label interchangeably in docs). Control smart TVs over Wi‑Fi from Android or iOS.
 
-**Version:** `1.5.0+20` (see `pubspec.yaml`)
+**Version:** `1.5.1+21` (see `pubspec.yaml`)
 
 ## Overview
 
@@ -19,6 +19,8 @@ OneRemote discovers TVs on the local network, pairs with brand-specific protocol
 | Hisense (VIDAA) | Active development | MQTT TLS (port `36669`); PIN pairing |
 | Chromecast with Google TV (Android TV) | Store-listed (experimental tier) | Android TV Remote Protocol v2; not Cast-only dongles |
 | Roku / TCL legacy Wi‑Fi | Experimental | See `references/tcl_validation_matrix.md`; not in store listing |
+| Sony (Google TV path) | Store-listed (experimental tier) | Reuses Android TV Remote Protocol v2 |
+| Sony BRAVIA IP Control | Experimental, not store-listed | PIN-mode only; see `references/sony_bravia_validation_matrix.md` |
 
 Physical validation runbooks: `references/samsung_validation_matrix.md`, `references/hisense_validation_matrix.md`.
 
@@ -183,10 +185,12 @@ Android Pro IAP receipt validation uses a Firebase callable in `functions/`. Dep
 | `references/persistent-device-identity.md` | Per-brand identity sources, migration, reconciliation |
 | `references/compliance-and-release-requirements.md` | Store submission checklist |
 | `references/marketing_strategy.md` | Naming, positioning, ad strategy |
-| `references/guide-adding-protocol-variant.md` | How to add a new protocol variant |
-| `references/guide-android-tv-remote-protocol.md` | Android TV protocol notes |
+| `references/guide-protocol-variants.md` | How protocol variants are determined, applied, and how to add a new one (or a per-variant remote layout) |
+| `references/guide-remote-command-dispatch.md` | The `CommandPayload` dispatch contract, and how to diverge a variant's commands |
+| `references/guide-tv-remote-protocols.md` | Per-protocol wire-protocol reference (Android TV Remote Protocol v2 today; one section per protocol) |
 | `references/feedback-collection-setup.md` | In-app feedback webhook setup |
 | `references/third_party_licenses.md` | OSS and manufacturer API license audit |
 | `references/samsung_validation_matrix.md` | Samsung physical validation runbook |
 | `references/hisense_validation_matrix.md` | Hisense physical validation runbook |
 | `references/tcl_validation_matrix.md` | TCL experimental validation runbook |
+| `references/sony_bravia_validation_matrix.md` | Sony BRAVIA IP Control experimental validation runbook |

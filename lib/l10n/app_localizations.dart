@@ -454,6 +454,24 @@ abstract class AppLocalizations {
   /// **'A PIN will appear on your TV screen — enter it when prompted.'**
   String get pairingAndroidTvPreStep1;
 
+  /// No description provided for @pairingSonyProgressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A PIN will appear on your TV screen — enter it when prompted.'**
+  String get pairingSonyProgressHint;
+
+  /// No description provided for @pairingSonyPreStep0.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Sony TV is ON and on the same Wi-Fi.'**
+  String get pairingSonyPreStep0;
+
+  /// No description provided for @pairingSonyPreStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'A PIN will appear on your TV screen — enter it when prompted.'**
+  String get pairingSonyPreStep1;
+
   /// No description provided for @pairingRokuProgressHint.
   ///
   /// In en, this message translates to:
@@ -579,6 +597,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No TVs found yet. Run a scan to discover devices.'**
   String get pairingNoDevicesFound;
+
+  /// No description provided for @pairingScanningSameNetworkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure your TV and phone are on the same Wi-Fi network.'**
+  String get pairingScanningSameNetworkHint;
+
+  /// No description provided for @pairingScanningTvSettingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Some TVs need a setting enabled to be discoverable.'**
+  String get pairingScanningTvSettingHint;
 
   /// No description provided for @pairingAddManuallyTooltip.
   ///

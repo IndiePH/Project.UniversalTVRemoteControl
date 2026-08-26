@@ -1184,6 +1184,6 @@ class _StubVariantRegistry implements VariantResolutionRegistry {
   final String _variant;
 
   @override
-  String resolve({required TvBrand brand, required TvDeviceInfo? info}) =>
+  String? resolve({required TvBrand brand, required TvDeviceInfo? info}) =>
       _variant;
 }

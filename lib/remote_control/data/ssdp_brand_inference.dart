@@ -46,5 +46,12 @@ TvBrand? inferSsdpTvBrand(Map<String, String> headers) {
   if (probe.contains('androidtvremote') || probe.contains('_androidtvremote')) {
     return TvBrand.androidTv;
   }
+  // `scalarwebapi` (urn:schemas-sony-com:service:ScalarWebAPI:1), not bare
+  // `sony` — that URN is also used by Sony's non-TV "Songpal" audio gear, but
+  // a bare `sony` match would additionally catch cameras and other Sony
+  // devices with no relation to ScalarWebAPI at all.
+  if (probe.contains('scalarwebapi')) {
+    return TvBrand.sony;
+  }
   return null;
 }

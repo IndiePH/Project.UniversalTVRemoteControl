@@ -24,6 +24,8 @@ class DefaultPairingProgressHintRegistry
           _localizedStrings.pairingHisenseProgressHint,
         (TvBrand.androidTv, TvDevice.defaultProtocolVariant) =>
           _localizedStrings.pairingAndroidTvProgressHint,
+        (TvBrand.sony, TvDevice.defaultProtocolVariant) =>
+          _localizedStrings.pairingSonyProgressHint,
         (TvBrand.roku, TvDevice.defaultProtocolVariant) =>
           _localizedStrings.pairingRokuProgressHint,
         (TvBrand.tcl, TclProtocolVariants.legacyWifi) =>

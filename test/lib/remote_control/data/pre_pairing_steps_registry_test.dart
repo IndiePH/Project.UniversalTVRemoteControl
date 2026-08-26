@@ -32,6 +32,15 @@ void main() {
       expect(steps, [fake.pairingSamsungPreStep0, fake.pairingSamsungPreStep1]);
     });
 
+    test('returns two Sony steps for Sony default variant', () {
+      final steps = registry.stepsFor(
+        TvBrand.sony,
+        TvDevice.defaultProtocolVariant,
+      );
+      expect(steps, isNotNull);
+      expect(steps, [fake.pairingSonyPreStep0, fake.pairingSonyPreStep1]);
+    });
+
     test('returns null for Hisense (no pre-pairing steps defined)', () {
       expect(
         registry.stepsFor(TvBrand.hisense, TvDevice.defaultProtocolVariant),
