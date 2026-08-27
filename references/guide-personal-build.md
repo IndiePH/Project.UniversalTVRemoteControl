@@ -120,8 +120,8 @@ Two things were requested that don't belong on `main`:
    `StoreProEntitlementRepository` (real Google Play Billing + server-side receipt
    validation via `verifyProAndroidPurchase`, see `references/goals/goal-pro-receipt-validation-remote-setup.md`).
 2. **No network activity unrelated to remote-control functionality.** Firebase Analytics,
-   Crashlytics, Firebase Remote Config, and the AdMob/UMP consent+init flow are all
-   suppressed — see "How it works" below for what's disabled and how completely.
+   Crashlytics, and Unity LevelPlay's ad SDK init are all suppressed — see "How it works"
+   below for what's disabled and how completely.
 
 **Play Integrity / Firebase App Check was not stripped, because it was never implemented.**
 Checked at the time this branch was created — no references anywhere in the codebase
@@ -157,7 +157,7 @@ build command in step 9 — because they gate different layers and neither can s
 other:
 
 - `--dart-define=PERSONAL_BUILD=true` gates app-level Dart behavior (entitlement, ad
-  display, explicit analytics calls, Remote Config fetch).
+  display, explicit analytics calls, ad SDK init).
 - `PERSONAL_BUILD=true` (the env var) gates two `AndroidManifest.xml` meta-data values via
   Gradle `manifestPlaceholders`, so Firebase Analytics/Crashlytics never auto-collect in
   the first place — see "Why two flags" below for why the Dart one alone isn't enough.
@@ -168,16 +168,15 @@ on merge):
 | File | Flag | What changes when set |
 |---|---|---|
 | `lib/app/configurations/app_monetization_di_config.dart` | dart-define | `_buildRepository()` returns `FakeProEntitlementRepository(initialStatus: entitled)` instead of the real store repository. Skips constructing `ProReceiptValidationService` entirely (`_needsReceiptValidation`) — so `firebase_auth`/`cloud_functions` are never touched. |
-| `lib/main.dart` | dart-define | Calls `FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false)` and `FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(false)` at startup (belt-and-suspenders on top of the manifest values below); skips `recordFlutterFatalError`/`recordError` in the two error handlers; skips the whole AdMob/UMP consent-gathering + `MobileAds.instance.initialize()` block entirely (ads never show for a forced-Pro user anyway). |
-| `lib/app/configurations/di_bootstrap.dart` | dart-define | Skips `AdRemoteConfigService.fetchAndActivate()` — no Firebase Remote Config network fetch on launch. |
+| `lib/main.dart` | dart-define | Calls `FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false)` and `FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(false)` at startup (belt-and-suspenders on top of the manifest values below); skips `recordFlutterFatalError`/`recordError` in the two error handlers; skips Unity LevelPlay SDK init (`_initializeLevelPlayAds()`) entirely — no ad-network calls, even though ads never show for a forced-Pro user anyway. |
 | `lib/app/analytics/analytics_service.dart` | dart-define | `_tryAnalytics()` returns `null`, so `logEvent` becomes a no-op. |
 | `lib/app/configurations/app_build_config.dart` | dart-define | Declares the Dart flag itself. |
 | `android/app/build.gradle.kts` | env var | Declares `personalBuild`; sets `analyticsCollectionDeactivated`/`crashlyticsCollectionEnabled` manifest placeholders. |
 | `android/app/src/main/AndroidManifest.xml` | env var (via placeholder) | `firebase_analytics_collection_deactivated` / `firebase_crashlytics_collection_enabled` meta-data — read by the native SDKs before any Dart code runs. |
 
-`Firebase.initializeApp()` itself is **not** skipped — `AdRemoteConfigService` depends on
-Firebase being initialized (even though its fetch is now skipped for personal builds), and
-some plugin init paths assume it's been called.
+`Firebase.initializeApp()` itself is **not** skipped — `FirebaseCrashlytics`/`FirebaseAnalytics`
+need Firebase initialized before their collection can be turned off (see `main.dart` above),
+and some plugin init paths assume it's been called.
 
 ### Why two flags — the pre-Dart-init gap
 
@@ -188,10 +187,10 @@ runs. A Dart-only flag (`setAnalyticsCollectionEnabled(false)` /
 auto-init has already happened, leaving a small window where the SDK could collect before
 being told to stop. The manifest meta-data closes that window — the SDKs read
 `firebase_analytics_collection_deactivated` / `firebase_crashlytics_collection_enabled`
-from their own `ContentProvider.onCreate()`, before Dart ever runs. Remote Config and
-AdMob/UMP don't have this problem — they only make network calls when a Dart-level
-function (`fetchAndActivate()`, `MobileAds.instance.initialize()`) is explicitly called, so
-skipping that call in Dart is already a complete fix for those two.
+from their own `ContentProvider.onCreate()`, before Dart ever runs. Unity LevelPlay doesn't
+have this problem — it only makes network calls when `LevelPlayAdsService.initialize()` (a
+Dart-level call) is explicitly invoked, so skipping that call in `_initializeLevelPlayAds()`
+is already a complete fix.
 
 Verified by inspecting the merged manifest baked into each APK variant
 (`aapt2 dump xmltree ... --file AndroidManifest.xml`):
@@ -234,3 +233,30 @@ Two things worth remembering about the Gradle/manifest piece specifically:
 - This is the one place this branch's changes live outside `lib/` — if `main` ever adds its
   own `manifestPlaceholders` entries in `android/app/build.gradle.kts`, that's a merge
   conflict to resolve carefully rather than something `flutter analyze` will catch.
+
+---
+
+## Archive: pre-LevelPlay ad stack (superseded 2026-08-27)
+
+`main` switched its ad implementation from AdMob/UMP to Unity LevelPlay in commit `8a52e47`
+("feat: Unity LevelPlay ads, Android fixes, and Crashlytics hardening (#30)"). Before that
+merge, this branch's ad-related bypass points looked different — kept here for history since
+they no longer exist in the codebase:
+
+- `lib/app/configurations/di_bootstrap.dart` used to skip `AdRemoteConfigService
+  .fetchAndActivate()` — a Firebase Remote Config fetch that toggled the `test_ads_enabled`
+  flag consumed by `AdConfig`. `main` deleted `AdRemoteConfigService` and the Remote Config
+  ads toggle entirely in `8a52e47`, so there was nothing left to skip; this file dropped out
+  of the guarded-files table.
+- `lib/main.dart` used to skip an AdMob/UMP consent-gathering + `MobileAds.instance
+  .initialize()` block, gated by `AdConsentCoordinator` (`lib/app/compliance
+  /ad_consent_coordinator.dart`, also deleted in `8a52e47`). That block is now replaced by
+  the Unity LevelPlay init described in the table above.
+- `android/app/build.gradle.kts` declared `productionAdMobAppId` and set it via
+  `manifestPlaceholders["admobAppId"]`, consumed by `AndroidManifest.xml`'s
+  `com.google.android.gms.ads.APPLICATION_ID` meta-data. All three were removed as dead code
+  once AdMob was gone — LevelPlay doesn't use an AndroidManifest-level application ID.
+- `lib/app/ads/interstitial_ad_controller.dart` and `lib/app/ads/interstitial_ad_policy.dart`
+  (interstitial ad logic under the old AdMob stack) were deleted upstream with no LevelPlay
+  equivalent added — the app currently only shows a bottom banner ad
+  (`lib/app/ads/bottom_banner_ad.dart`).

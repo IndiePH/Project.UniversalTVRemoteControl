@@ -1,10 +1,6 @@
 import java.io.FileInputStream
 import java.util.Properties
 
-// AdMob app ID is build-time config. Test vs live ad units are toggled at runtime
-// via Firebase Remote Config (`test_ads_enabled`) in Dart — see AdConfig.
-val productionAdMobAppId = "ca-app-pub-4297882562709937~9516353394"
-
 // personal-build branch only — see references/guide-personal-build.md.
 // Firebase Analytics/Crashlytics auto-init before Dart's main() runs, so the
 // --dart-define=PERSONAL_BUILD flag (Dart-only, invisible to Gradle) can't stop
@@ -43,7 +39,6 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["admobAppId"] = productionAdMobAppId
         manifestPlaceholders["analyticsCollectionDeactivated"] = personalBuild.toString()
         manifestPlaceholders["crashlyticsCollectionEnabled"] = (!personalBuild).toString()
     }
@@ -70,6 +65,10 @@ android {
                 )
             }
             signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
@@ -87,4 +86,14 @@ flutter {
 dependencies {
     // Play Console edge-to-edge: enableEdgeToEdge() on FlutterFragmentActivity.
     implementation("androidx.activity:activity-ktx:1.10.1")
+    // Android 12+ SplashScreen API (Theme.SplashScreen + installSplashScreen()).
+    implementation("androidx.core:core-splashscreen:1.2.0")
+    // Required by Unity LevelPlay (unity_levelplay_mediation).
+    implementation("com.google.android.gms:play-services-appset:16.0.2")
+    implementation("com.google.android.gms:play-services-ads-identifier:18.0.1")
+    implementation("com.google.android.gms:play-services-basement:18.3.0")
+    // Override transitive play-services-auth@@20.7.0 (from firebase-auth /
+    // androidx.credentials). 20.7.0 NPEs in SignInHubActivity.onCreate when
+    // the OS recreates the activity with a null sign-in extra. Fixed in 21.0.0+.
+    implementation("com.google.android.gms:play-services-auth:21.6.0")
 }

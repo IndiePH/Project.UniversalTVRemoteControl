@@ -10,9 +10,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
-import 'package:one_remote/app/ads/ad_remote_config_service.dart';
-import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
-import 'package:one_remote/app/ads/interstitial_ad_policy.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
 import 'package:one_remote/app/package_info/app_package_info.dart';
@@ -111,9 +108,6 @@ void _registerRemoteHomePageGetIt({
 }) {
   final sl = GetIt.instance;
   sl.registerSingleton<AppEnvironment>(environment);
-  sl.registerSingleton<AdRemoteConfigService>(
-    AdRemoteConfigService.withDefaults(),
-  );
   sl.registerSingleton<PrePairingStepsRegistry>(
     DefaultPrePairingStepsRegistry(localizedStrings: FakeLocalizedStrings()),
   );
@@ -229,7 +223,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: RemoteHomePage(
             appEnvironment: AppEnvironment.debug,
-            interstitialAdController: _buildInterstitialAdController(),
             commandService: commandService,
             deviceRepository: InMemoryDeviceRepository(),
             discoveryService: _EmptyDiscoveryService(),
@@ -324,7 +317,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: RemoteHomePage(
             appEnvironment: AppEnvironment.debug,
-            interstitialAdController: _buildInterstitialAdController(),
             commandService: commandService,
             deviceRepository: repository,
             discoveryService: _EmptyDiscoveryService(),
@@ -387,7 +379,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -430,7 +421,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -487,7 +477,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: RemoteHomePage(
             appEnvironment: AppEnvironment.debug,
-            interstitialAdController: _buildInterstitialAdController(),
             commandService: commandService,
             deviceRepository: repository,
             discoveryService: _EmptyDiscoveryService(),
@@ -545,7 +534,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -594,7 +582,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: RemoteHomePage(
             appEnvironment: AppEnvironment.debug,
-            interstitialAdController: _buildInterstitialAdController(),
             commandService: commandService,
             deviceRepository: repository,
             discoveryService: _EmptyDiscoveryService(),
@@ -657,7 +644,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -724,7 +710,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -786,7 +771,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: InMemoryDeviceRepository(),
           discoveryService: _StaticDiscoveryService(),
@@ -864,7 +848,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -924,7 +907,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -987,7 +969,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -1058,7 +1039,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: RemoteHomePage(
             appEnvironment: AppEnvironment.debug,
-            interstitialAdController: _buildInterstitialAdController(),
             commandService: commandService,
             deviceRepository: repository,
             discoveryService: _EmptyDiscoveryService(),
@@ -1117,7 +1097,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -1364,7 +1343,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -1417,7 +1395,6 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: RemoteHomePage(
           appEnvironment: AppEnvironment.debug,
-          interstitialAdController: _buildInterstitialAdController(),
           commandService: commandService,
           deviceRepository: repository,
           discoveryService: _EmptyDiscoveryService(),
@@ -1539,7 +1516,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: RemoteHomePage(
             appEnvironment: AppEnvironment.debug,
-            interstitialAdController: _buildInterstitialAdController(),
             commandService: commandService,
             deviceRepository: deviceRepository,
             discoveryService: _EmptyDiscoveryService(),
@@ -1609,7 +1585,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: RemoteHomePage(
             appEnvironment: AppEnvironment.debug,
-            interstitialAdController: _buildInterstitialAdController(),
             commandService: commandService,
             deviceRepository: deviceRepository,
             discoveryService: _EmptyDiscoveryService(),
@@ -1713,7 +1688,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: RemoteHomePage(
             appEnvironment: AppEnvironment.debug,
-            interstitialAdController: _buildInterstitialAdController(),
             commandService: commandService,
             deviceRepository: deviceRepository,
             discoveryService: _EmptyDiscoveryService(),
@@ -1804,7 +1778,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: RemoteHomePage(
             appEnvironment: AppEnvironment.debug,
-            interstitialAdController: _buildInterstitialAdController(),
             commandService: commandService,
             deviceRepository: deviceRepository,
             discoveryService: _EmptyDiscoveryService(),
@@ -1981,18 +1954,6 @@ ProEntitlementService _buildFreeProService() {
   );
   repository.setStatus(ProEntitlementStatus.notEntitled);
   return service;
-}
-
-InterstitialAdController _buildInterstitialAdController() {
-  return InterstitialAdController(
-    appEnvironment: AppEnvironment.debug,
-    adRemoteConfig: AdRemoteConfigService.withDefaults(),
-    policy: InterstitialAdPolicy(
-      minSuccessfulActionsBetweenAds: 100,
-      minIntervalBetweenAds: const Duration(hours: 1),
-      sessionImpressionCap: 1,
-    ),
-  );
 }
 
 class _ConnectionStateStubCommandService implements RemoteCommandService {

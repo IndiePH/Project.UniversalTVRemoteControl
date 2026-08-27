@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/app_localized_strings.dart';
-import 'package:one_remote/app/ads/ad_remote_config_service.dart';
-import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
+import 'package:one_remote/app/ads/ad_config.dart';
+import 'package:one_remote/app/ads/level_play_ads_service.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/application.dart';
@@ -19,11 +19,11 @@ class OneRemoteApp extends StatelessWidget {
   static Future<void> restart() async {
     final sl = GetIt.instance;
     final env = sl<AppEnvironment>();
-    final adRemoteConfig = sl.isRegistered<AdRemoteConfigService>()
-        ? sl<AdRemoteConfigService>()
-        : null;
     await sl.reset();
-    await DiBootstrap.initialize(env, adRemoteConfig: adRemoteConfig);
+    await DiBootstrap.initialize(env);
+    if (AdConfig.supportsMobileAds && sl.isRegistered<LevelPlayAdsService>()) {
+      await sl<LevelPlayAdsService>().initialize();
+    }
     runApp(OneRemoteApp(key: UniqueKey()));
   }
 
@@ -52,7 +52,6 @@ class OneRemoteApp extends StatelessWidget {
               themeMode: themePreference.themeMode,
               home: RemoteHomePage(
                 appEnvironment: sl<AppEnvironment>(),
-                interstitialAdController: sl<InterstitialAdController>(),
                 commandService: sl<RemoteCommandService>(),
                 deviceRepository: sl<DeviceRepository>(),
                 discoveryService: sl<DeviceDiscoveryService>(),

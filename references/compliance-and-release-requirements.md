@@ -12,8 +12,7 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 
 ### 1.1 App Tracking Transparency — iOS only
 
-- [x] Integrate the `app_tracking_transparency` Flutter plugin
-- [x] Request ATT permission **before** any ad loads — via `AdConsentCoordinator.prepareForAds()` ahead of `MobileAds.initialize()` in `main.dart`
+- [x] Request ATT permission **before** any ad loads — via LevelPlay `ATTrackingManager` in `LevelPlayAdsService.initialize()` (after first frame)
 - [ ] Handle both granted and denied states gracefully on device (ads must degrade, not crash — code paths exist; physical validation pending)
 
 > Apple mandates this on iOS 14.5+. Skipping it = automatic App Store rejection.
@@ -22,16 +21,15 @@ These will cause **rejection or removal** from the App Store / Google Play if mi
 
 ### 1.2 GDPR + CCPA Consent Screen — both platforms
 
-- [x] Integrate Google's UMP (User Messaging Platform) SDK via the `google_mobile_ads` plugin (`AdConsentCoordinator`)
-- [x] Gather consent before initializing the Mobile Ads SDK; banner/interstitial placements check `AdConsentCoordinator.canRequestAds`
-- [x] Settings sheet exposes UMP privacy-options form when required
+- [ ] Re-integrate a CMP / LevelPlay privacy APIs after removing Google UMP (`AdConsentCoordinator` deleted with AdMob)
+- [ ] Gather consent before initializing the ad SDK in EU/California
 - [ ] EU/California behavioral validation on physical devices before release ads go live
 
 > Required for all users in EU and California. Both Apple and Google enforce this at review.
 
-> Note: `google_mobile_ads` renders banner + interstitial scaffolds via `lib/app/ads/`
-> (see `references/changelog.md` 2026-05-13 and 2026-05-20). UMP + ATT are integrated
-> in app code; production AdMob IDs and regional device validation remain release blockers.
+> Note: Free-tier banners use Unity LevelPlay (`unity_levelplay_mediation`) via `lib/app/ads/`.
+> Interstitials are not wired. ATT is requested on iOS before `LevelPlay.init()`.
+> EU/CCPA consent is an open release blocker until a CMP is restored.
 
 ---
 
@@ -99,7 +97,7 @@ Without these accounts, submission is physically impossible regardless of code r
 |---|---|---|---|
 | Apple Developer Program | $99 / year | App Store submission, TestFlight, IAP setup in App Store Connect | ☐ |
 | Google Play Developer account | $25 one-time | Play Store submission, Play Billing setup in Play Console | ☐ |
-| Google AdMob account | Free | Ad network — required before ad integration goes live | ☐ |
+| Unity LevelPlay account | Free | Ad mediation — required before ads go live | ☐ |
 | Privacy Policy hosting | Free | Publicly accessible URL required at submission | ☐ |
 | Apple Mac computer | Hardware cost | Required to build and sign iOS apps — no alternative exists | ☐ (when producing signed iOS builds) |
 
@@ -123,7 +121,7 @@ Code-level tests (widget/integration) are necessary but not sufficient. Each bra
 ## 5. COPPA (Users Under 13)
 
 - [x] Define the target age group clearly in both store listings (**13+** on Play Console)
-- [ ] If the app may reach users under 13, ad targeting restrictions apply — review AdMob's child-directed content settings
+- [ ] If the app may reach users under 13, ad targeting restrictions apply — review LevelPlay COPPA settings (`LevelPlayPrivacySettings.setCOPPA`)
 
 > For a TV remote app, COPPA is unlikely to apply. Play Console target audience is **13+**; content rating may still show “all ages” separately.
 
@@ -148,7 +146,7 @@ Canonical short and full descriptions: **`references/marketing_strategy.md` §2*
 | Requirement | Platform | Blocker Type | Done |
 |---|---|---|---|
 | ATT permission dialog | iOS | Store rejection | ☐ |
-| GDPR/CCPA consent screen (UMP) | Both | Store rejection | ☐ |
+| GDPR/CCPA consent screen (CMP) | Both | Store rejection | ☐ |
 | Privacy Policy at live URL | Both | Store rejection | ☐ |
 | Production feedback webhook token (`FEEDBACK_WEBHOOK_TOKEN`; default URL in `FeedbackConfig`) | Both | Support / quality | ☐ |
 | IAP via Apple/Google only | Both | Store rejection / removal | ☐ |
@@ -157,8 +155,8 @@ Canonical short and full descriptions: **`references/marketing_strategy.md` §2*
 | Hisense API ToS review | Both | Legal / API access | ☐ |
 | Apple Developer Program account | iOS | Cannot submit | ☐ |
 | Google Play Developer account | Android | Cannot submit | ☐ |
-| AdMob account | Both | Ads cannot go live | ☐ |
-| Swap test AdMob ids for production (`AndroidManifest.xml`, `Info.plist` `GADApplicationIdentifier` + full `SKAdNetworkItems`, `--dart-define` banner unit IDs) | Both | Ads cannot go live | ☐ |
+| Unity LevelPlay account | Both | Ads cannot go live | ☐ |
+| Confirm LevelPlay app key + banner unit in `AdConfig`; expand SKAdNetwork list if extra adapters are added | Both | Ads cannot go live | ☐ |
 | Physical device validation (Samsung) | Android | Quality gate | ☐ |
 | Physical device validation (LG) | Android | Quality gate | ☐ |
 | Physical device validation (Hisense) | Android | Quality gate | ☐ |

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -5,14 +7,15 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:get_it/get_it.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:one_remote/app/analytics/analytics_service.dart';
-import 'package:one_remote/app/compliance/ad_consent_coordinator.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
+import 'package:one_remote/app/diagnostics/unhandled_zone_error.dart';
 import 'package:one_remote/app/configurations/app_build_config.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
 import 'package:one_remote/app/monetization/pro_entitlement_service.dart';
+import 'package:one_remote/app/ads/ad_config.dart';
+import 'package:one_remote/app/ads/level_play_ads_service.dart';
 import 'package:one_remote/app/one_remote_app.dart';
 import 'package:one_remote/app/stream_unhandled_error_source.dart';
 
@@ -28,17 +31,6 @@ void _recordUnhandledError(Object error) {
   if (sl.isRegistered<AppDiagnosticsRecorder>()) {
     sl<AppDiagnosticsRecorder>().recordUnhandledError(error);
   }
-}
-
-bool _supportsMobileAds() {
-  if (kIsWeb) {
-    return false;
-  }
-
-  return switch (defaultTargetPlatform) {
-    TargetPlatform.android || TargetPlatform.iOS => true,
-    _ => false,
-  };
 }
 
 Future<void> main() async {
@@ -66,12 +58,6 @@ Future<void> main() async {
   final proEntitlementService = GetIt.instance<ProEntitlementService>();
   await proEntitlementService.applyLastKnownStatusFromCache();
   await proEntitlementService.refreshFromStore(isDebugBuild: kDebugMode);
-  if (_supportsMobileAds() && !AppBuildConfig.personalBuildUnlock) {
-    await AdConsentCoordinator.prepareForAds();
-    if (AdConsentCoordinator.canRequestAds) {
-      await MobileAds.instance.initialize();
-    }
-  }
 
   FlutterError.onError = (FlutterErrorDetails details) {
     if (!AppBuildConfig.personalBuildUnlock) {
@@ -88,7 +74,11 @@ Future<void> main() async {
 
   PlatformDispatcher.instance.onError = (error, stack) {
     if (!AppBuildConfig.personalBuildUnlock) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      FirebaseCrashlytics.instance.recordError(
+        error,
+        stack,
+        fatal: UnhandledZoneError.isFatal(error),
+      );
     }
     _recordUnhandledError(error);
     final errorSource = _errorSource();
@@ -101,4 +91,18 @@ Future<void> main() async {
   };
 
   runApp(const OneRemoteApp());
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(_initializeLevelPlayAds());
+  });
+}
+
+Future<void> _initializeLevelPlayAds() async {
+  if (AppBuildConfig.personalBuildUnlock || !AdConfig.supportsMobileAds) {
+    return;
+  }
+  final sl = GetIt.instance;
+  if (!sl.isRegistered<LevelPlayAdsService>()) {
+    return;
+  }
+  await sl<LevelPlayAdsService>().initialize();
 }

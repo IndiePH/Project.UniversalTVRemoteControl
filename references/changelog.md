@@ -11,9 +11,33 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-08-27
+
+### Fixed
+- LAN `SocketException` (e.g. connection reset by peer on a TV at `192.168.x.x`) no longer
+  counts as a Crashlytics **fatal**. Uncaught async socket errors from TV transports were
+  recorded at `PlatformDispatcher.instance.onError` with `fatal: true` even though the app
+  kept running. `UnhandledZoneError.isFatal` now treats `dart:io` `SocketException` as
+  non-fatal; unexpected errors (e.g. `StateError`) stay fatal. Diagnostics and
+  `StreamUnhandledErrorSource` still receive the event.
+- Android: pin `play-services-auth` **21.6.0** in `android/app/build.gradle.kts` to override
+  transitive **20.7.0** from `firebase-auth` / `androidx.credentials`. **20.7.0** can NPE in
+  `SignInHubActivity.onCreate` when the OS recreates the activity with a null sign-in extra;
+  fixed in **21.0.0+**.
+
+### Docs
+- `README.md`, `references/app-initialization-and-remote-selection-flow.md`, and
+  `references/implementation_tasks.md` note the Crashlytics zone classifier alongside the
+  existing Samsung Deny / unauthorized non-fatal guidance.
+
+### Verification
+- `flutter test test/lib/app/diagnostics/unhandled_zone_error_test.dart` — LAN RST classified non-fatal; `StateError` stays fatal.
+- `flutter analyze lib/main.dart lib/app/diagnostics/unhandled_zone_error.dart` — no issues.
+
 ## 2026-08-26
 
 ### Changed
+- App version bump to `1.5.2+24` (`pubspec.yaml`; README and marketing versionCode synced).
 - LG command dispatch (PR [#28](https://github.com/IndiePH/Project.UniversalTVRemoteControl/pull/28),
   branch `refactor/lg-remote-command-convention-consolidatio`; design/audit log
   `references/goals/goal-lg-remote-command-convention-consolidation.md`): LG was the one brand
@@ -53,6 +77,11 @@ Keep entries short and append new updates at the top.
   Samsung's key map to produce that exact bug, confirmed the test failed with a precise message
   naming the brand/command/type, then reverted.
 
+### Fixed
+- Android 12–13 cold start: install `SplashScreen` before `enableEdgeToEdge()`, and use
+  `Theme.SplashScreen` on API 31+ so launch is no longer a black window until Flutter’s
+  first frame (`MainActivity.kt`, `values-v31` / `values-night-v31` styles).
+
 ### Verification
 - Diffed the merged branch against pre-refactor `main` command-by-command: every SSAP URI,
   payload shape, app-launch id, pointer button name, and toggle default (mute=`false`,
@@ -62,6 +91,8 @@ Keep entries short and append new updates at the top.
   7 brands), 1 pre-existing skip, 0 regressions.
 
 ### Docs
+- Updated `marketing_strategy.md` Play release notes for `1.5.1` / versionCode `23` to
+  lead with the black-splash fix (What’s new paste, shorter variant, operator checklist).
 - `references/goals/goal-lg-remote-command-convention-consolidation.md`'s plan has fully landed;
   see `guide-remote-command-dispatch.md` for the live contract.
 
@@ -74,6 +105,19 @@ Keep entries short and append new updates at the top.
   `sony_bravia_adapter.dart` each gained the same `default: throw UnsupportedError(...)` case used
   everywhere else (confirmed Sony's key mappers never produce either type, same as every other
   non-LG brand). `flutter analyze` 0 issues, full suite 753 passed post-merge.
+
+## 2026-08-25
+
+### Changed
+- App version bump to `1.5.1+23` for Play closed testing (`pubspec.yaml`; README and marketing versionCode synced).
+- Free-tier banner overlay follows `!isPro` (including unresolved Play Billing), not only `notEntitled`.
+- Release AAB includes LevelPlay/ironSource R8 keep rules so minification does not strip ads.
+- Replaced Google AdMob (`google_mobile_ads`) with Unity LevelPlay (`unity_levelplay_mediation` 9.2.0). App key `27c78d0ad`; banner unit `20azo5e9eecpv182`. Interstitials are not wired until a LevelPlay interstitial unit is provided.
+- Removed UMP/`AdConsentCoordinator`, Firebase Remote Config ad-unit toggle, and AdMob platform app IDs. iOS ATT is requested via the LevelPlay plugin before SDK init.
+- Cleared live Firebase Remote Config (`test_ads_enabled`) on `oneremote-497701` and removed `remoteconfig.template.json` / `firebase.json` Remote Config deploy target. Analytics, Crashlytics, Auth, and Functions are unchanged.
+
+### Docs
+- Ads/consent docs synced to LevelPlay (banner-only): `README.md`; `references/marketing_strategy.md`; `references/implementation_tasks.md`; `references/compliance-and-release-requirements.md`; `references/product_specs.md`; `references/universal-tv-remote-info-and-req.md`; `references/third_party_licenses.md`; `references/app-initialization-and-remote-selection-flow.md`. Live Firebase Remote Config `test_ads_enabled` cleared; `firebase.json` no longer deploys Remote Config.
 
 ## 2026-08-24
 

@@ -2,9 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get_it/get_it.dart';
 
-import 'package:one_remote/app/ads/ad_remote_config_service.dart';
-import 'package:one_remote/app/ads/interstitial_ad_controller.dart';
-import 'package:one_remote/app/ads/interstitial_ad_policy.dart';
 import 'package:one_remote/app/configurations/app_build_config.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/i_di_config.dart';
@@ -16,6 +13,7 @@ import 'package:one_remote/app/monetization/pro_receipt_validation_service.dart'
 import 'package:one_remote/app/monetization/pro_product_ids.dart';
 import 'package:one_remote/app/monetization/shared_prefs_pro_entitlement_cache.dart';
 import 'package:one_remote/app/monetization/store_pro_entitlement_repository.dart';
+import 'package:one_remote/app/ads/level_play_ads_service.dart';
 
 final class AppMonetizationDiConfig implements IDiConfig {
   const AppMonetizationDiConfig();
@@ -39,16 +37,6 @@ final class AppMonetizationDiConfig implements IDiConfig {
         : null;
     final repository = _buildRepository(receiptValidationService);
     final service = ProEntitlementService(repository: repository, cache: cache);
-    final interstitialPolicy = InterstitialAdPolicy(
-      minSuccessfulActionsBetweenAds: 25,
-      minIntervalBetweenAds: const Duration(minutes: 10),
-      sessionImpressionCap: 1,
-    );
-    final interstitialController = InterstitialAdController(
-      appEnvironment: env,
-      adRemoteConfig: sl<AdRemoteConfigService>(),
-      policy: interstitialPolicy,
-    );
 
     sl.registerSingleton<SharedPrefsProEntitlementCache>(cache);
     if (receiptValidationService != null) {
@@ -64,9 +52,9 @@ final class AppMonetizationDiConfig implements IDiConfig {
       service,
       dispose: (svc) => svc.dispose(),
     );
-    sl.registerSingleton<InterstitialAdController>(
-      interstitialController,
-      dispose: (controller) => controller.dispose(),
+    sl.registerSingleton<LevelPlayAdsService>(
+      LevelPlayAdsService(),
+      dispose: (svc) => svc.dispose(),
     );
   }
 

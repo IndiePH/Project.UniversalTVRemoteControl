@@ -17,7 +17,7 @@ enum AppBuildProfile {
 /// Central mapping from Flutter build mode to app environment and future flavor hooks.
 ///
 /// Android uses standard `debug` / `release` buildTypes only (no productFlavors yet).
-/// Runtime toggles (fake transports, AdMob test IDs, etc.) use `--dart-define` — see README.
+/// Runtime toggles (fake transports, etc.) use `--dart-define` — see README.
 abstract final class AppBuildConfig {
   /// Reserved for a future `development` Gradle flavor or `--dart-define=APP_ENV=development`.
   static const bool developmentFlavorReserved = false;

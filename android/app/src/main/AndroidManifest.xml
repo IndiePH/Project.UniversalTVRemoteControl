@@ -4,13 +4,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
     <application
         android:label="OneRemote"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="${admobAppId}"/>
         <!-- personal-build branch only — see references/guide-personal-build.md.
              Defaults false/true (Firebase's own defaults) via build.gradle.kts's
              `personalBuild` env-var read. NEVER merge this block's values as

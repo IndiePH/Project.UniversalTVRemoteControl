@@ -26,9 +26,8 @@ Verified against pinned versions in `pubspec.lock` / pub cache `LICENSE` files o
 | `crypto` | 3.0.7 | BSD-3-Clause | Samsung WSS TOFU fingerprints |
 | `flutter_svg` | 2.3.0 | MIT | Streaming shortcut SVG rendering |
 | `get_it` | 9.2.1 | MIT | DI |
-| `google_mobile_ads` | 8.0.0 | Apache-2.0 | Banner / interstitial ads |
+| `unity_levelplay_mediation` | 9.2.0 | Unity Advertising Terms of Service | Banner ads (LevelPlay) |
 | `in_app_purchase` | 3.2.3 | BSD-3-Clause | Pro (remove ads) IAP |
-| `app_tracking_transparency` | 2.0.6+1 | MIT | iOS ATT before ads |
 | `shared_preferences` | 2.5.5 | BSD-3-Clause | Persistence (devices, layout, TLS pins, …) |
 | `path_provider` | 2.1.5 | BSD-3-Clause | App documents paths |
 | `multicast_dns` | 0.3.3 | BSD-3-Clause | mDNS discovery helpers |
