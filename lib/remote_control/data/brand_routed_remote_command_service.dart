@@ -57,6 +57,13 @@ class BrandRoutedRemoteCommandService
   Future<CommandDispatchResult> preparePairing({
     required TvDevice device,
   }) async {
+    // device.brand/device.protocolVariant must already be correct here — this
+    // picks the adapter *before* any adapter has been contacted, so there is
+    // no TvDeviceInfo yet to resolve from. For discovered devices, a
+    // DeviceDiscoveryService impl (Ssdp/Mdns/RokuSsdp) already stamped
+    // protocolVariant at construction via
+    // DiscoveryVariantResolutionRegistry.resolveFromDiscovery; for
+    // manually-added devices it's whatever the add-device UI chose.
     final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter == null) {
       return CommandDispatchResult.unsupported(
@@ -66,11 +73,23 @@ class BrandRoutedRemoteCommandService
     try {
       await adapter.preparePairing(device: device);
       final info = await adapter.queryDeviceInfo(device: device);
-      final variant = _variantRegistry.resolve(brand: device.brand, info: info);
+      // Now that the adapter has actually talked to the TV, check whether a
+      // TvDeviceInfo-based rule refines the variant further (a dialect within
+      // the transport already selected above, e.g. a firmware-specific
+      // quirk). `resolve` returns null when no such rule exists for this
+      // brand, in which case device.protocolVariant is kept exactly as-is —
+      // this must never silently reset a variant already fixed above.
+      final variant =
+          _variantRegistry.resolve(brand: device.brand, info: info) ??
+          device.protocolVariant;
       final capabilities = const TvCapabilities().capabilitiesFor(
         device.brand,
         variant,
       );
+      // enriched carries what pairing learned that discovery couldn't: a
+      // stable id (if the device didn't already have one), capabilities and
+      // pin format for the resolved variant, and the model identifier the
+      // adapter reported. This is what gets persisted going forward.
       final enriched = device.copyWith(
         id: device.hasStableId ? device.id : (info?.stableId ?? device.id),
         capabilities: capabilities,
@@ -94,7 +113,10 @@ class BrandRoutedRemoteCommandService
       // Adapter explicitly signalled that a PIN is required (e.g. Hisense).
       return CommandDispatchResult.pinRequired(
         error.message,
-        pinFormat: const TvCapabilities().pinFormatFor(device.brand),
+        pinFormat: const TvCapabilities().pinFormatFor(
+          device.brand,
+          device.protocolVariant,
+        ),
       );
     } catch (error) {
       return CommandDispatchResult.failure(

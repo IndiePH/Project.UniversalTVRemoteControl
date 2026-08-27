@@ -14,6 +14,9 @@ abstract interface class LocalizedStrings {
   String get pairingAndroidTvProgressHint;
   String get pairingAndroidTvPreStep0;
   String get pairingAndroidTvPreStep1;
+  String get pairingSonyProgressHint;
+  String get pairingSonyPreStep0;
+  String get pairingSonyPreStep1;
   String get pairingRokuProgressHint;
   String get pairingRokuPreStep0;
   String get pairingRokuPreStep1;

@@ -38,15 +38,73 @@ Keep entries short and append new updates at the top.
 
 ### Changed
 - App version bump to `1.5.2+24` (`pubspec.yaml`; README and marketing versionCode synced).
+- LG command dispatch (PR [#28](https://github.com/IndiePH/Project.UniversalTVRemoteControl/pull/28),
+  branch `refactor/lg-remote-command-convention-consolidatio`; design/audit log
+  `references/goals/goal-lg-remote-command-convention-consolidation.md`): LG was the one brand
+  `CommandPayload`'s original migration left on string-sniffed sentinels
+  (`POINTER:`/`LAUNCH:`/`TOGGLE:` prefixes parsed by `LgWebSocketTransportClient`'s
+  `_LgCommandFactory`). `CommandPayload` gains two new cases — `PointerCommand(button)` and
+  `ToggleCommand(ToggleKind)` (`power`/`playPause`/`mute`) — and `LgTransportClient` gains real
+  `sendPointerCommand`/`sendAppLink`/`sendToggle` methods, promoted from private helpers
+  (`sendToggle` collapses what were three duplicated state-flip-and-send branches into one
+  `switch (kind)`). `LgKeyMapper`'s `lgPointerPrefix`/`lgLaunchPrefix`/`lgPowerToggleKey`/
+  `lgPlayPauseToggleKey` sentinel constants are deleted; every entry is now a real SSAP string or
+  a typed payload. `_LgCommandFactory`/`_LgTransportCommand` and the now-fully-unused
+  `TransportCommandFactory`/`TransportCommand` interfaces are deleted; `sendKey` calls `_sendSsap`
+  directly for the plain case.
+- `menu` is the one LG command that dispatches two unconditional, heterogeneous actions (a plain
+  settings key, then a settings-app launch) rather than one typed payload — handled as an
+  `LgAdapter`-local special case, not a new shared `CommandPayload` type. Git blame confirmed both
+  calls are deliberate cross-webOS-build coverage (added together in `553c321d`, not accidental
+  duplication), so both are still sent, same order, same payloads.
+- All 7 adapters' `sendCommand` switches now end in one `default: throw UnsupportedError('$Brand
+  has no dispatch path for ${payload.runtimeType}.')` instead of a hand-listed case per
+  unsupported `CommandPayload` type. Keeps each adapter's footprint at one line regardless of how
+  many brand-specific payload types exist (was starting to scale as O(brands × types) — this PR
+  alone added 2 new types × 6 non-LG adapters' worth of throw-cases before the `default:` pass
+  collapsed them back down). Trades away the sealed class's compiler-enforced exhaustiveness in
+  exchange for that scalability — see `guide-remote-command-dispatch.md`'s "Why `sealed`, and why
+  `default:`" for the reasoning and what replaces the lost guarantee.
+
+### Added
+- `supported_commands_dispatch_test.dart`: for every command each of the 7 adapters' own key map
+  claims to support (`payloadFor(command) != null`), dispatches it through that brand's fake
+  transport and fails only if it hits `UnsupportedError` — any other exception (pairing/auth
+  preconditions, etc.) is unrelated to payload-type dispatch and ignored. This is the check that
+  catches a key map drifting out of sync with its adapter's switch (a command marked supported
+  but not actually dispatchable), which is the exact gap the `default:` case above reopens now
+  that the compiler no longer catches it. Verified working, not just present: deliberately broke
+  Samsung's key map to produce that exact bug, confirmed the test failed with a precise message
+  naming the brand/command/type, then reverted.
 
 ### Fixed
 - Android 12–13 cold start: install `SplashScreen` before `enableEdgeToEdge()`, and use
   `Theme.SplashScreen` on API 31+ so launch is no longer a black window until Flutter’s
   first frame (`MainActivity.kt`, `values-v31` / `values-night-v31` styles).
 
+### Verification
+- Diffed the merged branch against pre-refactor `main` command-by-command: every SSAP URI,
+  payload shape, app-launch id, pointer button name, and toggle default (mute=`false`,
+  power=`true`, playPause=`true`) is unchanged — only how each is reached changed, not what gets
+  sent. `flutter analyze` — 0 issues. `flutter test` full suite — 721 passed, 0 failed (up from
+  580 pre-PR, the +141 being `supported_commands_dispatch_test.dart`'s generated cases across all
+  7 brands), 1 pre-existing skip, 0 regressions.
+
 ### Docs
 - Updated `marketing_strategy.md` Play release notes for `1.5.1` / versionCode `23` to
   lead with the black-splash fix (What’s new paste, shorter variant, operator checklist).
+- `references/goals/goal-lg-remote-command-convention-consolidation.md`'s plan has fully landed;
+  see `guide-remote-command-dispatch.md` for the live contract.
+
+### Changed (branch `feature/sony-adapter`, not yet merged to `main`)
+- Merged `main` into `feature/sony-adapter`, pulling in the LG dispatch refactor above. One real
+  conflict: `lg_key_mapper.dart`, where this branch still had the pre-refactor sentinel constants
+  — resolved by taking `main`'s version (confirmed via repo-wide grep that nothing on this branch
+  referenced those constants). The merge surfaced two adapters written before `PointerCommand`/
+  `ToggleCommand` existed and left non-exhaustive by them: `sony_adapter.dart` and
+  `sony_bravia_adapter.dart` each gained the same `default: throw UnsupportedError(...)` case used
+  everywhere else (confirmed Sony's key mappers never produce either type, same as every other
+  non-LG brand). `flutter analyze` 0 issues, full suite 753 passed post-merge.
 
 ## 2026-08-25
 
@@ -62,6 +120,52 @@ Keep entries short and append new updates at the top.
 - Ads/consent docs synced to LevelPlay (banner-only): `README.md`; `references/marketing_strategy.md`; `references/implementation_tasks.md`; `references/compliance-and-release-requirements.md`; `references/product_specs.md`; `references/universal-tv-remote-info-and-req.md`; `references/third_party_licenses.md`; `references/app-initialization-and-remote-selection-flow.md`. Live Firebase Remote Config `test_ads_enabled` cleared; `firebase.json` no longer deploys Remote Config.
 
 ## 2026-08-24
+
+### Added
+- Sony TV brand, Sub-goal A (branch `feature/sony-adapter`; design/research log
+  `references/goals/goal-sony-adapter.md`): `TvBrand.sony` selectable alongside the existing
+  brands, paired via the same Android TV Remote protocol `AndroidTvAdapter`/`TclGoogleTvAdapter`
+  already speak — Sony's entire 2021+ lineup runs Google TV (confirmed via external research,
+  not assumed). `SonyAdapter` is a thin wrapper reusing the shared `AndroidTvTransportClient` +
+  `AndroidTvKeyMapper` directly, with **no app-link override map** (TCL needed one for 4
+  commands; Sony's Google TV builds are assumed compatible with the default `https://` App Link
+  URIs until on-device testing says otherwise). `protocolVariant` is
+  `SonyProtocolVariants.defaultVariant` (new `sony_protocol_variants.dart`, mirrors
+  `AndroidTvProtocolVariants`/`SamsungProtocolVariants`'s single-variant pattern). Registered:
+  variant-resolution catch-all, `TvCapabilities` entry (same set as `androidTv`:
+  `keyCommands`/`powerControl`/`pinPairing`/`textInput`, `PinFormat.sixCharHex`), both DI
+  adapters-list locations (`remote_control_di_config.dart`, release + debug), and the two
+  `TvBrand`-exhaustive switches this broke (`discovered_device_support.dart`'s tier/priority,
+  `runtime_flags_template_debug.dart`). No UI brand-picker edit needed — it already iterates
+  `TvBrand.values` generically; confirmed (not assumed) that no per-brand icon system exists
+  anywhere in this app for any brand.
+- Sony pairing hint/step copy: `pairingSonyProgressHint`/`pairingSonyPreStep0`/`pairingSonyPreStep1`
+  wired as `(TvBrand.sony, TvDevice.defaultProtocolVariant)` entries in
+  `pairing_progress_hint_registry.dart`/`pre_pairing_steps_registry.dart` — **keyed by variant, not
+  just brand**, since Sub-goal C's future Bravia variant will need its own distinct copy (a
+  genuinely different PSK/PIN-over-REST pairing flow, not this protocol's on-screen 6-character
+  code). Copy reuses the Android TV strings verbatim (brand name swapped only) after real web
+  research (Sony support pages, Google's Google TV help, Home Assistant's `androidtv_remote`
+  integration/`tronikos/androidtvremote2`) found no verified Sony-specific pairing difference —
+  see the goal doc's Decisions log for full citations and confidence levels per claim.
+- Tests: `sony_test_lane_test.dart` (new — mirrors `android_tv_test_lane_test.dart`, the actual
+  established per-brand convention; no brand has a `*_adapter_test.dart` file in this repo), a
+  Sony case in `variant_resolution_registry_test.dart`, and a new
+  `remote_control_di_config_test.dart` (no test existed for this DI config file before) that
+  calls the real `configure()` on a fresh `GetIt` and asserts `TvReachabilityService` resolves a
+  working adapter for `TvBrand.sony` — a regression guard against `SonyAdapter` ever being
+  dropped from either adapters-list literal. `pairing_progress_hint_registry_test.dart`/
+  `pre_pairing_steps_registry_test.dart` each get one Sony spot-check (matching the existing
+  LG/Samsung per-brand convention, not exhaustive brand coverage).
+- Not yet done on this branch: A6 (`sony_validation_matrix.md` + on-device pairing/reliability
+  runbook — held pending access to real Sony hardware) and Sub-goals B/C (Bravia IP Control
+  research + implementation — separate, later work, not required for this brand to work on
+  2021+ Sony TVs).
+
+### Verification
+- Sony adapter Sub-goal A (A1–A5 + pairing-hint follow-up): `dart analyze` — 0 issues
+  project-wide at every step. `flutter test` full suite — 590 passed, 0 failed (up from 588
+  pre-existing before this branch's test additions), 1 pre-existing skip, 0 regressions.
 
 ### Changed
 - App version bump to `1.5.1+21` (`pubspec.yaml`; README and marketing release details synced).
@@ -107,9 +211,9 @@ Keep entries short and append new updates at the top.
 ## 2026-08-22
 
 ### Added
-- `CommandPayload` dispatch contract (branch `refactor/command-and-adapters`; design doc
-  `references/goals/goal-app-launch-dispatch-unification.md`, guide
-  `references/guide-command-payload-dispatch.md`): `CommandKeyMap.keyCodesFor(RemoteCommand) ->
+- `CommandPayload` dispatch contract (branch `refactor/command-and-adapters`; guide
+  `references/guide-remote-command-dispatch.md` — see that guide's "Why this design, not a
+  marker set" for the rejected alternative): `CommandKeyMap.keyCodesFor(RemoteCommand) ->
   List<String>` replaced with `payloadFor(RemoteCommand) -> CommandPayload?`, a sealed type with
   three cases — `KeySequence(codes)` (dispatched via `sendKey`/`sendFrame`), `AppLink(uri)`
   (dispatched via a brand's app-link method), `VidaaLaunch(displayName, url)` (Hisense-only, via
@@ -150,7 +254,7 @@ Keep entries short and append new updates at the top.
   removing it for the five real app-launch commands would just duplicate the same SSAP call
   through a second code path for no benefit. Documented on `lgLaunchPrefix`'s doc comment and in
   the guide.
-- `guide-command-payload-dispatch.md`'s "Writing `sendCommand`" section now spells out that a new
+- `guide-remote-command-dispatch.md`'s "Writing `sendCommand`" section now spells out that a new
   dispatch case requires editing both the transport-client interface and its concrete
   implementation, and that any test-local or debug fake using `implements` (not `extends`) needs
   the new method added by hand — `implements` never inherits a default method body.

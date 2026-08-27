@@ -35,6 +35,13 @@ void main() {
       );
     });
 
+    test('returns Sony hint for Sony default variant', () {
+      expect(
+        registry.hintFor(TvBrand.sony, TvDevice.defaultProtocolVariant),
+        fake.pairingSonyProgressHint,
+      );
+    });
+
     test('returns null for unknown variant of known brand', () {
       expect(registry.hintFor(TvBrand.lg, 'unknown_variant'), isNull);
     });

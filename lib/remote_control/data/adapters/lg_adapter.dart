@@ -94,15 +94,41 @@ class LgAdapter implements TvBrandAdapter {
       throw UnsupportedError('No LG key mapping for command: $command');
     }
     await _transportClient.connect(deviceId: device.id);
+
+    // menu is the one LG command that dispatches two unconditional, heterogeneous
+    // actions (a plain settings key, then a settings-app launch) rather than one
+    // typed payload — see lg_key_mapper.dart's menu entry for why.
+    if (command == RemoteCommand.menu) {
+      final settingsKey = payload as KeySequence;
+      await _transportClient.sendKey(
+        deviceId: device.id,
+        keyCode: settingsKey.codes.single,
+      );
+      await _transportClient.sendAppLink(
+        deviceId: device.id,
+        appLink: lgSettingsAppId,
+      );
+      return;
+    }
+
     switch (payload) {
       case KeySequence(:final codes):
         for (final code in codes) {
           await _transportClient.sendKey(deviceId: device.id, keyCode: code);
         }
-      case AppLink():
-        throw UnsupportedError('LG has no AppLink dispatch path.');
-      case VidaaLaunch():
-        throw UnsupportedError('LG has no VidaaLaunch dispatch path.');
+      case AppLink(:final uri):
+        await _transportClient.sendAppLink(deviceId: device.id, appLink: uri);
+      case PointerCommand(:final button):
+        await _transportClient.sendPointerCommand(
+          deviceId: device.id,
+          button: button,
+        );
+      case ToggleCommand(:final kind):
+        await _transportClient.sendToggle(deviceId: device.id, kind: kind);
+      default:
+        throw UnsupportedError(
+          'LG has no dispatch path for ${payload.runtimeType}.',
+        );
     }
   }
 

@@ -725,6 +725,14 @@ void main() {
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(
+        find.text('Make sure your TV and phone are on the same Wi-Fi network.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Some TVs need a setting enabled to be discoverable.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('tapping keyboard FAB opens manual add sheet', (tester) async {

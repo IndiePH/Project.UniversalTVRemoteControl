@@ -1,28 +1,10 @@
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 
-/// Prefix for commands routed via the webOS pointer input socket.
-/// Format: `lgPointerPrefix + buttonName` — e.g. `'POINTER:UP'`.
-/// [RealLgTransportClient] intercepts this prefix to use the pointer socket path.
-const String lgPointerPrefix = 'POINTER:';
-
-/// Prefix for commands that launch an app via ssap://com.webos.appmanager/launch.
-/// Format: `lgLaunchPrefix + appId` — e.g. `'LAUNCH:netflix'`.
-///
-/// Every LG command dispatches via `sendKey`, including the five app-launch
-/// commands below — `menu`'s settings-app fallback also relies on this same
-/// sentinel, so `LgWebSocketTransportClient`'s `sendKey`-path `startsWith` check
-/// can't be removed. Since that branch has to stay regardless, the app-launch
-/// commands keep using it too rather than gaining a separate direct-dispatch
-/// method that would just duplicate the same underlying SSAP call. See
-/// `references/goals/goal-app-launch-dispatch-unification.md` Phase 3.
-const String lgLaunchPrefix = 'LAUNCH:';
-
-/// Sentinel for the power toggle — transport resolves to turnOn or turnOff based on tracked state.
-const String lgPowerToggleKey = 'TOGGLE:POWER';
-
-/// Sentinel for the play/pause toggle — transport resolves to play or pause based on tracked state.
-const String lgPlayPauseToggleKey = 'TOGGLE:PLAY_PAUSE';
+/// App id for LG's settings app, launched as the second of [RemoteCommand.menu]'s two
+/// unconditional actions. Not a [_payloads] entry of its own — see [LgAdapter.sendCommand]'s
+/// menu special case for why menu isn't expressed as a single [CommandPayload].
+const String lgSettingsAppId = 'com.webos.app.settings';
 
 class LgKeyMapper extends CommandKeyMap {
   const LgKeyMapper();
@@ -32,33 +14,31 @@ class LgKeyMapper extends CommandKeyMap {
 }
 
 const Map<RemoteCommand, CommandPayload> _payloads = {
-  RemoteCommand.power: KeySequence([lgPowerToggleKey]),
+  RemoteCommand.power: ToggleCommand(ToggleKind.power),
   RemoteCommand.volumeUp: KeySequence(['ssap://audio/volumeUp']),
   RemoteCommand.volumeDown: KeySequence(['ssap://audio/volumeDown']),
-  RemoteCommand.mute: KeySequence(['ssap://audio/setMute']),
+  RemoteCommand.mute: ToggleCommand(ToggleKind.mute),
   RemoteCommand.channelUp: KeySequence(['ssap://tv/channelUp']),
   RemoteCommand.channelDown: KeySequence(['ssap://tv/channelDown']),
-  RemoteCommand.home: KeySequence(['${lgPointerPrefix}HOME']),
-  RemoteCommand.playPause: KeySequence([lgPlayPauseToggleKey]),
+  RemoteCommand.home: PointerCommand('HOME'),
+  RemoteCommand.playPause: ToggleCommand(ToggleKind.playPause),
   RemoteCommand.input: KeySequence(['ssap://tv/switchInput']),
-  RemoteCommand.dpadUp: KeySequence(['${lgPointerPrefix}UP']),
-  RemoteCommand.dpadDown: KeySequence(['${lgPointerPrefix}DOWN']),
-  RemoteCommand.dpadLeft: KeySequence(['${lgPointerPrefix}LEFT']),
-  RemoteCommand.dpadRight: KeySequence(['${lgPointerPrefix}RIGHT']),
-  RemoteCommand.dpadOk: KeySequence(['${lgPointerPrefix}ENTER']),
-  RemoteCommand.back: KeySequence(['${lgPointerPrefix}BACK']),
-  // menu behavior varies by webOS build; try settings entry points in order.
+  RemoteCommand.dpadUp: PointerCommand('UP'),
+  RemoteCommand.dpadDown: PointerCommand('DOWN'),
+  RemoteCommand.dpadLeft: PointerCommand('LEFT'),
+  RemoteCommand.dpadRight: PointerCommand('RIGHT'),
+  RemoteCommand.dpadOk: PointerCommand('ENTER'),
+  RemoteCommand.back: PointerCommand('BACK'),
+  // The settings-app launch (lgSettingsAppId) is dispatched separately by
+  // LgAdapter.sendCommand's menu special case — both actions are unconditional
+  // and deliberate (git blame: added together to cover different webOS build
+  // variants), not a primary/fallback pair.
   RemoteCommand.menu: KeySequence([
     'ssap://com.webos.service.settings/launchSettings',
-    '${lgLaunchPrefix}com.webos.app.settings',
   ]),
-  // Dispatched via `sendKey`, same as every other command — the LAUNCH: sentinel
-  // is interpreted by LgWebSocketTransportClient's command factory (see
-  // lgLaunchPrefix's doc comment above for why this stays KeySequence instead of
-  // becoming a direct-dispatch AppLink like Samsung's equivalent commands).
-  RemoteCommand.netflix: KeySequence(['${lgLaunchPrefix}netflix']),
-  RemoteCommand.primeVideo: KeySequence(['${lgLaunchPrefix}amazon']),
-  RemoteCommand.disneyPlus: KeySequence(['${lgLaunchPrefix}disneyplus']),
-  RemoteCommand.youtube: KeySequence(['${lgLaunchPrefix}youtube.leanback.v4']),
-  RemoteCommand.web: KeySequence(['${lgLaunchPrefix}com.webos.app.browser']),
+  RemoteCommand.netflix: AppLink('netflix'),
+  RemoteCommand.primeVideo: AppLink('amazon'),
+  RemoteCommand.disneyPlus: AppLink('disneyplus'),
+  RemoteCommand.youtube: AppLink('youtube.leanback.v4'),
+  RemoteCommand.web: AppLink('com.webos.app.browser'),
 };

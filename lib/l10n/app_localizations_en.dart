@@ -212,6 +212,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'A PIN will appear on your TV screen — enter it when prompted.';
 
   @override
+  String get pairingSonyProgressHint =>
+      'A PIN will appear on your TV screen — enter it when prompted.';
+
+  @override
+  String get pairingSonyPreStep0 => 'Your Sony TV is ON and on the same Wi-Fi.';
+
+  @override
+  String get pairingSonyPreStep1 =>
+      'A PIN will appear on your TV screen — enter it when prompted.';
+
+  @override
   String get pairingRokuProgressHint =>
       'Make sure mobile control is enabled in Roku settings.';
 
@@ -294,6 +305,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pairingNoDevicesFound =>
       'No TVs found yet. Run a scan to discover devices.';
+
+  @override
+  String get pairingScanningSameNetworkHint =>
+      'Make sure your TV and phone are on the same Wi-Fi network.';
+
+  @override
+  String get pairingScanningTvSettingHint =>
+      'Some TVs need a setting enabled to be discoverable.';
 
   @override
   String get pairingAddManuallyTooltip => 'Add manually';

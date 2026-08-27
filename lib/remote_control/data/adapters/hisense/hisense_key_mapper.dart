@@ -43,9 +43,9 @@ const Map<RemoteCommand, CommandPayload> _payloads = {
   RemoteCommand.disneyPlus: VidaaLaunch('Disney+', 'disneyplus'),
   RemoteCommand.youtube: VidaaLaunch('YouTube', 'youtube'),
   // NOTE: `.web` intentionally mirrors `.youtube` here, carried over unchanged
-  // from the pre-migration `_vidaaLaunchSpec` switch — see
-  // `references/goals/goal-app-launch-dispatch-unification.md` Phase 4, which
-  // flags this as a possible pre-existing bug and defers fixing it to a
-  // separate decision.
+  // from the pre-migration `_vidaaLaunchSpec` switch. Possibly a pre-existing
+  // bug (a browser command opening YouTube instead of a browser) rather than
+  // intentional — left unfixed here since fixing it is a behavior change, not
+  // a dispatch-mechanism change; flag before altering.
   RemoteCommand.web: VidaaLaunch('YouTube', 'youtube'),
 };

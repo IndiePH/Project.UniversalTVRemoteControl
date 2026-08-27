@@ -68,7 +68,7 @@ The registrations relevant to device selection and remotes, in order:
 2. `DeviceDiscoveryService` → `DiagnosticsRecordingDeviceDiscoveryService` wrapping a `CompositeDeviceDiscoveryService` that runs three discovery services together: `SsdpDeviceDiscoveryService`, `MdnsDeviceDiscoveryService`, `RokuSsdpDiscoveryService`.
 3. Per-brand pairing/token stores and transport clients: `LgPairingKeyStore`, `SamsungPairingTokenStore`, `SamsungWebSocketTransportClient`, `LgWebSocketTransportClient`, `HisensePairingAuthStore`, `HisenseMqttTransportClient`, `AndroidTvCertificateStore`, `AndroidTvTcpTransportClient`, `RokuHttpTransportClient`, `TclLegacyTransportClient` (real or fake, gated by `TCL_LEGACY_WIFI_ENABLED`).
 4. Six adapters constructed and collected into a list (`:126-133`): `SamsungAdapter`, `LgAdapter`, `HisenseAdapter`, `AndroidTvAdapter`, `TclRokuAdapter`, `TclLegacyWifiAdapter`.
-5. That adapter list feeds `BrandRoutedRemoteCommandService(adapters, variantRegistry, localizedStrings)` — this is the router every command/pairing call goes through (`_adapterFor(brand, variant)`, per `guide-adding-protocol-variant.md`).
+5. That adapter list feeds `BrandRoutedRemoteCommandService(adapters, variantRegistry, localizedStrings)` — this is the router every command/pairing call goes through (`_adapterFor(brand, variant)`, per `guide-protocol-variants.md`).
 6. `RemoteCommandService` → `DiagnosticsRecordingRemoteCommandService` wrapping that router.
 7. `TvConnectionStateService` → `MultiplexedTvConnectionStateService(commandService)`.
 8. `TvReachabilityService` → `AdapterTvReachabilityService(adapters)`.
@@ -87,7 +87,7 @@ The registrations relevant to device selection and remotes, in order:
 
 1. Reads `deviceRepository.getSavedDevices()` and `deviceRepository.getLastUsedDevice()`.
 2. **No last-used device** → clears text/connection subscriptions, resets the layout to computed defaults, and the screen renders its empty "connect a TV" state. Nothing auto-navigates to pairing — the user has to tap an explicit action.
-3. **Last-used device exists** → sets it as `_activeDevice`, subscribes to text-input-ready and connection-state streams, calls `_loadLayoutForDevice(lastUsed)` (capability filtering + saved layout including command-drawer `LayoutZone`; per-variant defaults in `goal-variant-remote-layout.md` are still an empty map) — matches `product_specs.md`'s "returning users auto-connect to last used device."
+3. **Last-used device exists** → sets it as `_activeDevice`, subscribes to text-input-ready and connection-state streams, calls `_loadLayoutForDevice(lastUsed)` (capability filtering + saved layout including command-drawer `LayoutZone`; per-`(brand, variant)` layout overrides per `guide-protocol-variants.md` — no real override authored yet, so this resolves to the global baseline for every device today) — matches `product_specs.md`'s "returning users auto-connect to last used device."
 
 ## Phase 5 — Pairing a device (`pairing_page.dart` + `pairing_page_coordinator.dart` + `pairing_page_data.dart`)
 
@@ -99,7 +99,7 @@ The user either taps a discovered result, or types a manual IP (built into a `Tv
 
 Selecting a device runs **`PairingPageCoordinator.pairSelectedDevice()`** (`pairing_page_coordinator.dart:24-77`):
 
-1. `commandService.preparePairing(device)` → `BrandRoutedRemoteCommandService.preparePairing()` (`brand_routed_remote_command_service.dart:54-100`), which is exactly the flow `guide-adding-protocol-variant.md` documents:
+1. `commandService.preparePairing(device)` → `BrandRoutedRemoteCommandService.preparePairing()` (`brand_routed_remote_command_service.dart:54-100`), which is exactly the flow `guide-protocol-variants.md` documents:
    - Resolves the adapter for `(device.brand, device.protocolVariant)` — at this point `protocolVariant` is still whatever default the discovery service stamped, not yet the real resolved variant.
    - `adapter.preparePairing(device)` — protocol-specific handshake start.
    - `adapter.queryDeviceInfo(device)` → `TvDeviceInfo?`.
@@ -125,7 +125,7 @@ From here, every button press runs `_send(command)` → `commandService.sendComm
 
 ## Where related goal docs plug into this flow
 
-- **`goal-variant-remote-layout.md`** — `_loadLayoutForDevice` default source; `_map` still empty.
+- **Per-variant remote layout** (`guide-protocol-variants.md`, "Adding a variant remote layout") — shipped: `_loadLayoutForDevice`'s default source; no real override authored yet, so it resolves to the global baseline for every device today.
 - **Command drawer** — shipped: same load path plus layout-editor UI (`LayoutZone.drawer`).
 - **`goal-persistent-device-identity.md`** — `id` / `host` created during discovery and Phase 5 pairing (supersedes `goal-stable-device-identifier.md`).
 

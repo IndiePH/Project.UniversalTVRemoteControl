@@ -108,13 +108,15 @@ class HisenseAdapter implements TvBrandAdapter {
         for (final code in codes) {
           await _transportClient.sendKey(deviceId: device.id, keyName: code);
         }
-      case AppLink():
-        throw UnsupportedError('Hisense has no AppLink dispatch path.');
       case VidaaLaunch(:final displayName, :final url):
         await _transportClient.launchVidaaApp(
           deviceId: device.id,
           displayName: displayName,
           url: url,
+        );
+      default:
+        throw UnsupportedError(
+          'Hisense has no dispatch path for ${payload.runtimeType}.',
         );
     }
   }
