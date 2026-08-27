@@ -63,102 +63,102 @@ final class PairingPageDialogs {
   }) async {
     final pinController = TextEditingController();
     return showDialog<String>(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          String? inputError;
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        String? inputError;
 
-          String? validatePin(AppLocalizations l10n) {
-            final value = pinController.text.trim();
-            return switch (pinFormat) {
-              PinFormat.sixCharHex =>
-                RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)
-                    ? null
-                    : l10n.pairingPinErrorInvalidHex,
-              PinFormat.fourDigitNumeric =>
-                RegExp(r'^\d{4}$').hasMatch(value)
-                    ? null
-                    : l10n.pairingPinErrorInvalid,
-              // No fixed shape — Sony BRAVIA validates entirely server-side.
-              PinFormat.freeform =>
-                value.isNotEmpty ? null : l10n.pairingPinErrorInvalid,
-            };
+        String? validatePin(AppLocalizations l10n) {
+          final value = pinController.text.trim();
+          return switch (pinFormat) {
+            PinFormat.sixCharHex =>
+              RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)
+                  ? null
+                  : l10n.pairingPinErrorInvalidHex,
+            PinFormat.fourDigitNumeric =>
+              RegExp(r'^\d{4}$').hasMatch(value)
+                  ? null
+                  : l10n.pairingPinErrorInvalid,
+            // No fixed shape — Sony BRAVIA validates entirely server-side.
+            PinFormat.freeform =>
+              value.isNotEmpty ? null : l10n.pairingPinErrorInvalid,
+          };
+        }
+
+        void submit(StateSetter setDialogState, AppLocalizations l10n) {
+          final error = validatePin(l10n);
+          if (error != null) {
+            setDialogState(() => inputError = error);
+            return;
           }
+          final trimmed = pinController.text.trim();
+          // Uppercasing is correct for the fixed-format PINs (hex/numeric
+          // are case-insensitive by construction) but not for freeform —
+          // an arbitrary PIN's case may matter and isn't ours to guess.
+          Navigator.of(context).pop(
+            pinFormat == PinFormat.freeform ? trimmed : trimmed.toUpperCase(),
+          );
+        }
 
-          void submit(StateSetter setDialogState, AppLocalizations l10n) {
-            final error = validatePin(l10n);
-            if (error != null) {
-              setDialogState(() => inputError = error);
-              return;
-            }
-            final trimmed = pinController.text.trim();
-            // Uppercasing is correct for the fixed-format PINs (hex/numeric
-            // are case-insensitive by construction) but not for freeform —
-            // an arbitrary PIN's case may matter and isn't ours to guess.
-            Navigator.of(context).pop(
-              pinFormat == PinFormat.freeform ? trimmed : trimmed.toUpperCase(),
-            );
-          }
-
-          return StatefulBuilder(
-            builder: (context, setDialogState) {
-              final l10n = AppLocalizations.of(context)!;
-              final isHex = pinFormat == PinFormat.sixCharHex;
-              final isFreeform = pinFormat == PinFormat.freeform;
-              return AlertDialog(
-                title: Text(l10n.pairingPinTitle),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l10n.pairingPinBody),
-                    const SizedBox(height: 8),
-                    Text(
-                      pairingMessage,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: pinController,
-                      keyboardType: isHex || isFreeform
-                          ? TextInputType.visiblePassword
-                          : TextInputType.number,
-                      maxLength: isHex ? 6 : (isFreeform ? null : 4),
-                      autofocus: true,
-                      textCapitalization: isHex
-                          ? TextCapitalization.characters
-                          : TextCapitalization.none,
-                      decoration: InputDecoration(
-                        labelText: isHex
-                            ? l10n.pairingPinCodeLabelHex
-                            : l10n.pairingPinCodeLabel,
-                        border: const OutlineInputBorder(),
-                        counterText: '',
-                        errorText: inputError,
-                      ),
-                      onChanged: (_) {
-                        if (inputError == null) return;
-                        setDialogState(() => inputError = null);
-                      },
-                      onSubmitted: (_) => submit(setDialogState, l10n),
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(null),
-                    child: Text(l10n.uiCancel),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final l10n = AppLocalizations.of(context)!;
+            final isHex = pinFormat == PinFormat.sixCharHex;
+            final isFreeform = pinFormat == PinFormat.freeform;
+            return AlertDialog(
+              title: Text(l10n.pairingPinTitle),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.pairingPinBody),
+                  const SizedBox(height: 8),
+                  Text(
+                    pairingMessage,
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  FilledButton(
-                    onPressed: () => submit(setDialogState, l10n),
-                    child: Text(l10n.pairingPinSubmitButton),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: pinController,
+                    keyboardType: isHex || isFreeform
+                        ? TextInputType.visiblePassword
+                        : TextInputType.number,
+                    maxLength: isHex ? 6 : (isFreeform ? null : 4),
+                    autofocus: true,
+                    textCapitalization: isHex
+                        ? TextCapitalization.characters
+                        : TextCapitalization.none,
+                    decoration: InputDecoration(
+                      labelText: isHex
+                          ? l10n.pairingPinCodeLabelHex
+                          : l10n.pairingPinCodeLabel,
+                      border: const OutlineInputBorder(),
+                      counterText: '',
+                      errorText: inputError,
+                    ),
+                    onChanged: (_) {
+                      if (inputError == null) return;
+                      setDialogState(() => inputError = null);
+                    },
+                    onSubmitted: (_) => submit(setDialogState, l10n),
                   ),
                 ],
-              );
-            },
-          );
-        },
-      );
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: Text(l10n.uiCancel),
+                ),
+                FilledButton(
+                  onPressed: () => submit(setDialogState, l10n),
+                  child: Text(l10n.pairingPinSubmitButton),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   static Future<void> showPairingOutcome({
