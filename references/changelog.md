@@ -20,6 +20,10 @@ Keep entries short and append new updates at the top.
   kept running. `UnhandledZoneError.isFatal` now treats `dart:io` `SocketException` as
   non-fatal; unexpected errors (e.g. `StateError`) stay fatal. Diagnostics and
   `StreamUnhandledErrorSource` still receive the event.
+- Android: pin `play-services-auth` **21.6.0** in `android/app/build.gradle.kts` to override
+  transitive **20.7.0** from `firebase-auth` / `androidx.credentials`. **20.7.0** can NPE in
+  `SignInHubActivity.onCreate` when the OS recreates the activity with a null sign-in extra;
+  fixed in **21.0.0+**.
 
 ### Docs
 - `README.md`, `references/app-initialization-and-remote-selection-flow.md`, and

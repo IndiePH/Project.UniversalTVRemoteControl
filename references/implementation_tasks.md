@@ -202,6 +202,7 @@ Living plan derived from `references/product_specs.md`—update both when scope 
 - [x] Firebase Analytics + Crashlytics (commit `bf5d103`): Firebase init + fatal error hooks in `main.dart`; `AnalyticsService` DI with Pro entitlement + startup locale events
 - [x] Crashlytics startup zone mismatch (`c1d5a2f`, 2026-08-15): `runApp` in the same zone as `WidgetsFlutterBinding.ensureInitialized()`; `runZonedGuarded` removed. Uncaught async errors stay on `PlatformDispatcher.instance.onError` (+ diagnostics / `StreamUnhandledErrorSource`)
 - [x] Crashlytics LAN `SocketException` false fatal (2026-08-27): `UnhandledZoneError.isFatal` — `SocketException` non-fatal at zone hook; `unhandled_zone_error_test.dart`
+- [x] Android `play-services-auth` override (2026-08-27): pin **21.6.0** in `android/app/build.gradle.kts` — avoids `SignInHubActivity` NPE on transitive **20.7.0** from Firebase Auth
 - [x] Android TV protobuf 6 compatibility (`ef8386b`): `PbList.createRepeated` → `List` in Android TV remote/pairing message types
 - [x] AdMob runtime test/live toggle + Android edge-to-edge (`4af3cdc` / `05aca51`, **TVREMOTE-63** / **TVREMOTE-26**; **superseded 2026-08-25** by LevelPlay — Remote Config/`AdRemoteConfigService` and AdMob IDs removed):
   - [x] `AdRemoteConfigService` — Firebase Remote Config `test_ads_enabled`; fail-safe default prefers test ad units; split settings/defaults from fetch; fetch failures keep last activated value; release `minimumFetchInterval` 1 minute (`05aca51`)

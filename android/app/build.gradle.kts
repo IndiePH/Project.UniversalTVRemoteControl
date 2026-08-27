@@ -82,4 +82,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-appset:16.0.2")
     implementation("com.google.android.gms:play-services-ads-identifier:18.0.1")
     implementation("com.google.android.gms:play-services-basement:18.3.0")
+    // Override transitive play-services-auth@@20.7.0 (from firebase-auth /
+    // androidx.credentials). 20.7.0 NPEs in SignInHubActivity.onCreate when
+    // the OS recreates the activity with a null sign-in extra. Fixed in 21.0.0+.
+    implementation("com.google.android.gms:play-services-auth:21.6.0")
 }
