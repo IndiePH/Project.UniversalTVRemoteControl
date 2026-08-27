@@ -48,7 +48,7 @@ Pairing (user-initiated, whenever no device or user taps "add/switch"):
 6. `AnalyticsService.setCountryAtStartup(locale)`.
 7. `ProEntitlementService.applyLastKnownStatusFromCache()` then `refreshFromStore(...)` — Pro status is available (from cache, at least) before the UI builds.
 8. `runApp(const OneRemoteApp())`. After the first frame, mobile only: `LevelPlayAdsService.initialize()` (iOS ATT, then Unity LevelPlay SDK init).
-9. `FlutterError.onError` / `PlatformDispatcher.instance.onError` wired to Crashlytics + `AppDiagnosticsRecorder` + an optional in-app error stream.
+9. `FlutterError.onError` / `PlatformDispatcher.instance.onError` wired to Crashlytics + `AppDiagnosticsRecorder` + an optional in-app error stream. Zone hook uses `UnhandledZoneError.isFatal(error)` so LAN `SocketException` (peer reset, Wi‑Fi blip) is recorded non-fatally; unexpected errors stay fatal. Samsung **Deny** / `ConnectionState.unauthorized` is handled at the transport layer (not a Crashlytics fatal).
 
 ## Phase 2 — Dependency injection: `di_bootstrap.dart`
 

@@ -8,6 +8,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:get_it/get_it.dart';
 import 'package:one_remote/app/analytics/analytics_service.dart';
 import 'package:one_remote/app/diagnostics/app_diagnostics_recorder.dart';
+import 'package:one_remote/app/diagnostics/unhandled_zone_error.dart';
 import 'package:one_remote/app/configurations/app_build_config.dart';
 import 'package:one_remote/app/configurations/app_environment.dart';
 import 'package:one_remote/app/configurations/di_bootstrap.dart';
@@ -61,7 +62,11 @@ Future<void> main() async {
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    FirebaseCrashlytics.instance.recordError(
+      error,
+      stack,
+      fatal: UnhandledZoneError.isFatal(error),
+    );
     _recordUnhandledError(error);
     final errorSource = _errorSource();
     if (errorSource != null) {

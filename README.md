@@ -65,6 +65,7 @@ On a phone and TV on the same LAN: open the app → pair (scan or manual IP) →
 - Connection behavior (active device on remote home):
   - Live transport state via `TvConnectionStateService`; `connect()` runs on subscribe and on a **5 s** periodic reconnect when `disconnected` or `error` (paused while another route covers home, e.g. pairing; also paused in background)
   - TV **Deny** / revoked remote-control authorization is `ConnectionState.unauthorized` — status **Allow this remote on your TV**; **no** 5 s retry (use the pair button to request Allow again). This is not reported as a Crashlytics crash.
+  - LAN peer socket reset (`SocketException`, e.g. TV sleep or Wi‑Fi drop) is a recoverable transport outcome — recorded non-fatally via `UnhandledZoneError`; the app keeps running and reconnect/retry handles recovery.
   - Pairing / saved-device rows use `TvReachabilityService` TCP reachability probes
   - Pairing credentials persist across restarts (`flutter_secure_storage`); preferred key is the proven per-TV stable id, with legacy host-keyed fallback during migration
   - After a router/DHCP IP change, rediscovery updates the saved TV's mutable `host` so reconnect does not require re-pairing when stable identity is known

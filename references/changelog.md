@@ -11,6 +11,25 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-08-27
+
+### Fixed
+- LAN `SocketException` (e.g. connection reset by peer on a TV at `192.168.x.x`) no longer
+  counts as a Crashlytics **fatal**. Uncaught async socket errors from TV transports were
+  recorded at `PlatformDispatcher.instance.onError` with `fatal: true` even though the app
+  kept running. `UnhandledZoneError.isFatal` now treats `dart:io` `SocketException` as
+  non-fatal; unexpected errors (e.g. `StateError`) stay fatal. Diagnostics and
+  `StreamUnhandledErrorSource` still receive the event.
+
+### Docs
+- `README.md`, `references/app-initialization-and-remote-selection-flow.md`, and
+  `references/implementation_tasks.md` note the Crashlytics zone classifier alongside the
+  existing Samsung Deny / unauthorized non-fatal guidance.
+
+### Verification
+- `flutter test test/lib/app/diagnostics/unhandled_zone_error_test.dart` — LAN RST classified non-fatal; `StateError` stays fatal.
+- `flutter analyze lib/main.dart lib/app/diagnostics/unhandled_zone_error.dart` — no issues.
+
 ## 2026-08-26
 
 ### Changed
