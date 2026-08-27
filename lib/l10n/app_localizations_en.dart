@@ -766,8 +766,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPrivacyPolicy => 'Privacy policy';
 
   @override
-  String get settingsAdPrivacyOptions => 'Ad privacy settings';
-
-  @override
   String get settingsLegalLinkFailed => 'Could not open the link.';
 }

@@ -352,7 +352,7 @@ These items are **release gates** for public distribution. **Actionable checklis
 
 * **Privacy policy:** Publicly hosted URL required when showing ads or collecting data; link it in both store listings.
 * **iOS App Tracking Transparency (ATT):** Request before loading personalized ads; omission is a common rejection reason.
-* **GDPR / CCPA:** Consent flows (for example Google UMP via the ads stack) before serving ads in applicable regions.
+* **GDPR / CCPA:** Consent flows before serving ads in applicable regions (LevelPlay privacy APIs or a CMP; Google UMP was removed with AdMob).
 * **In-app purchases:** All digital purchases only through Apple IAP and Google Play Billing.
 * **COPPA / age:** Declare target age appropriately in listings; adjust ad targeting if children may use the app.
 * **Manufacturer APIs:** Review Samsung, LG, Hisense (and future) developer terms before commercial reliance; record outcomes in `references/third_party_licenses.md` (see manufacturer section there).

@@ -34,8 +34,6 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
     required this.onOpenFeedback,
     required this.showPrivacyPolicyLink,
     required this.onOpenPrivacyPolicy,
-    required this.showAdPrivacyOptions,
-    required this.onOpenAdPrivacyOptions,
     required this.themePreference,
     required this.onThemePreferenceChanged,
     required this.appVersionLabel,
@@ -62,8 +60,6 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   final VoidCallback onOpenFeedback;
   final bool showPrivacyPolicyLink;
   final VoidCallback onOpenPrivacyPolicy;
-  final bool showAdPrivacyOptions;
-  final VoidCallback onOpenAdPrivacyOptions;
   final AppThemePreference themePreference;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
   final String appVersionLabel;
@@ -71,7 +67,7 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final showLegalSection = showPrivacyPolicyLink || showAdPrivacyOptions;
+    final showLegalSection = showPrivacyPolicyLink;
     final isPro = entitlementStatus == ProEntitlementStatus.entitled;
     final isCheckingPro = entitlementStatus == ProEntitlementStatus.unknown;
 
@@ -200,13 +196,6 @@ class RemoteHomeSettingsSheet extends StatelessWidget {
                     leading: const Icon(Icons.privacy_tip_outlined),
                     title: Text(l10n.settingsPrivacyPolicy),
                     onTap: onOpenPrivacyPolicy,
-                  ),
-                if (showAdPrivacyOptions)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.ads_click_outlined),
-                    title: Text(l10n.settingsAdPrivacyOptions),
-                    onTap: onOpenAdPrivacyOptions,
                   ),
               ],
               const SizedBox(height: 16),

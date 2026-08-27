@@ -24,8 +24,8 @@ The official Flutter plugin ecosystem covers all three key integration needs for
 | Need | Flutter Plugin |
 |---|---|
 | In-app purchase (remove ads) | `in_app_purchase` (official Flutter plugin) |
-| Ads | `google_mobile_ads` (official Google plugin) |
-| iOS ad tracking permission | `app_tracking_transparency` |
+| Ads | `unity_levelplay_mediation` (Unity LevelPlay) |
+| iOS ad tracking permission | LevelPlay `ATTrackingManager` (plugin bridge) |
 
 ### 2.2 Framework Options Comparison
 
@@ -144,9 +144,9 @@ any user data.
 
 | Requirement | Platform | What to Do |
 |---|---|---|
-| **App Tracking Transparency (ATT)** | iOS 14.5+ | Must request user permission before showing personalized ads. Use the `app_tracking_transparency` Flutter plugin. Skipping this = rejection. |
-| **GDPR consent (EU users)** | Both | Must show a consent dialog before loading ads for EU users. Use Google's UMP (User Messaging Platform) SDK — handles this automatically via the `google_mobile_ads` plugin. |
-| **CCPA consent (California users)** | Both | Handled by the same UMP SDK as GDPR. |
+| **App Tracking Transparency (ATT)** | iOS 14.5+ | Must request user permission before showing personalized ads. OneRemote uses LevelPlay `ATTrackingManager` in `LevelPlayAdsService` before `LevelPlay.init()`. Skipping this = rejection. |
+| **GDPR consent (EU users)** | Both | Must show a consent dialog before loading ads for EU users. Google UMP was removed with AdMob; restore a CMP or LevelPlay privacy APIs before ads go live in the EU. |
+| **CCPA consent (California users)** | Both | Same as GDPR — not currently wired after the LevelPlay migration. |
 | **COPPA (users under 13)** | Both | If your app may be used by children under 13, special restrictions apply to ad targeting. Define your target age group clearly in store listings. |
 
 ### 5.3 TV Manufacturer API Terms
@@ -172,7 +172,7 @@ Manufacturer API / ToS: `references/third_party_licenses.md`, `references/produc
 | TV device discovery | How smart TVs announce themselves on a network (SSDP / UPnP / mDNS protocols) |
 | Per-brand protocol | Each TV brand's specific command format (see Section 3.1) |
 | In-app purchase integration | Apple IAP + Google Play Billing via `in_app_purchase` plugin |
-| Ad integration + consent | AdMob setup, ATT permission flow, UMP consent dialog |
+| Ad integration + consent | Unity LevelPlay banners, ATT via LevelPlay, CMP/privacy APIs for EU/CCPA (open) |
 
 ### 6.2 Tools & Accounts
 
@@ -184,7 +184,7 @@ Manufacturer API / ToS: `references/third_party_licenses.md`, `references/produc
 | Flutter SDK | Free | Cross-platform framework |
 | Apple Developer Program | $99 / year | Required for TestFlight, App Store submission, IAP setup |
 | Google Play Developer account | $25 one-time | Required for Play Store submission, Play Billing setup |
-| Google AdMob account | Free | Ad network for showing ads in-app |
+| Unity LevelPlay account | Free | Ad mediation for in-app banners |
 | Privacy Policy hosting | Free | Any public webpage (GitHub Pages, Notion, etc.) |
 
 **Also reflected in:** `references/compliance-and-release-requirements.md` §3 (accounts / tools table).
@@ -209,8 +209,8 @@ Severity/likelihood view for planning. **Checklist:** `references/compliance-and
 | Risk | Severity | Likelihood | Mitigation |
 |---|---|---|---|
 | Using third-party payment processor for IAP | HIGH | N/A | Use Apple IAP + Google Play Billing only — non-negotiable |
-| Missing ATT permission dialog on iOS | HIGH | CERTAIN if omitted | Implement `app_tracking_transparency` plugin before first ad loads |
-| Missing GDPR/CCPA consent screen | HIGH | HIGH (EU/CA users) | Integrate Google UMP SDK — handles consent automatically |
+| Missing ATT permission dialog on iOS | HIGH | CERTAIN if omitted | Request ATT via LevelPlay `ATTrackingManager` before first ad loads (already in `LevelPlayAdsService`) |
+| Missing GDPR/CCPA consent screen | HIGH | HIGH (EU/CA users) | Restore a CMP / LevelPlay privacy APIs before ads go live in EU/CA |
 | No Privacy Policy at submission | HIGH | CERTAIN if omitted | Publish privacy policy page before submitting to either store |
 | TV manufacturer API restricts commercial use | MEDIUM | MEDIUM | Review developer terms for each brand before integrating |
 | App Store review rejection | MEDIUM | LOW | Ensure app is fully functional; document features clearly in submission |

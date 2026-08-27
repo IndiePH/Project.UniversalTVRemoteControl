@@ -47,18 +47,16 @@ Pairing (user-initiated, whenever no device or user taps "add/switch"):
 5. **`await DiBootstrap.initialize(env)`** — see Phase 2. Everything else in the app depends on this having finished; it's awaited before any UI exists.
 6. `AnalyticsService.setCountryAtStartup(locale)`.
 7. `ProEntitlementService.applyLastKnownStatusFromCache()` then `refreshFromStore(...)` — Pro status is available (from cache, at least) before the UI builds.
-8. Mobile only: `AdConsentCoordinator.prepareForAds()`, then `MobileAds.instance.initialize()` if consent allows.
-9. `FlutterError.onError` / `PlatformDispatcher.instance.onError` wired to Crashlytics + `AppDiagnosticsRecorder` + an optional in-app error stream.
-10. `runApp(const OneRemoteApp())`.
+8. `runApp(const OneRemoteApp())`. After the first frame, mobile only: `LevelPlayAdsService.initialize()` (iOS ATT, then Unity LevelPlay SDK init).
+9. `FlutterError.onError` / `PlatformDispatcher.instance.onError` wired to Crashlytics + `AppDiagnosticsRecorder` + an optional in-app error stream. Zone hook uses `UnhandledZoneError.isFatal(error)` so LAN `SocketException` (peer reset, Wi‑Fi blip) is recorded non-fatally; unexpected errors stay fatal. Samsung **Deny** / `ConnectionState.unauthorized` is handled at the transport layer (not a Crashlytics fatal).
 
 ## Phase 2 — Dependency injection: `di_bootstrap.dart`
 
-`DiBootstrap.initialize(env)` (`di_bootstrap.dart:46-79`):
+`DiBootstrap.initialize(env)` (`di_bootstrap.dart`):
 
 1. If `GetIt` already has core services registered (repeat init, e.g. tests or `OneRemoteApp.restart()`), resets it first.
-2. Fetches/activates `AdRemoteConfigService` (Firebase Remote Config) if mobile ads are supported.
-3. Registers app-wide singletons directly: `AppEnvironment`, `AdRemoteConfigService`, `AnalyticsService`, the locale `ValueNotifier`, `LocalizedStrings`, `AppThemeController` (loaded from persisted preference).
-4. Picks a list of `IDiConfig` objects via `_configsFor(env)` (`di_bootstrap.dart:26-44`) and calls `.configure(sl, env)` on each, in order:
+2. Registers app-wide singletons directly: `AppEnvironment`, `AnalyticsService`, the locale `ValueNotifier`, `LocalizedStrings`, `AppThemeController` (loaded from persisted preference).
+3. Picks a list of `IDiConfig` objects via `_configsFor(env)` (`di_bootstrap.dart`) and calls `.configure(sl, env)` on each, in order:
    - **production:** `RemoteControlDiConfig`, `AppMonetizationDiConfig`, `FeedbackDiConfig`.
    - **development/debug:** `RemoteControlDiConfig` *or* `DebugRemoteControlDiConfig` (chosen by a fake-transport override read from `TransportDebugSettings` or the `USE_FAKE_TRANSPORTS` compile flag), plus `DevAppDiConfig`, `AppMonetizationDiConfig`, `FeedbackDiConfig`.
 
@@ -79,7 +77,7 @@ The registrations relevant to device selection and remotes, in order:
 
 ## Phase 3 — Root widget: `one_remote_app.dart`
 
-`OneRemoteApp.build()` (`:30-67`) pulls `AppThemeController` and the locale/theme `ValueNotifier`s straight out of `GetIt`, then builds one `MaterialApp`. There is **no named-route table** — `MaterialApp.home` is `RemoteHomePage` directly, constructed with every dependency it needs resolved from `GetIt` right there (`commandService`, `deviceRepository`, `discoveryService`, `layoutRepository`, `proEntitlementService`, `connectionStateService`, `transportLogReaderProvider`, plus `interstitialAdController` and `appEnvironment`). `RemoteHomePage` **is** the app's single screen; pairing and every other page get pushed on top of it via `Navigator`, not routed to separately.
+`OneRemoteApp.build()` pulls `AppThemeController` and the locale/theme `ValueNotifier`s straight out of `GetIt`, then builds one `MaterialApp`. There is **no named-route table** — `MaterialApp.home` is `RemoteHomePage` directly, constructed with every dependency it needs resolved from `GetIt` right there (`commandService`, `deviceRepository`, `discoveryService`, `layoutRepository`, `proEntitlementService`, `connectionStateService`, `transportLogReaderProvider`, plus `appEnvironment`). `RemoteHomePage` **is** the app's single screen; pairing and every other page get pushed on top of it via `Navigator`, not routed to separately. Free-tier banner ads overlay the home stack after `LevelPlayAdsService` reports SDK ready.
 
 ## Phase 4 — `RemoteHomePage` boot (`remote_home_page.dart`)
 

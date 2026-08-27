@@ -100,16 +100,16 @@ Download OneRemote and control your Smart TV from your phone.
 | Target audience | 13+ (Play Console → Target audience) |
 | Privacy policy URL | `https://yoxent.github.io/legal-docs/one-remote/privacy-policy.html` |
 | Data deletion URL | `https://yoxent.github.io/legal-docs/one-remote/account-and-data-deletion.html` |
-| Ads disclosure | Banner + interstitial (not banner-only) |
+| Ads disclosure | Banner (LevelPlay); interstitial not wired |
 | In-app products | Weekly / monthly / yearly subscriptions + lifetime Pro |
 
 ---
 
 ## 🔹 Release details (AAB — Google Play)
 
-**Current release:** `1.5.1` · **versionCode:** `21` · **Track:** Internal testing → Production (promote same artifact when validated)
+**Current release:** `1.5.2` · **versionCode:** `24` · **Track:** Closed testing → Production (promote same artifact when validated)
 
-**Focus for this release:** Grid placement / layout persistence ([PR #25](https://github.com/IndiePH/Project.UniversalTVRemoteControl/pull/25)): swapped buttons restore to their saved cells, and in-flight layout saves are flushed when the app is backgrounded. No Play Console Data safety form change (no new data collected or shared).
+**Focus for this release:** Black splash on Android 12–13 (API 31–33). `enableEdgeToEdge()` was dismissing the system splash before Flutter’s first frame, leaving a black window. This build installs the SplashScreen API first and sets `Theme.SplashScreen` (icon + background) for API 31+. No Play Console Data safety form change (no new data collected or shared).
 
 **Build (signed AAB with production dart-defines):**
 
@@ -127,22 +127,9 @@ Requires `android/release_dart_defines.properties` (gitignored) with `FEEDBACK_W
 Paste under **Release → Release notes** (Internal testing or Production). Adjust length if Console limits apply.
 
 ```
-What's new in 1.5.1
+What's new in 1.5.2
 
-• Custom remote layouts restore correctly after you swap buttons — saved positions no longer snap back to defaults
-• Layout edits are saved when you leave the app, so custom grids are less likely to be lost
-• Paired TVs still reconnect after a router reboot or new IP when the TV can be identified again
-• Hide unused remote buttons in the layout editor drawer (Pro) without losing their place
-
-Thank you for using OneRemote!
-```
-
-**Shorter variant (if character limit is tight):**
-
-```
-• Swapped remote buttons keep their saved positions after reload
-• Layout edits save when you leave the app
-• Paired TVs still survive router reboot / new IP in the common case
+• Fixed a black screen when opening the app on Android 12 and 13
 ```
 
 ### Operator checklist (this AAB)
@@ -153,13 +140,14 @@ Thank you for using OneRemote!
 | Sheet column **L** `pairedModels`; FILTER formulas use `A:L` | ☐ |
 | Privacy policy live (pairedModels §2.1) | ☐ |
 | Data safety form unchanged (no new collected/shared data for this release) | ☐ |
-| Firebase Remote Config `test_ads_enabled` = `false` | ☐ |
-| Upload AAB to **Internal testing** | ☐ |
+| LevelPlay banner loads on free tier (app key `27c78d0ad`, unit `20azo5e9eecpv182`) | ☐ |
+| Upload AAB to **Closed testing** | ☐ |
 | Verify: pair TV, Pro purchase/restore, ads, feedback row in Sheet | ☐ |
 | Verify: reboot router / change TV IP, rediscover, reconnect without re-pair when identity is known | ☐ |
 | Verify: layout editor drawer — park a button, confirm it leaves the live remote, restore it | ☐ |
 | Verify: swap two grid buttons, kill/reopen app — both stay in swapped cells | ☐ |
 | Verify: edit layout, background the app immediately, reopen — last positions persisted | ☐ |
+| Verify: cold start on Android 12/13 — branded splash (not a black screen) until first frame | ☐ |
 | Verify: app shortcuts / launch commands still work on Samsung and Hisense | ☐ |
 | Update Main store listing full description (layout restore / save-on-background bullets) | ☐ |
 | Promote to **Production** (staged rollout recommended) | ☐ |
@@ -170,7 +158,7 @@ Thank you for using OneRemote!
 
 ## 🟢 Free Version (Base App)
 - Full remote controls for supported brands  
-- Ads after consent where required: bottom banner + occasional interstitial (engagement-gated; not during pairing)  
+- Ads after consent where required: bottom banner (LevelPlay); interstitial not wired yet 
 - Limited themes (1–2 only)  
 - Fixed layout only  
 
@@ -204,15 +192,15 @@ Rationale: aligned to competitor pricing, with intentionally lower price points 
 # 4. 📢 Ad Strategy
 
 ## 🟢 Ad Type Strategy (shipped)
-- **Banner ads** — bottom of remote home (free tier)
-- **Interstitial ads** — occasional full-screen ads after consent (UMP) and engagement policy; not on first launch or during pairing
+- **Banner ads** — bottom of remote home (free tier), Unity LevelPlay
+- **Interstitial ads** — not wired until a LevelPlay interstitial ad unit is provided
 
 Avoid:
 - Full-screen ads on launch  
 - Ads during pairing or connection loading  
 - Aggressive interstitial frequency  
 
-**Store copy:** Disclose both banner and interstitial ads in the full description and Play Console Data safety / ads declarations.
+**Store copy:** Disclose banner ads in the full description and Play Console Data safety / ads declarations. Re-add interstitial disclosure when that format ships.
 
 ---
 
