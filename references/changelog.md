@@ -11,6 +11,20 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-08-26
+
+### Changed
+- App version bump to `1.5.2+24` (`pubspec.yaml`; README and marketing versionCode synced).
+
+### Fixed
+- Android 12–13 cold start: install `SplashScreen` before `enableEdgeToEdge()`, and use
+  `Theme.SplashScreen` on API 31+ so launch is no longer a black window until Flutter’s
+  first frame (`MainActivity.kt`, `values-v31` / `values-night-v31` styles).
+
+### Docs
+- Updated `marketing_strategy.md` Play release notes for `1.5.1` / versionCode `23` to
+  lead with the black-splash fix (What’s new paste, shorter variant, operator checklist).
+
 ## 2026-08-25
 
 ### Changed

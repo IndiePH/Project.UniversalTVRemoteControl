@@ -76,6 +76,8 @@ flutter {
 dependencies {
     // Play Console edge-to-edge: enableEdgeToEdge() on FlutterFragmentActivity.
     implementation("androidx.activity:activity-ktx:1.10.1")
+    // Android 12+ SplashScreen API (Theme.SplashScreen + installSplashScreen()).
+    implementation("androidx.core:core-splashscreen:1.2.0")
     // Required by Unity LevelPlay (unity_levelplay_mediation).
     implementation("com.google.android.gms:play-services-appset:16.0.2")
     implementation("com.google.android.gms:play-services-ads-identifier:18.0.1")
