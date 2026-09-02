@@ -11,6 +11,19 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-09-02
+
+### Changed
+- Cloud Functions runtime for `verifyProAndroidPurchase` from Node.js 20 to **Node.js 24**
+  (`functions/package.json` `engines.node`). Node 20 is deprecated as of 2026-04-30 and
+  decommissioned 2026-10-30. Node 24 is the latest GA Cloud Run functions runtime (Node 26 is
+  preview). Deployed to `oneremote-497701` on 2026-09-02; no Play/app rebuild required.
+
+### Docs
+- `references/goals/goal-pro-receipt-validation-remote-setup.md`: Node.js prerequisite 24;
+  deploy must use `--project oneremote-497701` and confirm the CLI target line.
+- `README.md` Firebase section notes Node 24 and the project pin.
+
 ## 2026-08-27
 
 ### Fixed
