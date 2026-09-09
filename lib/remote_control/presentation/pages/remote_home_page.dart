@@ -27,11 +27,13 @@ import 'package:one_remote/app/theme/app_theme_preference.dart';
 import 'package:one_remote/app/transport_debug_settings.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/application.dart';
+import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/debug/runtime_flags_template_debug.dart';
 import 'package:one_remote/remote_control/domain/domain.dart'
     hide ConnectionState;
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
     as remote_connection;
+import 'package:one_remote/remote_control/presentation/controllers/reconnection_retry_controller.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_actions.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_status_kind.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_keyboard_availability.dart';
@@ -105,7 +107,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   Timer? _pairButtonHintResetTimer;
   OverlayEntry? _toastOverlayEntry;
   Timer? _toastOverlayTimer;
-  Timer? _connectionRetryTimer;
+  late final ReconnectionRetryController _retryController;
   ProEntitlementStatus _lastKnownProStatus = ProEntitlementStatus.unknown;
   bool _suppressProActivatedToast = false;
 
@@ -144,7 +146,30 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     widget.proEntitlementService.statusNotifier.addListener(
       _handleProEntitlementChanged,
     );
+    _retryController = ReconnectionRetryController(
+      commandService: widget.commandService,
+      discoveryService: widget.discoveryService,
+      deviceRepository: widget.deviceRepository,
+      identityRegistry: GetIt.instance.isRegistered<DeviceIdentityRegistry>()
+          ? GetIt.instance<DeviceIdentityRegistry>()
+          : null,
+      layoutRepository: widget.layoutRepository,
+      canAttemptNow: () =>
+          mounted && ModalRoute.of(context)?.isCurrent == true,
+      onDeviceUpdated: _handleDeviceUpdatedByReconciliation,
+    );
     _loadInitialDevice();
+  }
+
+  /// Adopts a device copy refreshed by the retry controller's escalation
+  /// step (see `ReconnectionRetryController._refreshDeviceFromRepository`) so
+  /// the page stops addressing a host that reconciliation has since moved on
+  /// from.
+  void _handleDeviceUpdatedByReconciliation(TvDevice device) {
+    if (!mounted || _activeDevice?.id != device.id) {
+      return;
+    }
+    setState(() => _activeDevice = device);
   }
 
   @override
@@ -172,7 +197,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     );
     _remoteTextReadySub?.cancel();
     _connectionStateSub?.cancel();
-    _stopConnectionRetry();
+    _retryController.dispose();
     _pairButtonBlinkTimer?.cancel();
     _pairButtonHintResetTimer?.cancel();
     _toastOverlayTimer?.cancel();
@@ -184,7 +209,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.paused) {
-      _stopConnectionRetry();
+      _retryController.stop();
       // Best-effort: give an in-flight layout save a chance to reach disk
       // before the OS can kill the process. Not a hard guarantee under an
       // aggressive OOM-kill, but this is the only hook the platform gives us.
@@ -193,7 +218,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshProEntitlementOnResume());
       if (_activeDevice != null && _connectionState.shouldAutoReconnect) {
-        _startConnectionRetry(_activeDevice!);
+        _retryController.start(_activeDevice!);
       }
     }
   }
@@ -317,7 +342,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   void _subscribeConnectionState(TvDevice? device) {
     _connectionStateSub?.cancel();
     _connectionStateSub = null;
-    _stopConnectionRetry();
+    _retryController.stop();
     if (device == null) {
       if (mounted) {
         setState(
@@ -349,37 +374,13 @@ class _RemoteHomePageState extends State<RemoteHomePage>
         }
       });
       if (state.shouldAutoReconnect) {
-        _startConnectionRetry(device);
+        _retryController.start(device);
       } else if (state == remote_connection.ConnectionState.connected ||
           state == remote_connection.ConnectionState.unauthorized) {
-        _stopConnectionRetry();
+        _retryController.stop();
       }
     });
     unawaited(widget.commandService.connect(device: device));
-  }
-
-  void _startConnectionRetry(TvDevice device) {
-    if (_connectionRetryTimer?.isActive == true) {
-      return;
-    }
-    _connectionRetryTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (_connectionState == remote_connection.ConnectionState.connected) {
-        _stopConnectionRetry();
-        return;
-      }
-      // Skip while another route is on top (e.g. pairing page) — avoids
-      // sending a connect to the active TV while the user is pairing a new one.
-      // Resumes naturally on the next tick once this page is current again.
-      if (!mounted || ModalRoute.of(context)?.isCurrent != true) {
-        return;
-      }
-      unawaited(widget.commandService.connect(device: device));
-    });
-  }
-
-  void _stopConnectionRetry() {
-    _connectionRetryTimer?.cancel();
-    _connectionRetryTimer = null;
   }
 
   Future<void> _loadInitialDevice() async {
@@ -1428,21 +1429,36 @@ class _RemoteHomePageState extends State<RemoteHomePage>
                               onResetLayout: _resetLayoutForActiveDevice,
                               onPersistLayout: _persistLayoutForActiveDevice,
                             )
-                          : RemoteHomeStatusPanel(
-                              deviceName: deviceName,
-                              status: _statusLine(
-                                AppLocalizations.of(context)!,
-                              ),
-                              connectionState: _connectionState,
-                              onOpenPairing: _openPairing,
-                              onOpenDeviceSwitcher: _hasAnyPairedDevice
-                                  ? _showDeviceSwitcher
-                                  : null,
-                              hasActiveDevice: _activeDevice != null,
-                              hasAnyPairedDevice: _hasAnyPairedDevice,
-                              highlightPairButton: _showPairingHint,
-                              pairButtonBlinkOn: _pairButtonBlinkOn,
-                              overlayOnChild: false,
+                          : ValueListenableBuilder<ReconnectionRetryState?>(
+                              valueListenable: _retryController.stateNotifier,
+                              builder: (context, retryState, child) {
+                                final waitingSeconds =
+                                    retryState?.phase ==
+                                        ReconnectionPhase.waiting
+                                    ? retryState!.waitSecondsRemaining
+                                    : null;
+                                return RemoteHomeStatusPanel(
+                                  deviceName: deviceName,
+                                  status: _statusLine(
+                                    AppLocalizations.of(context)!,
+                                  ),
+                                  connectionState: _connectionState,
+                                  onOpenPairing: _openPairing,
+                                  onOpenDeviceSwitcher: _hasAnyPairedDevice
+                                      ? _showDeviceSwitcher
+                                      : null,
+                                  hasActiveDevice: _activeDevice != null,
+                                  hasAnyPairedDevice: _hasAnyPairedDevice,
+                                  highlightPairButton: _showPairingHint,
+                                  pairButtonBlinkOn: _pairButtonBlinkOn,
+                                  overlayOnChild: false,
+                                  retryCountdownSeconds: waitingSeconds,
+                                  onRetryNow: waitingSeconds != null
+                                      ? _retryController.retryNow
+                                      : null,
+                                  child: child!,
+                                );
+                              },
                               child: RemoteHomeRemoteGrid(
                                 layoutItems: _layoutItems,
                                 gridColumns: kRemoteLayoutGridColumns,

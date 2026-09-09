@@ -169,7 +169,11 @@ Concrete approach (finalized):
 
 Skills: language-specific-implementation, clean-code-solid, framework-mastery
 Depends-on: []
-Status: concrete implementation approach finalized (see above); not yet written to a file.
+Status: implemented (`ReconnectionRetryController` + `RemoteHomePage`/`RemoteHomeStatusPanel`
+wiring) and covered by 9 unit tests in `reconnection_retry_controller_test.dart` (fast/escalate/wait
+cycle, `retryNow` immediacy, `canAttemptNow` gating, the device-refresh gap fix, and escalation
+failure resilience). `flutter analyze` clean; full suite green (754/754). Not yet re-verified against
+real hardware.
 Risk-hint: MEDIUM — new state machine in a heavily-used screen
 
 #### Task T1.2: Grow the wait duration across successive laps

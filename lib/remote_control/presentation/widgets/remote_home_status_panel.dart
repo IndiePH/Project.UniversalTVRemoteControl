@@ -24,6 +24,8 @@ class RemoteHomeStatusPanel extends StatelessWidget {
     this.highlightPairButton = false,
     this.pairButtonBlinkOn = false,
     this.overlayOnChild = false,
+    this.retryCountdownSeconds,
+    this.onRetryNow,
     required this.child,
   });
 
@@ -37,6 +39,16 @@ class RemoteHomeStatusPanel extends StatelessWidget {
   final bool highlightPairButton;
   final bool pairButtonBlinkOn;
   final bool overlayOnChild;
+
+  /// Seconds remaining in the automatic-reconnect wait phase, or `null` when
+  /// not currently waiting. When non-null, replaces the plain status line
+  /// with a countdown and a retry-now action (see
+  /// `references/goals/goal-automatic-reconnection-resilience.md` SG1/T1.1).
+  final int? retryCountdownSeconds;
+
+  /// Invoked when the retry-now icon is tapped. Only meaningful (and only
+  /// rendered) alongside a non-null [retryCountdownSeconds].
+  final VoidCallback? onRetryNow;
   final Widget child;
 
   @override
@@ -105,7 +117,17 @@ class RemoteHomeStatusPanel extends StatelessWidget {
                   ],
                 ),
               ),
-              if (status.isNotEmpty) ...[
+              if (retryCountdownSeconds != null) ...[
+                const SizedBox(
+                  height: RemoteHomeStatusPanelMetrics.statusLineSpacing,
+                ),
+                blurWhenPairFocus(
+                  _RetryCountdownRow(
+                    secondsRemaining: retryCountdownSeconds!,
+                    onRetryNow: onRetryNow,
+                  ),
+                ),
+              ] else if (status.isNotEmpty) ...[
                 const SizedBox(
                   height: RemoteHomeStatusPanelMetrics.statusLineSpacing,
                 ),
@@ -261,6 +283,45 @@ class _PairButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RetryCountdownRow extends StatelessWidget {
+  const _RetryCountdownRow({
+    required this.secondsRemaining,
+    required this.onRetryNow,
+  });
+
+  final int secondsRemaining;
+  final VoidCallback? onRetryNow;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(child: Text(l10n.remoteStatusRetryingIn(secondsRemaining))),
+        if (onRetryNow != null)
+          Tooltip(
+            message: l10n.remoteRetryNowTooltip,
+            child: InkWell(
+              onTap: onRetryNow,
+              borderRadius: BorderRadius.circular(
+                RemoteHomeStatusPanelMetrics.deviceSwitcherInkWellRadius,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  Icons.refresh,
+                  size: RemoteHomeStatusPanelMetrics.connectionDotSize * 2,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
