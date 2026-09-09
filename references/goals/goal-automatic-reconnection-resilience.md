@@ -76,13 +76,10 @@ retry/backoff bookkeeping — is bounded to each screen's own lifecycle, not sha
 with user: build each screen's retry logic against the existing shared services rather than
 introducing a new singleton.
 
-### D-2: Out of scope — recovery while the app is fully closed (proposed default, not explicitly confirmed)
-Recovering during a multi-hour window while the app process itself isn't running would require a
-platform background mechanism (Android WorkManager or a foreground service), with its own battery
-and OS-policy tradeoffs. This was offered to the user as a scope-boundary question; the question
-itself was not answered (a follow-up addressed the separate architecture question that became D-1
-instead). Treated here as the working default since it was never challenged, but it should be
-explicitly confirmed, not assumed settled.
+### D-2: Out of scope — recovery while the app is fully closed
+Confirmed with user: automatic reconnection only needs to work while the app is open. No
+background mechanism (Android WorkManager, foreground service, etc.) is needed or wanted —
+avoids the battery/OS-policy tradeoffs that would come with one.
 
 ### D-3: Automatic reconciliation triggering is the primary fix; identity-signal work is complementary
 Confirmed with user: the fix that matters regardless of circumstance is making reconciliation run
@@ -119,8 +116,10 @@ wait period displayed as "Connection error... retrying in Xs [retry-now icon]" w
 per-second countdown → on timeout or manual tap, loop back to the fast phase. Repeats indefinitely
 while the page is open and disconnected.
 Detail: Reuses `PairingPageData.discoverDevices`/`reconcileDiscovery` (already shared via DI, per
-D-1) rather than new discovery plumbing. Manual tap cancels the wait and restarts the cycle from
-the fast phase, not just a single immediate retry. Needs `DeviceIdentityRegistry` threaded into
+D-1) rather than new discovery plumbing. Manual tap on the retry-now icon cancels the pending wait
+and fires a connect attempt immediately (stop-and-fire, or restart the timer with a ~0 initial
+delay — either is fine, but the tap must not just reset the clock and wait out another full
+interval), then resumes the fast phase from there. Needs `DeviceIdentityRegistry` threaded into
 `RemoteHomePage`'s constructor (already a GetIt singleton elsewhere in the app). Does not depend on
 SG3/SG4 — works against whatever identity sources reconciliation already supports today.
 Skills: language-specific-implementation, clean-code-solid, framework-mastery
@@ -182,15 +181,15 @@ Depends-on: []
 Status: design + diff fully scoped in conversation; not yet written to a file
 Risk-hint: LOW
 
-#### Task T3.2: Verify `bt` presence on the reporting user's actual hardware
-Objective: Confirm via `dns-sd`/`avahi-browse` from a LAN device whether the user's specific
-Android TV advertises a `bt=` TXT field, to know whether T3.1 helps this device directly or
-whether it remains on IP-fallback.
-Detail: Purely informational — no code impact either way, since T3.1 degrades gracefully.
-Skills: correctness-validation
+#### Task T3.2: (Dropped as a requirement) `bt` presence is unknown and unverifiable in general
+Not a blocking task. Whether `bt` is present on any given device — the reporting user's or
+anyone else's — is unknown and expected to vary; this is exactly why T3.1 falls back to the
+IP-derived id and why reconciliation (SG4) must handle a mixed population regardless. No
+verification step is required before proceeding with T3.1.
+Skills: —
 Depends-on: []
-Status: pending — requested from user, not yet answered
-Risk-hint: LOW
+Status: not applicable
+Risk-hint: —
 
 ---
 
@@ -223,11 +222,8 @@ Risk-hint: LOW
 
 ## Open items (explicitly not settled — do not treat as agreed)
 
-- D-2: whether app-fully-closed recovery is truly out of scope was never explicitly confirmed —
-  see D-2 above.
 - Roku's complete lack of any post-pairing identity re-derivation (see Problem #3) — no fix
-  discussed; not resolved by SG1–SG4.
-- T3.2: whether `bt` is actually present on the reporting user's hardware.
+  discussed; left open for now, not resolved by SG1–SG4.
 - T4.1: exact mechanism and location for the cert-confirmation gate.
 - T1.2: wait-duration growth curve and cap.
 - Exact numeric parameters used throughout this document (3 fast attempts, 5s cadence, 45s initial
