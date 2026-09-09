@@ -221,10 +221,30 @@ discovery we only care to see the list; once we want to pair, that's when it has
 Detail: One reconciliation pass must serve every indicator on the page (the existing per-scan
 reconciliation already covers the whole saved-device list) — indicators must not each trigger
 their own separate reconcile call, which would multiply scans per paired device. Does not depend on
-SG3/SG4 — works against whatever `reconcile()` returns today.
+SG3/SG4 — works against whatever `reconcile()` returns today. When the reconciliation pass completes
+without changing a device's host (including Roku, which has no way to change it at all — see
+Problem #3), the indicator does **not** re-probe that same address a second time (confirmed with
+user): a same-host retry is a wasted network call, and a genuine same-host flake self-corrects on
+the next manual rescan anyway, matching this screen's already-agreed lower reliability bar.
+
+A real timing gotcha was found and fixed while implementing this: `scanCount` (part of each row's
+`ValueKey`, which is what forces `_PairedTvConnectionIndicator` to re-run its probe) used to bump at
+the very start of `_scanDevices()`, before discovery or reconciliation existed. Threading the shared
+reconciliation `Future` into an indicator built at that moment would hand it a stale/null value
+forever, since a `StatefulWidget` only reads its constructor args once, in `initState`. Fixed by
+moving `scanCount`'s bump into the same `setState` that sets `discoveredDevices` — i.e. indicators
+are (re)created only once discovery has resolved and the real reconciliation `Future` already exists.
+
 Skills: language-specific-implementation, clean-code-solid, correctness-validation
 Depends-on: []
-Status: design agreed; diff not yet written
+Status: implemented (`_PairedTvConnectionIndicator`'s probe → await-shared-reconcile → conditional
+re-probe chain, `_pendingReconcile` shared field on `_PairingPageState`, the `scanCount` timing fix)
+and covered by 5 new tests: 3 widget tests through `PairingPage` (reprobe-and-succeed after a host
+change, skip-reprobe when the host is unchanged, two-devices-off-one-shared-pass) plus 2 tests
+constructing `PairedTvListItem` directly (bypassing `PairingPage`, since `reconcileDiscovery`'s own
+internal try/catches make it impractical to force a real throw through the page) to exercise the
+indicator's defensive catch around a throwing shared reconciliation pass. `flutter analyze` clean;
+full suite green (762/762), including all 4 pre-existing connection-indicator tests unchanged.
 Risk-hint: MEDIUM — changes a widget lifecycle pattern (`ValueKey`/`scanCount`) shared across the
 whole paired list
 
