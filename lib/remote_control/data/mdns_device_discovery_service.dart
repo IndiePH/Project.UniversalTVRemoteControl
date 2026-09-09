@@ -105,7 +105,7 @@ class MdnsDeviceDiscoveryService implements DeviceDiscoveryService {
       final bluetoothMac = await bluetoothMacFuture;
       return TvDevice(
         id: bluetoothMac != null
-            ? 'androidtv-bt-$bluetoothMac'
+            ? 'androidtv-$bluetoothMac'
             : 'androidtv-${ip.address.address}',
         displayName: instanceName,
         brand: TvBrand.androidTv,
