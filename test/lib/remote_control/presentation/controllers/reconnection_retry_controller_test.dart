@@ -24,6 +24,14 @@ TvDevice _device({required String id, required String host}) => TvDevice(
   host: host,
 );
 
+/// Elapses one full fast phase (3 attempts) plus escalation, landing exactly
+/// at the moment a wait phase begins -- the point every growth/cap test below
+/// needs to inspect [ReconnectionRetryState.waitSecondsRemaining] at.
+void _driveOneLapToWait(FakeAsync async, {Duration interval = const Duration(seconds: 5)}) {
+  async.elapse(interval * 3);
+  async.flushMicrotasks();
+}
+
 void main() {
   group('ReconnectionRetryController', () {
     test('fast phase does not fire an immediate connect on start', () {
@@ -306,6 +314,93 @@ void main() {
           // refresh attempt itself failed), so discovery throwing does not
           // suppress it.
           expect(commandService.connectCallCount, 4);
+        });
+      },
+    );
+
+    test(
+      'wait duration doubles each successive failed lap, capped at waitCap',
+      () {
+        fakeAsync((async) {
+          final commandService = _RecordingCommandService();
+          final controller = _buildController(commandService: commandService);
+          addTearDown(controller.dispose);
+          controller.start(_device(id: 'androidtv-abc', host: '10.0.0.5'));
+
+          _driveOneLapToWait(async); // lap 1
+          expect(controller.stateNotifier.value?.waitSecondsRemaining, 45);
+
+          async.elapse(const Duration(seconds: 45));
+          _driveOneLapToWait(async); // lap 2
+          expect(controller.stateNotifier.value?.waitSecondsRemaining, 90);
+
+          async.elapse(const Duration(seconds: 90));
+          _driveOneLapToWait(async); // lap 3
+          expect(controller.stateNotifier.value?.waitSecondsRemaining, 180);
+
+          async.elapse(const Duration(seconds: 180));
+          _driveOneLapToWait(async); // lap 4: 360 would exceed the 5m cap
+          expect(controller.stateNotifier.value?.waitSecondsRemaining, 300);
+
+          async.elapse(const Duration(seconds: 300));
+          _driveOneLapToWait(async); // lap 5: stays capped, does not grow further
+          expect(controller.stateNotifier.value?.waitSecondsRemaining, 300);
+        });
+      },
+    );
+
+    test(
+      'retryNow resets wait growth back to the base duration for the next '
+      'lap',
+      () {
+        fakeAsync((async) {
+          final commandService = _RecordingCommandService();
+          final controller = _buildController(commandService: commandService);
+          addTearDown(controller.dispose);
+          controller.start(_device(id: 'androidtv-abc', host: '10.0.0.5'));
+
+          _driveOneLapToWait(async); // lap 1: wait == 45s
+          async.elapse(const Duration(seconds: 45));
+          _driveOneLapToWait(async); // lap 2: wait == 90s (grown)
+          expect(controller.stateNotifier.value?.waitSecondsRemaining, 90);
+
+          controller.retryNow();
+          // retryNow's immediate fire already counts as fast attempt #1, so
+          // only 2 more ticks (not 3) are needed to reach the escalation.
+          async.elapse(const Duration(seconds: 10));
+          async.flushMicrotasks();
+
+          expect(
+            controller.stateNotifier.value?.waitSecondsRemaining,
+            45,
+            reason: 'a manual retry should not inherit growth from automatic '
+                'failures earlier in the same streak',
+          );
+        });
+      },
+    );
+
+    test(
+      'a fresh start() after stop() resets wait growth back to the base '
+      'duration',
+      () {
+        fakeAsync((async) {
+          final commandService = _RecordingCommandService();
+          final controller = _buildController(commandService: commandService);
+          addTearDown(controller.dispose);
+          final device = _device(id: 'androidtv-abc', host: '10.0.0.5');
+          controller.start(device);
+
+          _driveOneLapToWait(async); // lap 1: wait == 45s
+          async.elapse(const Duration(seconds: 45));
+          _driveOneLapToWait(async); // lap 2: wait == 90s (grown)
+          expect(controller.stateNotifier.value?.waitSecondsRemaining, 90);
+
+          controller.stop();
+          controller.start(device); // simulates a fresh disconnected streak
+          _driveOneLapToWait(async);
+
+          expect(controller.stateNotifier.value?.waitSecondsRemaining, 45);
         });
       },
     );

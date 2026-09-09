@@ -7,7 +7,7 @@ import 'package:one_remote/remote_control/domain/domain.dart';
 import 'package:one_remote/remote_control/presentation/pages/pairing_page_data.dart';
 
 /// Phase of [ReconnectionRetryController]'s cycle. See
-/// `references/goals/goal-automatic-reconnection-resilience.md` SG1/T1.1.
+/// `references/goals/goal-automatic-reconnection-resilience.md` SG1/T1.1-T1.2.
 enum ReconnectionPhase { fastRetry, escalating, waiting }
 
 /// Snapshot published on [ReconnectionRetryController.stateNotifier]. The
@@ -45,6 +45,8 @@ class ReconnectionRetryController {
     this.fastAttemptLimit = 3,
     this.fastAttemptInterval = const Duration(seconds: 5),
     this.waitDuration = const Duration(seconds: 45),
+    this.waitGrowthFactor = 2,
+    this.waitCap = const Duration(minutes: 5),
   });
 
   final RemoteCommandService _commandService;
@@ -61,8 +63,20 @@ class ReconnectionRetryController {
   /// Delay between fast-phase connect attempts.
   final Duration fastAttemptInterval;
 
-  /// How long the wait phase lasts before looping back to the fast phase.
+  /// The wait phase's duration on the first lap of a disconnected streak.
+  /// Grows by [waitGrowthFactor] on each subsequent lap (see
+  /// [_nextWaitDuration]), up to [waitCap]. Resets back to this value
+  /// whenever [start] begins a fresh streak or [retryNow] is used — see
+  /// `references/goals/goal-automatic-reconnection-resilience.md` SG1/T1.2.
   final Duration waitDuration;
+
+  /// Multiplier applied to the wait duration after each failed lap.
+  final int waitGrowthFactor;
+
+  /// Ceiling the wait duration never grows past, however many laps fail in a
+  /// row — bounds worst-case retry spacing for a genuinely long-absent
+  /// device.
+  final Duration waitCap;
 
   /// `null` while idle; otherwise the current phase/countdown. Safe to listen
   /// to across the controller's lifetime — replaced on [dispose], not closed
@@ -75,11 +89,20 @@ class ReconnectionRetryController {
   Timer? _timer;
   int _fastAttemptsMade = 0;
 
+  /// The duration [_beginWaitPhase] will use the *next* time it runs. Reset
+  /// to [waitDuration] by [start] (a fresh disconnected streak) and
+  /// [retryNow] (the user asked for a fresh attempt); grown by
+  /// [waitGrowthFactor], capped at [waitCap], every other time a lap's wait
+  /// phase actually begins. Always assigned before [_beginWaitPhase] can run
+  /// — [start] runs first in every path that reaches it.
+  late Duration _nextWaitDuration;
+
   /// Starts the fast phase for [device]. No-op if a cycle is already running
   /// — call [stop] first to restart from scratch with a different device.
   void start(TvDevice device) {
     if (_timer != null) return;
     _device = device;
+    _nextWaitDuration = waitDuration;
     _beginFastPhase();
   }
 
@@ -99,6 +122,7 @@ class ReconnectionRetryController {
     if (_device == null) return;
     _timer?.cancel();
     _fastAttemptsMade = 0;
+    _nextWaitDuration = waitDuration;
     stateNotifier.value = const ReconnectionRetryState(
       phase: ReconnectionPhase.fastRetry,
     );
@@ -185,11 +209,12 @@ class ReconnectionRetryController {
   }
 
   void _beginWaitPhase() {
-    var remaining = waitDuration.inSeconds;
+    var remaining = _nextWaitDuration.inSeconds;
     stateNotifier.value = ReconnectionRetryState(
       phase: ReconnectionPhase.waiting,
       waitSecondsRemaining: remaining,
     );
+    _nextWaitDuration = _grow(_nextWaitDuration);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       remaining--;
       if (remaining <= 0) {
@@ -202,6 +227,11 @@ class ReconnectionRetryController {
         waitSecondsRemaining: remaining,
       );
     });
+  }
+
+  Duration _grow(Duration current) {
+    final grown = current * waitGrowthFactor;
+    return grown > waitCap ? waitCap : grown;
   }
 
   void _fireConnect() {

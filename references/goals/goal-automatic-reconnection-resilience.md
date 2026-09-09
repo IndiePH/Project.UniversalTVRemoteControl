@@ -98,10 +98,15 @@ Because `bt` availability varies by device/firmware (unverified, per-device), th
 reconciliation logic must not assume any single identity source is universally present — a
 network may simultaneously contain devices identified by any of the three schemes.
 
-### D-6: Home-page retry cycle repeats indefinitely; escalation stays flat per lap; wait duration may grow
+### D-6: Home-page retry cycle repeats indefinitely; escalation stays flat per lap; wait duration grows exponentially, capped
 Confirmed with user: the fast-phase and escalation-phase behavior stays identical on every lap
 ("flat") — same attempt count, same cadence, same single reconciliation pass. The wait period
-between laps may grow across successive laps (exact curve and cap: **open**, see below).
+between laps doubles each successive failed lap (45s → 90s → 180s → 300s, capped — see T1.2 for the
+exact numbers and rationale), so a genuinely long-absent device stops being polled aggressively
+without giving up recovery speed early in a disconnected streak. Growth resets back to the 45s base
+whenever a fresh disconnected streak begins (a real connection succeeded, or the device/page
+resubscribed) or the user taps retry-now — neither should inherit escalation from unrelated prior
+failures.
 
 ### D-7: `DeviceIdentityRegistry` is resolved via GetIt at the point of use, not threaded through page constructors
 Confirmed with user (raised as a direct challenge to the original T1.1 draft, which proposed adding
@@ -180,12 +185,25 @@ Risk-hint: MEDIUM — new state machine in a heavily-used screen
 Objective: The wait period (T1.1) increases on each successive lap of the outer cycle rather than
 staying at a fixed duration indefinitely, while the fast phase and escalation phase stay identical
 every lap.
-Detail: Growth curve and cap are **open** — not yet decided. Needs a follow-up decision on: starting
-duration, growth factor/step, and a maximum ceiling (to bound worst-case retry spacing for a
-genuinely long-absent device).
-Skills: language-specific-implementation, performance-optimization
+
+Confirmed approach: exponential growth with a cap (chosen over a simpler linear-step alternative and
+a coarser single-step-up alternative, both presented and rejected in favor of this one) — the
+standard shape for this exact problem (matches gRPC/AWS-SDK/Socket.IO-style reconnection backoff).
+- Base (lap 1) wait: 45s — unchanged from T1.1's original fixed value.
+- Growth: ×2 per successive failed lap (45s → 90s → 180s → 300s...).
+- Cap: 5 minutes — the wait never grows past this however many laps fail in a row, bounding
+  worst-case retry spacing for a genuinely long-absent device while still being a dramatic
+  improvement over the hours-long, fully-manual recovery from the triggering incident.
+- Reset conditions (both confirmed with user): growth resets back to the 45s base when (a) `start()`
+  begins a fresh disconnected streak (i.e. a real connection succeeded since the last failure, or the
+  page/device resubscribed), and (b) the user taps retry-now — a manual retry should get the fastest
+  path back, not inherit escalation from automatic failures earlier in the same streak.
+
+Skills: language-specific-implementation, performance-optimization, tradeoff-communication
 Depends-on: [T1.1]
-Status: direction confirmed by user; exact parameters open
+Status: implemented (`ReconnectionRetryController.waitGrowthFactor`/`waitCap`, reset in `start()` and
+`retryNow()`) and covered by 3 additional unit tests (growth-and-cap across 5 laps, reset-on-retryNow,
+reset-on-fresh-start). `flutter analyze` clean; full suite green (757/757).
 Risk-hint: LOW
 
 ---
@@ -272,10 +290,10 @@ Risk-hint: LOW
 - Roku's complete lack of any post-pairing identity re-derivation (see Problem #3) — no fix
   discussed; left open for now, not resolved by SG1–SG4.
 - T4.1: exact mechanism and location for the cert-confirmation gate.
-- T1.2: wait-duration growth curve and cap.
-- Exact numeric parameters used throughout this document (3 fast attempts, 5s cadence, 45s initial
-  wait) were proposed during design discussion, not independently specified by the user as hard
-  requirements — worth final confirmation once diffs are drafted.
+- Exact numeric parameters used throughout this document (3 fast attempts, 5s cadence) were proposed
+  during design discussion, not independently specified by the user as hard requirements — worth
+  final confirmation if they prove wrong in practice. T1.2's own numbers (45s base, ×2, 5m cap) are
+  now confirmed, not open.
 - Whether T4.1's failed-confirmation case should be silent (fall back to no-match) or surfaced
   distinctly (e.g., a "possible duplicate device" signal) — not discussed.
 
