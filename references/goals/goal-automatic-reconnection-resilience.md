@@ -257,13 +257,29 @@ Objective: `mdns_device_discovery_service.dart` builds `androidtv-bt-<mac>` when
 `_androidtvremote2._tcp` TXT record includes a `bt=` field; falls back to today's
 `androidtv-<ip>` when absent — no regression for devices without it.
 Detail: Confirmed against the `multicast_dns` package already in use (`ResourceRecordQuery.text`,
-`TxtResourceRecord.text`) — no new dependency. TXT lookup runs concurrently with the existing
-SRV/A lookups to avoid added scan latency. MAC normalized to lowercase at parse time for
-consistent id strings across scans. Improves how often SG1/SG2's reconciliation succeeds for
+`TxtResourceRecord.text`) — no new dependency; re-verified directly against the pinned 0.3.3
+package source (not just prior research) before implementing, including how it joins multiple
+TXT strings with `\n` via `StringBuffer.writeln` — confirms `rawText.split('\n')` is the correct
+parse approach. TXT lookup runs concurrently with the existing SRV/A lookups (started before the
+SRV `await for`, not after) to avoid added scan latency. MAC normalized to lowercase at parse time
+for consistent id strings across scans. Improves how often SG1/SG2's reconciliation succeeds for
 Android TV; not a prerequisite for either (D-3).
+
+The `bt=` parsing logic was extracted into its own small utility,
+`AndroidTvBluetoothMacTxtParser` (new file), rather than left as a private method on
+`MdnsDeviceDiscoveryService` — that class has zero existing tests and no seam to inject a fake
+`MDnsClient` (real network I/O, presumably validated manually against real devices today), so
+extracting the pure, deterministic parsing piece was what actually made this task unit-testable at
+all, not just a style preference.
+
 Skills: language-specific-implementation, clean-code-solid, correctness-validation
 Depends-on: []
-Status: design + diff fully scoped in conversation; not yet written to a file
+Status: implemented (`AndroidTvBluetoothMacTxtParser` + `MdnsDeviceDiscoveryService`'s concurrent
+TXT lookup) and covered by 8 unit tests on the parser (single/multiple entries, absent, empty
+value, malformed line, whitespace, case normalization). `flutter analyze` clean; full suite green
+(770/770). The discovery service's own orchestration (the concurrent-lookup wiring itself) is
+unverified by an automated test, consistent with the rest of that file's pre-existing untested
+status — flagged, not silently left unmentioned.
 Risk-hint: LOW
 
 #### Task T3.2: (Dropped as a requirement) `bt` presence is unknown and unverifiable in general

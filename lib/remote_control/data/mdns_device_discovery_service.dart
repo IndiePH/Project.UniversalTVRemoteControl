@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_multicast_lock/flutter_multicast_lock.dart';
 import 'package:multicast_dns/multicast_dns.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
+import 'package:one_remote/remote_control/data/android_tv_bluetooth_mac_txt_parser.dart';
 import 'package:one_remote/remote_control/data/discovery_variant_resolution_registry.dart';
 import 'package:one_remote/remote_control/domain/models/discovery_source.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
@@ -82,6 +83,10 @@ class MdnsDeviceDiscoveryService implements DeviceDiscoveryService {
     MDnsClient client,
     PtrResourceRecord ptr,
   ) async {
+    // Started alongside the SRV lookup below, not after it, so a firmware
+    // that does advertise `bt` doesn't add extra scan latency (T3.1).
+    final bluetoothMacFuture = _lookupBluetoothMac(client, ptr.domainName);
+
     SrvResourceRecord? srv;
     await for (final record in client.lookup<SrvResourceRecord>(
       ResourceRecordQuery.service(ptr.domainName),
@@ -97,8 +102,11 @@ class MdnsDeviceDiscoveryService implements DeviceDiscoveryService {
       timeout: timeout,
     )) {
       final instanceName = _instanceName(ptr.domainName);
+      final bluetoothMac = await bluetoothMacFuture;
       return TvDevice(
-        id: 'androidtv-${ip.address.address}',
+        id: bluetoothMac != null
+            ? 'androidtv-bt-$bluetoothMac'
+            : 'androidtv-${ip.address.address}',
         displayName: instanceName,
         brand: TvBrand.androidTv,
         protocolVariant: discoveryVariantRegistry.resolveFromDiscovery(
@@ -108,6 +116,31 @@ class MdnsDeviceDiscoveryService implements DeviceDiscoveryService {
         capabilities: const TvCapabilities().capabilitiesFor(TvBrand.androidTv),
         host: ip.address.address,
       );
+    }
+    return null;
+  }
+
+  /// Looks up [domainName]'s Bluetooth MAC from its `bt=` TXT field, if
+  /// advertised. `null` (not an error) when the record is absent, has no
+  /// `bt` entry, or the lookup times out -- Bluetooth-MAC advertisement is
+  /// not guaranteed on every Android TV firmware (see goal doc SG3/T3.2), so
+  /// absence must fall back cleanly to the IP-derived id, not abort
+  /// discovery for this device.
+  Future<String?> _lookupBluetoothMac(
+    MDnsClient client,
+    String domainName,
+  ) async {
+    try {
+      await for (final record in client.lookup<TxtResourceRecord>(
+        ResourceRecordQuery.text(domainName),
+        timeout: timeout,
+      )) {
+        final mac = AndroidTvBluetoothMacTxtParser.parse(record.text);
+        if (mac != null) return mac;
+      }
+    } catch (_) {
+      // Best-effort: a failed TXT lookup must not block discovery via the
+      // existing SRV/A path.
     }
     return null;
   }
