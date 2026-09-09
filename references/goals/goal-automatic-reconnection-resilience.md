@@ -103,6 +103,18 @@ Confirmed with user: the fast-phase and escalation-phase behavior stays identica
 ("flat") — same attempt count, same cadence, same single reconciliation pass. The wait period
 between laps may grow across successive laps (exact curve and cap: **open**, see below).
 
+### D-7: `DeviceIdentityRegistry` is resolved via GetIt at the point of use, not threaded through page constructors
+Confirmed with user (raised as a direct challenge to the original T1.1 draft, which proposed adding
+an `identityRegistry` constructor parameter to `RemoteHomePage`): `DeviceIdentityRegistry` is not a
+second store of identity — `TvDevice.id`, persisted via `DeviceRepository`, remains the single
+source of truth. The registry is only a session-scoped, in-memory `host → stableId` lookup cache
+that lets transport/secret-store code resolve a dialed host back to its stable id without an async
+repository read. `PairingPage`'s only production call site (`remote_home_actions.dart`) already
+resolves it this way — `sl.isRegistered<DeviceIdentityRegistry>() ? sl<DeviceIdentityRegistry>() :
+null` — rather than having it passed down from further up the widget tree. `RemoteHomePage` follows
+the same precedent: no constructor change, no test call-site changes: the retry controller (T1.1)
+resolves it internally via GetIt when it needs to call `PairingPageData.reconcileDiscovery`.
+
 ---
 
 ## Sub-goals and tasks
@@ -115,18 +127,49 @@ escalation (one discovery+reconcile pass, then a connect attempt) → on continu
 wait period displayed as "Connection error... retrying in Xs [retry-now icon]" with a live
 per-second countdown → on timeout or manual tap, loop back to the fast phase. Repeats indefinitely
 while the page is open and disconnected.
-Detail: Reuses `PairingPageData.discoverDevices`/`reconcileDiscovery` (already shared via DI, per
-D-1) rather than new discovery plumbing. Manual tap on the retry-now icon cancels the pending wait
-and fires a connect attempt immediately (stop-and-fire, or restart the timer with a ~0 initial
-delay — either is fine, but the tap must not just reset the clock and wait out another full
-interval), then resumes the fast phase from there. Needs `DeviceIdentityRegistry` threaded into
-`RemoteHomePage`'s constructor (already a GetIt singleton elsewhere in the app). Does not depend on
-SG3/SG4 — works against whatever identity sources reconciliation already supports today.
+
+Concrete approach (finalized):
+- New `ReconnectionRetryController` (own file, not inlined into `_RemoteHomePageState`, per
+  clean-code-solid SRP) exposes a `ValueListenable<ReconnectionRetryState?>` — `null` means idle;
+  otherwise `{phase: fastRetry|escalating|waiting, waitSecondsRemaining}`.
+- `start(device)`: begins the fast phase. Deliberately does **not** fire an immediate connect on
+  entry — only on each 5s tick — so it doesn't add an extra connect() call on top of the one
+  `_subscribeConnectionState` already fires directly on subscribe (preserves today's exact
+  connect-call-count behavior, verified against every existing `Duration(seconds: 5)` assertion in
+  `test/widget_test.dart`; no test rewrites needed).
+- Every attempt (fast-phase tick or escalation) is gated by an injected `canAttemptNow()` callback
+  (`mounted && ModalRoute.of(context)?.isCurrent == true`), matching today's "skip while another
+  route is on top" behavior exactly — a blocked tick is skipped, not counted, so progress resumes
+  cleanly once unblocked.
+- On the 3rd fast attempt, runs escalation: `PairingPageData.discoverDevices` +
+  `PairingPageData.reconcileDiscovery` (identical call already used by the pairing page's own scan
+  reconciliation, per D-1 — no new discovery/reconciliation plumbing). `DeviceIdentityRegistry` is
+  resolved internally via GetIt at this point, per D-7, not passed into the controller from
+  `RemoteHomePage`'s constructor.
+- **Device-refresh gap (found while designing this, now closed):** `reconcile()` only updates the
+  in-memory `DeviceIdentityRegistry` and returns a diff; `reconcileDiscovery` is what persists the
+  new host via `deviceRepository.saveDevice()`. Neither of those updates the `TvDevice` object the
+  page itself is holding (`_activeDevice`) or the one the controller is mid-cycle with — so without
+  an explicit fix, a successful reconnect right after a host change would still dial the stale IP
+  for the next command. Fix: after `reconcileDiscovery` returns, the controller re-reads
+  `deviceRepository.getSavedDevices()`, finds the entry matching its device's `id`, and if the host
+  differs, (a) uses the refreshed device for its own next `connect()` call, and (b) invokes a new
+  `onDeviceUpdated(TvDevice)` callback so `_RemoteHomePageState` can `setState(() => _activeDevice =
+  device)`. This is the mechanism that actually closes the loop from "reconciliation found a new
+  host" to "the page is actually talking to that host."
+- `retryNow()`: cancels the pending wait timer, fires a connect attempt **immediately** (not on the
+  next tick — this is a distinct code path from `start()`, so it doesn't affect the cold-start
+  connect-count tests above), then resumes the fast phase from attempt 1. Satisfies "must not just
+  reset the clock and wait out another full interval."
+- `stop()`/`dispose()`: cancels any active timer; wired into `_RemoteHomePageState.dispose()` and
+  everywhere `_stopConnectionRetry()` is called today (unauthorized state, paused lifecycle, device
+  switch).
+- No `RemoteHomePage` constructor changes and no `test/widget_test.dart` call-site changes required
+  anywhere in this design.
+
 Skills: language-specific-implementation, clean-code-solid, framework-mastery
 Depends-on: []
-Status: design fully agreed across multiple rounds of discussion; a diff exists in conversation
-history for an earlier, since-revised shape of this design — needs a fresh diff against the
-current agreed shape before implementation.
+Status: concrete implementation approach finalized (see above); not yet written to a file.
 Risk-hint: MEDIUM — new state machine in a heavily-used screen
 
 #### Task T1.2: Grow the wait duration across successive laps
