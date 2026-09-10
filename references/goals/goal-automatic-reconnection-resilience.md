@@ -559,6 +559,59 @@ suite green (779/779). Committed: `bdfc452` (docs), `f5e7076` (code).
 Risk-hint: MEDIUM — changes what a live-reachable, previously-unpaired Android TV's discovery-time id
 looks like; touches `AndroidTvCertificateStore` and the enrichment path every scan already runs
 
+#### Task T5.2: Migrate pre-existing `androidtv-<sha256>`-saved devices onto `androidtv-<mac>` — reopened, not decided, paused for tomorrow
+
+**Status: IN DISCUSSION, not agreed.** Previously logged as dropped (see the old Open items entry:
+"pre-existing paired Android TVs saved under the old `androidtv-<sha256>` scheme will not
+auto-migrate... they need one manual re-pair") after the plumbing needed looked too costly for the
+benefit. Reopened by user with a cheaper mechanism; then a real, still-unresolved correctness
+question was found. Picking this up again starts from the objection below, not from scratch.
+
+Objective (unchanged since first proposed): a device already saved under the old whole-cert-hash
+scheme should migrate onto the new `androidtv-<mac>` id automatically, without requiring the user to
+manually re-pair.
+
+**Current mechanism (refined twice — from the saved side, then from the discovered side):**
+```
+for each android tv in the discovered list this scan:
+    sha = hash(its cert)              # from the live probe T5.1 already runs
+    saved = find saved device where id == 'androidtv-' + sha
+    if saved found:
+        mac = parse mac from its cert
+        if mac found:
+            saved.id = 'androidtv-' + mac      # migrate
+        # else: leave saved as-is, try again next scan
+    # else: nothing to do -- not a migration candidate this scan
+```
+Runs against the live *discovered* list (not a sweep over stored `.cert.der` files, an earlier and
+since-rejected version) — a live cert is guaranteed current and guaranteed to actually be that
+device, unlike a stored file, which could be stale (silently overwritten by a later probe, or
+leftover from a different device that took the same host later). Also avoids needing a new
+app-startup hook — it's just another check inside the existing scan cycle. Plumbing note: the `sha`
+value needs to be carried from the enrichment step (where the cert bytes are available) to wherever
+this check runs — same open plumbing question flagged earlier in the conversation (a dedicated field
+on `TvDevice`, a subclass, and a side-channel structure passed alongside `reconcile()` were all
+discussed; leaning toward the side-channel approach to avoid a field that's meaningless for
+non-Android-TV devices, but not committed).
+
+**The unresolved objection (found last, not yet answered):** the `sha == sha` match itself is fully
+reliable — hashing bytes is deterministic and manufacturer-independent. The risk is entirely in the
+*next* step: the "mac found" branch trusts `AndroidTvCertSubjectMacParser`'s shape-check, which has
+only been verified against two device shapes (NVIDIA Shield, Nexus Player — both Google reference
+hardware, per `tronikos/androidtvremote2`). A third-party OEM's cert could embed something that
+merely *looks* MAC-shaped without being the device's real Bluetooth MAC. T5.1 has this same exposure,
+but there the consequence is benign (a newly-enriched device just fails to get a working stable id —
+no worse than before this project existed). Here the consequence is a regression: a device correctly
+identified via the reliable sha match gets its **currently-working** id overwritten with a possibly-
+wrong one. Not resolved: whether this residual risk is acceptable, or whether some additional
+safeguard is needed before migrating (none proposed yet).
+
+Skills: correctness-validation, clean-code-solid, security, risk-analysis
+Depends-on: [T5.1]
+Status: paused — mechanism agreed in shape, correctness objection open, plumbing shape open; resume
+next session
+Risk-hint: MEDIUM — touches saved device records for a population that currently works correctly
+
 > **Ordering note (moot):** this originally debated implementation order between SG4 and SG5. Moot now
 > that SG4's T4.1/T4.2 are dropped entirely (see SG4) — SG5/T5.1 is the only sub-goal in this section
 > pair with any code, and it has already shipped. SG5 appears after SG4 in this document purely because
@@ -570,9 +623,12 @@ looks like; touches `AndroidTvCertificateStore` and the enrichment path every sc
 
 - Roku's complete lack of any post-pairing identity re-derivation (see Problem #3) — no fix
   discussed; left open for now, not resolved by SG1–SG5.
-- Pre-existing paired Android TVs saved under the old `androidtv-<sha256>` scheme will not
-  auto-migrate to `androidtv-<mac>` — accepted, decided with user: they need one manual re-pair.
-  Not a bug to fix later; logged here so it isn't rediscovered and "fixed" by mistake.
+- **Reopened, see T5.2 — not settled either way.** Whether pre-existing paired Android TVs saved
+  under the old `androidtv-<sha256>` scheme should auto-migrate to `androidtv-<mac>`. Previously
+  closed as "accepted, needs one manual re-pair" after the plumbing looked too costly; reopened with
+  a cheaper mechanism, then paused on an unresolved correctness objection (see T5.2's own entry for
+  the detail). Do not silently re-close this as "accepted" or silently build it — pick up the T5.2
+  discussion first.
 - A saved `androidtv-<mac>` device whose IP changes on the same scan neither `bt` nor a live cert
   connection works will not be reconciled that scan (T4.1, dropped) — accepted, decided with user:
   the only mechanism that could fire without a host anchor has real misfire risk (could merge two
