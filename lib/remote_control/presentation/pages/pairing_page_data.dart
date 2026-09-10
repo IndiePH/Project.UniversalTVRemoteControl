@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
 import 'package:one_remote/remote_control/application/device_discovery_service.dart';
@@ -6,6 +9,8 @@ import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/discovered_device_support.dart';
 import 'package:one_remote/remote_control/application/layout_identity_migration_repository.dart';
 import 'package:one_remote/remote_control/application/layout_repository.dart';
+import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_certificate_store.dart';
+import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_legacy_sha256_id_migrator.dart';
 import 'package:one_remote/remote_control/data/device_reconciliation_service.dart';
 import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/domain/models/device_support_tier.dart';
@@ -85,6 +90,21 @@ final class PairingPageData {
         // in-session registry binding still lets transports reach the TV;
         // the persisted host is corrected on a later successful reconcile.
       }
+    }
+
+    // TEMPORARY -- see AndroidTvLegacySha256IdMigrator's doc comment for what this is and its
+    // removal criteria. Unawaited: best-effort background migration, must not add latency here.
+    // isRegistered-guarded per D-7's precedent: not every caller's DI container has this
+    // registered (e.g. tests exercising other brands), and this must degrade to a no-op, not throw.
+    if (GetIt.instance.isRegistered<AndroidTvCertificateStore>()) {
+      unawaited(
+        AndroidTvLegacySha256IdMigrator.migrate(
+          discovered: discovered,
+          saved: saved,
+          certStore: GetIt.instance<AndroidTvCertificateStore>(),
+          repository: deviceRepository,
+        ),
+      );
     }
 
     final deviceMigrator = deviceRepository is DeviceIdentityMigrationRepository

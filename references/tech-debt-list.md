@@ -35,6 +35,10 @@ current count):
   from the underlying ASN.1 parser with no single narrower type to catch; mirrors the same
   best-effort, must-not-crash reasoning already applied to `AndroidTvBluetoothMacTxtParser`'s mDNS
   lookup (T3.1).
+- `lib/remote_control/data/adapters/android_tv/android_tv_legacy_sha256_id_migrator.dart` — added
+  during SG5/T5.2. Same reasoning: a failed probe against one device (unreachable host, TLS
+  handshake failure, malformed cert) must not affect migration of any other device this scan. This
+  whole file is itself temporary — see the dedicated section below.
 
 ### Why it exists (steelmanning the current state)
 
@@ -133,3 +137,48 @@ should be done for all three discovery services together, not just one — intro
 for mDNS alone while leaving SSDP/Roku as the odd ones out would trade one inconsistency for
 another. Reasonable as its own small goal if discovery-layer correctness becomes a priority; not
 scoped into any current goal.
+
+---
+
+## Temporary Android TV legacy `sha256`-to-`mac` id migration (SG5/T5.2) — planned removal
+
+**Status:** Intentionally temporary, live as of 2026-09-10. **Not a bug — a scheduled removal.**
+
+### What
+
+`AndroidTvLegacySha256IdMigrator` (`lib/remote_control/data/adapters/android_tv/android_tv_legacy_sha256_id_migrator.dart`)
+migrates a device saved under the old whole-cert-hash id scheme (`androidtv-<sha256>`, from before
+the pairing certificate's subject was known to embed the device's Bluetooth MAC) onto the newer
+`androidtv-<mac>` scheme, so affected users don't have to manually re-pair. Called from exactly one
+place: `PairingPageData.reconcileDiscovery`.
+
+Deliberately isolated from the permanent Android TV enrichment path
+(`CompositeDeviceDiscoveryService._enrichAndroidTvIdentity`), which is completely unmodified by this
+work: this migrator makes its own live connection to a discovered Android TV even when that device
+already has a `bt`-derived id this scan — the permanent enrichment path skips connecting in that
+case specifically to avoid a redundant probe, but this migrator needs the certificate regardless of
+what id the device already has.
+
+### Why it's temporary, not permanent
+
+Two reasons this shouldn't stay in the codebase indefinitely:
+1. **Correctness risk.** Migrating trusts `AndroidTvCertSubjectMacParser`'s MAC extraction, verified
+   against only two device shapes (NVIDIA Shield, Nexus Player, both Google reference hardware). A
+   third-party OEM's cert could embed something merely MAC-*shaped* without being the real MAC —
+   would settle into a wrong-but-stable id for that device rather than the correct one.
+2. **Diminishing returns.** The population needing migration only shrinks (every successful
+   migration, and every manual re-pair, removes one device from it permanently) — this is a
+   transitional shim, not something that earns its keep long-term. It also pays a real, if small,
+   ongoing cost: an extra live connection per scan for every Android TV that still has a `bt`-derived
+   id, purely to check a population that's expected to approach zero.
+
+### Exit criteria — do this, don't just leave it running
+
+Delete `android_tv_legacy_sha256_id_migrator.dart`, its test file, and its one call site (and the
+`get_it`/`AndroidTvCertificateStore` imports in `pairing_page_data.dart` added only for that call,
+if unused elsewhere in that file) when **either**:
+- `AndroidTvLegacySha256IdMigrator.enabled` has been flipped to `false` for a full release cycle, or
+- **~2026-11-10** (about two months from introduction) is reached,
+
+whichever comes first. Do not wait for "no more reports of issues" as the trigger — the removal is
+scheduled, not conditional on outcome.
