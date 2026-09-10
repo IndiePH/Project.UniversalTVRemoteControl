@@ -11,6 +11,56 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-09-10
+
+### Added
+- Automatic, self-recovering reconnection on the remote/home page (branch `fix/reconnection`;
+  design log `references/goals/goal-automatic-reconnection-resilience.md`). Previously a failed
+  connection just redialed the same host every 5 seconds forever, with no escalation and no
+  reconciliation — a paired Android TV that hit a transient port-level failure could stay
+  disconnected until the app was manually reopened. New `ReconnectionRetryController`
+  (`lib/remote_control/presentation/controllers/reconnection_retry_controller.dart`): fast phase
+  (3 attempts, 5s cadence) → one discovery+reconcile pass → a final connect attempt → on continued
+  failure, a wait period shown as "Connection error... retrying in Xs" with a live countdown and a
+  manual retry-now option, looping indefinitely while the page is open. The wait period grows
+  exponentially across successive failed laps (45s → 90s → 180s → 300s, capped at 5 minutes) and
+  resets to the 45s base on a fresh connection or a manual retry.
+- Self-correcting reachability indicator on the paired-devices list
+  (`pairing_page_sections.dart`'s `_PairedTvConnectionIndicator`). Previously each paired TV's
+  wifi icon reflected a single probe per manual rescan, even though the page's own reconciliation
+  pass already ran in the background — so a successful reconcile never triggered a re-check within
+  that same scan. Now: probe the known host → on failure, await that scan's own reconciliation →
+  if the host changed, re-probe once → grey only if both fail.
+- Android TV devices now get an IP-independent stable id (`androidtv-<mac>`) via two channels
+  instead of falling back to an IP-derived id whenever unreachable: the mDNS `_androidtvremote2._tcp`
+  TXT record's `bt=` field when advertised (`android_tv_bluetooth_mac_txt_parser.dart`), and — for
+  TVs that don't advertise `bt` — the Bluetooth MAC embedded in the pairing certificate's subject,
+  parsed on every live cert probe instead of hashing the whole certificate
+  (`android_tv_cert_subject_mac_parser.dart`, ported from `tronikos/androidtvremote2`'s verified
+  algorithm). The certificate enrichment step no longer requires a device to already be "recognized"
+  before its id is trusted — that gate protected pairing consent, which is unaffected by this change,
+  not against any live-connection risk.
+
+### Docs
+- `references/goals/goal-automatic-reconnection-resilience.md`: full design log for the above,
+  including decisions logged and later superseded as the identity model was refined (`bt` and the
+  certificate were initially assumed to be independent signals needing cross-confirmation; later
+  found to read the same underlying MAC, dissolving that need). Two reconciliation gaps were
+  identified and deliberately left unresolved rather than built with unacceptable tradeoffs: a
+  pre-existing paired device migrating from the old whole-certificate-hash id to the new MAC-based
+  one (accepted — needs one manual re-pair), and a saved MAC-based device whose IP changes on the
+  same scan neither identity channel works (accepted — self-heals via the automatic retry above,
+  since the only alternative mechanism had no reliable way to confirm two devices were the same
+  without risking a false match).
+- `references/tech-debt-list.md`: two new logged items (bare `catch` sites added by this work,
+  mirroring the pattern already used at their call sites; discovery services' lack of a unit-test
+  seam, encountered while adding mDNS test coverage).
+
+### Verification
+- `flutter analyze` clean; full test suite green (779/779), including new coverage for the retry
+  state machine, the paired-list indicator's reprobe chain, the `bt` TXT parser, the certificate
+  subject MAC parser, and the discovery-time enrichment skip/fallback behavior.
+
 ## 2026-09-02
 
 ### Changed
