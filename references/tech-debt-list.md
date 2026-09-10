@@ -30,6 +30,11 @@ current count):
   during SG1/T1.1 of the reconnection-resilience work, deliberately mirroring the existing pattern
   at the two call sites it directly composes (`BrandRoutedRemoteCommandService.connect` and
   `PairingPageData.reconcileDiscovery`), not as a fresh, independent decision.
+- `lib/remote_control/data/adapters/android_tv/android_tv_cert_subject_mac_parser.dart` — added
+  during SG5/T5.1. Malformed/unexpected certificate DER can throw several distinct exception types
+  from the underlying ASN.1 parser with no single narrower type to catch; mirrors the same
+  best-effort, must-not-crash reasoning already applied to `AndroidTvBluetoothMacTxtParser`'s mDNS
+  lookup (T3.1).
 
 ### Why it exists (steelmanning the current state)
 
