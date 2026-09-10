@@ -14,8 +14,9 @@ import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 /// `androidtv-<mac>` id, so affected users don't need to manually re-pair. Temporary because it
 /// trusts MAC extraction verified against only two device shapes, and the population needing it
 /// only shrinks over time. Full rationale, removal deadline (~2026-11-10), and exit criteria:
-/// `references/tech-debt-list.md`. Introduced in commit 4f998a2 — read that commit's message for
-/// the design discussion behind why it's shaped this way.
+/// `references/tech-debt-list.md`. Introduced in commit 4f998a2 ("feat(android-tv): add temporary
+/// sha256-to-mac id migration shim (SG5/T5.2)") — read that commit's message for the design
+/// discussion behind why it's shaped this way.
 final class AndroidTvLegacySha256IdMigrator {
   const AndroidTvLegacySha256IdMigrator._();
 
