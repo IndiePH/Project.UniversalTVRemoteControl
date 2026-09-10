@@ -41,17 +41,33 @@ Keep entries short and append new updates at the top.
   before its id is trusted — that gate protected pairing consent, which is unaffected by this change,
   not against any live-connection risk.
 
+### Not included (considered, deliberately dropped — not oversights)
+- **A previously-paired Android TV whose IP changes on a scan where neither `bt` nor a live cert
+  connection produces a MAC does not get reconciled that scan.** The only proposed match key was the
+  device's host, but this scenario is defined by the host *changing* — the match could only ever fire
+  when nothing needed updating. The alternative (drop the host requirement, match by count instead)
+  risks silently merging two different physical TVs for anyone who owns more than one. Accepted as a
+  rare, self-healing gap: the automatic retry above means a later scan very likely recovers the MAC
+  and reconciles normally.
+- **A MAC-address collision between two different manufacturers' devices is not detected or guarded
+  against.** MAC uniqueness is the manufacturer's responsibility (IEEE OUI allocation), not something
+  this app can independently verify; Home Assistant's own production `androidtv_remote` integration
+  carries the same exposure with no mitigation.
+- **A device paired before this update (saved under the old whole-certificate-hash id) does not
+  automatically migrate to the new MAC-based id — it needs one manual re-pair.** Explored twice with
+  two different mechanisms; both rejected. The decisive reason: the enrichment step's own new
+  optimization (above) skips the live certificate connection whenever a device already has a MAC via
+  `bt` — meaning no certificate is ever read again for any device that still advertises `bt`, which is
+  almost certainly true of most pre-existing paired devices. The migration mechanism explored can't
+  reach the population it was meant to help. A second, independent concern also applied: migrating
+  would trust MAC extraction verified against only two device shapes (NVIDIA Shield, Nexus Player) —
+  a wrong extraction for some other manufacturer would overwrite an already-working id with a bad one.
+
 ### Docs
 - `references/goals/goal-automatic-reconnection-resilience.md`: full design log for the above,
   including decisions logged and later superseded as the identity model was refined (`bt` and the
   certificate were initially assumed to be independent signals needing cross-confirmation; later
-  found to read the same underlying MAC, dissolving that need). Two reconciliation gaps were
-  identified and deliberately left unresolved rather than built with unacceptable tradeoffs: a
-  pre-existing paired device migrating from the old whole-certificate-hash id to the new MAC-based
-  one (accepted — needs one manual re-pair), and a saved MAC-based device whose IP changes on the
-  same scan neither identity channel works (accepted — self-heals via the automatic retry above,
-  since the only alternative mechanism had no reliable way to confirm two devices were the same
-  without risking a false match).
+  found to read the same underlying MAC, dissolving that need).
 - `references/tech-debt-list.md`: two new logged items (bare `catch` sites added by this work,
   mirroring the pattern already used at their call sites; discovery services' lack of a unit-test
   seam, encountered while adding mDNS test coverage).
