@@ -449,39 +449,38 @@ Risk-hint: —
 >   incident's situation (saved `androidtv-<mac>`, discovered `androidtv-<ip>` because neither `bt`
 >   nor a live cert connection worked this scan).
 >
-> Also corrected: this does not depend on T5.1 (the `ip` fallback already exists today, independent
-> of T5.1's cert-subject-parsing work), so it can be implemented any time after T3.1.
+> **Dropped entirely, after the host+brand mechanism above was found to be broken by construction.**
+> The proposed T4.1 match required the discovered device's host to equal the saved device's host —
+> but the whole point of this task was handling an IP *change*, which by definition means those hosts
+> differ. Matching on "same host" can only ever fire in the case where nothing needs updating (a
+> no-op); it cannot fire in the case it was meant to solve. Once host is removed from the match, the
+> only thing left to correlate on is much weaker — "exactly one saved `androidtv-<mac>` device with no
+> exact match this scan, and exactly one discovered `androidtv-<ip>` device this scan, anywhere on the
+> network" — which has a real misfire risk (could merge two different physical TVs for a user who owns
+> more than one) with no host anchor to bound it. There is no safe middle version. Decided with user:
+> don't build either — accept this scenario (IP changed at the same moment neither `bt` nor a live
+> cert connection worked) as a rare, self-healing gap, same treatment as T4.3 and the sha→mac
+> migration case. SG1's automatic retry means a later scan very likely recovers the MAC and reconciles
+> normally via exact match; the cost of not building this is at most a delayed reconnect, not a
+> permanently broken one.
 
-#### Task T4.1 (final scope): Correlate a saved `androidtv-<mac>` device against a same-scan `androidtv-<ip>` discovery
-Objective: A device already saved under `androidtv-<mac>` can still, on a given scan, be discovered
-at `androidtv-<ip>` if neither `bt` nor a live cert connection produced a MAC that scan. Reconciliation
-needs to recognize these as probably-the-same-device via the same host+brand-uniqueness heuristic
-already used for today's legacy-rekey case (which runs in the opposite direction — legacy *saved*,
-stable *discovered* — so this is a new, narrow addition, not a generalization of it). Scope is
-deliberately narrow: only saved=`androidtv-<mac>` / discovered=`androidtv-<ip>`, nothing involving
-`sha256` (see re-scope note above — not needed).
-Detail: Mechanism location still open — inside `DeviceReconciliationService.reconcile()` (as a small
-new pass alongside, not folded into, the existing legacy-rekey block, which is specifically about the
-IP-derived-*saved*-device case and shouldn't be disturbed) vs. a wrapping step in
-`PairingPageData.reconcileDiscovery`. No live "confirmation" step is possible here by definition — the
-discovery is stuck at `ip` precisely because nothing else was reachable this scan. Safety comes
-entirely from the same conservative uniqueness constraint already relied on today: exactly one
-candidate, exactly one target, matching host+brand.
-Skills: correctness-validation, clean-code-solid, security
-Depends-on: [T3.1]
-Status: re-scoped (narrowed); concept agreed, diff not yet scoped
-Risk-hint: LOW-MEDIUM — small, narrowly-scoped addition to core reconciliation matching logic
+#### Task T4.1: Correlate a saved `androidtv-<mac>` device against a same-scan `androidtv-<ip>` discovery — dropped
+Not built. See the dropped-entirely note above: the only mechanism that could actually fire (removing
+host from the match) carries real misfire risk with no offsetting benefit once SG1's automatic retry
+is accounted for. No task tracking this further; logged here so it isn't rediscovered and rebuilt
+without re-deriving why it was rejected.
+Skills: correctness-validation, risk-analysis
+Depends-on: []
+Status: dropped — accepted as a rare, self-healing gap; no further work planned
+Risk-hint: —
 
-#### Task T4.2: Regression-check legacy IP-only matching path
-Objective: Confirm devices with no `bt`, no cert-derived MAC, and no saved stable id yet (still purely
-IP-derived, i.e. never paired under any Android TV identity scheme) continue to be handled by the
-existing legacy-rekey heuristic unchanged after T4.1's new pass is added alongside it.
-Detail: No new behavior — verification only, to ensure T4.1 doesn't narrow or interfere with what
-already works for devices without any passive or connectable identity source.
-Skills: correctness-validation, test-creation-strategy, regression-prevention
-Depends-on: [T3.1, T4.1]
-Status: not started
-Risk-hint: LOW
+#### Task T4.2: Regression-check legacy IP-only matching path — moot
+Was verification-only for T4.1's new pass. Since T4.1 was dropped, there is no new pass to regression-
+check; the existing legacy-rekey heuristic is untouched by this goal.
+Skills: —
+Depends-on: []
+Status: not applicable
+Risk-hint: —
 
 #### Task T4.3: MAC-collision residual risk — accepted, not mitigated
 Per D-11: the collision risk D-4 identified no longer has the independent-signal mitigation the
@@ -536,19 +535,34 @@ practice, once real-device coverage exists.
 cert id in favor of an already-"stable" `bt` id at first-time pairing. Once both sources normalize to
 the identical `androidtv-<mac>` string for the same physical device, there is nothing left to
 discard; no fix to `preparePairing` is needed.
+Also includes a related, small addition found while implementing: `CompositeDeviceDiscoveryService`
+skips the live cert probe entirely when discovery already produced a `bt`-derived mac this scan
+(confirmed safe — the pairing flow independently re-stores its own cert on success, so this doesn't
+starve anything), and the identical mac-first-then-sha logic is applied to
+`AndroidTvCertificateStore.stableIdForHost` (the pairing-time lookup) too, not just the discovery-time
+probe — otherwise a brand-new pairing could still land on a `sha256` id.
+
+Ported the MAC-extraction algorithm directly from `tronikos/androidtvremote2`'s actual source (fetched
+and re-verified, not just summarized from earlier research): the MAC is the last `/`-separated segment
+of the certificate subject's Common Name (`dnQualifier` carries the device name only, never the MAC).
+Added one deviation from the reference: a MAC-shape validation on the extracted value before accepting
+it, since the reference trusts it blindly for a display-only use, whereas this app exact-matches on it.
+
 Skills: language-specific-implementation, clean-code-solid, security, correctness-validation
 Depends-on: [T3.1]
-Status: design agreed; diff not yet written
+Status: implemented (`AndroidTvCertSubjectMacParser`, `AndroidTvCertificateStore.stableIdFromDer`,
+the retired `hasStoredServerCertificate` gate, and the discovery-time skip-if-already-stable check)
+and covered by 11 new unit tests (parser: Shield/Nexus-shaped CNs, no-MAC, malformed/empty DER;
+`stableIdFromDer`: mac-preferred and sha-fallback; composite discovery: skip-probe-when-already-stable)
+using real synthetic certificates built via `basic_utils`, not mocks. `flutter analyze` clean; full
+suite green (779/779). Committed: `bdfc452` (docs), `f5e7076` (code).
 Risk-hint: MEDIUM — changes what a live-reachable, previously-unpaired Android TV's discovery-time id
 looks like; touches `AndroidTvCertificateStore` and the enrichment path every scan already runs
 
-> **Ordering note (superseded):** this originally said SG4's T4.1/T4.2 depend on T5.1, and that
-> implementation order should follow T5.1 → T4.1/T4.2 despite the section order. That dependency
-> turned out to be wrong (see SG4's re-scope note above) — T4.1/T4.2 depend only on T3.1, which has
-> already shipped, and T4.1's final scope (saved `androidtv-<mac>` vs. same-scan `androidtv-<ip>`,
-> nothing `sha256`-related) doesn't touch anything T5.1 produces. SG5 still appears after SG4 in this
-> document purely because of when each was introduced in conversation — no dependency either
-> direction, and no ordering requirement between them; either can be implemented first.
+> **Ordering note (moot):** this originally debated implementation order between SG4 and SG5. Moot now
+> that SG4's T4.1/T4.2 are dropped entirely (see SG4) — SG5/T5.1 is the only sub-goal in this section
+> pair with any code, and it has already shipped. SG5 appears after SG4 in this document purely because
+> of when each was introduced in conversation.
 
 ---
 
@@ -559,9 +573,11 @@ looks like; touches `AndroidTvCertificateStore` and the enrichment path every sc
 - Pre-existing paired Android TVs saved under the old `androidtv-<sha256>` scheme will not
   auto-migrate to `androidtv-<mac>` — accepted, decided with user: they need one manual re-pair.
   Not a bug to fix later; logged here so it isn't rediscovered and "fixed" by mistake.
-- T4.1: exact mechanism and location for correlating a saved `androidtv-<mac>` device against a
-  same-scan `androidtv-<ip>` discovery (inside `reconcile()` as a new pass vs. a wrapping step in
-  `PairingPageData.reconcileDiscovery`).
+- A saved `androidtv-<mac>` device whose IP changes on the same scan neither `bt` nor a live cert
+  connection works will not be reconciled that scan (T4.1, dropped) — accepted, decided with user:
+  the only mechanism that could fire without a host anchor has real misfire risk (could merge two
+  different physical TVs), and SG1's automatic retry means a later scan very likely recovers normally.
+  Not a bug to fix later; logged here for the same reason as the item above.
 - T5.1: whether the whole-DER-hash fallback (when subject-MAC parsing fails) is ever actually
   exercised in practice is unknown — logged in `references/tech-debt-list.md` to revisit once there's
   real-device coverage across more OEMs than the two confirmed subject-format examples.
@@ -579,17 +595,17 @@ looks like; touches `AndroidTvCertificateStore` and the enrichment path every sc
 - The paired-list page's wifi icon reflects a freshly reconciled host within the same scan that
   found it, not requiring a second manual rescan.
 - Both of the above work correctly today, against existing identity sources, independent of
-  whether SG3/SG4/SG5 have landed yet.
+  whether SG3/SG5 have landed yet.
 - Any reachable Android TV — paired or not, `bt`-advertising or not — gets a `androidtv-<mac>`
   discovery-time id whenever a MAC is obtainable via either channel (mDNS `bt`, or a live cert read
   per SG5), without requiring prior pairing to have "recognized" it first.
-- A previously-paired Android TV saved under `androidtv-<mac>` is reconciled correctly after an IP
-  change even on a scan where neither `bt` nor a live cert connection produced a MAC (falling back to
-  `androidtv-<ip>` that scan only) — matching the original triggering incident — via T4.1's
-  host+brand-uniqueness correlation. Devices still saved under the old `androidtv-<sha256>` scheme are
-  explicitly not covered (see Open items); they need one manual re-pair.
+- A previously-paired Android TV saved under `androidtv-<mac>` is reconciled correctly whenever a MAC
+  is obtainable via *either* channel that scan. **Not covered, deliberately (SG4 dropped)**: a scan
+  where the device's IP changed *and* neither `bt` nor a live cert connection worked that same scan —
+  falls back to `androidtv-<ip>` unreconciled until a later scan recovers the MAC via SG1's automatic
+  retry. Also not covered: devices still saved under the old `androidtv-<sha256>` scheme (need one
+  manual re-pair) — see Open items for both.
 - Devices with neither `bt` nor a connectable cert (Roku, manually-added, or an Android TV that's
   simply unreachable this scan) are unaffected — same behavior as today, no regression.
 - `flutter analyze` clean; existing test suite green; new coverage added for SG5's certificate
-  subject parsing, the reconciliation mixed-identity-source path (T4.2), and the retry state machine
-  (T1.1).
+  subject parsing and the retry state machine (T1.1).
