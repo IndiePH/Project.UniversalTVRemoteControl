@@ -40,6 +40,12 @@ Keep entries short and append new updates at the top.
   algorithm). The certificate enrichment step no longer requires a device to already be "recognized"
   before its id is trusted — that gate protected pairing consent, which is unaffected by this change,
   not against any live-connection risk.
+- **Temporary:** a device paired before this update (saved under the old whole-certificate-hash id)
+  now migrates automatically onto the new MAC-based id, without a manual re-pair
+  (`AndroidTvLegacySha256IdMigrator`). Deliberately isolated from the permanent enrichment above and
+  scheduled for removal around 2026-11-10 (see `references/tech-debt-list.md`) — it trusts MAC
+  extraction verified against only two device shapes, and the population needing it only shrinks, so
+  it's scoped as a bounded-time convenience rather than permanent behavior.
 
 ### Not included (considered, deliberately dropped — not oversights)
 - **A previously-paired Android TV whose IP changes on a scan where neither `bt` nor a live cert
@@ -53,29 +59,23 @@ Keep entries short and append new updates at the top.
   against.** MAC uniqueness is the manufacturer's responsibility (IEEE OUI allocation), not something
   this app can independently verify; Home Assistant's own production `androidtv_remote` integration
   carries the same exposure with no mitigation.
-- **A device paired before this update (saved under the old whole-certificate-hash id) does not
-  automatically migrate to the new MAC-based id — it needs one manual re-pair.** Explored twice with
-  two different mechanisms; both rejected. The decisive reason: the enrichment step's own new
-  optimization (above) skips the live certificate connection whenever a device already has a MAC via
-  `bt` — meaning no certificate is ever read again for any device that still advertises `bt`, which is
-  almost certainly true of most pre-existing paired devices. The migration mechanism explored can't
-  reach the population it was meant to help. A second, independent concern also applied: migrating
-  would trust MAC extraction verified against only two device shapes (NVIDIA Shield, Nexus Player) —
-  a wrong extraction for some other manufacturer would overwrite an already-working id with a bad one.
 
 ### Docs
 - `references/goals/goal-automatic-reconnection-resilience.md`: full design log for the above,
   including decisions logged and later superseded as the identity model was refined (`bt` and the
   certificate were initially assumed to be independent signals needing cross-confirmation; later
-  found to read the same underlying MAC, dissolving that need).
-- `references/tech-debt-list.md`: two new logged items (bare `catch` sites added by this work,
-  mirroring the pattern already used at their call sites; discovery services' lack of a unit-test
-  seam, encountered while adding mDNS test coverage).
+  found to read the same underlying MAC, dissolving that need), and the migration shim above, which
+  was dropped once before being reopened with a mechanism that resolved the original objections.
+- `references/tech-debt-list.md`: bare `catch` sites added by this work (mirroring the pattern
+  already used at their call sites), discovery services' lack of a unit-test seam (encountered while
+  adding mDNS test coverage), and the migration shim's own scheduled-removal entry with its exit
+  criteria.
 
 ### Verification
-- `flutter analyze` clean; full test suite green (779/779), including new coverage for the retry
+- `flutter analyze` clean; full test suite green (783/783), including new coverage for the retry
   state machine, the paired-list indicator's reprobe chain, the `bt` TXT parser, the certificate
-  subject MAC parser, and the discovery-time enrichment skip/fallback behavior.
+  subject MAC parser, the discovery-time enrichment skip/fallback behavior, and the migration shim's
+  filtering logic.
 
 ## 2026-09-02
 
