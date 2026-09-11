@@ -1027,7 +1027,8 @@ void main() {
         expect(
           reachability.probeCountByHost['192.168.1.10'],
           1,
-          reason: 'a same-host retry after a no-op reconciliation pass is a '
+          reason:
+              'a same-host retry after a no-op reconciliation pass is a '
               'wasted network call and must be skipped',
         );
       },

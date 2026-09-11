@@ -15,65 +15,77 @@ void main() {
 
   final certStore = AndroidTvCertificateStore();
 
-  TvDevice androidTv({required String id, String host = '192.168.1.20'}) => TvDevice(
-    id: id,
-    displayName: 'Living Room TV',
-    brand: TvBrand.androidTv,
-    capabilities: const {DeviceCapability.keyCommands},
-    host: host,
-  );
+  TvDevice androidTv({required String id, String host = '192.168.1.20'}) =>
+      TvDevice(
+        id: id,
+        displayName: 'Living Room TV',
+        brand: TvBrand.androidTv,
+        capabilities: const {DeviceCapability.keyCommands},
+        host: host,
+      );
 
   group('AndroidTvLegacySha256IdMigrator.migrate', () {
-    test('does nothing when no saved device uses the legacy sha256 id format', () async {
-      final repository = _RecordingDeviceRepository();
-      await AndroidTvLegacySha256IdMigrator.migrate(
-        discovered: [androidTv(id: 'androidtv-aa:bb:cc:dd:ee:ff')],
-        saved: [
-          androidTv(id: 'androidtv-aa:bb:cc:dd:ee:ff'), // already mac-based, not legacy
-          androidTv(id: 'androidtv-192.168.1.20'), // ip-derived, not legacy
-        ],
-        certStore: certStore,
-        repository: repository,
-      );
+    test(
+      'does nothing when no saved device uses the legacy sha256 id format',
+      () async {
+        final repository = _RecordingDeviceRepository();
+        await AndroidTvLegacySha256IdMigrator.migrate(
+          discovered: [androidTv(id: 'androidtv-aa:bb:cc:dd:ee:ff')],
+          saved: [
+            androidTv(
+              id: 'androidtv-aa:bb:cc:dd:ee:ff',
+            ), // already mac-based, not legacy
+            androidTv(id: 'androidtv-192.168.1.20'), // ip-derived, not legacy
+          ],
+          certStore: certStore,
+          repository: repository,
+        );
 
-      expect(repository.savedCalls, isEmpty);
-    });
+        expect(repository.savedCalls, isEmpty);
+      },
+    );
 
-    test('ignores non-Android-TV saved devices even if their id happens to look sha-shaped', () async {
-      final repository = _RecordingDeviceRepository();
-      final shaLikeId = 'androidtv-${'a' * 64}';
-      await AndroidTvLegacySha256IdMigrator.migrate(
-        discovered: [],
-        saved: [
-          TvDevice(
-            id: shaLikeId,
-            displayName: 'Not Actually Android TV',
-            brand: TvBrand.samsung,
-            capabilities: const {DeviceCapability.keyCommands},
-          ),
-        ],
-        certStore: certStore,
-        repository: repository,
-      );
+    test(
+      'ignores non-Android-TV saved devices even if their id happens to look sha-shaped',
+      () async {
+        final repository = _RecordingDeviceRepository();
+        final shaLikeId = 'androidtv-${'a' * 64}';
+        await AndroidTvLegacySha256IdMigrator.migrate(
+          discovered: [],
+          saved: [
+            TvDevice(
+              id: shaLikeId,
+              displayName: 'Not Actually Android TV',
+              brand: TvBrand.samsung,
+              capabilities: const {DeviceCapability.keyCommands},
+            ),
+          ],
+          certStore: certStore,
+          repository: repository,
+        );
 
-      expect(repository.savedCalls, isEmpty);
-    });
+        expect(repository.savedCalls, isEmpty);
+      },
+    );
 
-    test('skips a discovered device with a blank host without attempting a connection', () async {
-      final repository = _RecordingDeviceRepository();
-      final legacyId = 'androidtv-${'a' * 64}';
+    test(
+      'skips a discovered device with a blank host without attempting a connection',
+      () async {
+        final repository = _RecordingDeviceRepository();
+        final legacyId = 'androidtv-${'a' * 64}';
 
-      // If this reached the connection step it would hang/timeout against a real socket; the
-      // guard must return before that, so this test completing quickly is itself the assertion.
-      await AndroidTvLegacySha256IdMigrator.migrate(
-        discovered: [androidTv(id: 'androidtv-192.168.1.99', host: '')],
-        saved: [androidTv(id: legacyId)],
-        certStore: certStore,
-        repository: repository,
-      );
+        // If this reached the connection step it would hang/timeout against a real socket; the
+        // guard must return before that, so this test completing quickly is itself the assertion.
+        await AndroidTvLegacySha256IdMigrator.migrate(
+          discovered: [androidTv(id: 'androidtv-192.168.1.99', host: '')],
+          saved: [androidTv(id: legacyId)],
+          certStore: certStore,
+          repository: repository,
+        );
 
-      expect(repository.savedCalls, isEmpty);
-    });
+        expect(repository.savedCalls, isEmpty);
+      },
+    );
 
     test('ignores discovered devices of other brands', () async {
       final repository = _RecordingDeviceRepository();
@@ -140,5 +152,6 @@ class _RecordingDeviceRepository implements DeviceRepository {
   ) async {}
 
   @override
-  Future<Map<String, dynamic>?> getDeviceSystemInfo(String deviceId) async => null;
+  Future<Map<String, dynamic>?> getDeviceSystemInfo(String deviceId) async =>
+      null;
 }

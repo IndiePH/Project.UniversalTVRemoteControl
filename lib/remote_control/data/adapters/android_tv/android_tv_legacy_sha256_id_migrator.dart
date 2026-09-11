@@ -82,7 +82,9 @@ final class AndroidTvLegacySha256IdMigrator {
       if (rawDer == null) return;
 
       final der = Uint8List.fromList(rawDer);
-      final legacyId = AndroidTvCertificateStore.stableIdFromServerCertificate(der);
+      final legacyId = AndroidTvCertificateStore.stableIdFromServerCertificate(
+        der,
+      );
       final legacyDevice = legacyByShaId[legacyId];
       if (legacyDevice == null) return;
 

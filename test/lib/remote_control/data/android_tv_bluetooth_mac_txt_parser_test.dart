@@ -17,20 +17,23 @@ void main() {
       );
     });
 
-    test('finds bt among multiple newline-joined TXT entries, in any order', () {
-      expect(
-        AndroidTvBluetoothMacTxtParser.parse(
-          'id=abc123\nbt=AA:BB:CC:DD:EE:FF\nmodel=Chromecast\n',
-        ),
-        'aa:bb:cc:dd:ee:ff',
-      );
-      expect(
-        AndroidTvBluetoothMacTxtParser.parse(
-          'bt=AA:BB:CC:DD:EE:FF\nid=abc123\n',
-        ),
-        'aa:bb:cc:dd:ee:ff',
-      );
-    });
+    test(
+      'finds bt among multiple newline-joined TXT entries, in any order',
+      () {
+        expect(
+          AndroidTvBluetoothMacTxtParser.parse(
+            'id=abc123\nbt=AA:BB:CC:DD:EE:FF\nmodel=Chromecast\n',
+          ),
+          'aa:bb:cc:dd:ee:ff',
+        );
+        expect(
+          AndroidTvBluetoothMacTxtParser.parse(
+            'bt=AA:BB:CC:DD:EE:FF\nid=abc123\n',
+          ),
+          'aa:bb:cc:dd:ee:ff',
+        );
+      },
+    );
 
     test('returns null when no bt entry is present', () {
       expect(

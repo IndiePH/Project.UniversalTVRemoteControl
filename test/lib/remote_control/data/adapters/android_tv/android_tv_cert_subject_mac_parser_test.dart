@@ -36,17 +36,20 @@ void main() {
       );
     });
 
-    test('extracts the MAC from a Nexus Player-shaped CN (MAC-only, no name)', () {
-      // Nexus Player splits the device name into dnQualifier, leaving only
-      // "atvremote/<mac>" in CN -- basic_utils's CSR builder only accepts a
-      // CN attribute, so this covers the CN-side shape the parser reads;
-      // dnQualifier is irrelevant to MAC extraction per the ported algorithm.
-      final der = certDerWithCn('atvremote/AA:BB:CC:DD:EE:FF');
-      expect(
-        AndroidTvCertSubjectMacParser.parseFromDer(der),
-        'aa:bb:cc:dd:ee:ff',
-      );
-    });
+    test(
+      'extracts the MAC from a Nexus Player-shaped CN (MAC-only, no name)',
+      () {
+        // Nexus Player splits the device name into dnQualifier, leaving only
+        // "atvremote/<mac>" in CN -- basic_utils's CSR builder only accepts a
+        // CN attribute, so this covers the CN-side shape the parser reads;
+        // dnQualifier is irrelevant to MAC extraction per the ported algorithm.
+        final der = certDerWithCn('atvremote/AA:BB:CC:DD:EE:FF');
+        expect(
+          AndroidTvCertSubjectMacParser.parseFromDer(der),
+          'aa:bb:cc:dd:ee:ff',
+        );
+      },
+    );
 
     test('returns null when the CN has no MAC-shaped trailing segment', () {
       final der = certDerWithCn('atvremote/darcy/SHIELD Android TV');
@@ -68,10 +71,7 @@ void main() {
     });
 
     test('returns null for empty DER instead of throwing', () {
-      expect(
-        AndroidTvCertSubjectMacParser.parseFromDer(Uint8List(0)),
-        isNull,
-      );
+      expect(AndroidTvCertSubjectMacParser.parseFromDer(Uint8List(0)), isNull);
     });
   });
 }

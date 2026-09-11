@@ -154,8 +154,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
           ? GetIt.instance<DeviceIdentityRegistry>()
           : null,
       layoutRepository: widget.layoutRepository,
-      canAttemptNow: () =>
-          mounted && ModalRoute.of(context)?.isCurrent == true,
+      canAttemptNow: () => mounted && ModalRoute.of(context)?.isCurrent == true,
       onDeviceUpdated: _handleDeviceUpdatedByReconciliation,
     );
     _loadInitialDevice();

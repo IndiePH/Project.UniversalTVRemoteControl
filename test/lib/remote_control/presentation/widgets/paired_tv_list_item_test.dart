@@ -85,7 +85,8 @@ void main() {
         expect(
           reachability.callCount,
           1,
-          reason: 'a failed shared pass gives up rather than re-probing the '
+          reason:
+              'a failed shared pass gives up rather than re-probing the '
               'same host it already knows is unreachable',
         );
       },
