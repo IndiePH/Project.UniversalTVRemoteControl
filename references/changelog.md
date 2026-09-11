@@ -11,6 +11,39 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-09-11
+
+### Fixed
+- Pairing a brand-new Android TV that advertises `bt` could fail outright with
+  `SocketException: Failed host lookup` (found on a real device during personal-build testing of
+  `fix/reconnection`). The pairing connection's host resolver only knows how to turn a device id
+  back into a connectable host via `DeviceIdentityRegistry` (empty for a device that's never been
+  registered) or a legacy regex extracting an IPv4 from the id string (no match for a MAC-based id)
+  — and since the previous day's work started giving unpaired Android TVs a MAC-based id whenever
+  `bt` is available, first-time pairing for such a device had no way to resolve a host at all.
+  `BrandRoutedRemoteCommandService.preparePairing` already registered the device's host once pairing
+  completed; now it also registers before the connection attempt, so the resolver has something to
+  find. See `references/tech-debt-list.md` for the broader design gap this exposed (the
+  adapter→transport boundary drops the already-known host and re-derives it via this
+  timing-dependent lookup instead) and the deliberately-deferred proper fix.
+- The paired-device "Device Info" dialog's "Last known IP" row was reading a substring of the
+  device's internal id (stripping the brand prefix) — only actually an IP for legacy IP-derived ids;
+  for any stable-id device (`androidtv-<mac>`, `androidtv-<sha256>`, `samsung-<udn>`, etc.) it showed
+  the raw id fragment mislabeled as an IP. Now reads the real, currently-tracked host. Also adds a
+  debug-build-only "Device ID (debug)" row showing the raw id directly, for inspecting which
+  identity format a device landed on.
+
+### Docs
+- `references/tech-debt-list.md`: the adapter/transport host-resolution design gap above, with the
+  exact location of the interim fix and a concrete sketch of the deferred proper fix (pass the host
+  directly for calls that already have a full `TvDevice`, rather than re-deriving it via the
+  registry) — scoped as a breaking change across every brand's transport client, not something to
+  fold into a single bug fix.
+
+### Verification
+- `flutter analyze` clean; full test suite green (784/784), including a new regression test that
+  fails without the pairing fix (host resolves to null) and passes with it.
+
 ## 2026-09-10
 
 ### Added
