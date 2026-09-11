@@ -5,6 +5,7 @@ import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_tr
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -26,6 +27,11 @@ class AndroidTvAdapter implements TvBrandAdapter {
 
   @override
   bool get supportsTextInput => true;
+
+  // START_LONG/END_LONG are native RemoteDirection values on this protocol —
+  // see goal-long-press-key.md verified fact #3, #30.
+  @override
+  bool get supportsKeyHold => true;
 
   @override
   Set<RemoteCommand> get supportedCommands => _supportedCommands;
@@ -96,6 +102,26 @@ class AndroidTvAdapter implements TvBrandAdapter {
   }) async {
     await _transportClient.connect(deviceId: device.id);
     await _transportClient.sendText(deviceId: device.id, text: text);
+  }
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async {
+    final payload = _keyMap.payloadFor(command);
+    if (payload is! KeySequence || payload.codes.isEmpty) {
+      throw UnsupportedError(
+        'No Android TV key mapping for hold command: $command',
+      );
+    }
+    await _transportClient.connect(deviceId: device.id);
+    await _transportClient.sendKeyHold(
+      deviceId: device.id,
+      keyCode: payload.codes.first,
+      phase: phase,
+    );
   }
 
   @override

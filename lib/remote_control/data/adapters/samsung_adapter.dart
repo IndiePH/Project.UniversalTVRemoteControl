@@ -11,6 +11,7 @@ import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transpor
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_log_reader.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -50,6 +51,11 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
 
   @override
   bool get supportsTextInput => true;
+
+  // Cmd: "Press"/"Release" — undocumented by Samsung but confirmed via real
+  // library usage. See goal-long-press-key.md verified fact #20-23.
+  @override
+  bool get supportsKeyHold => true;
 
   @override
   Set<RemoteCommand> get supportedCommands => _supportedCommands;
@@ -136,6 +142,26 @@ class SamsungAdapter implements TvBrandAdapter, TransportLogProvider {
   }) async {
     await _transportClient.connect(deviceId: device.id);
     await _transportClient.sendText(deviceId: device.id, text: text);
+  }
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async {
+    final payload = _keyMapper.payloadFor(command);
+    if (payload is! KeySequence || payload.codes.isEmpty) {
+      throw UnsupportedError(
+        'No Samsung key mapping for hold command: $command',
+      );
+    }
+    await _transportClient.connect(deviceId: device.id);
+    await _transportClient.sendKeyHold(
+      deviceId: device.id,
+      keyCode: payload.codes.first,
+      phase: phase,
+    );
   }
 
   @override

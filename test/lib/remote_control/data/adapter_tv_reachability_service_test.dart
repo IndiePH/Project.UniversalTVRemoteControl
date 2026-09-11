@@ -3,6 +3,7 @@ import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapter_tv_reachability_service.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -91,6 +92,16 @@ class _ReachableAdapter implements TvBrandAdapter {
 
   @override
   bool get supportsTextInput => false;
+
+  @override
+  bool get supportsKeyHold => false;
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async => throw UnsupportedError('Key hold is not supported for $brand.');
 
   @override
   Set<RemoteCommand> get supportedCommands => const {};

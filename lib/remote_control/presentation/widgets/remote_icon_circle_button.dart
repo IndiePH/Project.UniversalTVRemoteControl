@@ -24,6 +24,8 @@ class RemoteIconCircleButton extends StatelessWidget {
     this.foregroundColor,
     this.interactionCommand,
     this.onPressHaptic,
+    this.onHoldStart,
+    this.onHoldEnd,
   });
 
   final IconData? icon;
@@ -45,6 +47,11 @@ class RemoteIconCircleButton extends StatelessWidget {
 
   /// Custom haptic when no [interactionCommand] is available.
   final VoidCallback? onPressHaptic;
+
+  /// Passed straight through to [RemotePressFeedback] — see its own docs for
+  /// how these change tap-dispatch timing when set.
+  final VoidCallback? onHoldStart;
+  final VoidCallback? onHoldEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +119,8 @@ class RemoteIconCircleButton extends StatelessWidget {
       onPressHaptic: interactionCommand != null
           ? () => RemoteCommandHapticFeedback.playFor(interactionCommand!)
           : onPressHaptic,
+      onHoldStart: onHoldStart,
+      onHoldEnd: onHoldEnd,
       child: buttonBody,
     );
   }

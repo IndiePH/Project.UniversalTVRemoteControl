@@ -7,6 +7,7 @@ import 'package:one_remote/remote_control/data/adapters/sony_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -72,11 +73,37 @@ void main() {
       expect(adapter.supportedCommands.contains(RemoteCommand.netflix), isTrue);
     },
   );
+
+  test('SonyAdapter: supportsKeyHold is true', () {
+    final adapter = SonyAdapter(transportClient: _SpySonyTransportClient());
+    expect(adapter.supportsKeyHold, isTrue);
+  });
+
+  test('SonyAdapter: sendKeyHold sends START_LONG then END_LONG via the '
+      'resolved key code', () async {
+    final transport = _SpySonyTransportClient();
+    final adapter = SonyAdapter(transportClient: transport);
+    await adapter.sendKeyHold(
+      device: device,
+      command: RemoteCommand.dpadOk,
+      phase: KeyHoldPhase.down,
+    );
+    await adapter.sendKeyHold(
+      device: device,
+      command: RemoteCommand.dpadOk,
+      phase: KeyHoldPhase.up,
+    );
+    expect(transport.sentKeyHolds, [
+      ('23', KeyHoldPhase.down),
+      ('23', KeyHoldPhase.up),
+    ]);
+  });
 }
 
 class _SpySonyTransportClient implements AndroidTvTransportClient {
   int connectCalls = 0;
   final List<String> sentKeys = [];
+  final List<(String, KeyHoldPhase)> sentKeyHolds = [];
   String? probedHost;
 
   @override
@@ -96,6 +123,15 @@ class _SpySonyTransportClient implements AndroidTvTransportClient {
     required String keyCode,
   }) async {
     sentKeys.add(keyCode);
+  }
+
+  @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  }) async {
+    sentKeyHolds.add((keyCode, phase));
   }
 
   @override

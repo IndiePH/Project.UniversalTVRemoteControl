@@ -11,6 +11,7 @@ import 'package:one_remote/remote_control/data/persistence/device_identity_regis
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_capabilities.dart';
@@ -517,6 +518,77 @@ void main() {
     });
   });
 
+  group('brand dispatch — key hold', () {
+    test('supportsKeyHold delegates to the matching brand adapter', () async {
+      final samsung = _RecordingAdapter(
+        brand: TvBrand.samsung,
+        supportsKeyHold: true,
+      );
+      final lg = _RecordingAdapter(brand: TvBrand.lg, supportsKeyHold: false);
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [samsung, lg],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+
+      expect(service.supportsKeyHold(device: device), isTrue);
+      expect(service.supportsKeyHold(device: lgDevice), isFalse);
+    });
+
+    test('supportsKeyHold returns false when no adapter configured', () {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+      expect(service.supportsKeyHold(device: device), isFalse);
+    });
+
+    test(
+      'sendKeyHold routes to the matching brand adapter with the right args',
+      () async {
+        final samsung = _RecordingAdapter(
+          brand: TvBrand.samsung,
+          supportsKeyHold: true,
+        );
+        final lg = _RecordingAdapter(brand: TvBrand.lg, supportsKeyHold: true);
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [samsung, lg],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
+        );
+
+        await service.sendKeyHold(
+          device: device,
+          command: RemoteCommand.dpadOk,
+          phase: KeyHoldPhase.down,
+        );
+
+        expect(samsung.sendKeyHoldCallCount, 1);
+        expect(samsung.lastKeyHoldCommand, RemoteCommand.dpadOk);
+        expect(samsung.lastKeyHoldPhase, KeyHoldPhase.down);
+        expect(lg.sendKeyHoldCallCount, 0);
+      },
+    );
+
+    test('sendKeyHold throws when no adapter configured for brand', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+
+      await expectLater(
+        service.sendKeyHold(
+          device: device,
+          command: RemoteCommand.dpadOk,
+          phase: KeyHoldPhase.down,
+        ),
+        throwsUnsupportedError,
+      );
+    });
+  });
+
   group('brand dispatch — sendText', () {
     test('routes to the matching brand adapter', () async {
       final samsung = _RecordingAdapter(brand: TvBrand.samsung);
@@ -1016,6 +1088,7 @@ class _RecordingAdapter implements TvBrandAdapter {
   _RecordingAdapter({
     required this.brand,
     this._supportsTextInput = true,
+    this._supportsKeyHold = false,
     this.connectError,
     Set<RemoteCommand>? supportedCommands,
     Stream<bool>? textInputReadyStream,
@@ -1029,6 +1102,7 @@ class _RecordingAdapter implements TvBrandAdapter {
   String get protocolVariant => TvDevice.defaultProtocolVariant;
 
   final bool _supportsTextInput;
+  final bool _supportsKeyHold;
   final Set<RemoteCommand> _supportedCommands;
   final Stream<bool> _textInputReadyStream;
   final Object? connectError;
@@ -1038,9 +1112,26 @@ class _RecordingAdapter implements TvBrandAdapter {
   int sendCommandCallCount = 0;
   int sendTextCallCount = 0;
   int connectCallCount = 0;
+  int sendKeyHoldCallCount = 0;
+  RemoteCommand? lastKeyHoldCommand;
+  KeyHoldPhase? lastKeyHoldPhase;
 
   @override
   bool get supportsTextInput => _supportsTextInput;
+
+  @override
+  bool get supportsKeyHold => _supportsKeyHold;
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async {
+    sendKeyHoldCallCount++;
+    lastKeyHoldCommand = command;
+    lastKeyHoldPhase = phase;
+  }
 
   @override
   Set<RemoteCommand> get supportedCommands => _supportedCommands;
@@ -1114,6 +1205,16 @@ class _ThrowingAdapter implements TvBrandAdapter {
 
   @override
   bool get supportsTextInput => true;
+
+  @override
+  bool get supportsKeyHold => false;
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async => throw StateError('key hold error');
 
   @override
   Set<RemoteCommand> get supportedCommands => RemoteCommand.values.toSet();

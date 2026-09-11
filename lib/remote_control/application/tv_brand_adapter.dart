@@ -1,4 +1,5 @@
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -55,6 +56,23 @@ abstract class TvBrandAdapter {
     required TvDevice device,
     required RemoteCommand command,
   });
+
+  /// Whether this brand can send a real held-key press (native down/up wire primitive)
+  /// rather than a single atomic tap. `false` by default — see
+  /// `references/goals/goal-long-press-key.md` for which brands have one and why brands
+  /// without one are not emulated.
+  bool get supportsKeyHold => false;
+
+  /// Sends one edge (`down` or `up`) of a held key press for a command that already
+  /// resolves via [sendCommand]'s key map. Only meaningful when [supportsKeyHold] is
+  /// `true`; callers must not invoke this otherwise.
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async => throw UnsupportedError(
+    'Key hold is not supported for ${device.brand.name}.',
+  );
 
   Future<void> sendText({required TvDevice device, required String text});
 

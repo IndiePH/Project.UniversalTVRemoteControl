@@ -5,6 +5,7 @@ import 'package:one_remote/remote_control/data/adapters/tcl/tcl_legacy_key_mappe
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_legacy_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variants.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -30,6 +31,12 @@ class TclLegacyWifiAdapter implements TvBrandAdapter {
 
   @override
   bool get supportsTextInput => false;
+
+  // Every send opens a fresh TCP socket (sendFrame) — structurally the worst
+  // fit in this codebase for hold emulation. Out of scope, not deferred; see
+  // goal-long-press-key.md verified fact #9.
+  @override
+  bool get supportsKeyHold => false;
 
   @override
   Set<RemoteCommand> get supportedCommands => _supportedCommands;
@@ -97,6 +104,15 @@ class TclLegacyWifiAdapter implements TvBrandAdapter {
   }) async {
     throw UnsupportedError('Text input is not supported for TCL legacy Wi-Fi.');
   }
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async => throw UnsupportedError(
+    'Key hold is not supported for ${device.brand.name}.',
+  );
 
   @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>

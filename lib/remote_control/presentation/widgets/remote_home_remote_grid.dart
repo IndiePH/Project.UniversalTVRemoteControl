@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/layout_item_id.dart';
 import 'package:one_remote/remote_control/domain/models/layout_zone.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
@@ -31,6 +32,8 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
     required this.onSendCommand,
     required this.onSearchInputPressed,
     required this.onDisabledInteraction,
+    this.supportsKeyHold = false,
+    this.onSendKeyHold,
   });
 
   final List<LayoutEditItem> layoutItems;
@@ -42,6 +45,15 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
   final void Function(RemoteCommand command) onSendCommand;
   final VoidCallback onSearchInputPressed;
   final VoidCallback onDisabledInteraction;
+
+  /// Whether the active device's adapter can send a real held-key press.
+  /// Gates whether OK/Home/Left/Right offer a hold gesture at all — see
+  /// `references/goals/goal-long-press-key.md`.
+  final bool supportsKeyHold;
+
+  /// Required when [supportsKeyHold] can be `true`. Dispatches one edge
+  /// (`down`/`up`) of a held key press.
+  final void Function(RemoteCommand command, KeyHoldPhase phase)? onSendKeyHold;
 
   @override
   Widget build(BuildContext context) {
@@ -136,6 +148,10 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
             : pairingHintActive
             ? null
             : onDisabledInteraction;
+        // Hold is scoped to Home only among the generic single-icon items —
+        // see RemoteCircularDpad's own scope note for OK/Left/Right.
+        final holdEnabled =
+            command == RemoteCommand.home && controlsEnabled && supportsKeyHold;
         itemWidget = SizedBox(
           width: width,
           height: height,
@@ -152,6 +168,12 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
                 isPower: controlsEnabled && item.isPower,
                 onPressed: onPressed,
                 interactionCommand: command,
+                onHoldStart: holdEnabled
+                    ? () => onSendKeyHold!(command!, KeyHoldPhase.down)
+                    : null,
+                onHoldEnd: holdEnabled
+                    ? () => onSendKeyHold!(command!, KeyHoldPhase.up)
+                    : null,
               ),
             ),
           ),
@@ -164,6 +186,7 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
   Widget _buildDpadItem(LayoutEditItem item, double cellSize) {
     final width = (item.width * cellSize) + ((item.width - 1) * gridGap);
     final height = (item.height * cellSize) + ((item.height - 1) * gridGap);
+    final holdEnabled = controlsEnabled && supportsKeyHold;
     return SizedBox(
       width: width,
       height: height,
@@ -197,6 +220,26 @@ class RemoteHomeRemoteGrid extends StatelessWidget {
                 : pairingHintActive
                 ? _noopAction
                 : onDisabledInteraction,
+            onLeftHoldStart: holdEnabled
+                ? () =>
+                      onSendKeyHold!(RemoteCommand.dpadLeft, KeyHoldPhase.down)
+                : null,
+            onLeftHoldEnd: holdEnabled
+                ? () => onSendKeyHold!(RemoteCommand.dpadLeft, KeyHoldPhase.up)
+                : null,
+            onRightHoldStart: holdEnabled
+                ? () =>
+                      onSendKeyHold!(RemoteCommand.dpadRight, KeyHoldPhase.down)
+                : null,
+            onRightHoldEnd: holdEnabled
+                ? () => onSendKeyHold!(RemoteCommand.dpadRight, KeyHoldPhase.up)
+                : null,
+            onOkHoldStart: holdEnabled
+                ? () => onSendKeyHold!(RemoteCommand.dpadOk, KeyHoldPhase.down)
+                : null,
+            onOkHoldEnd: holdEnabled
+                ? () => onSendKeyHold!(RemoteCommand.dpadOk, KeyHoldPhase.up)
+                : null,
           ),
         ),
       ),

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_device_info_snapshot.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/remote_control/data/adapters/adapter_device_info_log_gate.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
@@ -260,13 +261,45 @@ class SamsungWebSocketTransportClient
     required String deviceId,
     required String keyCode,
   }) async {
+    await _sendRemoteKeyCommand(
+      deviceId: deviceId,
+      keyCode: keyCode,
+      cmd: 'Click',
+      eventType: 'key_sent',
+    );
+  }
+
+  /// `Cmd: "Press"`/`"Release"` — undocumented by Samsung, confirmed via
+  /// `xchwarze/samsung-tv-ws-api`'s `SendRemoteKey.press()`/`release()`. Same
+  /// payload shape as `Click`, only `Cmd` differs. See
+  /// `references/goals/goal-long-press-key.md` fact #20-21.
+  @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  }) async {
+    await _sendRemoteKeyCommand(
+      deviceId: deviceId,
+      keyCode: keyCode,
+      cmd: phase == KeyHoldPhase.down ? 'Press' : 'Release',
+      eventType: 'key_hold_${phase.name}',
+    );
+  }
+
+  Future<void> _sendRemoteKeyCommand({
+    required String deviceId,
+    required String keyCode,
+    required String cmd,
+    required String eventType,
+  }) async {
     final socket = await _socketFor(deviceId);
     await _applyKeyPacing(deviceId);
 
     final payload = <String, dynamic>{
       'method': 'ms.remote.control',
       'params': <String, dynamic>{
-        'Cmd': 'Click',
+        'Cmd': cmd,
         'DataOfCmd': keyCode,
         'Option': 'false',
         'TypeOfRemote': 'SendRemoteKey',
@@ -278,7 +311,7 @@ class SamsungWebSocketTransportClient
       TransportEvent(
         transport: 'samsung',
         deviceId: deviceId,
-        type: 'key_sent',
+        type: eventType,
         message: keyCode,
       ),
     );

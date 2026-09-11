@@ -33,6 +33,7 @@ import 'package:one_remote/remote_control/domain/domain.dart'
     hide ConnectionState;
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
     as remote_connection;
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/presentation/controllers/reconnection_retry_controller.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_actions.dart';
 import 'package:one_remote/remote_control/presentation/pages/remote_home_status_kind.dart';
@@ -66,6 +67,7 @@ class RemoteHomePage extends StatefulWidget {
     required this.proEntitlementService,
     required this.connectionStateService,
     this.transportLogReaderProvider = const NoopTransportLogReaderProvider(),
+    this.keyHoldCommandService = const NoopKeyHoldCommandService(),
   });
 
   final AppEnvironment appEnvironment;
@@ -76,6 +78,7 @@ class RemoteHomePage extends StatefulWidget {
   final LayoutRepository layoutRepository;
   final ProEntitlementService proEntitlementService;
   final TransportLogReaderProvider transportLogReaderProvider;
+  final KeyHoldCommandService keyHoldCommandService;
 
   @override
   State<RemoteHomePage> createState() => _RemoteHomePageState();
@@ -431,6 +434,29 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       return false;
     }
     return result.isSuccess;
+  }
+
+  bool get _supportsKeyHold {
+    final device = _activeDevice;
+    if (device == null) {
+      return false;
+    }
+    return widget.keyHoldCommandService.supportsKeyHold(device: device);
+  }
+
+  /// Fire-and-forget, mirroring `connect()`'s own "best-effort" convention in
+  /// this file — a lost hold edge is low-stakes (the user can just press
+  /// again) and doesn't warrant a toast for every failure during a gesture.
+  void _sendKeyHold(RemoteCommand command, KeyHoldPhase phase) {
+    final device = _activeDevice;
+    if (device == null) {
+      return;
+    }
+    unawaited(
+      widget.keyHoldCommandService
+          .sendKeyHold(device: device, command: command, phase: phase)
+          .catchError((_) {}),
+    );
   }
 
   Future<void> _sendText() async {
@@ -1472,6 +1498,8 @@ class _RemoteHomePageState extends State<RemoteHomePage>
                                 pairingHintActive:
                                     _showPairingHint && _activeDevice == null,
                                 onSendCommand: _sendCommandFromGrid,
+                                supportsKeyHold: _supportsKeyHold,
+                                onSendKeyHold: _sendKeyHold,
                                 onSearchInputPressed: () =>
                                     unawaited(_onSearchInputKeyboardPressed()),
                                 onDisabledInteraction:

@@ -13,6 +13,7 @@ import 'package:one_remote/remote_control/data/brand_routed_remote_command_servi
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
 import 'package:one_remote/remote_control/domain/models/device_capability.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -119,6 +120,49 @@ void main() {
     expect(transport.sendKeyCalls, greaterThan(0));
     expect(transport.sendTextCalls, 1);
   });
+
+  test('Samsung adapter: supportsKeyHold is true', () {
+    final adapter = SamsungAdapter(
+      transportClient: _SpySamsungTransportClient(),
+    );
+    expect(adapter.supportsKeyHold, isTrue);
+  });
+
+  test('Samsung adapter: sendKeyHold sends Press then Release via the resolved '
+      'key code', () async {
+    final transport = _SpySamsungTransportClient();
+    final adapter = SamsungAdapter(transportClient: transport);
+    await adapter.sendKeyHold(
+      device: samsungDevice,
+      command: RemoteCommand.dpadOk,
+      phase: KeyHoldPhase.down,
+    );
+    await adapter.sendKeyHold(
+      device: samsungDevice,
+      command: RemoteCommand.dpadOk,
+      phase: KeyHoldPhase.up,
+    );
+    expect(transport.sentKeyHolds, [
+      ('KEY_ENTER', KeyHoldPhase.down),
+      ('KEY_ENTER', KeyHoldPhase.up),
+    ]);
+  });
+
+  test(
+    'Samsung adapter: sendKeyHold throws for a command with no key mapping',
+    () async {
+      final transport = _SpySamsungTransportClient();
+      final adapter = SamsungAdapter(transportClient: transport);
+      await expectLater(
+        adapter.sendKeyHold(
+          device: samsungDevice,
+          command: RemoteCommand.netflix,
+          phase: KeyHoldPhase.down,
+        ),
+        throwsUnsupportedError,
+      );
+    },
+  );
 
   test(
     'Samsung adapter: watch readiness does not trigger eager reconnect',
@@ -434,6 +478,7 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
   final List<String> clearPairingDeviceIds = [];
   final List<String> sentKeyCodes = [];
   final List<String> launchedAppIds = [];
+  final List<(String, KeyHoldPhase)> sentKeyHolds = [];
 
   @override
   Stream<TransportEvent> get events => const Stream<TransportEvent>.empty();
@@ -460,6 +505,15 @@ class _SpySamsungTransportClient implements SamsungTransportClient {
   }) async {
     sendKeyCalls += 1;
     sentKeyCodes.add(keyCode);
+  }
+
+  @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  }) async {
+    sentKeyHolds.add((keyCode, phase));
   }
 
   @override
@@ -543,6 +597,13 @@ class _SlowSamsungTransportClient implements SamsungTransportClient {
   }) async {}
 
   @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  }) async {}
+
+  @override
   Future<void> launchApp({
     required String deviceId,
     required String appId,
@@ -604,6 +665,13 @@ class _TimeoutSamsungTransportClient implements SamsungTransportClient {
   Future<void> sendKey({
     required String deviceId,
     required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
   }) async {}
 
   @override
@@ -672,6 +740,13 @@ class _RejectingSamsungTransportClient implements SamsungTransportClient {
   Future<void> sendKey({
     required String deviceId,
     required String keyCode,
+  }) async {}
+
+  @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
   }) async {}
 
   @override
@@ -750,6 +825,13 @@ class _FlakySamsungTransportClient implements SamsungTransportClient {
   }) async {}
 
   @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  }) async {}
+
+  @override
   Future<void> launchApp({
     required String deviceId,
     required String appId,
@@ -804,6 +886,16 @@ class _SubsetSamsungAdapter implements TvBrandAdapter {
 
   @override
   bool get supportsTextInput => false;
+
+  @override
+  bool get supportsKeyHold => false;
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async => throw UnsupportedError('Key hold is not supported for $brand.');
 
   @override
   Set<RemoteCommand> get supportedCommands => const {RemoteCommand.power};
@@ -865,6 +957,16 @@ class _CompatibilitySamsungAdapter implements TvBrandAdapter {
 
   @override
   bool get supportsTextInput => true;
+
+  @override
+  bool get supportsKeyHold => false;
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async => throw UnsupportedError('Key hold is not supported for $brand.');
 
   @override
   Set<RemoteCommand> get supportedCommands => RemoteCommand.values.toSet();

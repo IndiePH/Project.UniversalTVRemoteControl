@@ -59,6 +59,7 @@ class OneRemoteApp extends StatelessWidget {
                 proEntitlementService: sl<ProEntitlementService>(),
                 connectionStateService: sl<TvConnectionStateService>(),
                 transportLogReaderProvider: sl<TransportLogReaderProvider>(),
+                keyHoldCommandService: sl<KeyHoldCommandService>(),
               ),
             ),
           ),

@@ -1,5 +1,6 @@
 import 'package:one_remote/remote_control/data/adapters/transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_source.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 abstract class AndroidTvTransportClient
@@ -13,6 +14,16 @@ abstract class AndroidTvTransportClient
   });
 
   Future<void> sendKey({required String deviceId, required String keyCode});
+
+  /// Sends one edge of a held key press using the protocol's native
+  /// `START_LONG`/`END_LONG` `RemoteDirection` — see
+  /// `references/guide-tv-remote-protocols.md`'s "Key codes" section.
+  /// [keyCode] is the string-encoded integer from [AndroidTvKeyMapper].
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  });
 
   Future<void> sendText({required String deviceId, required String text});
 

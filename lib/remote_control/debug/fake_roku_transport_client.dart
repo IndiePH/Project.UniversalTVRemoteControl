@@ -4,6 +4,7 @@ import 'package:one_remote/remote_control/data/adapters/tcl/roku_transport_clien
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class FakeRokuTransportClient
@@ -36,6 +37,23 @@ class FakeRokuTransportClient
         transport: 'roku',
         deviceId: deviceId,
         type: 'key_sent',
+        message: keyCode,
+      ),
+    );
+  }
+
+  @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  }) async {
+    await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'roku',
+        deviceId: deviceId,
+        type: 'key_hold_${phase.name}',
         message: keyCode,
       ),
     );

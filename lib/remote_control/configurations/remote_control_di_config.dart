@@ -203,6 +203,7 @@ final class RemoteControlDiConfig implements IDiConfig {
       identityRegistry: sl<DeviceIdentityRegistry>(),
     );
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
+    sl.registerSingleton<KeyHoldCommandService>(commandService);
     sl.registerSingleton<RemoteCommandService>(
       DiagnosticsRecordingRemoteCommandService(
         delegate: commandService,
@@ -299,6 +300,7 @@ final class DebugRemoteControlDiConfig implements IDiConfig {
       identityRegistry: sl<DeviceIdentityRegistry>(),
     );
     sl.registerSingleton<TransportLogReaderProvider>(commandService);
+    sl.registerSingleton<KeyHoldCommandService>(commandService);
     sl.registerSingleton<RemoteCommandService>(
       DiagnosticsRecordingRemoteCommandService(
         delegate: commandService,

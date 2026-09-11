@@ -6,12 +6,16 @@ import 'package:one_remote/remote_control/data/adapters/samsung_adapter.dart';
 import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/data/variant_resolution_registry.dart';
 import 'package:one_remote/remote_control/domain/domain.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 
 /// Routes generic remote actions to a brand-specific adapter.
 ///
 /// Capability checks are enforced here so UI code can stay brand-agnostic.
 class BrandRoutedRemoteCommandService
-    implements RemoteCommandService, TransportLogReaderProvider {
+    implements
+        RemoteCommandService,
+        TransportLogReaderProvider,
+        KeyHoldCommandService {
   BrandRoutedRemoteCommandService({
     required List<TvBrandAdapter> adapters,
     required this._variantRegistry,
@@ -233,6 +237,25 @@ class BrandRoutedRemoteCommandService
         exception: error,
       );
     }
+  }
+
+  @override
+  bool supportsKeyHold({required TvDevice device}) {
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
+    return adapter?.supportsKeyHold ?? false;
+  }
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async {
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
+    if (adapter == null) {
+      throw UnsupportedError('No adapter for ${device.brand.name}.');
+    }
+    await adapter.sendKeyHold(device: device, command: command, phase: phase);
   }
 
   @override

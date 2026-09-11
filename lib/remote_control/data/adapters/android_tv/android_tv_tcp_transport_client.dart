@@ -14,6 +14,7 @@ import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_tr
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 /// TCP+TLS transport for the Android TV v2 remote protocol.
@@ -164,6 +165,29 @@ class AndroidTvTcpTransportClient
         remoteKeyInject: RemoteKeyInject(
           keyCode: int.parse(keyCode),
           direction: RemoteDirection.short,
+        ),
+      ),
+    );
+  }
+
+  /// Sends `START_LONG` on [KeyHoldPhase.down], `END_LONG` on
+  /// [KeyHoldPhase.up] — a true two-message pair, nothing resent in between
+  /// (confirmed against `tronikos/androidtvremote2`'s own hold implementation,
+  /// see `references/goals/goal-long-press-key.md` fact #30).
+  @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  }) async {
+    _sendRemoteMessage(
+      deviceId,
+      RemoteMessage(
+        remoteKeyInject: RemoteKeyInject(
+          keyCode: int.parse(keyCode),
+          direction: phase == KeyHoldPhase.down
+              ? RemoteDirection.startLong
+              : RemoteDirection.endLong,
         ),
       ),
     );

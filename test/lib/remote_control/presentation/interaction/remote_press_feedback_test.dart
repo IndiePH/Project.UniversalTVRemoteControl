@@ -77,4 +77,173 @@ void main() {
     expect(scale.scale, kRemotePressFeedbackScale);
     expect(scale.duration, kRemotePressFeedbackDuration);
   });
+
+  group('hold gesture (onHoldStart/onHoldEnd set)', () {
+    testWidgets('a quick release fires onPressed, not onHoldStart/onHoldEnd', (
+      tester,
+    ) async {
+      var pressed = false;
+      var holdStarted = false;
+      var holdEnded = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RemotePressFeedback(
+              onPressed: () => pressed = true,
+              onHoldStart: () => holdStarted = true,
+              onHoldEnd: () => holdEnded = true,
+              child: const SizedBox(
+                width: kRemotePressFeedbackTestChildSize,
+                height: kRemotePressFeedbackTestChildSize,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        kRemotePressFeedbackTestTapOffset,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      await gesture.up();
+      await tester.pump();
+
+      expect(pressed, isTrue);
+      expect(holdStarted, isFalse);
+      expect(holdEnded, isFalse);
+    });
+
+    testWidgets(
+      'onPressed does not fire eagerly on pointer-down when hold callbacks are set',
+      (tester) async {
+        var pressed = false;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: RemotePressFeedback(
+                onPressed: () => pressed = true,
+                onHoldStart: () {},
+                onHoldEnd: () {},
+                child: const SizedBox(
+                  width: kRemotePressFeedbackTestChildSize,
+                  height: kRemotePressFeedbackTestChildSize,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final gesture = await tester.startGesture(
+          kRemotePressFeedbackTestTapOffset,
+        );
+        await tester.pump();
+
+        expect(pressed, isFalse);
+
+        await gesture.up();
+        await tester.pump();
+      },
+    );
+
+    testWidgets('holding past the threshold fires onHoldStart, not onPressed', (
+      tester,
+    ) async {
+      var pressed = false;
+      var holdStarted = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RemotePressFeedback(
+              onPressed: () => pressed = true,
+              onHoldStart: () => holdStarted = true,
+              onHoldEnd: () {},
+              child: const SizedBox(
+                width: kRemotePressFeedbackTestChildSize,
+                height: kRemotePressFeedbackTestChildSize,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        kRemotePressFeedbackTestTapOffset,
+      );
+      await tester.pump(
+        kRemoteHoldThreshold + const Duration(milliseconds: 50),
+      );
+
+      expect(holdStarted, isTrue);
+      expect(pressed, isFalse);
+
+      await gesture.up();
+      await tester.pump();
+    });
+
+    testWidgets('releasing after a hold fires onHoldEnd exactly once', (
+      tester,
+    ) async {
+      var holdEndedCount = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RemotePressFeedback(
+              onPressed: () {},
+              onHoldStart: () {},
+              onHoldEnd: () => holdEndedCount++,
+              child: const SizedBox(
+                width: kRemotePressFeedbackTestChildSize,
+                height: kRemotePressFeedbackTestChildSize,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        kRemotePressFeedbackTestTapOffset,
+      );
+      await tester.pump(
+        kRemoteHoldThreshold + const Duration(milliseconds: 50),
+      );
+      await gesture.up();
+      await tester.pump();
+
+      expect(holdEndedCount, 1);
+    });
+
+    testWidgets('watchdog force-ends the hold if the release event is lost', (
+      tester,
+    ) async {
+      var holdEndedCount = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RemotePressFeedback(
+              onPressed: () {},
+              onHoldStart: () {},
+              onHoldEnd: () => holdEndedCount++,
+              child: const SizedBox(
+                width: kRemotePressFeedbackTestChildSize,
+                height: kRemotePressFeedbackTestChildSize,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.startGesture(kRemotePressFeedbackTestTapOffset);
+      // Cross the hold threshold, then the watchdog ceiling, without ever
+      // releasing — simulates a lost end/cancel event (e.g. backgrounded
+      // app), per goal-long-press-key.md fact #19.
+      await tester.pump(kRemoteHoldThreshold + kRemoteHoldWatchdogTimeout);
+
+      expect(holdEndedCount, 1);
+    });
+  });
 }

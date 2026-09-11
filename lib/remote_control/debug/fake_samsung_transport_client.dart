@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 import 'package:one_remote/remote_control/data/adapters/samsung/samsung_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
@@ -89,6 +90,27 @@ class FakeSamsungTransportClient
     );
     log(
       'Samsung transport sendKey: $deviceId -> $keyCode',
+      name: 'samsung_transport',
+    );
+  }
+
+  @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  }) async {
+    await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'samsung',
+        deviceId: deviceId,
+        type: 'key_hold_${phase.name}',
+        message: keyCode,
+      ),
+    );
+    log(
+      'Samsung transport sendKeyHold: $deviceId -> $keyCode (${phase.name})',
       name: 'samsung_transport',
     );
   }

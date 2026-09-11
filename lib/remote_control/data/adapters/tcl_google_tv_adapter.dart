@@ -5,6 +5,7 @@ import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_protocol_variants.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -50,6 +51,11 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
 
   @override
   bool get supportsTextInput => true;
+
+  // Same protocol/transport as AndroidTvAdapter — START_LONG/END_LONG apply
+  // unchanged. See goal-long-press-key.md verified fact #3, #30.
+  @override
+  bool get supportsKeyHold => true;
 
   @override
   Set<RemoteCommand> get supportedCommands => _supportedCommands;
@@ -123,6 +129,26 @@ class TclGoogleTvAdapter implements TvBrandAdapter {
   }) async {
     await _transportClient.connect(deviceId: device.id);
     await _transportClient.sendText(deviceId: device.id, text: text);
+  }
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async {
+    final payload = _keyMap.payloadFor(command);
+    if (payload is! KeySequence || payload.codes.isEmpty) {
+      throw UnsupportedError(
+        'No TCL Google TV key mapping for hold command: $command',
+      );
+    }
+    await _transportClient.connect(deviceId: device.id);
+    await _transportClient.sendKeyHold(
+      deviceId: device.id,
+      keyCode: payload.codes.first,
+      phase: phase,
+    );
   }
 
   @override

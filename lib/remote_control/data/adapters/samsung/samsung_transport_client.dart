@@ -1,5 +1,6 @@
 import 'package:one_remote/remote_control/data/adapters/transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_source.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 abstract class SamsungTransportClient
@@ -22,6 +23,16 @@ abstract class SamsungTransportClient
   });
 
   Future<void> sendKey({required String deviceId, required String keyCode});
+
+  /// Sends one edge of a held key press via `ms.remote.control`'s `Cmd:
+  /// "Press"`/`"Release"` (undocumented by Samsung, confirmed via
+  /// `xchwarze/samsung-tv-ws-api` — see
+  /// `references/goals/goal-long-press-key.md` fact #20).
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  });
 
   /// Launches a Tizen app via `ms.channel.emit` / `ed.apps.launch`.
   Future<void> launchApp({required String deviceId, required String appId});

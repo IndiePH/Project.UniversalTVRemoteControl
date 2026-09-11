@@ -4,6 +4,7 @@ import 'package:one_remote/remote_control/data/adapters/supported_remote_command
 import 'package:one_remote/remote_control/data/adapters/tcl/roku_transport_client.dart';
 import 'package:one_remote/remote_control/data/adapters/tcl/tcl_roku_key_mapper.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -29,6 +30,11 @@ class TclRokuAdapter implements TvBrandAdapter {
 
   @override
   bool get supportsTextInput => false;
+
+  // Roku's official ECP has real /keydown//keyup endpoints — see
+  // goal-long-press-key.md verified fact #16-19.
+  @override
+  bool get supportsKeyHold => true;
 
   @override
   Set<RemoteCommand> get supportedCommands => _supportedCommands;
@@ -96,6 +102,24 @@ class TclRokuAdapter implements TvBrandAdapter {
     required String text,
   }) async {
     throw UnsupportedError('Text input is not supported for Roku TVs.');
+  }
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async {
+    final payload = _keyMap.payloadFor(command);
+    if (payload is! KeySequence || payload.codes.isEmpty) {
+      throw UnsupportedError('No Roku key mapping for hold command: $command');
+    }
+    await _transportClient.connect(deviceId: device.id);
+    await _transportClient.sendKeyHold(
+      deviceId: device.id,
+      keyCode: payload.codes.first,
+      phase: phase,
+    );
   }
 
   @override

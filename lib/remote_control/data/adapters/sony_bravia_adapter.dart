@@ -5,6 +5,7 @@ import 'package:one_remote/remote_control/data/adapters/sony/sony_bravia_transpo
 import 'package:one_remote/remote_control/data/adapters/sony/sony_protocol_variants.dart';
 import 'package:one_remote/remote_control/data/adapters/supported_remote_commands.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/remote_command.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -45,6 +46,11 @@ class SonyBraviaAdapter implements TvBrandAdapter {
 
   @override
   bool get supportsTextInput => false;
+
+  // IRCC codes model discrete infrared pulses with no press/hold concept —
+  // see goal-long-press-key.md verified fact #24. Out of scope, not deferred.
+  @override
+  bool get supportsKeyHold => false;
 
   /// Live-computed rather than cached: app-launch entries are reported
   /// optimistically (a specific TV's actual app list can only be checked
@@ -176,6 +182,15 @@ class SonyBraviaAdapter implements TvBrandAdapter {
   }) async {
     throw UnsupportedError('Text input is not supported for Sony BRAVIA.');
   }
+
+  @override
+  Future<void> sendKeyHold({
+    required TvDevice device,
+    required RemoteCommand command,
+    required KeyHoldPhase phase,
+  }) async => throw UnsupportedError(
+    'Key hold is not supported for ${device.brand.name}.',
+  );
 
   @override
   Stream<bool> watchRemoteTextInputReady(TvDevice device) =>

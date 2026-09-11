@@ -10,6 +10,7 @@ export 'pro_device_switch_policy.dart';
 export 'saved_device_display_ordering.dart';
 export 'tv_device_selection.dart';
 export 'device_repository.dart';
+export 'key_hold_command_service.dart';
 export 'layout_repository.dart';
 export 'pin_required_exception.dart';
 export 'remote_command_service.dart';

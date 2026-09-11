@@ -12,6 +12,12 @@ class RemoteCircularDpad extends StatelessWidget {
     required this.onLeft,
     required this.onRight,
     required this.onOk,
+    this.onLeftHoldStart,
+    this.onLeftHoldEnd,
+    this.onRightHoldStart,
+    this.onRightHoldEnd,
+    this.onOkHoldStart,
+    this.onOkHoldEnd,
   });
 
   final VoidCallback onUp;
@@ -19,6 +25,17 @@ class RemoteCircularDpad extends StatelessWidget {
   final VoidCallback onLeft;
   final VoidCallback onRight;
   final VoidCallback onOk;
+
+  /// Hold support is scoped to Left/Right/OK only (continuous seek, context
+  /// menu) — Up/Down have no long-press behavior on a real Android TV
+  /// remote, so they keep the plain tap-only contract. See
+  /// `references/goals/goal-long-press-key.md`.
+  final VoidCallback? onLeftHoldStart;
+  final VoidCallback? onLeftHoldEnd;
+  final VoidCallback? onRightHoldStart;
+  final VoidCallback? onRightHoldEnd;
+  final VoidCallback? onOkHoldStart;
+  final VoidCallback? onOkHoldEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +78,8 @@ class RemoteCircularDpad extends StatelessWidget {
             onTap: onLeft,
             iconColor: appColors.remoteGlyphOnRemote,
             interactionCommand: RemoteCommand.dpadLeft,
+            onHoldStart: onLeftHoldStart,
+            onHoldEnd: onLeftHoldEnd,
           ),
           _ArrowButton(
             alignment: Alignment.centerRight,
@@ -69,11 +88,15 @@ class RemoteCircularDpad extends StatelessWidget {
             onTap: onRight,
             iconColor: appColors.remoteGlyphOnRemote,
             interactionCommand: RemoteCommand.dpadRight,
+            onHoldStart: onRightHoldStart,
+            onHoldEnd: onRightHoldEnd,
           ),
           RemotePressFeedback(
             onPressed: onOk,
             onPressHaptic: () =>
                 RemoteCommandHapticFeedback.playFor(RemoteCommand.dpadOk),
+            onHoldStart: onOkHoldStart,
+            onHoldEnd: onOkHoldEnd,
             child: Container(
               width: 120,
               height: 120,
@@ -108,6 +131,8 @@ class _ArrowButton extends StatelessWidget {
     required this.iconColor,
     required this.interactionCommand,
     this.iconPadding = EdgeInsets.zero,
+    this.onHoldStart,
+    this.onHoldEnd,
   });
 
   final Alignment alignment;
@@ -116,6 +141,8 @@ class _ArrowButton extends StatelessWidget {
   final Color iconColor;
   final RemoteCommand interactionCommand;
   final EdgeInsets iconPadding;
+  final VoidCallback? onHoldStart;
+  final VoidCallback? onHoldEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -128,6 +155,8 @@ class _ArrowButton extends StatelessWidget {
           onPressed: onTap,
           onPressHaptic: () =>
               RemoteCommandHapticFeedback.playFor(interactionCommand),
+          onHoldStart: onHoldStart,
+          onHoldEnd: onHoldEnd,
           child: Material(
             color: Colors.transparent,
             shape: const CircleBorder(),

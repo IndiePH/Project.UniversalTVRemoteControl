@@ -5,6 +5,7 @@ import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_tr
 import 'package:one_remote/remote_control/data/adapters/transport_event.dart';
 import 'package:one_remote/remote_control/data/adapters/transport_event_emitter_mixin.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart';
+import 'package:one_remote/remote_control/domain/models/key_hold_phase.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
 class FakeAndroidTvTransportClient
@@ -62,6 +63,27 @@ class FakeAndroidTvTransportClient
     );
     log(
       'Android TV fake transport sendKey: $deviceId -> $keyCode',
+      name: 'android_tv_transport',
+    );
+  }
+
+  @override
+  Future<void> sendKeyHold({
+    required String deviceId,
+    required String keyCode,
+    required KeyHoldPhase phase,
+  }) async {
+    await _ensureConnected(deviceId);
+    emitTransportEvent(
+      TransportEvent(
+        transport: 'android_tv',
+        deviceId: deviceId,
+        type: 'key_hold_${phase.name}',
+        message: keyCode,
+      ),
+    );
+    log(
+      'Android TV fake transport sendKeyHold: $deviceId -> $keyCode (${phase.name})',
       name: 'android_tv_transport',
     );
   }
