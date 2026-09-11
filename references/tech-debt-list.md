@@ -182,3 +182,91 @@ if unused elsewhere in that file) when **either**:
 
 whichever comes first. Do not wait for "no more reports of issues" as the trigger — the removal is
 scheduled, not conditional on outcome.
+
+---
+
+## Adapter→transport boundary drops `TvDevice.host`, relies on registry-timing instead
+
+**Status:** Logged, immediate symptom patched, root design gap not addressed. Found while diagnosing
+a real-device pairing failure (`SocketException: Failed host lookup`) during `fix/reconnection`
+testing.
+
+### What
+
+Every `TvBrandAdapter`/`RemoteCommandService` method (`preparePairing`, `connect`, `sendCommand`,
+etc.) receives the full `TvDevice` object, host included. But `AndroidTvAdapter` hands off to its
+transport client with only the bare id string:
+
+```dart
+// android_tv_adapter.dart
+preparePairing → _transportClient.connect(deviceId: device.id)
+```
+
+`AndroidTvTcpTransportClient` then has to re-derive a host it was never given, via an injected
+resolver function (`String Function(String deviceId) _hostResolver`, wired in
+`remote_control_di_config.dart`): try `DeviceIdentityRegistry.hostForStableId(deviceId)` first, then
+fall back to regex-extracting an IPv4 substring from the id itself
+(`legacy_host_resolver.dart`). This is a deliberate, existing pattern (see the goal doc's D-7) used
+identically across every brand's transport client, not something introduced by this branch.
+
+### The bug it caused
+
+T3.1 started giving unpaired Android TVs a `androidtv-<mac>` id (instead of always
+`androidtv-<ip>`). For a device that has never been paired before, `DeviceIdentityRegistry` has no
+entry yet, and the regex fallback finds no IP inside a MAC string — both resolution paths return
+empty, so `SecureSocket.connect('', ...)` fails with "Failed host lookup." The registry-based
+resolver mechanism was only ever safe by accident, because every discovery-time id used to be
+IP-derived; T3.1 broke that unstated assumption without anyone noticing until real-device testing.
+
+### Immediate fix applied (kept for now, not the root fix)
+
+`lib/remote_control/data/brand_routed_remote_command_service.dart`, in `preparePairing` — added a
+call to `_registerIdentity(device)` **before** `await adapter.preparePairing(device: device)` (was
+previously only called once, on `enriched`, after pairing already completed). This doesn't change
+*what* gets registered or *how* it's looked up — same registry, same `_hostResolver` mechanism — it
+only changes *when* the existing registration happens, so the entry exists before the same lookup
+that was failing. Commit `b1f90a5`; regression test in
+`test/lib/remote_control/data/brand_routed_remote_command_service_test.dart`
+(`_RegistryCheckingAdapter`).
+
+### The proper fix, not yet built
+
+Change transport-client methods that are always called with a full `TvDevice` in hand
+(`connect`, `preparePairing`) to receive the host directly, rather than re-deriving it through a
+timing-dependent lookup:
+
+```dart
+// instead of:
+Future<void> connect({required String deviceId})
+// this:
+Future<void> connect({required String deviceId, required String host})
+```
+
+`_hostResolver`/`DeviceIdentityRegistry` would stay in place for the calls that genuinely only ever
+have a bare id (`cancelPairing(deviceId)`, secret-store lookups mid-handshake — continuations of a
+handshake started earlier, with no live `TvDevice` in scope at that point) — this isn't a proposal to
+delete the registry, only to stop relying on it for the initial call, where relying on it was never
+actually necessary.
+
+**Open question, not decided:** pass `host` as an added parameter (matches this class's existing
+narrow-parameter style; ISP — a transport client has no legitimate use for `displayName`,
+`capabilities`, etc.), or pass the whole `TvDevice` (avoids primitive obsession / possible
+id-vs-host mismatch between two separate params; more future-proof if another field is ever needed).
+Both are legitimate; leaning toward `host`-as-parameter for consistency with the existing convention
+at this exact boundary, but not committed.
+
+### Why it's still worth fixing properly
+
+The immediate fix only closes the one gap that was actually hit (first-time pairing). The underlying
+fragility — any transport-client call site relying on `_hostResolver` succeeding, for an id format
+the registry hasn't been populated for yet — is a class of bug, not a single instance. It's currently
+only known to be safe because every code path that could hit it happens to register in time; a
+future change to id-assignment timing (in Android TV or any other brand) could silently reintroduce
+this exact failure mode elsewhere.
+
+### Scope if fixed
+
+Would touch every brand's transport client's `connect`/`preparePairing` signature (Samsung, LG,
+Hisense, Sony, Roku, Android TV), not just Android TV's — a breaking change to an internal interface,
+requiring explicit confirmation before starting (`api-design` skill: "Request confirmation for
+breaking changes"), not something to fold into an unrelated bug fix.
