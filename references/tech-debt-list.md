@@ -10,8 +10,9 @@ into an existing one.
 
 ## Bare `catch (_) {}` swallowing
 
-**Status:** Logged, not fixed. Out of scope for `goal-automatic-reconnection-resilience.md` — this
-is a pre-existing, codebase-wide pattern, not something introduced by that work.
+**Status:** Logged, not fixed. Out of scope for the automatic-reconnection work (see
+`references/device-identity-and-reconnection.md`) — this is a pre-existing, codebase-wide pattern,
+not something introduced by that work.
 
 ### What
 
