@@ -60,6 +60,12 @@ class _RemotePressFeedbackState extends State<RemotePressFeedback> {
   bool _holdActive = false;
   Timer? _holdWatchdog;
 
+  /// The [onHoldEnd] in effect when the current hold started. Captured
+  /// separately from `widget.onHoldEnd` because a parent rebuild can null it
+  /// out mid-hold (e.g. `controlsEnabled` flipping false on a connection
+  /// drop) — see [didUpdateWidget].
+  VoidCallback? _activeHoldEndCallback;
+
   bool get _interactive => widget.enabled && widget.onPressed != null;
   bool get _holdCapable =>
       widget.onHoldStart != null && widget.onHoldEnd != null;
@@ -106,6 +112,7 @@ class _RemotePressFeedbackState extends State<RemotePressFeedback> {
       return;
     }
     _holdActive = true;
+    _activeHoldEndCallback = widget.onHoldEnd;
     widget.onHoldStart!.call();
     _holdWatchdog?.cancel();
     _holdWatchdog = Timer(kRemoteHoldWatchdogTimeout, _endHoldIfActive);
@@ -128,16 +135,30 @@ class _RemotePressFeedbackState extends State<RemotePressFeedback> {
       return;
     }
     _holdActive = false;
-    widget.onHoldEnd?.call();
+    final callback = _activeHoldEndCallback;
+    _activeHoldEndCallback = null;
+    callback?.call();
+  }
+
+  @override
+  void didUpdateWidget(RemotePressFeedback oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A parent rebuild can null out onHoldStart/onHoldEnd mid-hold (e.g.
+    // controlsEnabled flipping false on a connection drop while a button is
+    // held). RawGestureDetector then disposes the LongPressGestureRecognizer
+    // on the next build with no onLongPressEnd/onLongPressCancel callback —
+    // GestureRecognizer.dispose() only rejects the arena entry, it never
+    // synthesizes one — so the release has to be forced here, using the
+    // callback captured at hold-start, or the TV is left thinking the key is
+    // still held.
+    if (_holdActive && (!_interactive || !_holdCapable)) {
+      _endHoldIfActive();
+    }
   }
 
   @override
   void dispose() {
-    _holdWatchdog?.cancel();
-    if (_holdActive) {
-      _holdActive = false;
-      widget.onHoldEnd?.call();
-    }
+    _endHoldIfActive();
     super.dispose();
   }
 

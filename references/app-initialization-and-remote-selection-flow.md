@@ -77,7 +77,7 @@ The registrations relevant to device selection and remotes, in order:
 
 ## Phase 3 — Root widget: `one_remote_app.dart`
 
-`OneRemoteApp.build()` pulls `AppThemeController` and the locale/theme `ValueNotifier`s straight out of `GetIt`, then builds one `MaterialApp`. There is **no named-route table** — `MaterialApp.home` is `RemoteHomePage` directly, constructed with every dependency it needs resolved from `GetIt` right there (`commandService`, `deviceRepository`, `discoveryService`, `layoutRepository`, `proEntitlementService`, `connectionStateService`, `transportLogReaderProvider`, plus `appEnvironment`). `RemoteHomePage` **is** the app's single screen; pairing and every other page get pushed on top of it via `Navigator`, not routed to separately. Free-tier banner ads overlay the home stack after `LevelPlayAdsService` reports SDK ready.
+`OneRemoteApp.build()` pulls `AppThemeController` and the locale/theme `ValueNotifier`s straight out of `GetIt`, then builds one `MaterialApp`. There is **no named-route table** — `MaterialApp.home` is `RemoteHomePage` directly, constructed with every dependency it needs resolved from `GetIt` right there (`commandService`, `deviceRepository`, `discoveryService`, `layoutRepository`, `proEntitlementService`, `connectionStateService`, `transportLogReaderProvider`, `keyHoldCommandService`, plus `appEnvironment`). `RemoteHomePage` **is** the app's single screen; pairing and every other page get pushed on top of it via `Navigator`, not routed to separately. Free-tier banner ads overlay the home stack after `LevelPlayAdsService` reports SDK ready.
 
 ## Phase 4 — `RemoteHomePage` boot (`remote_home_page.dart`)
 

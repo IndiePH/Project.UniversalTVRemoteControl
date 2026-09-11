@@ -216,6 +216,54 @@ void main() {
       expect(holdEndedCount, 1);
     });
 
+    testWidgets(
+      'regression: losing hold-capability mid-hold (e.g. connection drop) '
+      'still fires onHoldEnd, not silently dropped',
+      (tester) async {
+        var holdEndedCount = 0;
+        final holdCapable = ValueNotifier<bool>(true);
+        addTearDown(holdCapable.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ValueListenableBuilder<bool>(
+                valueListenable: holdCapable,
+                builder: (context, capable, _) => RemotePressFeedback(
+                  onPressed: () {},
+                  onHoldStart: capable ? () {} : null,
+                  onHoldEnd: capable ? () => holdEndedCount++ : null,
+                  child: const SizedBox(
+                    width: kRemotePressFeedbackTestChildSize,
+                    height: kRemotePressFeedbackTestChildSize,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.startGesture(kRemotePressFeedbackTestTapOffset);
+        await tester.pump(
+          kRemoteHoldThreshold + const Duration(milliseconds: 50),
+        );
+
+        // Simulates the real trigger: connection state changes mid-hold,
+        // causing controlsEnabled (and therefore hold-capability) to flip —
+        // with no pointer event involved, only a parent rebuild.
+        holdCapable.value = false;
+        await tester.pump();
+
+        expect(
+          holdEndedCount,
+          1,
+          reason:
+              'the held key must be released on the TV when the button '
+              'loses hold-capability mid-gesture, not left stuck down',
+        );
+      },
+    );
+
     testWidgets('watchdog force-ends the hold if the release event is lost', (
       tester,
     ) async {

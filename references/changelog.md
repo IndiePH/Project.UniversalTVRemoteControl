@@ -13,7 +13,32 @@ Keep entries short and append new updates at the top.
 
 ## 2026-09-11
 
+### Added
+- Long-press/hold support for the D-pad (OK/Left/Right) and Home button, for the three brands
+  with a confirmed native held-key wire primitive: Android TV family (`AndroidTvAdapter`,
+  `TclGoogleTvAdapter`, `SonyAdapter` — `START_LONG`/`END_LONG`), Samsung (`SamsungAdapter` —
+  `Cmd: "Press"`/`"Release"`), and Roku (`TclRokuAdapter` — `/keydown/`/`/keyup/`). LG, Sony
+  BRAVIA, Hisense VIDAA, and TCL legacy WiFi are explicitly out of scope — none has a reliable
+  native primitive, confirmed via a research spike with citations (see
+  `references/goals/goal-long-press-key.md`). New `TvBrandAdapter.supportsKeyHold`/`sendKeyHold`
+  capability (mirrors `supportsTextInput`) and a new opt-in `KeyHoldCommandService` application
+  port (mirrors `TransportLogReaderProvider`) rather than widening `RemoteCommandService`, since
+  every adapter/service in this codebase uses `implements`, not `extends`, and
+  `RemoteCommandService` has 9 unrelated implementers that would otherwise be forced to carry
+  hold-related boilerplate. `RemotePressFeedback` gains `onHoldStart`/`onHoldEnd` via a real
+  `LongPressGestureRecognizer` (`RawGestureDetector`) plus a watchdog timeout that force-releases
+  a held key if the gesture's own end event is lost.
+
 ### Fixed
+- A held key could get stuck "down" on the TV if the button lost hold-capability mid-gesture —
+  e.g. the connection dropping while a user is holding OK. `RawGestureDetector` silently disposes
+  a `LongPressGestureRecognizer` no longer present in its `gestures` map on rebuild, and
+  `GestureRecognizer.dispose()` only rejects the pending arena entry, it never synthesizes
+  `onLongPressEnd`/`onLongPressCancel` — so the previously-sent `down` edge was never followed by
+  an `up`. `RemotePressFeedback` now captures the active `onHoldEnd` callback at hold-start time
+  and force-releases the hold in `didUpdateWidget` the moment capability is lost, before the
+  recognizer gets torn down. Found via a targeted bug-diagnosis review after the initial
+  implementation shipped; reproduced with a regression test before fixing.
 - Pairing a brand-new Android TV that advertises `bt` could fail outright with
   `SocketException: Failed host lookup` (found on a real device during personal-build testing of
   `fix/reconnection`). The pairing connection's host resolver only knows how to turn a device id
@@ -34,6 +59,11 @@ Keep entries short and append new updates at the top.
   identity format a device landed on.
 
 ### Docs
+- `references/goals/goal-long-press-key.md`: full research trail (per-brand protocol capability
+  matrix with citations), design derivation, and the mid-hold stuck-key bug writeup above.
+- `references/app-initialization-and-remote-selection-flow.md`: Phase 3's `RemoteHomePage`
+  constructor dependency list now includes `keyHoldCommandService`, the new DI registration the
+  long-press feature added alongside the existing `transportLogReaderProvider` one.
 - `references/tech-debt-list.md`: the adapter/transport host-resolution design gap above, with the
   exact location of the interim fix and a concrete sketch of the deferred proper fix (pass the host
   directly for calls that already have a full `TvDevice`, rather than re-deriving it via the
@@ -41,8 +71,11 @@ Keep entries short and append new updates at the top.
   fold into a single bug fix.
 
 ### Verification
-- `flutter analyze` clean; full test suite green (784/784), including a new regression test that
-  fails without the pairing fix (host resolves to null) and passes with it.
+- Long-press feature + stuck-key fix: `flutter analyze` clean, `dart format --set-exit-if-changed`
+  clean, full test suite green (805/805) including the regression test that reproduced the
+  stuck-key bug before the fix and passes after it.
+- Pairing fix: `flutter analyze` clean; full test suite green (784/784), including a new
+  regression test that fails without the pairing fix (host resolves to null) and passes with it.
 
 ## 2026-09-10
 

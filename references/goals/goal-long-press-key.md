@@ -483,6 +483,35 @@ questions #1-5 resolved.
   across 8 test files. This goal's own implementation is done; **not yet validated against real
   hardware** for any of the three in-scope brands — see "Open items" below before
   closing/retiring this doc.
+- 2026-09-11: **Bug found and fixed — a held key could get stuck "down" on the TV if
+  hold-capability was revoked mid-gesture.** Found via `bug-diagnosis`-skill review requested by
+  the user specifically because unit tests are "too unit" to catch integration-seam bugs —
+  correct call; none of the widget tests written for Sub-goal C exercised a parent rebuild mid-hold,
+  which is exactly what triggers this.
+  - **Root cause, traced through Flutter's own source, not guessed (per `bug-diagnosis`'s
+    prohibition on guessing):** `remote_home_remote_grid.dart` recomputes `holdEnabled =
+    controlsEnabled && supportsKeyHold` on every rebuild. If the connection drops mid-hold (a
+    realistic trigger — TV Wi-Fi blip while a user is holding OK/Left/Right/Home),
+    `RemotePressFeedback` rebuilds with `onHoldStart`/`onHoldEnd` now `null`.
+    `RawGestureDetectorState._syncAll` (`gesture_detector.dart:1550-1553`) disposes any recognizer
+    no longer present in the new `gestures` map directly; `GestureRecognizer.dispose()`
+    (`recognizer.dart:467-476`) only rejects the pending arena entry — it never synthesizes
+    `onLongPressEnd`/`onLongPressCancel`. Net effect: the widget's own `_holdActive` flag never
+    resets, and even the `kRemoteHoldWatchdogTimeout` safety net built for lost-release scenarios
+    was neutered, because by the time it fired, `widget.onHoldEnd` had *already* been rebuilt to
+    `null` — so the previously-dispatched `down`/`START_LONG`/`Press` was never followed by an
+    `up`/`END_LONG`/`Release`.
+  - **Reproduced before fixing**, per `bug-diagnosis`'s prohibition on proposing a fix without
+    reproducing: added a widget test using a `ValueNotifier<bool>` to flip hold-capability mid-hold
+    with no pointer event involved (mirroring the real trigger exactly) — confirmed red (`0`
+    releases instead of `1`) against the pre-fix code.
+  - **Fix:** `_RemotePressFeedbackState` now captures `_activeHoldEndCallback` at hold-start time
+    (not read fresh off `widget` later) and added `didUpdateWidget`, which force-ends an active
+    hold using that captured callback the moment the new widget loses hold-capability or
+    interactivity — before `build()` hands a stripped gesture map to `RawGestureDetector`.
+    `dispose()` now routes through the same `_endHoldIfActive()` path for consistency.
+  - **Verified:** the regression test now passes; full suite 805/0 (804 + the new regression test),
+    `flutter analyze` clean, `dart format` clean.
 
 ---
 
