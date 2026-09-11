@@ -271,3 +271,65 @@ Would touch every brand's transport client's `connect`/`preparePairing` signatur
 Hisense, Sony, Roku, Android TV), not just Android TV's — a breaking change to an internal interface,
 requiring explicit confirmation before starting (`api-design` skill: "Request confirmation for
 breaking changes"), not something to fold into an unrelated bug fix.
+
+---
+
+## `ReconnectionRetryController`'s ownership sits in the presentation layer, not the domain layer
+
+**Status:** Logged, not fixed. Surfaced while diagnosing/designing
+`references/goals/goal-reconnection-background-teardown.md` (removing Android TV's redundant
+transport-level auto-reconnect, 2026-09-11) — pre-existing since `ReconnectionRetryController` was
+introduced in PR #32, not introduced or worsened by that goal's fix.
+
+### What
+
+`ReconnectionRetryController` — the fast/escalate/wait retry cycle that recovers a device's
+connection after a drop — is instantiated and owned by `RemoteHomePage`'s `State`
+(`remote_home_page.dart:149-159`), gated by widget/navigation concepts specifically
+(`canAttemptNow: () => mounted && ModalRoute.of(context)?.isCurrent == true`). It is not reachable
+from, or reusable by, anything other than this one page.
+
+### Why it's arguably in the wrong layer
+
+Per `abstraction-domain-modeling` (DA-2/DA-4: choose abstraction level by business meaning, class
+ownership changes only when its own responsibility changes) and `modularity` (assign each domain
+concern to exactly one module): "automatically retry a dropped connection to the active device,
+with backoff, while the app is open" is a cross-cutting *domain/application* policy, not a
+presentation concern — evidenced by the fact that when this policy was first built (PR #17), it was
+built once and shared identically across three unrelated protocols (LG, Samsung, Hisense), with
+nothing protocol-specific in it. `RemoteCommandService`/`BrandRoutedRemoteCommandService` is already
+the one brand-agnostic chokepoint every caller goes through — a more natural owner for this policy
+than a specific page widget. Today, `RemoteHomePage` happens to be the *only* consumer of
+`RemoteCommandService.connect()`/`sendCommand()` in the whole app (verified via grep, 2026-09-11), so
+this isn't causing a live bug — but any future consumer (a background surface, a different screen, a
+quick-settings tile) would get no automatic reconnection for free and would need to reimplement this
+controller itself.
+
+### Why it's not being fixed now
+
+Relocating it properly means redesigning what `canAttemptNow()`'s "don't dial while another route is
+on top" gate even means for an owner that isn't a widget (a domain-layer service has no concept of
+`ModalRoute`), plus deciding DI/lifecycle ownership of a single instance shared across the app. That's
+a real, separate architecture change affecting all six brands' shared retry path, not a one-file fix —
+scoping it into the Android TV/Hisense cleanup above would have been exactly the kind of open-ended
+scope creep `technical-debt-management` says to avoid. Flagged by the user explicitly to revisit as
+its own piece of work.
+
+### How to fix, if prioritized
+
+Move retry orchestration into `BrandRoutedRemoteCommandService` (or a new domain service it composes),
+keyed by device id, started/stopped by explicit domain-level signals (e.g. "this device is the active
+one" / "app is foregrounded") rather than widget lifecycle callbacks. The "pause while another route is
+on top" behavior would need a domain-appropriate replacement — possibly an explicit
+`suspendAutoReconnect()`/`resumeAutoReconnect()` pair the page calls around modal pushes, rather than
+the controller reaching into `BuildContext` itself.
+
+### Second instance of the same tension, found 2026-09-11
+
+While finishing `goal-reconnection-background-teardown.md`: `RemoteHomePage` is also the only place
+that knows when a device stops being the active one (switching devices, unpairing) — and nothing
+signals the transport layer when that happens, which is exactly why Hisense's poll timer for a
+deselected device kept running indefinitely (see that goal doc's Design item 8/9). The fix applied
+there is pragmatic (a `pauseMonitoring` call from the page, consistent with this goal's other pieces),
+not a resolution of the underlying layering question — device-active-state is presentation-layer
+state standing in for what should probably be domain-layer state, same root cause as the item above.
