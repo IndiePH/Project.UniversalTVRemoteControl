@@ -151,6 +151,44 @@ void main() {
         completes,
       );
     });
+
+    test(
+      'registers a device that already has a non-IP stable id BEFORE the '
+      'adapter connects, not just after -- regression for "Failed host '
+      'lookup" when a real transport\'s host resolver needs the registry '
+      'populated during preparePairing\'s own connect, not only afterward',
+      () async {
+        final registry = DeviceIdentityRegistry();
+        final adapter = _RegistryCheckingAdapter(registry);
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [adapter],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
+          identityRegistry: registry,
+        );
+        // Never paired before -- discovery already gave it a non-IP stable
+        // id (e.g. androidtv-<mac> via bt, or androidtv-<sha256>/UDN), but
+        // nothing has registered host<->id for it yet.
+        const freshlyDiscovered = TvDevice(
+          id: 'androidtv-aa:bb:cc:dd:ee:ff',
+          displayName: 'Living Room TV',
+          brand: TvBrand.samsung,
+          capabilities: {DeviceCapability.keyCommands},
+          host: '192.168.1.20',
+        );
+
+        await service.preparePairing(device: freshlyDiscovered);
+
+        expect(
+          adapter.hostSeenDuringPreparePairing,
+          '192.168.1.20',
+          reason:
+              'a real transport\'s host resolver looks this up by stable id '
+              'during preparePairing\'s own connect -- if it were null here, '
+              'the connect would fail exactly like the real bug did',
+        );
+      },
+    );
   });
 
   group('brand dispatch — connect', () {
@@ -1148,6 +1186,23 @@ class _LogProviderAdapter extends _RecordingAdapter
 class _StubTransportLogReader implements TransportLogReader {
   @override
   Future<String?> readLatestLogForSharing() async => 'stub log';
+}
+
+/// Captures what `registry.hostForStableId(device.id)` returns at the moment
+/// `preparePairing` runs -- simulating what a real transport's `_hostResolver`
+/// needs to already find, since it resolves purely from the registry (or a
+/// legacy IPv4-in-id regex fallback that doesn't apply to a MAC/hash id).
+class _RegistryCheckingAdapter extends _RecordingAdapter {
+  _RegistryCheckingAdapter(this._registry) : super(brand: TvBrand.samsung);
+
+  final DeviceIdentityRegistry _registry;
+  String? hostSeenDuringPreparePairing;
+
+  @override
+  Future<void> preparePairing({required TvDevice device}) async {
+    hostSeenDuringPreparePairing = _registry.hostForStableId(device.id);
+    await super.preparePairing(device: device);
+  }
 }
 
 class _InfoReturningAdapter extends _RecordingAdapter {
