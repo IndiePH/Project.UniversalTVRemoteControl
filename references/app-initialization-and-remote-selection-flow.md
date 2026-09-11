@@ -95,7 +95,7 @@ Triggered from `remote_home_actions.dart`, which pushes `PairingPage` via `Navig
 
 `PairingPage.initState()` (`:86-94`) kicks off, concurrently: `_scanDevices()` (calls `DeviceDiscoveryService.discover()` — runs SSDP + mDNS + Roku SSDP together, per Phase 2a #2), `_loadRecentManualIps()`, and `_loadPairingMetadata()`.
 
-The user either taps a discovered result, or types a manual IP (built into a `TvDevice` by `pairing_page_data.dart`). Discovery/pairing now prefer a proven stable `id` with mutable `host` when identity can be established (`goal-persistent-device-identity.md`); IP-derived ids remain the fallback when it cannot.
+The user either taps a discovered result, or types a manual IP (built into a `TvDevice` by `pairing_page_data.dart`). Discovery/pairing now prefer a proven stable `id` with mutable `host` when identity can be established (`references/device-identity-and-reconnection.md`); IP-derived ids remain the fallback when it cannot.
 
 Selecting a device runs **`PairingPageCoordinator.pairSelectedDevice()`** (`pairing_page_coordinator.dart:24-77`):
 
@@ -127,6 +127,6 @@ From here, every button press runs `_send(command)` → `commandService.sendComm
 
 - **Per-variant remote layout** (`guide-protocol-variants.md`, "Adding a variant remote layout") — shipped: `_loadLayoutForDevice`'s default source; no real override authored yet, so it resolves to the global baseline for every device today.
 - **Command drawer** — shipped: same load path plus layout-editor UI (`LayoutZone.drawer`).
-- **`goal-persistent-device-identity.md`** — `id` / `host` created during discovery and Phase 5 pairing (supersedes `goal-stable-device-identifier.md`).
+- **`references/device-identity-and-reconnection.md`** — `id` / `host` created during discovery and pairing, plus the automatic-reconnection retry cycle.
 
 ---

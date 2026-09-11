@@ -8,7 +8,9 @@ import 'package:one_remote/remote_control/application/device_discovery_service.d
 import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/remote_command_service.dart';
 import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
+import 'package:one_remote/remote_control/data/in_memory_device_repository.dart';
 import 'package:one_remote/remote_control/data/pairing_progress_hint_registry.dart';
+import 'package:one_remote/remote_control/data/persistence/device_identity_registry.dart';
 import 'package:one_remote/remote_control/data/pre_pairing_steps_registry.dart';
 import 'package:one_remote/remote_control/domain/models/connection_state.dart'
     as remote_connection;
@@ -47,6 +49,7 @@ void main() {
     TvReachabilityService? reachabilityService,
     ProEntitlementService? proEntitlementService,
     String? activeDeviceId,
+    DeviceIdentityRegistry? identityRegistry,
   }) {
     return MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -61,6 +64,7 @@ void main() {
             reachabilityService ?? _StubTvReachabilityService(),
         proEntitlementService: proEntitlementService ?? buildProService(),
         activeDeviceId: activeDeviceId,
+        identityRegistry: identityRegistry,
       ),
     );
   }
@@ -951,6 +955,132 @@ void main() {
         containsAll([savedDevice.id, otherDevice.id]),
       );
     });
+
+    testWidgets(
+      'reprobes at the new host and turns green after reconciliation moves '
+      'the device',
+      (tester) async {
+        const staleDevice = TvDevice(
+          id: 'samsung-uuid-1',
+          displayName: 'Living Room TV',
+          brand: TvBrand.samsung,
+          capabilities: {DeviceCapability.keyCommands},
+          host: '192.168.1.10',
+        );
+        final movedDiscovered = staleDevice.copyWith(host: '192.168.1.99');
+        final repository = InMemoryDeviceRepository();
+        await repository.saveDevice(staleDevice);
+        final reachability = _HostAwareReachabilityService(
+          reachableHosts: {'192.168.1.99'},
+        );
+
+        await tester.pumpWidget(
+          buildPage(
+            commandService: _StubCommandService(
+              preparePairingResult: CommandDispatchResult.success('OK'),
+            ),
+            deviceRepository: repository,
+            discoveryService: _FixedDiscoveryService([movedDiscovered]),
+            reachabilityService: reachability,
+            identityRegistry: DeviceIdentityRegistry(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byIcon(Icons.wifi), findsOneWidget);
+        expect(find.byIcon(Icons.wifi_off), findsNothing);
+        expect(reachability.probeCountByHost['192.168.1.10'], 1);
+        expect(reachability.probeCountByHost['192.168.1.99'], 1);
+      },
+    );
+
+    testWidgets(
+      'does not reprobe (stays grey) when reconciliation leaves the host '
+      'unchanged',
+      (tester) async {
+        const staleDevice = TvDevice(
+          id: 'samsung-uuid-1',
+          displayName: 'Living Room TV',
+          brand: TvBrand.samsung,
+          capabilities: {DeviceCapability.keyCommands},
+          host: '192.168.1.10',
+        );
+        final repository = InMemoryDeviceRepository();
+        await repository.saveDevice(staleDevice);
+        final reachability = _HostAwareReachabilityService(reachableHosts: {});
+
+        await tester.pumpWidget(
+          buildPage(
+            commandService: _StubCommandService(
+              preparePairingResult: CommandDispatchResult.success('OK'),
+            ),
+            deviceRepository: repository,
+            discoveryService: _FixedDiscoveryService(const []),
+            reachabilityService: reachability,
+            identityRegistry: DeviceIdentityRegistry(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byIcon(Icons.wifi_off), findsOneWidget);
+        expect(find.byIcon(Icons.wifi), findsNothing);
+        expect(
+          reachability.probeCountByHost['192.168.1.10'],
+          1,
+          reason:
+              'a same-host retry after a no-op reconciliation pass is a '
+              'wasted network call and must be skipped',
+        );
+      },
+    );
+
+    testWidgets(
+      'reconciles two paired devices off one shared pass: only the one that '
+      'actually moved turns green',
+      (tester) async {
+        const movedSaved = TvDevice(
+          id: 'samsung-uuid-1',
+          displayName: 'Living Room TV',
+          brand: TvBrand.samsung,
+          capabilities: {DeviceCapability.keyCommands},
+          host: '192.168.1.10',
+        );
+        const stuckSaved = TvDevice(
+          id: 'roku-serial-9',
+          displayName: 'Bedroom Roku',
+          brand: TvBrand.roku,
+          capabilities: {DeviceCapability.keyCommands},
+          host: '192.168.1.20',
+        );
+        final repository = InMemoryDeviceRepository();
+        await repository.saveDevice(movedSaved);
+        await repository.saveDevice(stuckSaved);
+        final reachability = _HostAwareReachabilityService(
+          reachableHosts: {'192.168.1.99'},
+        );
+
+        await tester.pumpWidget(
+          buildPage(
+            commandService: _StubCommandService(
+              preparePairingResult: CommandDispatchResult.success('OK'),
+            ),
+            deviceRepository: repository,
+            discoveryService: _FixedDiscoveryService([
+              movedSaved.copyWith(host: '192.168.1.99'),
+            ]),
+            reachabilityService: reachability,
+            identityRegistry: DeviceIdentityRegistry(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byIcon(Icons.wifi), findsOneWidget);
+        expect(find.byIcon(Icons.wifi_off), findsOneWidget);
+        // stuckSaved (no matching discovery, no fix for Roku's identity gap)
+        // must not have been probed twice either.
+        expect(reachability.probeCountByHost['192.168.1.20'], 1);
+      },
+    );
   });
 }
 
@@ -1210,6 +1340,31 @@ class _SpyTvReachabilityService implements TvReachabilityService {
     probedDeviceIds.add(device.id);
     return false;
   }
+}
+
+/// Reports reachable only for hosts in [reachableHosts] and records how many
+/// times each host was probed -- used to verify the SG2/T2.1 indicator chain
+/// both reprobes a genuinely new host and skips a same-host retry.
+class _HostAwareReachabilityService implements TvReachabilityService {
+  _HostAwareReachabilityService({required this._reachableHosts});
+
+  final Set<String> _reachableHosts;
+  final Map<String, int> probeCountByHost = {};
+
+  @override
+  Future<bool> isReachable(TvDevice device) async {
+    final host = device.resolvedHost;
+    probeCountByHost[host] = (probeCountByHost[host] ?? 0) + 1;
+    return _reachableHosts.contains(host);
+  }
+}
+
+class _FixedDiscoveryService implements DeviceDiscoveryService {
+  _FixedDiscoveryService(this._devices);
+  final List<TvDevice> _devices;
+
+  @override
+  Future<List<TvDevice>> discoverDevices() async => _devices;
 }
 
 class _StubPrePairingStepsRegistry implements PrePairingStepsRegistry {

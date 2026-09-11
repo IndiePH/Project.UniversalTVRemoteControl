@@ -59,6 +59,34 @@ void main() {
       expect(devices.single.id, 'androidtv-192.168.1.21');
     },
   );
+
+  test(
+    'skips the certificate probe entirely when discovery already produced a MAC-based id',
+    () async {
+      final resolver = _FakeAndroidTvIdentityResolver(
+        stableIdByHost: {'192.168.1.22': 'androidtv-should-not-be-used'},
+      );
+      final service = CompositeDeviceDiscoveryService(
+        services: [
+          _StaticDiscoveryService([
+            const TvDevice(
+              id: 'androidtv-aa:bb:cc:dd:ee:ff',
+              displayName: 'Kitchen TV',
+              brand: TvBrand.androidTv,
+              capabilities: {DeviceCapability.keyCommands},
+              host: '192.168.1.22',
+            ),
+          ]),
+        ],
+        androidTvIdentityResolver: resolver,
+      );
+
+      final devices = await service.discoverDevices();
+
+      expect(devices.single.id, 'androidtv-aa:bb:cc:dd:ee:ff');
+      expect(resolver.probedHosts, isEmpty);
+    },
+  );
 }
 
 class _StaticDiscoveryService implements DeviceDiscoveryService {

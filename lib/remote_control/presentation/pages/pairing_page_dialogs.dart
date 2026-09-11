@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
@@ -351,9 +352,11 @@ final class PairingPageDialogs {
     required TvDevice device,
     required DateTime? pairedAt,
   }) async {
-    final prefix = '${device.brand.name}-';
-    final lastKnownIp = device.id.startsWith(prefix)
-        ? device.id.substring(prefix.length)
+    // resolvedHost prefers the real, currently-tracked host and falls back to
+    // an IPv4 parsed from a legacy id -- unlike the id string itself, which
+    // for a stable-id device (e.g. androidtv-<mac>) is not an IP at all.
+    final lastKnownIp = device.resolvedHost.isNotEmpty
+        ? device.resolvedHost
         : null;
 
     final pairedAtLabel = pairedAt != null
@@ -398,6 +401,12 @@ final class PairingPageDialogs {
                   label: l10n.pairingDeviceInfoLabelLastIp,
                   value: lastKnownIp,
                 ),
+              // Debug-only: the raw stable id (androidtv-<mac>, androidtv-<sha256>, a UDN, etc.)
+              // is an internal implementation detail, not something a production user needs to
+              // see -- but it's exactly what's useful to inspect while testing identity/migration
+              // behavior. Not localized: developer-facing only, never shown in a release build.
+              if (kDebugMode)
+                _InfoRow(label: 'Device ID (debug)', value: device.id),
             ],
           ),
           actions: [

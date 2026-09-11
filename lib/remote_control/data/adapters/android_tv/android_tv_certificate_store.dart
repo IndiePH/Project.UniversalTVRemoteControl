@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:basic_utils/basic_utils.dart';
 import 'package:crypto/crypto.dart';
+import 'package:one_remote/remote_control/data/adapters/android_tv/android_tv_cert_subject_mac_parser.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pointycastle/asn1.dart';
 
@@ -127,10 +128,22 @@ class AndroidTvCertificateStore {
   static (BigInt, BigInt)? extractRsaFromDer(Uint8List der) =>
       _rsaFromCertDer(der);
 
-  /// Returns the stable identity derived from a server certificate.
+  /// Returns the stable identity derived from a server certificate's whole
+  /// DER hash. Superseded by [stableIdFromDer] as the primary result (see
+  /// D-8/SG5/T5.1) but kept, unchanged, as its fallback for a cert whose
+  /// subject doesn't embed a recognizable MAC.
   static String stableIdFromServerCertificate(Uint8List der) {
     final digest = sha256.convert(der);
     return 'androidtv-${digest.toString()}';
+  }
+
+  /// Returns the stable identity for a server certificate: the MAC embedded
+  /// in its subject (matching the same value `bt`/mDNS discovery would give
+  /// for this same device, per D-8), or [stableIdFromServerCertificate]'s
+  /// whole-DER hash when the subject doesn't embed a recognizable MAC.
+  static String stableIdFromDer(Uint8List der) {
+    final mac = AndroidTvCertSubjectMacParser.parseFromDer(der);
+    return mac != null ? 'androidtv-$mac' : stableIdFromServerCertificate(der);
   }
 
   /// Removes all stored server certificate files for [host].
@@ -159,11 +172,11 @@ class AndroidTvCertificateStore {
     );
   }
 
-  /// Returns the stable per-device identifier for [host]: the SHA-256 of the
-  /// stored server certificate DER, formatted as `androidtv-<sha256hex>`. Null
-  /// when no server cert has been stored yet (i.e. before first pairing
-  /// completes). Used as [TvDevice.id] so the device can be re-keyed off its
-  /// IP-derived id onto this stable value.
+  /// Returns the stable per-device identifier for [host] (see
+  /// [stableIdFromDer]): the stored server certificate's subject MAC, or its
+  /// whole-DER hash fallback. Null when no server cert has been stored yet
+  /// (i.e. before first pairing completes). Used as [TvDevice.id] so the
+  /// device can be re-keyed off its IP-derived id onto this stable value.
   Future<String?> stableIdForHost(String host) async {
     final dir = await getApplicationDocumentsDirectory();
     final file = File(
@@ -171,37 +184,7 @@ class AndroidTvCertificateStore {
     );
     if (!file.existsSync()) return null;
     final der = await file.readAsBytes();
-    return stableIdFromServerCertificate(der);
-  }
-
-  /// Returns whether [stableId] matches any server certificate already stored
-  /// by this app, regardless of the host used when it was saved.
-  ///
-  /// This is intentionally certificate-backed: a TLS peer is not treated as
-  /// an already-paired TV merely because it exposes the Android TV port.
-  Future<bool> hasStoredServerCertificate(String stableId) async {
-    final expected = stableId.trim();
-    if (expected.isEmpty) return false;
-
-    final dir = await getApplicationDocumentsDirectory();
-    try {
-      await for (final entity in dir.list()) {
-        if (entity is! File || !entity.path.endsWith('.cert.der')) {
-          continue;
-        }
-        try {
-          final der = await entity.readAsBytes();
-          if (stableIdFromServerCertificate(der) == expected) {
-            return true;
-          }
-        } catch (_) {
-          // Ignore malformed or concurrently removed certificate files.
-        }
-      }
-    } catch (_) {
-      // Treat an unavailable certificate directory as an unknown identity.
-    }
-    return false;
+    return stableIdFromDer(der);
   }
 
   static String _hostTag(String host) =>

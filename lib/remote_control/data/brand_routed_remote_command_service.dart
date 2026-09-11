@@ -71,6 +71,18 @@ class BrandRoutedRemoteCommandService
       );
     }
     try {
+      // Registered before the connect below, not just after (see the later
+      // _registerIdentity(enriched) call): a device already carrying a
+      // non-IP stable id at discovery time (e.g. androidtv-<mac> via bt or a
+      // live cert read) has never been registered yet if this is its first
+      // pairing attempt, and the transport's host resolver has no other way
+      // to turn that id back into a connectable host -- its only fallback is
+      // regex-extracting an IPv4 from the id string, which doesn't exist for
+      // a MAC- or hash-based id. Without this, preparePairing's own connect
+      // fails with "Failed host lookup" for exactly that case. No-ops via
+      // _registerIdentity's own guard for a device with no stable id yet
+      // (the regex fallback already handles that case correctly).
+      _registerIdentity(device);
       await adapter.preparePairing(device: device);
       final info = await adapter.queryDeviceInfo(device: device);
       // Now that the adapter has actually talked to the TV, check whether a

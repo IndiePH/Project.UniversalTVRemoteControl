@@ -217,13 +217,16 @@ class AndroidTvTcpTransportClient
     socket.destroy();
   }
 
-  /// Looks up an already-paired Android TV by its server certificate at
-  /// [host]. When found, the certificate is also stored under the new host so
-  /// subsequent remote connections can use the existing pairing.
+  /// Looks up an Android TV's stable id (see [AndroidTvCertificateStore.
+  /// stableIdFromDer]) by connecting to its server certificate at [host].
+  /// The certificate is also stored under this host so subsequent remote
+  /// connections can use it.
   ///
-  /// A TLS peer is accepted only when its certificate fingerprint is already
-  /// present in app storage. This prevents an unpaired TV from being treated
-  /// as a known device just because port 6466 is reachable.
+  /// Runs unconditionally for any reachable Android TV, paired or not -- the
+  /// TLS connection itself already happens either way, and the earlier
+  /// "already recognized" gate was found to protect consent (handled by the
+  /// pairing PIN step) rather than anything this discovery-time read needs
+  /// to re-check. See D-9.
   @override
   Future<String?> discoverStableIdAtHost(String host) async {
     final normalizedHost = host.trim();
@@ -243,13 +246,7 @@ class AndroidTvTcpTransportClient
       if (rawDer == null) return null;
 
       final der = Uint8List.fromList(rawDer);
-      final stableId = AndroidTvCertificateStore.stableIdFromServerCertificate(
-        der,
-      );
-      if (!await _certStore.hasStoredServerCertificate(stableId)) {
-        return null;
-      }
-
+      final stableId = AndroidTvCertificateStore.stableIdFromDer(der);
       await _certStore.storeServerCert(normalizedHost, der);
       return stableId;
     } catch (_) {

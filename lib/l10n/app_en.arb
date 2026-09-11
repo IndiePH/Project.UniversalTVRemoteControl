@@ -23,6 +23,13 @@
   "remoteStatusEnterTextBeforeSending": "Enter text before sending.",
   "remoteStatusPairTvFirst": "Pair a TV first.",
   "remoteKeyboardUnavailable": "Remote keyboard can't be used on this screen or with this TV.",
+  "remoteStatusRetryingIn": "Retrying in {seconds}s",
+  "@remoteStatusRetryingIn": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "remoteRetryNowTooltip": "Retry now",
   "connectTvTooltip": "Connect TV",
   "remoteSwitchDeviceTooltip": "Switch TV",
   "remoteDeviceSwitcherTitle": "Your TVs",
