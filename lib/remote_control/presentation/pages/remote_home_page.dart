@@ -398,7 +398,12 @@ class _RemoteHomePageState extends State<RemoteHomePage>
         _retryController.stop();
       }
     });
-    unawaited(widget.commandService.connect(device: device));
+    // No explicit connect() call here: `watch` always replays a value
+    // synchronously on listen (defaulting to disconnected for a device with
+    // no cached state this session — see MultiplexedTvConnectionStateService),
+    // so the listener above already fires _retryController.start(), whose
+    // first attempt is immediate. An unconditional call here would just be a
+    // redundant second dial racing that one on every fresh subscribe.
   }
 
   Future<void> _loadInitialDevice() async {

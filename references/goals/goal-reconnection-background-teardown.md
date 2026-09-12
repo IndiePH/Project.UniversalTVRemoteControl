@@ -336,6 +336,29 @@ GM-4 (document findings with evidence) rather than silently folded into the diff
    four lines once the dead-gap fix landed (they weren't duplicates before — `_beginFastPhase`
    didn't fire immediately). Collapsed: `retryNow()` now does its own guard/cancel/growth-reset,
    then delegates to `_beginFastPhase()` instead of repeating its body.
+2. **Real regression, found while verifying item 5 (the lifecycle-gated `_canAttemptNow`
+   getter) against the full `widget_test.dart` suite, not just the isolated controller unit
+   tests:** `_subscribeConnectionState`'s unconditional `unawaited(widget.commandService.connect
+   (device: device))` at the end became a genuine duplicate dial once item 3's dead-gap fix
+   shipped. `MultiplexedTvConnectionStateService.watch()` always replays a value synchronously on
+   `.listen()` (defaulting to `disconnected` for a device with no cached state this session), so
+   for any freshly-subscribed device the listener's `disconnected`/`error` branch now *also* fires
+   an immediate connect via `_retryController.start()` — racing the pre-existing explicit call.
+   Likely harmless in practice (every brand has some concurrent-connect guard that would absorb
+   the second dial), but a genuine, avoidable duplicate, not something to paper over by bumping
+   affected tests' expected counts from 1 to 2. **Fixed:** removed the explicit call entirely —
+   verified against all 7 call sites of `_subscribeConnectionState`; the 3 that pass `null` never
+   reach it, and the remaining ones (cold start, device switch, the rare `didUpdateWidget`
+   command-service-swap path) are all correctly handled by the replayed state triggering the
+   retry controller instead. This also makes the very first connect attempt respect
+   `canAttemptNow`'s gate like every other retry-controller-driven connect already does, instead
+   of being an ungated special case — a consistency improvement, not a new risk, given the whole
+   point of this goal is one authority for "should we dial right now." All 3 previously-failing
+   `widget_test.dart` tests pass again; full file (32 tests, 1 pre-existing skip) green.
+
+Both were caught specifically because the *broader*, cross-file test suite was run after each
+change, not just the narrowly-scoped unit test file for whatever was being touched at the time —
+worth keeping as the standard going forward for the remaining tasks (5, 6, 9), not a one-off.
 
 ## Test plan (per `test-creation-strategy`/`regression-prevention`)
 
