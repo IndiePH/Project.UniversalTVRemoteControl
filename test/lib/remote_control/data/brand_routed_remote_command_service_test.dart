@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:one_remote/remote_control/application/background_poll_aware.dart';
 import 'package:one_remote/remote_control/application/command_dispatch_result.dart';
 import 'package:one_remote/remote_control/application/pin_required_exception.dart';
 import 'package:one_remote/remote_control/application/transport_log_provider.dart';
@@ -995,6 +996,93 @@ void main() {
       expect(result.isPinRequired, isFalse);
     });
   });
+
+  // Design item 7/9: pauseMonitoring/resumeMonitoring delegate only when the
+  // resolved adapter implements BackgroundPollAware (Hisense) -- mirrors the
+  // existing TransportLogReaderProvider capability-check tests above.
+  group('BackgroundPollAware — pauseMonitoring/resumeMonitoring', () {
+    const hisenseDevice = TvDevice(
+      id: 'hisense-1',
+      displayName: 'Hisense TV',
+      brand: TvBrand.hisense,
+      capabilities: {DeviceCapability.keyCommands},
+    );
+
+    test(
+      'delegates to the adapter when it implements BackgroundPollAware',
+      () async {
+        final hisense = _BackgroundPollAwareAdapter(brand: TvBrand.hisense);
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [hisense],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
+        );
+
+        await service.pauseMonitoring(device: hisenseDevice);
+        await service.resumeMonitoring(device: hisenseDevice);
+
+        expect(hisense.pauseMonitoringCallCount, 1);
+        expect(hisense.resumeMonitoringCallCount, 1);
+      },
+    );
+
+    test(
+      'is a no-op for a brand whose adapter does not implement '
+      'BackgroundPollAware (e.g. LG)',
+      () async {
+        final lg = _RecordingAdapter(brand: TvBrand.lg);
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [lg],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
+        );
+
+        await expectLater(
+          service.pauseMonitoring(device: lgDevice),
+          completes,
+        );
+        await expectLater(
+          service.resumeMonitoring(device: lgDevice),
+          completes,
+        );
+      },
+    );
+
+    test('is a no-op when no adapter is configured for the brand', () async {
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
+
+      await expectLater(
+        service.pauseMonitoring(device: hisenseDevice),
+        completes,
+      );
+      await expectLater(
+        service.resumeMonitoring(device: hisenseDevice),
+        completes,
+      );
+    });
+
+    test(
+      'other brands sharing the same adapter map are unaffected by a '
+      'BackgroundPollAware adapter being present for a different brand',
+      () async {
+        final hisense = _BackgroundPollAwareAdapter(brand: TvBrand.hisense);
+        final lg = _RecordingAdapter(brand: TvBrand.lg);
+        final service = BrandRoutedRemoteCommandService(
+          adapters: [hisense, lg],
+          variantRegistry: const DefaultVariantResolutionRegistry(),
+          localizedStrings: FakeLocalizedStrings(),
+        );
+
+        await service.pauseMonitoring(device: lgDevice);
+
+        expect(hisense.pauseMonitoringCallCount, 0);
+      },
+    );
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1186,6 +1274,24 @@ class _LogProviderAdapter extends _RecordingAdapter
 class _StubTransportLogReader implements TransportLogReader {
   @override
   Future<String?> readLatestLogForSharing() async => 'stub log';
+}
+
+class _BackgroundPollAwareAdapter extends _RecordingAdapter
+    implements BackgroundPollAware {
+  _BackgroundPollAwareAdapter({required super.brand});
+
+  int pauseMonitoringCallCount = 0;
+  int resumeMonitoringCallCount = 0;
+
+  @override
+  Future<void> pauseMonitoring({required TvDevice device}) async {
+    pauseMonitoringCallCount++;
+  }
+
+  @override
+  Future<void> resumeMonitoring({required TvDevice device}) async {
+    resumeMonitoringCallCount++;
+  }
 }
 
 /// Captures what `registry.hostForStableId(device.id)` returns at the moment

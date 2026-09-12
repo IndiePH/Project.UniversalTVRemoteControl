@@ -437,6 +437,41 @@ worth keeping as the standard going forward for the remaining tasks (5, 6, 9), n
    confirming the new synchronous path and the old pop-triggered path converge on the same end
    state rather than one masking a bug in the other.
 
+5. **Every bullet in the Test plan below implemented**, closing the gaps the plan itself flagged
+   (no dedicated `AndroidTvTcpTransportClient`/`HisenseMqttTransportClient` test files existed
+   before this). Notable findings along the way, not anticipated when the plan was written:
+   - The Android TV and Hisense regression tests exercise the *real* transport classes against a
+     loopback TLS/TCP fake server rather than fake transport doubles, since the removed behavior
+     (the self-scheduled reconnect) lived entirely inside each class's own socket-close handling —
+     a fake would have tested nothing. Both fake the persistence-backed credential stores
+     (`AndroidTvCertificateStore`, `HisensePairingAuthStore`) by subclassing and overriding just
+     the methods that touch disk/`path_provider`, confirmed via `dart analyze` that `implements`
+     erases default method bodies even on an abstract class — the same fact from item 3 above —
+     so every other implementer of those two interfaces was otherwise unaffected.
+   - Making `_ConnectionStateStubCommandService.connect()` actually emit `connecting` (needed to
+     test symptom 2's label transition directly) surfaced a **pre-existing, out-of-scope race** in
+     `MultiplexedTvConnectionStateService`: its replay-on-listen always defaults to `disconnected`
+     before the real upstream state has had a microtask to arrive, so *any* fresh subscribe fires
+     one redundant `connect()` regardless of the device's actual state. Not something this goal's
+     fixes touch (it predates this branch and affects every brand identically) — worked around in
+     the test stub itself by guarding the `connecting` emission on not-already-connected, mirroring
+     `AndroidTvTcpTransportClient`'s own real early-return for a redundant connect.
+   - The device-switcher pauseMonitoring test (Design item 8) intermittently looked like a
+     Pro-entitlement bug (`ProDeviceSwitchPolicy` blocking the switch) until isolating it showed an
+     *existing* sibling test in this file has the same latent gap: both rely on `SharedPreferences`
+     mock initialization performed by whichever earlier test in the file happens to run first,
+     rather than each test being self-contained. Fixed only in the new test (explicit
+     `SharedPreferences.setMockInitialValues({})`), not the pre-existing sibling — out of scope for
+     this goal, logged here rather than silently touched in passing.
+   - Every new regression test was verified to actually fail without the fix it guards (checked by
+     temporarily reverting the relevant production line and re-running), not just written to pass
+     against the current code — per this goal's own standing lesson (see item 1/2 above) that a
+     test which only ever exercises the passing path proves nothing about the regression it claims
+     to cover.
+
+   Verified: `flutter analyze` clean; full `flutter test` run (796 tests, 1 pre-existing skip)
+   green.
+
 ## Test plan (per `test-creation-strategy`/`regression-prevention`)
 
 - `AndroidTvTcpTransportClient` unit test: after `onDone` fires on the remote socket, no second

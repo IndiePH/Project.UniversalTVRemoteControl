@@ -452,6 +452,67 @@ void main() {
   });
 
   testWidgets(
+    'label moves from Connection error to Connecting the moment a retry fires',
+    (WidgetTester tester) async {
+      // Direct regression test for symptom 2 (goal doc): the fix isn't an
+      // optimistic label flip, it's making the retry controller the sole
+      // connect authority so the transport's own real `connecting` emission
+      // (goal doc fact #7) always arrives promptly and isn't silently
+      // dropped by a second, uncoordinated reconnect scheduler racing it
+      // (fact #8). Asserts the actual label text, not just connectCallCount.
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'android-1',
+        displayName: 'Android TV',
+        brand: TvBrand.androidTv,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.disconnected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      commandService.emitConnectionState(remote_connection.ConnectionState.error);
+      await tester.pump();
+      expect(find.text('Connection error'), findsOneWidget);
+      expect(find.text('Connecting…'), findsNothing);
+
+      // The fast-phase retry fires every 5s; the moment it does, connect()
+      // emits `connecting` and the label must reflect it on the very next
+      // frame -- not stay stuck on "Connection error" waiting for a
+      // confirmation that never had a trustworthy signal to relay before
+      // this branch's fix.
+      await tester.pump(const Duration(seconds: 5));
+      expect(find.text('Connecting…'), findsOneWidget);
+      expect(find.text('Connection error'), findsNothing);
+    },
+  );
+
+  testWidgets(
     'does not retry after TV authorization denial; shows allow-on-TV guidance',
     (WidgetTester tester) async {
       _registerRemoteHomePageGetIt();
@@ -603,6 +664,16 @@ void main() {
       final countAfterRetry = commandService.connectCallCount;
       expect(countAfterRetry, greaterThan(1));
 
+      // The retry's own connect() call (like every real transport) emits
+      // `connecting` first; resolve that attempt back to `error` before
+      // backgrounding so pausing genuinely happens in a disconnected state,
+      // not mid-attempt -- matching what a real transport's own timeout
+      // would do well before a human has time to background the app.
+      commandService.emitConnectionState(
+        remote_connection.ConnectionState.error,
+      );
+      await tester.pump();
+
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       await tester.pump();
       await tester.pump(const Duration(seconds: 5));
@@ -612,6 +683,172 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 5));
       expect(commandService.connectCallCount, greaterThan(countAfterRetry));
+    },
+  );
+
+  testWidgets(
+    'a disconnect arriving after pause restarts the controller but never '
+    'actually dials while still paused (fact #9 / Design item 5)',
+    (WidgetTester tester) async {
+      // The gap fact #9 found: _retryController.stop() on paused only stops
+      // it once, at that moment. _subscribeConnectionState's listener stays
+      // subscribed and unconditionally calls _retryController.start() on
+      // any later disconnected/error emission, regardless of app lifecycle
+      // -- e.g. the TV's own keepalive timing out well after backgrounding
+      // already happened. The fix is `_canAttemptNow`'s lifecycle check,
+      // not the stop() call alone -- this test starts the device already
+      // connected (so no retry is running yet when paused happens) and
+      // only emits the drop *after* pausing, which the sibling
+      // 'paused stops retry...' test above doesn't exercise (there, the
+      // drop happens before pausing).
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'android-1',
+        displayName: 'Android TV',
+        brand: TvBrand.androidTv,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.connected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // MultiplexedTvConnectionStateService's replay-on-listen defaults to
+      // `disconnected` before the real initial state has had a chance to
+      // arrive (a pre-existing quirk, not something this goal's fixes
+      // touch), so cold start makes one connect() attempt regardless of
+      // `initialState` -- capture it as the baseline instead of assuming 0.
+      final countAtColdStart = commandService.connectCallCount;
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      // The drop arrives *after* pausing -- e.g. the TV's own keepalive
+      // timing out because backgrounding caused missed pings, well after
+      // _retryController.stop() already ran once.
+      commandService.emitConnectionState(
+        remote_connection.ConnectionState.disconnected,
+      );
+      await tester.pump();
+
+      // start() gets invoked again by the listener regardless of lifecycle
+      // -- confirm every subsequent attempt is still gated inert, across
+      // several fast-phase-interval-sized waits, not just the first tick.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(const Duration(seconds: 5));
+      expect(
+        commandService.connectCallCount,
+        countAtColdStart,
+        reason:
+            '_canAttemptNow must gate every attempt while paused, even '
+            'though start() itself was invoked again by the listener',
+      );
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      // The controller's fast-phase timer has been ticking (and skipping)
+      // every 5s since the disconnect arrived while paused; its next tick
+      // is what should finally get through now that canAttemptNow is true
+      // again -- not an immediate dial on resume itself, since start() is a
+      // no-op while the controller is already running.
+      await tester.pump(const Duration(seconds: 5));
+      expect(
+        commandService.connectCallCount,
+        greaterThan(countAtColdStart),
+        reason: 'resuming must let the already-restarted controller through',
+      );
+    },
+  );
+
+  testWidgets(
+    'paused pauses background monitoring for the active device; resumed '
+    'resumes it (Design item 7)',
+    (WidgetTester tester) async {
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'hisense-1',
+        displayName: 'Hisense TV',
+        brand: TvBrand.hisense,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.connected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(commandService.pauseMonitoringCallCount, 0);
+      expect(commandService.resumeMonitoringCallCount, 0);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      expect(
+        commandService.pauseMonitoringCallCount,
+        1,
+        reason: 'paused must pause background monitoring alongside stopping '
+            'the retry controller',
+      );
+      expect(commandService.resumeMonitoringCallCount, 0);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(
+        commandService.resumeMonitoringCallCount,
+        1,
+        reason: 'resumed must resume background monitoring alongside the '
+            'existing retry-controller start path',
+      );
+      expect(
+        commandService.pauseMonitoringCallCount,
+        1,
+        reason: 'resumed must not pause it again',
+      );
     },
   );
 
@@ -874,6 +1111,93 @@ void main() {
     expect(await repository.getLastUsedDevice(), bedroom);
   });
 
+  testWidgets(
+    'switching the active device pauses the previous device\'s monitoring '
+    '(Design item 8); the very first activation pauses nothing',
+    (WidgetTester tester) async {
+      // Required standalone (not just when the whole file happens to run in
+      // an order where an earlier test already primed it): ProEntitlementService
+      // touches SharedPrefsProEntitlementCache synchronously while resolving
+      // `entitled`, which needs shared_preferences' mock channel initialized
+      // -- without this, isPro silently stays false and the switcher treats
+      // this as a free-tier lock, unrelated to anything this test is about.
+      SharedPreferences.setMockInitialValues({});
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const livingRoom = TvDevice(
+        id: 'samsung-living-room',
+        displayName: 'Living Room TV',
+        brand: TvBrand.samsung,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      const bedroom = TvDevice(
+        id: 'lg-bedroom',
+        displayName: 'Bedroom TV',
+        brand: TvBrand.lg,
+        capabilities: {DeviceCapability.keyCommands},
+      );
+      await repository.saveDevice(livingRoom);
+      await repository.saveDevice(bedroom);
+      await repository.setLastUsedDevice(livingRoom.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.connected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      // The very first activation (from no active device at all) must not
+      // call pauseMonitoring -- there is nothing to pause yet.
+      expect(commandService.pausedDevices, isEmpty);
+
+      await tester.tap(find.byTooltip('Switch TV'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Bedroom TV'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bedroom TV'), findsOneWidget);
+      expect(
+        commandService.pausedDevices,
+        [livingRoom],
+        reason:
+            'switching A -> B must pause A (the outgoing device) before '
+            'subscribing to B',
+      );
+
+      await tester.tap(find.byTooltip('Switch TV'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Living Room TV'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Living Room TV'), findsOneWidget);
+      expect(
+        commandService.pausedDevices,
+        [livingRoom, bedroom],
+        reason:
+            'switching back B -> A must pause B this time, restarting A '
+            'cleanly via the normal connect() path',
+      );
+    },
+  );
+
   testWidgets('places active paired TV first in pro device switcher', (
     WidgetTester tester,
   ) async {
@@ -1132,6 +1456,95 @@ void main() {
     expect(find.text('Disconnected'), findsOneWidget);
     expect(_pairButtonColor(tester), appColors.remoteSurface);
   });
+
+  testWidgets(
+    'unpairing the active device pauses its monitoring immediately, while '
+    'still on the Pairing page -- not only once it is popped',
+    (WidgetTester tester) async {
+      // Direct regression test for Open question 4 (goal doc): before the
+      // fix, RemoteHomePage only noticed an active-device unpair via
+      // _openPairing()'s own cleanup once the Pairing page was popped -- a
+      // timing race, not a guarantee. `_canAttemptNow`'s route check
+      // already makes the retry controller inert for the entire time the
+      // Pairing page is on top regardless of this fix (see 'retry timer
+      // skips connect while another route is on top'), so connectCallCount
+      // can't distinguish "fixed" from "not fixed" here. pauseMonitoring is
+      // the right, unconditional signal instead: `_clearActiveDevice`
+      // (reached only through the new onDeviceUnpaired callback while this
+      // fix is in effect) fires it synchronously; without the fix, it would
+      // only fire later, once _openPairing()'s own continuation runs after
+      // popping back.
+      SharedPreferences.setMockInitialValues({});
+      _registerRemoteHomePageGetIt();
+      addTearDown(GetIt.instance.reset);
+
+      final repository = InMemoryDeviceRepository();
+      const activeDevice = TvDevice(
+        id: 'samsung-living-room',
+        displayName: 'Living Room TV',
+        brand: TvBrand.samsung,
+        capabilities: {
+          DeviceCapability.keyCommands,
+          DeviceCapability.powerControl,
+        },
+      );
+      await repository.saveDevice(activeDevice);
+      await repository.setLastUsedDevice(activeDevice.id);
+      final commandService = _ConnectionStateStubCommandService(
+        initialState: remote_connection.ConnectionState.connected,
+      );
+      addTearDown(commandService.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RemoteHomePage(
+            appEnvironment: AppEnvironment.debug,
+            commandService: commandService,
+            deviceRepository: repository,
+            discoveryService: _EmptyDiscoveryService(),
+            layoutRepository: _InMemoryLayoutRepository(),
+            proEntitlementService: _buildEntitledProService(),
+            connectionStateService: _multiplexedConnectionStateService(
+              commandService,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(commandService.pauseMonitoringCallCount, 0);
+
+      await tester.tap(find.byTooltip('Connect TV'));
+      await tester.pumpAndSettle();
+
+      await tester.drag(
+        find.text('Living Room TV'),
+        kRemoteWidgetTestSwipeToDismissOffset,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+      await tester.pumpAndSettle();
+
+      // Still on the Pairing page -- deliberately not popped yet.
+      expect(
+        commandService.pauseMonitoringCallCount,
+        1,
+        reason:
+            'unpairing the active device must clear it (and pause its '
+            'monitoring) synchronously, not only once the Pairing page is '
+            'eventually popped',
+      );
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text('No TV connected'), findsOneWidget);
+      // Popping back must not pause it a second time via _openPairing()'s
+      // own cleanup finding the same already-cleared device redundantly.
+      expect(commandService.pauseMonitoringCallCount, 1);
+    },
+  );
 
   testWidgets(
     'opens onboarding and troubleshooting guidance from help action',
@@ -2048,6 +2461,22 @@ class _ConnectionStateStubCommandService implements RemoteCommandService {
   @override
   Future<void> connect({required TvDevice device}) async {
     connectCallCount++;
+    // Every real transport emits `connecting` at the start of a connect
+    // attempt (goal doc fact #7) -- mirrored here so tests can assert the
+    // label actually reflects a retry firing, not just that connect() was
+    // called. Guarded on not-already-connected, mirroring how a
+    // well-behaved transport (e.g. AndroidTvTcpTransportClient's
+    // `_remoteSockets[deviceId] != null` early return) treats a redundant
+    // connect on an already-connected device as a silent no-op rather than
+    // re-announcing `connecting`: without this guard, a device that starts
+    // already `connected` would spuriously flip to `connecting` and get
+    // stuck there, racing MultiplexedTvConnectionStateService's replay
+    // (which defaults to `disconnected` before the real initial state has
+    // had a chance to arrive, and so triggers one such redundant call on
+    // every fresh subscribe regardless of the device's real state).
+    if (_state != remote_connection.ConnectionState.connected) {
+      emitConnectionState(remote_connection.ConnectionState.connecting);
+    }
   }
 
   @override
@@ -2056,14 +2485,18 @@ class _ConnectionStateStubCommandService implements RemoteCommandService {
 
   int pauseMonitoringCallCount = 0;
   int resumeMonitoringCallCount = 0;
+  final List<TvDevice> pausedDevices = [];
+  final List<TvDevice> resumedDevices = [];
 
   @override
   Future<void> pauseMonitoring({required TvDevice device}) async {
     pauseMonitoringCallCount++;
+    pausedDevices.add(device);
   }
 
   @override
   Future<void> resumeMonitoring({required TvDevice device}) async {
     resumeMonitoringCallCount++;
+    resumedDevices.add(device);
   }
 }
