@@ -24,20 +24,21 @@ TvDevice _device({required String id, required String host}) => TvDevice(
   host: host,
 );
 
-/// Elapses one full fast phase (3 attempts) plus escalation, landing exactly
-/// at the moment a wait phase begins -- the point every growth/cap test below
-/// needs to inspect [ReconnectionRetryState.waitSecondsRemaining] at.
+/// Elapses one full fast phase (3 attempts -- the first immediate, the other
+/// two one tick apart) plus escalation, landing exactly at the moment a wait
+/// phase begins -- the point every growth/cap test below needs to inspect
+/// [ReconnectionRetryState.waitSecondsRemaining] at.
 void _driveOneLapToWait(
   FakeAsync async, {
   Duration interval = const Duration(seconds: 5),
 }) {
-  async.elapse(interval * 3);
+  async.elapse(interval * 2);
   async.flushMicrotasks();
 }
 
 void main() {
   group('ReconnectionRetryController', () {
-    test('fast phase does not fire an immediate connect on start', () {
+    test('fast phase fires an immediate connect on start', () {
       fakeAsync((async) {
         final commandService = _RecordingCommandService();
         final controller = _buildController(commandService: commandService);
@@ -45,7 +46,7 @@ void main() {
 
         controller.start(_device(id: 'androidtv-abc', host: '10.0.0.5'));
 
-        expect(commandService.connectCallCount, 0);
+        expect(commandService.connectCallCount, 1);
         expect(
           controller.stateNotifier.value?.phase,
           ReconnectionPhase.fastRetry,
@@ -53,8 +54,9 @@ void main() {
       });
     });
 
-    test('fires one connect per fast-phase tick, then escalates and fires an '
-        'extra connect before entering the wait phase', () {
+    test('fires an immediate connect on start, then one connect per '
+        'subsequent fast-phase tick, then escalates and fires an extra '
+        'connect before entering the wait phase', () {
       fakeAsync((async) {
         final commandService = _RecordingCommandService();
         final discovery = _ScriptedDiscoveryService(const []);
@@ -66,15 +68,14 @@ void main() {
         final device = _device(id: 'androidtv-abc', host: '10.0.0.5');
 
         controller.start(device);
-
-        async.elapse(const Duration(seconds: 5));
         expect(commandService.connectCallCount, 1);
 
         async.elapse(const Duration(seconds: 5));
         expect(commandService.connectCallCount, 2);
 
-        // Third tick fires the last fast attempt, then triggers escalation
-        // (discovery + reconcile + one more connect) before waiting.
+        // Second tick fires the last (third) fast attempt, then triggers
+        // escalation (discovery + reconcile + one more connect) before
+        // waiting.
         async.elapse(const Duration(seconds: 5));
         async.flushMicrotasks();
         expect(discovery.callCount, 1);
@@ -99,7 +100,10 @@ void main() {
         addTearDown(controller.dispose);
         controller.start(_device(id: 'androidtv-abc', host: '10.0.0.5'));
 
-        async.elapse(const Duration(seconds: 15));
+        // The immediate-fire fix moves escalation (and wait-phase entry)
+        // from t=15s to t=10s: connects at t=0 (start), t=5s, t=10s (third
+        // attempt, triggers escalation).
+        async.elapse(const Duration(seconds: 10));
         async.flushMicrotasks();
         expect(controller.stateNotifier.value?.waitSecondsRemaining, 45);
 
@@ -112,12 +116,11 @@ void main() {
           controller.stateNotifier.value?.phase,
           ReconnectionPhase.fastRetry,
         );
-        expect(commandService.connectCallCount, connectCountBeforeLoop);
-
-        // The new fast phase behaves like the first: no immediate fire,
-        // one connect per subsequent 5s tick.
-        async.elapse(const Duration(seconds: 5));
+        // The new fast phase fires an immediate connect too, same as start().
         expect(commandService.connectCallCount, connectCountBeforeLoop + 1);
+
+        async.elapse(const Duration(seconds: 5));
+        expect(commandService.connectCallCount, connectCountBeforeLoop + 2);
       });
     });
 
@@ -178,8 +181,6 @@ void main() {
         final controller = _buildController(commandService: commandService);
         addTearDown(controller.dispose);
         controller.start(_device(id: 'androidtv-abc', host: '10.0.0.5'));
-
-        async.elapse(const Duration(seconds: 5));
         expect(commandService.connectCallCount, 1);
 
         controller.stop();
@@ -194,7 +195,7 @@ void main() {
         'false, and resumes cleanly once true again', () {
       fakeAsync((async) {
         final commandService = _RecordingCommandService();
-        var canAttempt = true;
+        var canAttempt = false;
         final controller = _buildController(
           commandService: commandService,
           canAttemptNow: () => canAttempt,
@@ -202,7 +203,9 @@ void main() {
         addTearDown(controller.dispose);
         controller.start(_device(id: 'androidtv-abc', host: '10.0.0.5'));
 
-        canAttempt = false;
+        // The immediate fire on start() is itself gated by canAttemptNow.
+        expect(commandService.connectCallCount, 0);
+
         async.elapse(const Duration(seconds: 5));
         expect(commandService.connectCallCount, 0);
 
