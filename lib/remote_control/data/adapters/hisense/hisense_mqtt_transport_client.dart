@@ -62,9 +62,6 @@ class HisenseMqttTransportClient
       <String, ConnectionState>{};
   final Map<String, Timer> _connectivityPollTimers = <String, Timer>{};
   final Set<String> _authorizedDeviceIds = <String>{};
-  // Guards _pollConnectivity from launching a second reconnect while the first
-  // is still in flight (an MQTT connect can take several seconds on a busy LAN).
-  final Set<String> _reconnectInFlight = <String>{};
   final AdapterDeviceInfoLogGate _deviceInfoLogGate =
       AdapterDeviceInfoLogGate();
 
@@ -334,7 +331,6 @@ class HisenseMqttTransportClient
         client?.connectionStatus?.state == MqttConnectionState.connected;
     if (!mqttConnected) {
       _emitConnectionState(deviceId, ConnectionState.disconnected);
-      await _maybeReconnect(deviceId);
       return;
     }
     final host = _hostResolver(deviceId).trim();
@@ -352,28 +348,6 @@ class HisenseMqttTransportClient
       _emitConnectionState(deviceId, ConnectionState.connected);
     } catch (_) {
       _emitConnectionState(deviceId, ConnectionState.disconnected);
-      await _maybeReconnect(deviceId);
-    }
-  }
-
-  /// Attempts a single, non-overlapping reconnect for devices that have
-  /// already cleared the PIN gate in this session. Skipped when the device
-  /// is not yet authorized, when a reconnect is already in flight, or when
-  /// the host cannot be resolved — the lazy reconnect path on the next user
-  /// action still covers those cases.
-  Future<void> _maybeReconnect(String deviceId) async {
-    if (!_authorizedDeviceIds.contains(deviceId)) return;
-    if (_reconnectInFlight.contains(deviceId)) return;
-    final host = _hostResolver(deviceId).trim();
-    if (host.isEmpty) return;
-    _reconnectInFlight.add(deviceId);
-    _emitConnectionState(deviceId, ConnectionState.connecting);
-    try {
-      await _ensureConnected(deviceId);
-    } catch (_) {
-      _emitConnectionState(deviceId, ConnectionState.disconnected);
-    } finally {
-      _reconnectInFlight.remove(deviceId);
     }
   }
 
@@ -381,7 +355,6 @@ class HisenseMqttTransportClient
   Future<void> clearPairing({required String deviceId}) async {
     _connectivityPollTimers.remove(deviceId)?.cancel();
     _authorizedDeviceIds.remove(deviceId);
-    _reconnectInFlight.remove(deviceId);
     final host = _hostResolver(deviceId).trim();
     if (host.isNotEmpty) {
       await _pairingAuth.clearHost(host);
