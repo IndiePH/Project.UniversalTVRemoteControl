@@ -53,6 +53,7 @@ final class RemoteHomeActions {
     LayoutRepository? layoutRepository,
     required ProEntitlementService proEntitlementService,
     required String? activeDeviceId,
+    void Function(String deviceId)? onDeviceUnpaired,
   }) async {
     final sl = GetIt.instance;
     if (sl.isRegistered<AnalyticsService>()) {
@@ -92,6 +93,7 @@ final class RemoteHomeActions {
           manualAddVariantProbe: sl.isRegistered<ManualAddVariantProbe>()
               ? sl<ManualAddVariantProbe>()
               : null,
+          onDeviceUnpaired: onDeviceUnpaired,
         ),
       ),
     );

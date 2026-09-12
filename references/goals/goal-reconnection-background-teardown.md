@@ -323,7 +323,8 @@ worth pausing — flagged as worth asking about, not assumed in or out of scope.
    (`pairing_page.dart:471,510`), which has no direct reference back into `RemoteHomePage`'s
    state; likely needs a callback/result threaded back through `RemoteHomeActions.openPairing`
    (already returns a value `_openPairing` reads) or an explicit check against the returned
-   device list. Exact wiring to be determined during implementation.
+   device list. Exact wiring to be determined during implementation. **Resolved, see
+   Implementation notes item 4.**
 
 ## Implementation notes (found during implementation, not anticipated in design)
 
@@ -402,6 +403,39 @@ worth keeping as the standard going forward for the remaining tasks (5, 6, 9), n
    Verified: `flutter analyze` clean; full `flutter test` run (784 tests) green, including
    `hisense_test_lane_test.dart` and every widget/controller/adapter test touched by the interface
    change.
+
+4. **Open question 4 resolved: `PairingPage` gained an optional `onDeviceUnpaired(String
+   deviceId)` callback**, invoked from both of its existing unpair call sites
+   (`_confirmRemoveSavedDevice`, `_offerLegacyCleanup`) the moment a device is actually removed —
+   while the Pairing page is still open, not gated on ever popping back. `PairingPage` itself
+   stays brand-/caller-agnostic: it reports "this id was just unpaired" unconditionally and lets
+   the caller decide whether it matters, mirroring how `_handleDeviceUpdatedByReconciliation`
+   already treats a device-id match as the caller's call, not the reporter's.
+   `RemoteHomeActions.openPairing` gained a matching optional parameter threaded straight through
+   to the `PairingPage` it constructs. `RemoteHomePage._openPairing()` passes
+   `_handleActiveDeviceUnpaired`, which no-ops unless the reported id matches `_activeDevice?.id`,
+   then delegates to a new `_clearActiveDevice()` helper.
+
+   `_clearActiveDevice()` is an extraction, not new behavior: the two existing "no active device"
+   branches (`_refreshSavedDevicesForFreeTier`'s and `_openPairing`'s own null-device branch) were
+   byte-for-byte identical blocks (setState clearing `_activeDevice`/status/layout-edit-mode, then
+   `_subscribeRemoteTextReady(null)` + `_subscribeConnectionState(null, previousDevice:
+   previousDevice)` + `_resetLayoutToDefaults()`) — adding a third near-identical call site made
+   the duplication worth collapsing (`clean-code-solid`). Because `_subscribeConnectionState`
+   already handles a non-null `previousDevice` by pausing its background monitoring and stopping
+   the retry controller (Design item 7/8's own machinery), this one helper call gives the new
+   unpair path the exact same synchronous stop+pause guarantee item 8 asked for ("shares a call
+   site with the Open question 4 fix") with no separate mechanism needed. Added a `mounted` guard
+   inside `_clearActiveDevice()` itself (harmless no-op for the two pre-existing call sites, which
+   were always already-mounted-checked; load-bearing for the new callback path, which can fire
+   from a different widget's async callback after `RemoteHomePage` could in principle have been
+   disposed).
+
+   Verified: `flutter analyze` clean; full `flutter test` run (784 tests, 1 pre-existing skip)
+   green, including the pre-existing `widget_test.dart` test `'clears active device when current
+   paired TV is removed'`, which still passes even though it only asserts *after* popping back —
+   confirming the new synchronous path and the old pop-triggered path converge on the same end
+   state rather than one masking a bug in the other.
 
 ## Test plan (per `test-creation-strategy`/`regression-prevention`)
 

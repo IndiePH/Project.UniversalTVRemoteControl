@@ -320,15 +320,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     }
 
     if (lastUsed == null) {
-      final previousDevice = _activeDevice;
-      setState(() {
-        _activeDevice = null;
-        _applyStatusKind(RemoteHomeStatusKind.connectTvToBegin);
-        _isLayoutEditMode = false;
-      });
-      _subscribeRemoteTextReady(null);
-      _subscribeConnectionState(null, previousDevice: previousDevice);
-      _resetLayoutToDefaults();
+      _clearActiveDevice();
     } else if (_activeDevice?.id != lastUsed.id) {
       await _activateDevice(lastUsed);
     } else if (removedExtraDevices) {
@@ -727,6 +719,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       layoutRepository: widget.layoutRepository,
       proEntitlementService: widget.proEntitlementService,
       activeDeviceId: _activeDevice?.id,
+      onDeviceUnpaired: _handleActiveDeviceUnpaired,
     );
     if (!mounted) return;
 
@@ -739,21 +732,51 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     if (!mounted) return;
     _hasAnyPairedDevice = savedDevices.isNotEmpty;
     if (device == null) {
-      final previousDevice = _activeDevice;
-      setState(() {
-        _activeDevice = null;
-        _applyStatusKind(RemoteHomeStatusKind.connectTvToBegin);
-        _isLayoutEditMode = false;
-      });
-      _subscribeRemoteTextReady(null);
-      _subscribeConnectionState(null, previousDevice: previousDevice);
-      _resetLayoutToDefaults();
+      _clearActiveDevice();
       if (!mounted) return;
       setState(() {});
       return;
     }
 
     await _activateDevice(device);
+  }
+
+  /// Handles [PairingPage.onDeviceUnpaired] (threaded through
+  /// [RemoteHomeActions.openPairing]): fires as soon as a device is unpaired
+  /// there, while that page is still open, rather than waiting for it to be
+  /// popped. Without this, an unpair of the active device would leave
+  /// `_activeDevice` (and its retry controller / background polling) pointed
+  /// at a now-unpaired device for however long the user keeps browsing the
+  /// Pairing page before navigating back — a timing race, not a structural
+  /// guarantee, per the goal doc's Open question 4.
+  void _handleActiveDeviceUnpaired(String deviceId) {
+    if (!mounted || _activeDevice?.id != deviceId) {
+      return;
+    }
+    _clearActiveDevice();
+  }
+
+  /// Clears the active device and everything that depends on it: status
+  /// kind, layout edit mode, the text-input/connection-state subscriptions
+  /// (which, via [_subscribeConnectionState]'s `previousDevice` handling,
+  /// also pauses the outgoing device's background monitoring and stops the
+  /// retry controller), and the default layout. Shared by every path that
+  /// can end up with no active device — no saved devices left, the Pairing
+  /// page returning with nothing selected, and the active device being
+  /// unpaired while that page is still open.
+  void _clearActiveDevice() {
+    if (!mounted) {
+      return;
+    }
+    final previousDevice = _activeDevice;
+    setState(() {
+      _activeDevice = null;
+      _applyStatusKind(RemoteHomeStatusKind.connectTvToBegin);
+      _isLayoutEditMode = false;
+    });
+    _subscribeRemoteTextReady(null);
+    _subscribeConnectionState(null, previousDevice: previousDevice);
+    _resetLayoutToDefaults();
   }
 
   void _toggleLayoutEditMode() {
