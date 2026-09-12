@@ -154,7 +154,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
           ? GetIt.instance<DeviceIdentityRegistry>()
           : null,
       layoutRepository: widget.layoutRepository,
-      canAttemptNow: () => mounted && ModalRoute.of(context)?.isCurrent == true,
+      canAttemptNow: () => _canAttemptNow,
       onDeviceUpdated: _handleDeviceUpdatedByReconciliation,
     );
     _loadInitialDevice();
@@ -204,6 +204,25 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     _textController.dispose();
     super.dispose();
   }
+
+  /// Whether the retry controller should actually dial the active device
+  /// right now. Combines two independent gates the controller itself has no
+  /// way to check: whether another route (a dialog/sheet) is on top — avoids
+  /// dialing the active TV mid-pairing-flow — and whether the app is
+  /// currently backgrounded.
+  ///
+  /// The lifecycle check compares against `paused` specifically, not
+  /// `resumed`: `lifecycleState` is nullable and can still be null very
+  /// early during startup, before Flutter has reported an initial state --
+  /// requiring `== resumed` would incorrectly block the first connect
+  /// attempt in that window. Comparing against `paused` treats null (and
+  /// `inactive`/`hidden`, e.g. a brief system dialog) as fine to proceed,
+  /// matching [didChangeAppLifecycleState] below, which only ever acts on
+  /// `paused`/`resumed` and treats every other state as a non-event.
+  bool get _canAttemptNow =>
+      mounted &&
+      WidgetsBinding.instance.lifecycleState != AppLifecycleState.paused &&
+      ModalRoute.of(context)?.isCurrent == true;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {

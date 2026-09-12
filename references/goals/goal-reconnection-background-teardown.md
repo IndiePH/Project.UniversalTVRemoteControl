@@ -325,6 +325,18 @@ worth pausing — flagged as worth asking about, not assumed in or out of scope.
    (already returns a value `_openPairing` reads) or an explicit check against the returned
    device list. Exact wiring to be determined during implementation.
 
+## Implementation notes (found during implementation, not anticipated in design)
+
+Two things surfaced only once code was actually written and the *full* test suite run against
+it — not just the narrow unit-test file for whatever was just changed. Recorded per `bug-diagnosis`'s
+GM-4 (document findings with evidence) rather than silently folded into the diff.
+
+1. **DRY violation, found applying `clean-code-solid` to the item-3 diff itself:**
+   `ReconnectionRetryController._beginFastPhase()` and `retryNow()` became identical in their last
+   four lines once the dead-gap fix landed (they weren't duplicates before — `_beginFastPhase`
+   didn't fire immediately). Collapsed: `retryNow()` now does its own guard/cancel/growth-reset,
+   then delegates to `_beginFastPhase()` instead of repeating its body.
+
 ## Test plan (per `test-creation-strategy`/`regression-prevention`)
 
 - `AndroidTvTcpTransportClient` unit test: after `onDone` fires on the remote socket, no second
