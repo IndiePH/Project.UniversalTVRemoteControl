@@ -1,5 +1,6 @@
 export 'command_dispatch_result.dart';
 export 'android_tv_stable_identity_resolver.dart';
+export 'background_poll_aware.dart';
 export 'device_discovery_service.dart';
 export 'device_last_seen_repository.dart';
 export 'free_tier_device_policy.dart';

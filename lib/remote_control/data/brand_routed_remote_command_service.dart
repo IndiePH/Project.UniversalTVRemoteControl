@@ -306,6 +306,22 @@ class BrandRoutedRemoteCommandService
   }
 
   @override
+  Future<void> pauseMonitoring({required TvDevice device}) async {
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
+    if (adapter is BackgroundPollAware) {
+      await (adapter as BackgroundPollAware).pauseMonitoring(device: device);
+    }
+  }
+
+  @override
+  Future<void> resumeMonitoring({required TvDevice device}) async {
+    final adapter = _adapterFor(device.brand, device.protocolVariant);
+    if (adapter is BackgroundPollAware) {
+      await (adapter as BackgroundPollAware).resumeMonitoring(device: device);
+    }
+  }
+
+  @override
   TransportLogReader readerForDevice(TvDevice device) {
     final adapter = _adapterFor(device.brand, device.protocolVariant);
     if (adapter is TransportLogProvider) {

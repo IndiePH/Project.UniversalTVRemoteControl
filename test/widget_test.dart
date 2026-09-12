@@ -2053,4 +2053,17 @@ class _ConnectionStateStubCommandService implements RemoteCommandService {
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
       null;
+
+  int pauseMonitoringCallCount = 0;
+  int resumeMonitoringCallCount = 0;
+
+  @override
+  Future<void> pauseMonitoring({required TvDevice device}) async {
+    pauseMonitoringCallCount++;
+  }
+
+  @override
+  Future<void> resumeMonitoring({required TvDevice device}) async {
+    resumeMonitoringCallCount++;
+  }
 }

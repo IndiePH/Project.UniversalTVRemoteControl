@@ -181,4 +181,10 @@ class _RecordingCommandService implements RemoteCommandService {
   Future<void> unpairDevice({required TvDevice device}) async {
     unpairedIds.add(device.id);
   }
+
+  @override
+  Future<void> pauseMonitoring({required TvDevice device}) async {}
+
+  @override
+  Future<void> resumeMonitoring({required TvDevice device}) async {}
 }

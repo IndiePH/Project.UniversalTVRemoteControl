@@ -457,6 +457,14 @@ class _RecordingCommandService implements RemoteCommandService {
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) =>
       throw UnimplementedError();
+
+  @override
+  Future<void> pauseMonitoring({required TvDevice device}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> resumeMonitoring({required TvDevice device}) =>
+      throw UnimplementedError();
 }
 
 /// Discovery double used via [PairingPageData.discoverDevices], which sorts

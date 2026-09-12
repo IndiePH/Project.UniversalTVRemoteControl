@@ -228,6 +228,16 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.paused) {
       _retryController.stop();
+      final device = _activeDevice;
+      if (device != null) {
+        // Pauses only our own background poll (e.g. Hisense's connectivity
+        // timer) — the underlying connection itself is left alone and times
+        // out on its own schedule if genuinely idle. See goal doc Design
+        // item 7/8: a proactive explicit disconnect here was considered and
+        // dropped, as it trades a guaranteed cost (forced reconnect on every
+        // brief background) for a marginal one.
+        unawaited(widget.commandService.pauseMonitoring(device: device));
+      }
       // Best-effort: give an in-flight layout save a chance to reach disk
       // before the OS can kill the process. Not a hard guarantee under an
       // aggressive OOM-kill, but this is the only hook the platform gives us.
@@ -235,8 +245,12 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     }
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshProEntitlementOnResume());
-      if (_activeDevice != null && _connectionState.shouldAutoReconnect) {
-        _retryController.start(_activeDevice!);
+      final device = _activeDevice;
+      if (device != null) {
+        unawaited(widget.commandService.resumeMonitoring(device: device));
+      }
+      if (device != null && _connectionState.shouldAutoReconnect) {
+        _retryController.start(device);
       }
     }
   }
@@ -306,13 +320,14 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     }
 
     if (lastUsed == null) {
+      final previousDevice = _activeDevice;
       setState(() {
         _activeDevice = null;
         _applyStatusKind(RemoteHomeStatusKind.connectTvToBegin);
         _isLayoutEditMode = false;
       });
       _subscribeRemoteTextReady(null);
-      _subscribeConnectionState(null);
+      _subscribeConnectionState(null, previousDevice: previousDevice);
       _resetLayoutToDefaults();
     } else if (_activeDevice?.id != lastUsed.id) {
       await _activateDevice(lastUsed);
@@ -357,7 +372,19 @@ class _RemoteHomePageState extends State<RemoteHomePage>
         });
   }
 
-  void _subscribeConnectionState(TvDevice? device) {
+  /// [previousDevice], when given, is whatever was active immediately before
+  /// this call (captured by the caller before it reassigned `_activeDevice`,
+  /// since by the time this method runs that field already holds the new
+  /// value). Pauses its background polling — e.g. Hisense's connectivity
+  /// timer — before subscribing to the new device, so a deselected device
+  /// doesn't keep polling indefinitely (goal doc Design item 8). Omitted (or
+  /// equal to the new device) for the very-first-activation and
+  /// same-device-different-command-service (`didUpdateWidget`) cases, where
+  /// there is nothing to pause.
+  void _subscribeConnectionState(TvDevice? device, {TvDevice? previousDevice}) {
+    if (previousDevice != null && previousDevice.id != device?.id) {
+      unawaited(widget.commandService.pauseMonitoring(device: previousDevice));
+    }
     _connectionStateSub?.cancel();
     _connectionStateSub = null;
     _retryController.stop();
@@ -594,6 +621,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
   }
 
   Future<void> _activateDevice(TvDevice device) async {
+    final previousDevice = _activeDevice;
     setState(() {
       _activeDevice = device;
       _applyStatusKind(RemoteHomeStatusKind.ready);
@@ -601,7 +629,7 @@ class _RemoteHomePageState extends State<RemoteHomePage>
       _pairButtonBlinkOn = false;
     });
     _subscribeRemoteTextReady(device);
-    _subscribeConnectionState(device);
+    _subscribeConnectionState(device, previousDevice: previousDevice);
     await _loadLayoutForDevice(device);
   }
 
@@ -711,13 +739,14 @@ class _RemoteHomePageState extends State<RemoteHomePage>
     if (!mounted) return;
     _hasAnyPairedDevice = savedDevices.isNotEmpty;
     if (device == null) {
+      final previousDevice = _activeDevice;
       setState(() {
         _activeDevice = null;
         _applyStatusKind(RemoteHomeStatusKind.connectTvToBegin);
         _isLayoutEditMode = false;
       });
       _subscribeRemoteTextReady(null);
-      _subscribeConnectionState(null);
+      _subscribeConnectionState(null, previousDevice: previousDevice);
       _resetLayoutToDefaults();
       if (!mounted) return;
       setState(() {});

@@ -360,6 +360,49 @@ Both were caught specifically because the *broader*, cross-file test suite was r
 change, not just the narrowly-scoped unit test file for whatever was being touched at the time —
 worth keeping as the standard going forward for the remaining tasks (5, 6, 9), not a one-off.
 
+3. **Design items 7/8 implemented as specified, with one mechanical consequence not spelled out
+   in the design:** added `BackgroundPollAware` (`application/background_poll_aware.dart`,
+   `pauseMonitoring`/`resumeMonitoring`, mirrors `TransportLogProvider`'s shape exactly) and the
+   same two methods on `RemoteCommandService` itself, implemented by all 3 real implementers
+   (`BrandRoutedRemoteCommandService` delegates via `is BackgroundPollAware` capability check —
+   `HisenseAdapter` is the only implementer; `InMemoryRemoteCommandService` and
+   `DiagnosticsRecordingRemoteCommandService` no-op/delegate respectively). `HisenseAdapter`
+   delegates to new `HisenseTransportClient.pauseMonitoring`/`resumeMonitoring` methods
+   (`deviceId`-keyed, added to the abstract transport interface itself since
+   `FakeHisenseTransportClient` also `implements` it — Dart's `implements` erases default method
+   bodies even on an abstract class, confirmed by testing it directly, so every implementer of
+   `HisenseTransportClient` needed an explicit override regardless of whether the interface method
+   had a body). `HisenseMqttTransportClient`'s real implementation just cancels/restarts
+   `_connectivityPollTimers[deviceId]` (`pauseMonitoring`) and restarts-plus-one-fresh-check
+   (`resumeMonitoring`) — the underlying MQTT client itself is never touched by either call, per
+   the design. Confirmed via the same `implements`-erasure fact: every `RemoteCommandService`
+   implementer — including 7 test fakes across 6 test files — needed a trivial override too; these
+   got plain no-ops (or `throw UnimplementedError()` where the existing fake already used that
+   convention for unused members, e.g. `reconnection_retry_controller_test.dart`'s
+   `_RecordingCommandService`) rather than real assertions, since meaningfully testing
+   pause/resume behavior is Task 6's job, not this one's.
+
+   `RemoteHomePage` wiring: `didChangeAppLifecycleState` calls `pauseMonitoring` alongside
+   `_retryController.stop()` on `paused`, and `resumeMonitoring` on `resumed` — gated only on
+   `_activeDevice != null`, deliberately *not* on `_connectionState.shouldAutoReconnect` like the
+   adjacent `_retryController.start()` call is, since the poll's job is to (re)detect the real
+   connection state after a background spell, not to only run when reconnection policy already
+   expects a problem. `_subscribeConnectionState` gained an optional `previousDevice` parameter
+   (pauses it when non-null and different from the new device) — added because by the time any
+   existing call site invoked `_subscribeConnectionState`, `_activeDevice` had already been
+   reassigned to the *new* device by that call site's own `setState`, so the method could not
+   simply read `_activeDevice` itself to recover "what was active a moment ago"; each of the 3
+   call sites that can genuinely change the active device (`_activateDevice`,
+   `_refreshSavedDevicesForFreeTier`'s clear-to-null branch, `_openPairing`'s clear-to-null branch)
+   now captures `_activeDevice` into a local *before* its own `setState` overwrites it, and passes
+   that through. `_loadInitialDevice` (cold start) and `didUpdateWidget` (command-service swap, same
+   device) both correctly pass no `previousDevice` — the former because `_activeDevice` is
+   genuinely null pre-activation, the latter because the device isn't changing at all.
+
+   Verified: `flutter analyze` clean; full `flutter test` run (784 tests) green, including
+   `hisense_test_lane_test.dart` and every widget/controller/adapter test touched by the interface
+   change.
+
 ## Test plan (per `test-creation-strategy`/`regression-prevention`)
 
 - `AndroidTvTcpTransportClient` unit test: after `onDone` fires on the remote socket, no second

@@ -88,4 +88,10 @@ class InMemoryRemoteCommandService implements RemoteCommandService {
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) async =>
       null;
+
+  @override
+  Future<void> pauseMonitoring({required TvDevice device}) async {}
+
+  @override
+  Future<void> resumeMonitoring({required TvDevice device}) async {}
 }

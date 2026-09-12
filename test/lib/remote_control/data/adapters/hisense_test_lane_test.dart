@@ -338,6 +338,12 @@ class _SlowHisenseTransportClient
   Future<void> clearPairing({required String deviceId}) async {}
 
   @override
+  Future<void> pauseMonitoring({required String deviceId}) async {}
+
+  @override
+  Future<void> resumeMonitoring({required String deviceId}) async {}
+
+  @override
   Stream<ConnectionState> watchConnectionState(String deviceId) =>
       Stream<ConnectionState>.value(ConnectionState.connected);
 
@@ -401,6 +407,12 @@ class _SpyHisenseTransportClient
   }
 
   @override
+  Future<void> pauseMonitoring({required String deviceId}) async {}
+
+  @override
+  Future<void> resumeMonitoring({required String deviceId}) async {}
+
+  @override
   Stream<ConnectionState> watchConnectionState(String deviceId) =>
       Stream<ConnectionState>.value(ConnectionState.connected);
 
@@ -448,6 +460,12 @@ class _ErrorOnPinHisenseTransportClient
 
   @override
   Future<void> clearPairing({required String deviceId}) async {}
+
+  @override
+  Future<void> pauseMonitoring({required String deviceId}) async {}
+
+  @override
+  Future<void> resumeMonitoring({required String deviceId}) async {}
 
   @override
   Stream<ConnectionState> watchConnectionState(String deviceId) =>

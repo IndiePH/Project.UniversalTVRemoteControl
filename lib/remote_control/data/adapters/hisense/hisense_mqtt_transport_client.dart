@@ -352,6 +352,17 @@ class HisenseMqttTransportClient
   }
 
   @override
+  Future<void> pauseMonitoring({required String deviceId}) async {
+    _connectivityPollTimers.remove(deviceId)?.cancel();
+  }
+
+  @override
+  Future<void> resumeMonitoring({required String deviceId}) async {
+    _startConnectivityPolling(deviceId);
+    await _pollConnectivity(deviceId);
+  }
+
+  @override
   Future<void> clearPairing({required String deviceId}) async {
     _connectivityPollTimers.remove(deviceId)?.cancel();
     _authorizedDeviceIds.remove(deviceId);
