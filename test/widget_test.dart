@@ -496,7 +496,9 @@ void main() {
       );
       await tester.pump();
 
-      commandService.emitConnectionState(remote_connection.ConnectionState.error);
+      commandService.emitConnectionState(
+        remote_connection.ConnectionState.error,
+      );
       await tester.pump();
       expect(find.text('Connection error'), findsOneWidget);
       expect(find.text('Connecting…'), findsNothing);
@@ -831,7 +833,8 @@ void main() {
       expect(
         commandService.pauseMonitoringCallCount,
         1,
-        reason: 'paused must pause background monitoring alongside stopping '
+        reason:
+            'paused must pause background monitoring alongside stopping '
             'the retry controller',
       );
       expect(commandService.resumeMonitoringCallCount, 0);
@@ -841,7 +844,8 @@ void main() {
       expect(
         commandService.resumeMonitoringCallCount,
         1,
-        reason: 'resumed must resume background monitoring alongside the '
+        reason:
+            'resumed must resume background monitoring alongside the '
             'existing retry-controller start path',
       );
       expect(

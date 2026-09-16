@@ -1026,27 +1026,18 @@ void main() {
       },
     );
 
-    test(
-      'is a no-op for a brand whose adapter does not implement '
-      'BackgroundPollAware (e.g. LG)',
-      () async {
-        final lg = _RecordingAdapter(brand: TvBrand.lg);
-        final service = BrandRoutedRemoteCommandService(
-          adapters: [lg],
-          variantRegistry: const DefaultVariantResolutionRegistry(),
-          localizedStrings: FakeLocalizedStrings(),
-        );
+    test('is a no-op for a brand whose adapter does not implement '
+        'BackgroundPollAware (e.g. LG)', () async {
+      final lg = _RecordingAdapter(brand: TvBrand.lg);
+      final service = BrandRoutedRemoteCommandService(
+        adapters: [lg],
+        variantRegistry: const DefaultVariantResolutionRegistry(),
+        localizedStrings: FakeLocalizedStrings(),
+      );
 
-        await expectLater(
-          service.pauseMonitoring(device: lgDevice),
-          completes,
-        );
-        await expectLater(
-          service.resumeMonitoring(device: lgDevice),
-          completes,
-        );
-      },
-    );
+      await expectLater(service.pauseMonitoring(device: lgDevice), completes);
+      await expectLater(service.resumeMonitoring(device: lgDevice), completes);
+    });
 
     test('is a no-op when no adapter is configured for the brand', () async {
       final service = BrandRoutedRemoteCommandService(
