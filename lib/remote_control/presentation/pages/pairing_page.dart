@@ -40,6 +40,7 @@ class PairingPage extends StatefulWidget {
     this.identityRegistry,
     this.layoutRepository,
     this.manualAddVariantProbe,
+    this.onDeviceUnpaired,
   });
 
   final RemoteCommandService commandService;
@@ -50,6 +51,16 @@ class PairingPage extends StatefulWidget {
   final TvReachabilityService reachabilityService;
   final ProEntitlementService proEntitlementService;
   final String? activeDeviceId;
+
+  /// Notified synchronously (i.e. before this page is ever popped) whenever
+  /// a device is unpaired here, whatever its id. The caller — not this page
+  /// — decides whether the id matters (e.g. whether it was its own active
+  /// device); this page has no opinion beyond "this device was just
+  /// unpaired." Exists so a caller showing that same device elsewhere isn't
+  /// stuck relying on the page-pop's return value to find out, which only
+  /// fires once the user navigates back and races whatever that caller was
+  /// doing with the device in the meantime.
+  final void Function(String deviceId)? onDeviceUnpaired;
 
   /// Optional variant probe for manual add-by-IP (see `ManualAddVariantProbe`).
   /// Null (e.g. in unit tests) falls back to the default variant — safe
@@ -470,6 +481,7 @@ class _PairingPageState extends State<PairingPage> {
 
     await widget.commandService.unpairDevice(device: device);
     await widget.deviceRepository.removeSavedDevice(device.id);
+    widget.onDeviceUnpaired?.call(device.id);
     final layoutDeleter = widget.layoutRepository is LayoutDeletionRepository
         ? widget.layoutRepository as LayoutDeletionRepository
         : null;
@@ -514,6 +526,7 @@ class _PairingPageState extends State<PairingPage> {
       try {
         await widget.deviceRepository.removeSavedDevice(device.id);
         removedAny = true;
+        widget.onDeviceUnpaired?.call(device.id);
       } catch (_) {
         continue;
       }

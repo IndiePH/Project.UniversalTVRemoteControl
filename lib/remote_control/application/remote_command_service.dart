@@ -46,4 +46,14 @@ abstract class RemoteCommandService {
 
   /// Cached or probed model/firmware from the active transport (brand-dependent).
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device});
+
+  /// Pauses this brand's own background connectivity polling for [device]
+  /// (e.g. Hisense's poll timer) without touching the underlying connection,
+  /// which is left to time out on its own schedule if genuinely idle. No-op
+  /// for brands with no polling loop of their own — see [BackgroundPollAware].
+  Future<void> pauseMonitoring({required TvDevice device});
+
+  /// Resumes background monitoring paused by [pauseMonitoring] and performs
+  /// one fresh check immediately. No-op for brands with no polling loop.
+  Future<void> resumeMonitoring({required TvDevice device});
 }

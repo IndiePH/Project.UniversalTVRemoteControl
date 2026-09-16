@@ -109,4 +109,12 @@ final class DiagnosticsRecordingRemoteCommandService
   @override
   Future<TvDeviceInfo?> queryDeviceInfo({required TvDevice device}) =>
       _delegate.queryDeviceInfo(device: device);
+
+  @override
+  Future<void> pauseMonitoring({required TvDevice device}) =>
+      _delegate.pauseMonitoring(device: device);
+
+  @override
+  Future<void> resumeMonitoring({required TvDevice device}) =>
+      _delegate.resumeMonitoring(device: device);
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:one_remote/remote_control/application/background_poll_aware.dart';
 import 'package:one_remote/remote_control/application/tv_brand_adapter.dart';
 import 'package:one_remote/remote_control/data/adapters/command_key_map.dart';
 import 'package:one_remote/remote_control/data/adapters/hisense/hisense_key_mapper.dart';
@@ -12,7 +13,7 @@ import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device_info.dart';
 
-class HisenseAdapter implements TvBrandAdapter {
+class HisenseAdapter implements TvBrandAdapter, BackgroundPollAware {
   HisenseAdapter({required this._transportClient, CommandKeyMap? keyMap})
     : _keyMap = keyMap ?? const HisenseKeyMapper() {
     _supportedCommands = kCommonSupportedRemoteCommands
@@ -49,6 +50,14 @@ class HisenseAdapter implements TvBrandAdapter {
   Future<void> probeConnection({required TvDevice device}) async {
     await _transportClient.probe(device.resolvedHost);
   }
+
+  @override
+  Future<void> pauseMonitoring({required TvDevice device}) =>
+      _transportClient.pauseMonitoring(deviceId: device.id);
+
+  @override
+  Future<void> resumeMonitoring({required TvDevice device}) =>
+      _transportClient.resumeMonitoring(deviceId: device.id);
 
   @override
   Future<void> unpairDevice({required TvDevice device}) async {

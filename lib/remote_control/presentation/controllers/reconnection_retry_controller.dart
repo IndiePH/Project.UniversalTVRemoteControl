@@ -121,13 +121,8 @@ class ReconnectionRetryController {
   void retryNow() {
     if (_device == null) return;
     _timer?.cancel();
-    _fastAttemptsMade = 0;
     _nextWaitDuration = waitDuration;
-    stateNotifier.value = const ReconnectionRetryState(
-      phase: ReconnectionPhase.fastRetry,
-    );
-    _attemptFastConnect();
-    _timer = Timer.periodic(fastAttemptInterval, (_) => _attemptFastConnect());
+    _beginFastPhase();
   }
 
   /// Releases the state notifier. The controller is unusable afterward.
@@ -141,6 +136,7 @@ class ReconnectionRetryController {
     stateNotifier.value = const ReconnectionRetryState(
       phase: ReconnectionPhase.fastRetry,
     );
+    _attemptFastConnect();
     _timer = Timer.periodic(fastAttemptInterval, (_) => _attemptFastConnect());
   }
 

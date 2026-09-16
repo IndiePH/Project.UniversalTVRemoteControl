@@ -71,10 +71,6 @@ class AndroidTvTcpTransportClient
   // Negotiated features = _remoteClientFeatures & TV's code1 from RemoteConfigure.
   final Map<String, int> _remoteNegotiatedFeatures = {};
 
-  // _remoteActive tracks devices with intentional remote connections so
-  // _onRemoteSocketDone can distinguish unexpected closes (reconnect) from
-  // explicit clearPairing() calls (do not reconnect).
-  final Set<String> _remoteActive = {};
   final Set<String> _remoteConnecting = {};
 
   // Connection state, keyed by deviceId
@@ -268,13 +264,10 @@ class AndroidTvTcpTransportClient
     _cleanupPairing(deviceId);
   }
 
-  /// Prevents reconnect, closes both sockets, and removes the stored server
-  /// certificate so the device can be re-paired from scratch.
+  /// Closes both sockets and removes the stored server certificate so the
+  /// device can be re-paired from scratch.
   @override
   Future<void> clearPairing({required String deviceId}) async {
-    // Remove from _remoteActive before destroying the socket so that
-    // _onRemoteSocketDone does not schedule a reconnect.
-    _remoteActive.remove(deviceId);
     _cleanupPairing(deviceId);
     _cleanupRemote(deviceId);
     await _certStore.clearServerCert(_hostResolver(deviceId));
@@ -566,7 +559,6 @@ class AndroidTvTcpTransportClient
         },
       );
 
-      _remoteActive.add(deviceId);
       _emitState(deviceId, ConnectionState.connected);
     } catch (e) {
       _emitState(deviceId, ConnectionState.error);
@@ -694,24 +686,10 @@ class AndroidTvTcpTransportClient
     _emitState(deviceId, ConnectionState.error);
   }
 
-  void _onRemoteSocketDone(String deviceId) async {
+  void _onRemoteSocketDone(String deviceId) {
     log('Android TV remote socket closed', name: 'android_tv_transport');
     _cleanupRemote(deviceId);
     _emitState(deviceId, ConnectionState.disconnected);
-
-    // _remoteActive is cleared by clearPairing() before socket.destroy() is
-    // called, so its absence here means an intentional disconnect — skip reconnect.
-    if (!_remoteActive.contains(deviceId)) return;
-
-    await Future<void>.delayed(const Duration(seconds: 3));
-    _emitState(deviceId, ConnectionState.connecting);
-    try {
-      await _connectRemote(deviceId);
-    } catch (e) {
-      log('Android TV: reconnect failed: $e', name: 'android_tv_transport');
-      _remoteActive.remove(deviceId);
-      _emitState(deviceId, ConnectionState.error);
-    }
   }
 
   void _sendRemoteMessage(String deviceId, RemoteMessage msg) {

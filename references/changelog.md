@@ -11,6 +11,86 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-09-12
+
+### Fixed
+- Reconnection kept retrying after backgrounding the app, and the connection-state label stayed
+  on "Connection error" instead of showing "Connecting…" the moment a retry fired — two bugs
+  reported against the automatic-reconnection work shipped 2026-09-10 (PR #32). Root cause traced
+  via git history: Android TV's transport-level self-reconnect (`_onRemoteSocketDone`, PR #9) and
+  Hisense's poll-triggered self-reconnect (`_pollConnectivity`) each predate
+  `ReconnectionRetryController` (PR #32) by months and were never coordinated with it — two
+  independent, uncoordinated reconnect schedulers raced on a silent concurrent-connect guard,
+  which is why a page-triggered retry could produce no visible effect at all (branch
+  `fix/reconnection-background-teardown`; design log
+  `references/goals/goal-reconnection-background-teardown.md`):
+  - Deleted both transport-level self-reconnect schedulers. Android TV's `_onRemoteSocketDone` now
+    only cleans up and reports the disconnect (`_remoteActive`, which existed solely to gate the
+    removed reconnect, removed along with its 4 usage sites). Hisense's `_pollConnectivity` keeps
+    detecting and reporting state — its actual job, since MQTT's own state alone isn't trusted —
+    but no longer self-triggers a reconnect on a detected drop (`_maybeReconnect` and
+    `_reconnectInFlight`, now fully dead, removed). `ReconnectionRetryController` is the sole retry
+    authority for every brand now, matching how LG/Samsung/TCL/Roku/Sony already worked.
+  - Closed a ~5s dead gap in `ReconnectionRetryController`: `_beginFastPhase()` started its
+    periodic timer with no immediate first tick, so both `start()` and the wait-phase loop-back
+    left a window with no connect attempt in flight — exactly when a user would expect to see
+    "Connecting…" right away. Now fires the first attempt immediately, mirroring the pattern
+    `retryNow()` already used (and collapsed the resulting duplication between the two).
+  - Removed a duplicate `connect()` call on every fresh device subscription, found while verifying
+    the dead-gap fix against the full widget-test suite: `_subscribeConnectionState`'s own
+    unconditional `connect()` call was racing the retry controller's now-immediate first attempt,
+    since `MultiplexedTvConnectionStateService.watch()` always replays a value synchronously on
+    listen. Removing it also makes the very first connect attempt respect the same lifecycle gate
+    (below) as every other retry-controller-driven connect, instead of being an ungated exception.
+  - Lifecycle-gated the retry controller's `canAttemptNow` check: `_retryController.stop()` on
+    `paused` only stopped it once, at that moment — it didn't stop `_subscribeConnectionState`'s
+    listener from restarting it on a *later* disconnected/error emission (e.g. the TV's own
+    keepalive timing out because backgrounding caused missed pings), regardless of app lifecycle.
+    `canAttemptNow` now also checks `WidgetsBinding.instance.lifecycleState != paused` (not
+    `== resumed`, since `lifecycleState` can still be null very early at startup), so every
+    subsequent attempt is gated inert until the app actually resumes, however many times the
+    controller gets restarted while backgrounded.
+  - Paused Hisense's background connectivity poll (`_connectivityPollTimers`, 8s interval) while
+    backgrounded or while its device isn't the active one, instead of letting it keep probing
+    indefinitely — the same class of always-on background cost as the deleted reconnect
+    schedulers, via a different mechanism. Deliberately pauses only the app's own polling, not the
+    underlying MQTT session, which is left to time out on its own schedule if genuinely idle (a
+    proactive disconnect-on-every-background was considered and dropped: it trades a guaranteed
+    cost, a forced reconnect+flicker on every brief accidental background, for a marginal one).
+    Added `BackgroundPollAware`, a capability interface mirroring the existing
+    `TransportLogProvider` pattern, with `pauseMonitoring`/`resumeMonitoring` on
+    `RemoteCommandService` delegated only when the resolved adapter implements it (Hisense only —
+    every other brand is untouched). Wired from `didChangeAppLifecycleState` (paused/resumed) and
+    from device switching (pauses whichever device was previously active before subscribing to the
+    new one).
+  - Unpairing the currently-active device from the Pairing page now clears it (and stops retrying
+    it) synchronously, the moment the unpair completes — not only once the Pairing page is
+    eventually popped. Previously `RemoteHomePage` had no way to hear about an unpair except via
+    `_openPairing()`'s own cleanup after the page closed, a timing race rather than a guarantee.
+    `PairingPage` gained an `onDeviceUnpaired(deviceId)` callback fired from both of its unpair
+    call sites, threaded through `RemoteHomeActions.openPairing`.
+
+### Docs
+- `references/goals/goal-reconnection-background-teardown.md`: full diagnosis and design log for
+  the above, including the capability-interface pattern's three-revision history and the
+  brief-vs-long-backgrounding cost/benefit comparison that ruled out a proactive disconnect.
+- `references/tech-debt-list.md`: logged `ReconnectionRetryController`'s ownership sitting in the
+  presentation layer (`RemoteHomePage`) rather than the domain layer, with a second instance of
+  the same tension (device-active-state tracking) found while scoping this fix — deferred to a
+  separate future pass, not part of this fix.
+
+### Verification
+- `flutter analyze` clean; full test suite green (796/796, 1 pre-existing skip — up from 784),
+  including two new dedicated unit-test files that never existed for these transports before
+  (`AndroidTvTcpTransportClient`, `HisenseMqttTransportClient`, both exercised against real
+  loopback TLS/TCP fake servers rather than fake doubles, since the removed behavior lived
+  entirely in each class's own socket-close handling), a `BackgroundPollAware` capability-check
+  test, and five new widget tests covering the label-transition regression, the unpair-while-
+  still-on-Pairing-page race, the lifecycle-gate edge case, and the background-monitoring
+  pause/resume and device-switch wiring. Every new regression test was verified to actually fail
+  without the fix it guards, not just written to pass against the current code. Not yet verified
+  on real hardware — see the goal doc's standing hardware-verification notice.
+
 ## 2026-09-11
 
 ### Fixed

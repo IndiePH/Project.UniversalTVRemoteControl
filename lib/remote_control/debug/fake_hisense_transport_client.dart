@@ -140,6 +140,12 @@ class FakeHisenseTransportClient
   }
 
   @override
+  Future<void> pauseMonitoring({required String deviceId}) async {}
+
+  @override
+  Future<void> resumeMonitoring({required String deviceId}) async {}
+
+  @override
   Stream<ConnectionState> watchConnectionState(String deviceId) =>
       _connectionControllerFor(deviceId).stream;
 
