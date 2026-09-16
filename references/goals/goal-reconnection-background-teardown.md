@@ -1,20 +1,23 @@
 # Goal: Stop reconnection loops from surviving backgrounding, and reflect retries in the connection-state label
 
 **Branch:** `fix/reconnection-background-teardown` (current)
-**Status:** Diagnosis complete (static code trace, not yet reproduced on hardware). Design went
-through several revisions on 2026-09-11, each time after user pushback found a smaller or more
-correct fix than the prior draft — see Design section, and especially the capability-interface
-pattern's three-revision history. Final shape: delete both transport-level self-reconnect
-schedulers, fix the retry controller's dead gap, lifecycle-gate `canAttemptNow`, and pause (not
-disconnect) Hisense's poll timer while backgrounded. Not yet implemented — awaiting go-ahead.
-**Related:** `references/device-identity-and-reconnection.md` (the automatic-reconnection-resilience work this bug was found in, commit `5c4994e`, PR #32), `references/tech-debt-list.md` (bare `catch (_)` pattern touched by this area)
+**Status:** Implementation complete (2026-09-12). All 9 design items shipped across 8 commits:
+both transport-level self-reconnect schedulers deleted, the retry controller's dead gap closed,
+`canAttemptNow` lifecycle-gated, Hisense's poll timer paused/resumed on background/foreground and
+on device switch, the active device cleared synchronously on unpair, and full regression-test
+coverage added for the whole plan (796 tests, up from the pre-branch baseline; every new test
+verified to actually fail without its fix, not just written to pass). `flutter analyze` clean;
+full `flutter test` suite green. Still **not verified on real hardware** — see the warning below,
+which remains accurate; everything here was validated statically and via test doubles, not a live
+TV. Retest on-device before considering this fully closed.
+**Related:** `references/device-identity-and-reconnection.md` (the automatic-reconnection-resilience work this bug was found in, commit `5c4994e`, PR #32), `references/tech-debt-list.md` (bare `catch (_)` pattern touched by this area, plus the `ReconnectionRetryController` domain-layering entry this branch added)
 **Retires when:** the fix ships and is confirmed to actually stop reconnect activity after backgrounding, on real hardware — at that point fold anything load-bearing into `references/device-identity-and-reconnection.md` and delete this file.
 
 > ⚠️ **Not verified on hardware.** Everything below is a static trace through the code (file:line
-> citations, confidence noted per claim) — I have not run the app and observed the described
-> behavior directly. Per `bug-diagnosis` skill discipline this stands in for reproduction only
-> because live reproduction wasn't available in this session; treat anything not marked
-> "confirmed" as needing a runtime check before or during implementation.
+> citations, confidence noted per claim) plus test-double-based verification (widget tests,
+> loopback TLS/TCP fake servers) — nobody has run this on a real TV and observed the described
+> behavior directly yet. Treat anything not marked "confirmed" as needing a runtime check, and
+> treat the whole branch as needing an on-device pass before this file retires.
 
 ---
 
@@ -290,7 +293,11 @@ worth pausing — flagged as worth asking about, not assumed in or out of scope.
    `disconnected`/`error` emission it observes (`state.shouldAutoReconnect`), which
    `_onRemoteSocketDone`'s `_emitState(disconnected)` (kept in this design) still triggers
    immediately — so there should be no coverage gap from removing the self-reconnect. Worth a
-   deliberate check during implementation, not just an assumption.
+   deliberate check during implementation, not just an assumption. **Resolved: confirmed, no
+   gap.** `_onRemoteSocketDone`/`_pollConnectivity` both still emit their disconnected state
+   immediately after the self-reconnect removal (Tasks 2/3); the widget tests added for Task 6
+   (`'starts retry on error state...'`, the two new transport-client regression tests) directly
+   exercise this and confirm the retry controller picks up from that emission with no gap.
 2. ~~Should the app still proactively close idle live sockets/MQTT connections when
    backgrounded?~~ — **resolved 2026-09-11, final answer: no.** Went through two rounds: first
    deferred as a "future enhancement," then briefly pulled into scope after the battery-cost
@@ -303,7 +310,11 @@ worth pausing — flagged as worth asking about, not assumed in or out of scope.
    decided.
 3. Bare `catch (_)` in `_connectRemote`'s original retry path is being deleted along with the
    retry itself, not modified — no new tech-debt entry needed there. Confirm no other bare-catch
-   cleanup is implied by this change during implementation.
+   cleanup is implied by this change during implementation. **Resolved: confirmed, none implied.**
+   The 4 remaining bare `catch (_)` blocks across both transport clients (Hisense's `probe`/
+   `_pollConnectivity`/`clearPairing`, Android TV's identity-probe fallback) are all pre-existing,
+   unrelated to the deleted self-reconnect logic — reachability/best-effort fallbacks, not retry
+   paths.
 4. **In scope, per user 2026-09-11 — pre-existing race, independent of the rest of this goal,
    not introduced by it:** `clearPairing()`'s `_emitState(disconnected)` (any brand, not just
    Android TV) reaches `RemoteHomePage._subscribeConnectionState`'s listener exactly like any

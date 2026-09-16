@@ -4,6 +4,14 @@ A linear walkthrough of what runs, in order, from process start to a working rem
 screen — which file hands off to which. Verified by direct source reads, 2026-08-21.
 This is descriptive documentation of *current, shipped* behavior — not a proposal.
 
+> ⚠️ **Line citations are drifting.** Several `file.dart:NN-NN` citations below (e.g.
+> `RemoteHomePage.initState()`'s `:132-141`) predate PR #32's automatic-reconnection work
+> (2026-09-10), which inserted lines ahead of them without this doc being re-verified —
+> `initState()` is actually at `:142-160` now. Only the citations `fix/reconnection-background-
+> teardown` (2026-09-12) itself touched were refreshed as part of that branch; the rest have not
+> been re-checked. Treat every line number here as approximate until a full re-verification pass
+> is done.
+
 ---
 
 ## Quick-reference chain
@@ -83,7 +91,7 @@ The registrations relevant to device selection and remotes, in order:
 
 `initState()` (`:132-141`): registers a lifecycle observer, snapshots Pro status and subscribes to its changes, warms up the interstitial ad controller, then calls `_loadInitialDevice()`.
 
-`_loadInitialDevice()` (`:397-418`):
+`_loadInitialDevice()` (`:428-448`):
 
 1. Reads `deviceRepository.getSavedDevices()` and `deviceRepository.getLastUsedDevice()`.
 2. **No last-used device** → clears text/connection subscriptions, resets the layout to computed defaults, and the screen renders its empty "connect a TV" state. Nothing auto-navigates to pairing — the user has to tap an explicit action.
@@ -91,9 +99,9 @@ The registrations relevant to device selection and remotes, in order:
 
 ## Phase 5 — Pairing a device (`pairing_page.dart` + `pairing_page_coordinator.dart` + `pairing_page_data.dart`)
 
-Triggered from `remote_home_actions.dart`, which pushes `PairingPage` via `Navigator.of(context).push<TvDevice>(...)` (`:73-86`) — the pushed route returns a `TvDevice?` when it pops, which is how the paired device gets back to `RemoteHomePage`.
+Triggered from `remote_home_actions.dart`, which pushes `PairingPage` via `Navigator.of(context).push<TvDevice>(...)` (`:78-99`) — the pushed route returns a `TvDevice?` when it pops, which is how a *newly paired* device gets back to `RemoteHomePage`. Separately (added 2026-09-12, `references/goals/goal-reconnection-background-teardown.md`), an *unpair* of the currently-active device is reported back immediately, while `PairingPage` is still open, via an `onDeviceUnpaired(deviceId)` callback also passed into this same `push` call — not gated on ever popping. See Phase 6.
 
-`PairingPage.initState()` (`:86-94`) kicks off, concurrently: `_scanDevices()` (calls `DeviceDiscoveryService.discover()` — runs SSDP + mDNS + Roku SSDP together, per Phase 2a #2), `_loadRecentManualIps()`, and `_loadPairingMetadata()`.
+`PairingPage.initState()` (`:124-132`) kicks off, concurrently: `_scanDevices()` (calls `DeviceDiscoveryService.discover()` — runs SSDP + mDNS + Roku SSDP together, per Phase 2a #2), `_loadRecentManualIps()`, and `_loadPairingMetadata()`.
 
 The user either taps a discovered result, or types a manual IP (built into a `TvDevice` by `pairing_page_data.dart`). Discovery/pairing now prefer a proven stable `id` with mutable `host` when identity can be established (`references/device-identity-and-reconnection.md`); IP-derived ids remain the fallback when it cannot.
 
@@ -113,11 +121,24 @@ Selecting a device runs **`PairingPageCoordinator.pairSelectedDevice()`** (`pair
 
 ## Phase 6 — Back on `RemoteHomePage`: activation and ready state
 
-The caller in `remote_home_actions.dart` receives the returned device and calls **`RemoteHomePage._activateDevice(device)`** (`remote_home_page.dart:601-611`) — the same method `_loadInitialDevice` uses for the auto-connect path:
+The caller in `remote_home_actions.dart` receives the returned device and calls **`RemoteHomePage._activateDevice(device)`** (`remote_home_page.dart:615-625`) — the same method `_loadInitialDevice` uses for the auto-connect path:
 
 1. Sets `_activeDevice`, marks status `ready`, clears any pairing-hint UI state.
-2. Subscribes to text-input-ready and connection-state streams for this device.
+2. Subscribes to text-input-ready and connection-state streams for this device — pausing the
+   *previous* active device's background monitoring first, if there was one (Design item 8,
+   `references/goals/goal-reconnection-background-teardown.md`), so a deselected device doesn't
+   keep polling indefinitely.
 3. `_loadLayoutForDevice(device)` — resolves which buttons show and where (capability filtering, saved positions, command-drawer zone). Per-`(brand,variant)` default overrides are wired but the defaults map is still empty.
+
+**Unpair path (added 2026-09-12):** if instead the user *unpairs* the currently-active device
+while still on `PairingPage` (rather than pairing/selecting a new one), `PairingPage` calls
+`onDeviceUnpaired(deviceId)` synchronously at that moment — `RemoteHomePage._handleActiveDeviceUnpaired`
+no-ops unless the id matches `_activeDevice?.id`, then delegates to `_clearActiveDevice()` (shared
+with every other "no active device" path: no saved devices left, or the Pairing page returning
+with nothing selected). This closes a timing race that existed before: previously `RemoteHomePage`
+only found out about an active-device unpair via this same `_activateDevice`/pop-return flow,
+once the Pairing page was eventually popped — during which time the stale, now-unpaired device
+kept being the one the retry controller and background polling pointed at.
 
 From here, every button press runs `_send(command)` → `commandService.sendCommand(device, command)` → `BrandRoutedRemoteCommandService._adapterFor(brand, variant)` → that adapter's protocol-specific transport client.
 
@@ -128,5 +149,8 @@ From here, every button press runs `_send(command)` → `commandService.sendComm
 - **Per-variant remote layout** (`guide-protocol-variants.md`, "Adding a variant remote layout") — shipped: `_loadLayoutForDevice`'s default source; no real override authored yet, so it resolves to the global baseline for every device today.
 - **Command drawer** — shipped: same load path plus layout-editor UI (`LayoutZone.drawer`).
 - **`references/device-identity-and-reconnection.md`** — `id` / `host` created during discovery and pairing, plus the automatic-reconnection retry cycle.
+- **`references/goals/goal-reconnection-background-teardown.md`** — the retry cycle's lifecycle
+  gating, background poll pause/resume on device switch and app backgrounding, and the unpair
+  callback described in Phase 5/6 above.
 
 ---
