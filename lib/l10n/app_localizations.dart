@@ -214,6 +214,18 @@ abstract class AppLocalizations {
   /// **'Remote keyboard can\'t be used on this screen or with this TV.'**
   String get remoteKeyboardUnavailable;
 
+  /// No description provided for @remoteStatusRetryingIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying in {seconds}s'**
+  String remoteStatusRetryingIn(int seconds);
+
+  /// No description provided for @remoteRetryNowTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry now'**
+  String get remoteRetryNowTooltip;
+
   /// No description provided for @connectTvTooltip.
   ///
   /// In en, this message translates to:

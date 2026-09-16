@@ -11,13 +11,13 @@
 
 Deploy and configure server-side Google Play receipt validation for Pro purchases. The Flutter app calls the callable after purchase/restore; entitlement is written to Firestore by the function.
 
-**Node.js 20** is required on the machine that builds and deploys `functions/` — not for running the Flutter app.
+**Node.js 24** is required on the machine that builds and deploys `functions/` — not for running the Flutter app.
 
 ---
 
 ## 1. Prerequisites on your machine
 
-1. Install [Node.js 20](https://nodejs.org/) (matches `functions/package.json` `engines.node`).
+1. Install [Node.js 24](https://nodejs.org/) (matches `functions/package.json` `engines.node`).
 2. Install Firebase CLI:
    ```powershell
    npm install -g firebase-tools
@@ -102,18 +102,26 @@ Firebase loads `functions/.env.<projectId>` on deploy for 2nd gen functions.
 
 ## 5. Build and deploy Functions
 
+Always pass `--project oneremote-497701`. The Firebase CLI can target a different active project (for example another app in the same login) even when `.firebaserc` lists this one.
+
 ```powershell
 cd functions
 npm install
 cd ..
-npx firebase-tools@latest deploy --only functions
+npx firebase-tools@latest deploy --only functions --project oneremote-497701
 ```
 
+The first line of output must be `=== Deploying to 'oneremote-497701'...`. If it names any other project, stop with Ctrl+C.
+
 `firebase.json` runs `npm run build` in `functions/` via `predeploy` before upload. For local emulator or `npm test`, run `npm run build` in `functions/` after changing `src/`.
+
+A Node.js **runtime-only** change (for example `engines.node` in `functions/package.json`) does not require a new Play/app build. Existing installs keep calling the same callable.
 
 Expected deploy output includes:
 
 `verifyProAndroidPurchase(asia-southeast1)`
+
+and an update line such as `updating Node.js 24 (2nd Gen) function verifyProAndroidPurchase(asia-southeast1)`.
 
 ---
 
@@ -122,6 +130,7 @@ Expected deploy output includes:
 1. **Firebase Console → Build → Functions**
    - Function: `verifyProAndroidPurchase`
    - Region: `asia-southeast1`
+   - Runtime: **Node.js 24** (Additional details)
 2. **Google Cloud Console → Cloud Run**
    - Service exists and is healthy.
 
@@ -248,6 +257,6 @@ Protect Firebase backends (callable, Firestore) from scripted abuse and fake cli
 
 ---
 
-## Why Node.js 20?
+## Why Node.js 24?
 
 Only for the `functions/` backend — `npm install`, `npm test` (builds TypeScript), and `firebase deploy --only functions` (also builds via `predeploy`). Run `npm run build` locally when using the emulator or after editing `src/` without deploying. The Flutter app uses Dart only; it does not require Node on the developer machine except when working on Cloud Functions.

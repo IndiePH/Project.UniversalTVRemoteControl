@@ -11,6 +11,198 @@ Keep entries short and append new updates at the top.
 > `pairing_page_coordinator.dart`, or `pairing_page_data.dart`, flag it to the user and update
 > that doc alongside the changelog entry.
 
+## 2026-09-12
+
+### Fixed
+- Reconnection kept retrying after backgrounding the app, and the connection-state label stayed
+  on "Connection error" instead of showing "Connecting…" the moment a retry fired — two bugs
+  reported against the automatic-reconnection work shipped 2026-09-10 (PR #32). Root cause traced
+  via git history: Android TV's transport-level self-reconnect (`_onRemoteSocketDone`, PR #9) and
+  Hisense's poll-triggered self-reconnect (`_pollConnectivity`) each predate
+  `ReconnectionRetryController` (PR #32) by months and were never coordinated with it — two
+  independent, uncoordinated reconnect schedulers raced on a silent concurrent-connect guard,
+  which is why a page-triggered retry could produce no visible effect at all (branch
+  `fix/reconnection-background-teardown`; design log
+  `references/goals/goal-reconnection-background-teardown.md`):
+  - Deleted both transport-level self-reconnect schedulers. Android TV's `_onRemoteSocketDone` now
+    only cleans up and reports the disconnect (`_remoteActive`, which existed solely to gate the
+    removed reconnect, removed along with its 4 usage sites). Hisense's `_pollConnectivity` keeps
+    detecting and reporting state — its actual job, since MQTT's own state alone isn't trusted —
+    but no longer self-triggers a reconnect on a detected drop (`_maybeReconnect` and
+    `_reconnectInFlight`, now fully dead, removed). `ReconnectionRetryController` is the sole retry
+    authority for every brand now, matching how LG/Samsung/TCL/Roku/Sony already worked.
+  - Closed a ~5s dead gap in `ReconnectionRetryController`: `_beginFastPhase()` started its
+    periodic timer with no immediate first tick, so both `start()` and the wait-phase loop-back
+    left a window with no connect attempt in flight — exactly when a user would expect to see
+    "Connecting…" right away. Now fires the first attempt immediately, mirroring the pattern
+    `retryNow()` already used (and collapsed the resulting duplication between the two).
+  - Removed a duplicate `connect()` call on every fresh device subscription, found while verifying
+    the dead-gap fix against the full widget-test suite: `_subscribeConnectionState`'s own
+    unconditional `connect()` call was racing the retry controller's now-immediate first attempt,
+    since `MultiplexedTvConnectionStateService.watch()` always replays a value synchronously on
+    listen. Removing it also makes the very first connect attempt respect the same lifecycle gate
+    (below) as every other retry-controller-driven connect, instead of being an ungated exception.
+  - Lifecycle-gated the retry controller's `canAttemptNow` check: `_retryController.stop()` on
+    `paused` only stopped it once, at that moment — it didn't stop `_subscribeConnectionState`'s
+    listener from restarting it on a *later* disconnected/error emission (e.g. the TV's own
+    keepalive timing out because backgrounding caused missed pings), regardless of app lifecycle.
+    `canAttemptNow` now also checks `WidgetsBinding.instance.lifecycleState != paused` (not
+    `== resumed`, since `lifecycleState` can still be null very early at startup), so every
+    subsequent attempt is gated inert until the app actually resumes, however many times the
+    controller gets restarted while backgrounded.
+  - Paused Hisense's background connectivity poll (`_connectivityPollTimers`, 8s interval) while
+    backgrounded or while its device isn't the active one, instead of letting it keep probing
+    indefinitely — the same class of always-on background cost as the deleted reconnect
+    schedulers, via a different mechanism. Deliberately pauses only the app's own polling, not the
+    underlying MQTT session, which is left to time out on its own schedule if genuinely idle (a
+    proactive disconnect-on-every-background was considered and dropped: it trades a guaranteed
+    cost, a forced reconnect+flicker on every brief accidental background, for a marginal one).
+    Added `BackgroundPollAware`, a capability interface mirroring the existing
+    `TransportLogProvider` pattern, with `pauseMonitoring`/`resumeMonitoring` on
+    `RemoteCommandService` delegated only when the resolved adapter implements it (Hisense only —
+    every other brand is untouched). Wired from `didChangeAppLifecycleState` (paused/resumed) and
+    from device switching (pauses whichever device was previously active before subscribing to the
+    new one).
+  - Unpairing the currently-active device from the Pairing page now clears it (and stops retrying
+    it) synchronously, the moment the unpair completes — not only once the Pairing page is
+    eventually popped. Previously `RemoteHomePage` had no way to hear about an unpair except via
+    `_openPairing()`'s own cleanup after the page closed, a timing race rather than a guarantee.
+    `PairingPage` gained an `onDeviceUnpaired(deviceId)` callback fired from both of its unpair
+    call sites, threaded through `RemoteHomeActions.openPairing`.
+
+### Docs
+- `references/goals/goal-reconnection-background-teardown.md`: full diagnosis and design log for
+  the above, including the capability-interface pattern's three-revision history and the
+  brief-vs-long-backgrounding cost/benefit comparison that ruled out a proactive disconnect.
+- `references/tech-debt-list.md`: logged `ReconnectionRetryController`'s ownership sitting in the
+  presentation layer (`RemoteHomePage`) rather than the domain layer, with a second instance of
+  the same tension (device-active-state tracking) found while scoping this fix — deferred to a
+  separate future pass, not part of this fix.
+
+### Verification
+- `flutter analyze` clean; full test suite green (796/796, 1 pre-existing skip — up from 784),
+  including two new dedicated unit-test files that never existed for these transports before
+  (`AndroidTvTcpTransportClient`, `HisenseMqttTransportClient`, both exercised against real
+  loopback TLS/TCP fake servers rather than fake doubles, since the removed behavior lived
+  entirely in each class's own socket-close handling), a `BackgroundPollAware` capability-check
+  test, and five new widget tests covering the label-transition regression, the unpair-while-
+  still-on-Pairing-page race, the lifecycle-gate edge case, and the background-monitoring
+  pause/resume and device-switch wiring. Every new regression test was verified to actually fail
+  without the fix it guards, not just written to pass against the current code. Not yet verified
+  on real hardware — see the goal doc's standing hardware-verification notice.
+
+## 2026-09-11
+
+### Fixed
+- Pairing a brand-new Android TV that advertises `bt` could fail outright with
+  `SocketException: Failed host lookup` (found on a real device during personal-build testing of
+  `fix/reconnection`). The pairing connection's host resolver only knows how to turn a device id
+  back into a connectable host via `DeviceIdentityRegistry` (empty for a device that's never been
+  registered) or a legacy regex extracting an IPv4 from the id string (no match for a MAC-based id)
+  — and since the previous day's work started giving unpaired Android TVs a MAC-based id whenever
+  `bt` is available, first-time pairing for such a device had no way to resolve a host at all.
+  `BrandRoutedRemoteCommandService.preparePairing` already registered the device's host once pairing
+  completed; now it also registers before the connection attempt, so the resolver has something to
+  find. See `references/tech-debt-list.md` for the broader design gap this exposed (the
+  adapter→transport boundary drops the already-known host and re-derives it via this
+  timing-dependent lookup instead) and the deliberately-deferred proper fix.
+- The paired-device "Device Info" dialog's "Last known IP" row was reading a substring of the
+  device's internal id (stripping the brand prefix) — only actually an IP for legacy IP-derived ids;
+  for any stable-id device (`androidtv-<mac>`, `androidtv-<sha256>`, `samsung-<udn>`, etc.) it showed
+  the raw id fragment mislabeled as an IP. Now reads the real, currently-tracked host. Also adds a
+  debug-build-only "Device ID (debug)" row showing the raw id directly, for inspecting which
+  identity format a device landed on.
+
+### Docs
+- `references/tech-debt-list.md`: the adapter/transport host-resolution design gap above, with the
+  exact location of the interim fix and a concrete sketch of the deferred proper fix (pass the host
+  directly for calls that already have a full `TvDevice`, rather than re-deriving it via the
+  registry) — scoped as a breaking change across every brand's transport client, not something to
+  fold into a single bug fix.
+
+### Verification
+- `flutter analyze` clean; full test suite green (784/784), including a new regression test that
+  fails without the pairing fix (host resolves to null) and passes with it.
+
+## 2026-09-10
+
+### Added
+- Automatic, self-recovering reconnection on the remote/home page (branch `fix/reconnection`;
+  design log `references/goals/goal-automatic-reconnection-resilience.md`). Previously a failed
+  connection just redialed the same host every 5 seconds forever, with no escalation and no
+  reconciliation — a paired Android TV that hit a transient port-level failure could stay
+  disconnected until the app was manually reopened. New `ReconnectionRetryController`
+  (`lib/remote_control/presentation/controllers/reconnection_retry_controller.dart`): fast phase
+  (3 attempts, 5s cadence) → one discovery+reconcile pass → a final connect attempt → on continued
+  failure, a wait period shown as "Connection error... retrying in Xs" with a live countdown and a
+  manual retry-now option, looping indefinitely while the page is open. The wait period grows
+  exponentially across successive failed laps (45s → 90s → 180s → 300s, capped at 5 minutes) and
+  resets to the 45s base on a fresh connection or a manual retry.
+- Self-correcting reachability indicator on the paired-devices list
+  (`pairing_page_sections.dart`'s `_PairedTvConnectionIndicator`). Previously each paired TV's
+  wifi icon reflected a single probe per manual rescan, even though the page's own reconciliation
+  pass already ran in the background — so a successful reconcile never triggered a re-check within
+  that same scan. Now: probe the known host → on failure, await that scan's own reconciliation →
+  if the host changed, re-probe once → grey only if both fail.
+- Android TV devices now get an IP-independent stable id (`androidtv-<mac>`) via two channels
+  instead of falling back to an IP-derived id whenever unreachable: the mDNS `_androidtvremote2._tcp`
+  TXT record's `bt=` field when advertised (`android_tv_bluetooth_mac_txt_parser.dart`), and — for
+  TVs that don't advertise `bt` — the Bluetooth MAC embedded in the pairing certificate's subject,
+  parsed on every live cert probe instead of hashing the whole certificate
+  (`android_tv_cert_subject_mac_parser.dart`, ported from `tronikos/androidtvremote2`'s verified
+  algorithm). The certificate enrichment step no longer requires a device to already be "recognized"
+  before its id is trusted — that gate protected pairing consent, which is unaffected by this change,
+  not against any live-connection risk.
+- **Temporary:** a device paired before this update (saved under the old whole-certificate-hash id)
+  now migrates automatically onto the new MAC-based id, without a manual re-pair
+  (`AndroidTvLegacySha256IdMigrator`). Deliberately isolated from the permanent enrichment above and
+  scheduled for removal around 2026-11-10 (see `references/tech-debt-list.md`) — it trusts MAC
+  extraction verified against only two device shapes, and the population needing it only shrinks, so
+  it's scoped as a bounded-time convenience rather than permanent behavior.
+
+### Not included (considered, deliberately dropped — not oversights)
+- **A previously-paired Android TV whose IP changes on a scan where neither `bt` nor a live cert
+  connection produces a MAC does not get reconciled that scan.** The only proposed match key was the
+  device's host, but this scenario is defined by the host *changing* — the match could only ever fire
+  when nothing needed updating. The alternative (drop the host requirement, match by count instead)
+  risks silently merging two different physical TVs for anyone who owns more than one. Accepted as a
+  rare, self-healing gap: the automatic retry above means a later scan very likely recovers the MAC
+  and reconciles normally.
+- **A MAC-address collision between two different manufacturers' devices is not detected or guarded
+  against.** MAC uniqueness is the manufacturer's responsibility (IEEE OUI allocation), not something
+  this app can independently verify; Home Assistant's own production `androidtv_remote` integration
+  carries the same exposure with no mitigation.
+
+### Docs
+- `references/goals/goal-automatic-reconnection-resilience.md`: full design log for the above,
+  including decisions logged and later superseded as the identity model was refined (`bt` and the
+  certificate were initially assumed to be independent signals needing cross-confirmation; later
+  found to read the same underlying MAC, dissolving that need), and the migration shim above, which
+  was dropped once before being reopened with a mechanism that resolved the original objections.
+- `references/tech-debt-list.md`: bare `catch` sites added by this work (mirroring the pattern
+  already used at their call sites), discovery services' lack of a unit-test seam (encountered while
+  adding mDNS test coverage), and the migration shim's own scheduled-removal entry with its exit
+  criteria.
+
+### Verification
+- `flutter analyze` clean; full test suite green (783/783), including new coverage for the retry
+  state machine, the paired-list indicator's reprobe chain, the `bt` TXT parser, the certificate
+  subject MAC parser, the discovery-time enrichment skip/fallback behavior, and the migration shim's
+  filtering logic.
+
+## 2026-09-02
+
+### Changed
+- Cloud Functions runtime for `verifyProAndroidPurchase` from Node.js 20 to **Node.js 24**
+  (`functions/package.json` `engines.node`). Node 20 is deprecated as of 2026-04-30 and
+  decommissioned 2026-10-30. Node 24 is the latest GA Cloud Run functions runtime (Node 26 is
+  preview). Deployed to `oneremote-497701` on 2026-09-02; no Play/app rebuild required.
+
+### Docs
+- `references/goals/goal-pro-receipt-validation-remote-setup.md`: Node.js prerequisite 24;
+  deploy must use `--project oneremote-497701` and confirm the CLI target line.
+- `README.md` Firebase section notes Node 24 and the project pin.
+
 ## 2026-08-27
 
 ### Fixed

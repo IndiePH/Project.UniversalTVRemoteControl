@@ -57,6 +57,12 @@ class CompositeDeviceDiscoveryService implements DeviceDiscoveryService {
     if (device.brand != TvBrand.androidTv || resolver == null) {
       return device;
     }
+    // Already has a MAC-based id from bt this scan (see D-8) -- the cert
+    // probe would only re-derive the identical value, so skip the redundant
+    // TLS connection entirely rather than pay its cost for a known answer.
+    if (device.hasStableId) {
+      return device;
+    }
 
     final host = device.resolvedHost.trim();
     if (host.isEmpty) return device;

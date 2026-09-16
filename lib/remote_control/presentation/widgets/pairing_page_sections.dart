@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:one_remote/l10n/app_localizations.dart';
+import 'package:one_remote/remote_control/application/device_repository.dart';
 import 'package:one_remote/remote_control/application/tv_reachability_service.dart';
 import 'package:one_remote/remote_control/domain/models/tv_brand.dart';
 import 'package:one_remote/remote_control/domain/models/tv_device.dart';
@@ -123,6 +124,8 @@ class PairedTvListItem extends StatefulWidget {
     required this.switchLocked,
     this.switchLockTooltip,
     required this.reachabilityService,
+    required this.deviceRepository,
+    required this.reconcileInFlight,
     required this.onConfirmDismiss,
     required this.onRename,
     required this.onInfo,
@@ -135,6 +138,14 @@ class PairedTvListItem extends StatefulWidget {
   final bool switchLocked;
   final String? switchLockTooltip;
   final TvReachabilityService reachabilityService;
+  final DeviceRepository deviceRepository;
+
+  /// The current scan's shared reconciliation pass, if one is running (see
+  /// `_PairingPageState._scanDevices`). `null` when no saved devices exist
+  /// yet to reconcile against. Every indicator on the page awaits this same
+  /// instance rather than starting its own reconcile call — see
+  /// `references/goals/goal-automatic-reconnection-resilience.md` SG2/T2.1.
+  final Future<void>? reconcileInFlight;
   final Future<bool?> Function(DismissDirection) onConfirmDismiss;
   final VoidCallback onRename;
   final VoidCallback onInfo;
@@ -186,6 +197,8 @@ class _PairedTvListItemState extends State<PairedTvListItem> {
             _PairedTvConnectionIndicator(
               device: widget.device,
               reachabilityService: widget.reachabilityService,
+              deviceRepository: widget.deviceRepository,
+              reconcileInFlight: widget.reconcileInFlight,
             ),
             IconButton(
               icon: const Icon(Icons.edit_outlined),
@@ -236,10 +249,14 @@ class _PairedTvConnectionIndicator extends StatefulWidget {
   const _PairedTvConnectionIndicator({
     required this.device,
     required this.reachabilityService,
+    required this.deviceRepository,
+    required this.reconcileInFlight,
   });
 
   final TvDevice device;
   final TvReachabilityService reachabilityService;
+  final DeviceRepository deviceRepository;
+  final Future<void>? reconcileInFlight;
 
   @override
   State<_PairedTvConnectionIndicator> createState() =>
@@ -253,7 +270,52 @@ class _PairedTvConnectionIndicatorState
   @override
   void initState() {
     super.initState();
-    _reachableFuture = widget.reachabilityService.isReachable(widget.device);
+    _reachableFuture = _probeThenReconcileThenReprobe();
+  }
+
+  /// Probes [TvDevice.resolvedHost]; on failure, awaits the scan's shared
+  /// reconciliation pass (started once for the whole paired list, not by
+  /// this indicator) and re-probes only if that pass actually moved this
+  /// device to a new host. A same-host retry is skipped deliberately: it's
+  /// a wasted network call for a device reconciliation couldn't help (e.g.
+  /// Roku, which has no post-pairing identity re-derivation at all -- see
+  /// the goal doc's Problem #3), and a genuine same-host flake corrects
+  /// itself on the next manual rescan, matching this screen's lower
+  /// reliability bar per T2.1.
+  Future<bool> _probeThenReconcileThenReprobe() async {
+    if (await widget.reachabilityService.isReachable(widget.device)) {
+      return true;
+    }
+    final reconcile = widget.reconcileInFlight;
+    if (reconcile == null) {
+      return false;
+    }
+    try {
+      await reconcile;
+    } catch (_) {
+      // The shared pass failed for everyone awaiting it; this indicator's
+      // own probe already failed too, so there is nothing better to show.
+      return false;
+    }
+    if (!mounted) {
+      return false;
+    }
+    final refreshed = await _refreshedDevice();
+    if (refreshed == null ||
+        refreshed.resolvedHost == widget.device.resolvedHost) {
+      return false;
+    }
+    return widget.reachabilityService.isReachable(refreshed);
+  }
+
+  Future<TvDevice?> _refreshedDevice() async {
+    final saved = await widget.deviceRepository.getSavedDevices();
+    for (final candidate in saved) {
+      if (candidate.id == widget.device.id) {
+        return candidate;
+      }
+    }
+    return null;
   }
 
   @override

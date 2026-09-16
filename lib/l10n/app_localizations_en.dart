@@ -70,6 +70,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Remote keyboard can\'t be used on this screen or with this TV.';
 
   @override
+  String remoteStatusRetryingIn(int seconds) {
+    return 'Retrying in ${seconds}s';
+  }
+
+  @override
+  String get remoteRetryNowTooltip => 'Retry now';
+
+  @override
   String get connectTvTooltip => 'Connect TV';
 
   @override

@@ -71,10 +71,6 @@ class AndroidTvTcpTransportClient
   // Negotiated features = _remoteClientFeatures & TV's code1 from RemoteConfigure.
   final Map<String, int> _remoteNegotiatedFeatures = {};
 
-  // _remoteActive tracks devices with intentional remote connections so
-  // _onRemoteSocketDone can distinguish unexpected closes (reconnect) from
-  // explicit clearPairing() calls (do not reconnect).
-  final Set<String> _remoteActive = {};
   final Set<String> _remoteConnecting = {};
 
   // Connection state, keyed by deviceId
@@ -217,13 +213,16 @@ class AndroidTvTcpTransportClient
     socket.destroy();
   }
 
-  /// Looks up an already-paired Android TV by its server certificate at
-  /// [host]. When found, the certificate is also stored under the new host so
-  /// subsequent remote connections can use the existing pairing.
+  /// Looks up an Android TV's stable id (see [AndroidTvCertificateStore.
+  /// stableIdFromDer]) by connecting to its server certificate at [host].
+  /// The certificate is also stored under this host so subsequent remote
+  /// connections can use it.
   ///
-  /// A TLS peer is accepted only when its certificate fingerprint is already
-  /// present in app storage. This prevents an unpaired TV from being treated
-  /// as a known device just because port 6466 is reachable.
+  /// Runs unconditionally for any reachable Android TV, paired or not -- the
+  /// TLS connection itself already happens either way, and the earlier
+  /// "already recognized" gate was found to protect consent (handled by the
+  /// pairing PIN step) rather than anything this discovery-time read needs
+  /// to re-check. See D-9.
   @override
   Future<String?> discoverStableIdAtHost(String host) async {
     final normalizedHost = host.trim();
@@ -243,13 +242,7 @@ class AndroidTvTcpTransportClient
       if (rawDer == null) return null;
 
       final der = Uint8List.fromList(rawDer);
-      final stableId = AndroidTvCertificateStore.stableIdFromServerCertificate(
-        der,
-      );
-      if (!await _certStore.hasStoredServerCertificate(stableId)) {
-        return null;
-      }
-
+      final stableId = AndroidTvCertificateStore.stableIdFromDer(der);
       await _certStore.storeServerCert(normalizedHost, der);
       return stableId;
     } catch (_) {
@@ -271,13 +264,10 @@ class AndroidTvTcpTransportClient
     _cleanupPairing(deviceId);
   }
 
-  /// Prevents reconnect, closes both sockets, and removes the stored server
-  /// certificate so the device can be re-paired from scratch.
+  /// Closes both sockets and removes the stored server certificate so the
+  /// device can be re-paired from scratch.
   @override
   Future<void> clearPairing({required String deviceId}) async {
-    // Remove from _remoteActive before destroying the socket so that
-    // _onRemoteSocketDone does not schedule a reconnect.
-    _remoteActive.remove(deviceId);
     _cleanupPairing(deviceId);
     _cleanupRemote(deviceId);
     await _certStore.clearServerCert(_hostResolver(deviceId));
@@ -569,7 +559,6 @@ class AndroidTvTcpTransportClient
         },
       );
 
-      _remoteActive.add(deviceId);
       _emitState(deviceId, ConnectionState.connected);
     } catch (e) {
       _emitState(deviceId, ConnectionState.error);
@@ -697,24 +686,10 @@ class AndroidTvTcpTransportClient
     _emitState(deviceId, ConnectionState.error);
   }
 
-  void _onRemoteSocketDone(String deviceId) async {
+  void _onRemoteSocketDone(String deviceId) {
     log('Android TV remote socket closed', name: 'android_tv_transport');
     _cleanupRemote(deviceId);
     _emitState(deviceId, ConnectionState.disconnected);
-
-    // _remoteActive is cleared by clearPairing() before socket.destroy() is
-    // called, so its absence here means an intentional disconnect — skip reconnect.
-    if (!_remoteActive.contains(deviceId)) return;
-
-    await Future<void>.delayed(const Duration(seconds: 3));
-    _emitState(deviceId, ConnectionState.connecting);
-    try {
-      await _connectRemote(deviceId);
-    } catch (e) {
-      log('Android TV: reconnect failed: $e', name: 'android_tv_transport');
-      _remoteActive.remove(deviceId);
-      _emitState(deviceId, ConnectionState.error);
-    }
   }
 
   void _sendRemoteMessage(String deviceId, RemoteMessage msg) {

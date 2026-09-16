@@ -40,6 +40,7 @@ class PairingPage extends StatefulWidget {
     this.identityRegistry,
     this.layoutRepository,
     this.manualAddVariantProbe,
+    this.onDeviceUnpaired,
   });
 
   final RemoteCommandService commandService;
@@ -50,6 +51,16 @@ class PairingPage extends StatefulWidget {
   final TvReachabilityService reachabilityService;
   final ProEntitlementService proEntitlementService;
   final String? activeDeviceId;
+
+  /// Notified synchronously (i.e. before this page is ever popped) whenever
+  /// a device is unpaired here, whatever its id. The caller — not this page
+  /// — decides whether the id matters (e.g. whether it was its own active
+  /// device); this page has no opinion beyond "this device was just
+  /// unpaired." Exists so a caller showing that same device elsewhere isn't
+  /// stuck relying on the page-pop's return value to find out, which only
+  /// fires once the user navigates back and races whatever that caller was
+  /// doing with the device in the meantime.
+  final void Function(String deviceId)? onDeviceUnpaired;
 
   /// Optional variant probe for manual add-by-IP (see `ManualAddVariantProbe`).
   /// Null (e.g. in unit tests) falls back to the default variant — safe
@@ -73,6 +84,13 @@ class _PairingPageState extends State<PairingPage> {
   PairingPageViewState _viewState = const PairingPageViewState();
   TvDevice? _activePairingDevice;
   bool _legacyCleanupOffered = false;
+
+  /// The current scan's reconciliation pass, shared by every paired-device
+  /// indicator (see `_PairedTvConnectionIndicator` in
+  /// `pairing_page_sections.dart`) rather than each one starting its own.
+  /// Not part of [_viewState]: it's plumbing for the indicators, not display
+  /// state the page itself renders.
+  Future<void>? _pendingReconcile;
   final ScrollController _pairedDevicesScrollController = ScrollController();
   late final PairingPageCoordinator _pairingCoordinator =
       PairingPageCoordinator(
@@ -177,7 +195,6 @@ class _PairingPageState extends State<PairingPage> {
         isLoading: true,
         clearErrorMessage: true,
         discoveredDevices: const [],
-        scanCount: _viewState.scanCount + 1,
       );
     });
 
@@ -215,19 +232,27 @@ class _PairingPageState extends State<PairingPage> {
           // Orphan tracking is advisory and must not block discovery.
         }
       }
+      Future<void>? reconcileFuture;
       if (saved.isNotEmpty) {
-        unawaited(
-          PairingPageData.reconcileDiscovery(
-            discovered: discovered,
-            saved: saved,
-            identityRegistry: widget.identityRegistry,
-            deviceRepository: widget.deviceRepository,
-            layoutRepository: widget.layoutRepository,
-          ),
+        reconcileFuture = PairingPageData.reconcileDiscovery(
+          discovered: discovered,
+          saved: saved,
+          identityRegistry: widget.identityRegistry,
+          deviceRepository: widget.deviceRepository,
+          layoutRepository: widget.layoutRepository,
         );
+        // Every paired-device indicator awaits this same instance (see
+        // _buildPairedDeviceList); make sure it never surfaces as an
+        // unhandled Future error regardless of whether any indicator
+        // happens to be listening when it completes.
+        unawaited(reconcileFuture.catchError((_) {}));
       }
+      _pendingReconcile = reconcileFuture;
       setState(() {
-        _viewState = _viewState.copyWith(discoveredDevices: discovered);
+        _viewState = _viewState.copyWith(
+          discoveredDevices: discovered,
+          scanCount: _viewState.scanCount + 1,
+        );
       });
       if (staleLegacyDevices.isNotEmpty &&
           widget.proEntitlementService.isPro &&
@@ -456,6 +481,7 @@ class _PairingPageState extends State<PairingPage> {
 
     await widget.commandService.unpairDevice(device: device);
     await widget.deviceRepository.removeSavedDevice(device.id);
+    widget.onDeviceUnpaired?.call(device.id);
     final layoutDeleter = widget.layoutRepository is LayoutDeletionRepository
         ? widget.layoutRepository as LayoutDeletionRepository
         : null;
@@ -500,6 +526,7 @@ class _PairingPageState extends State<PairingPage> {
       try {
         await widget.deviceRepository.removeSavedDevice(device.id);
         removedAny = true;
+        widget.onDeviceUnpaired?.call(device.id);
       } catch (_) {
         continue;
       }
@@ -701,6 +728,8 @@ class _PairingPageState extends State<PairingPage> {
             ),
             switchLockTooltip: l10n.proDeviceSwitchLockedTooltip,
             reachabilityService: widget.reachabilityService,
+            deviceRepository: widget.deviceRepository,
+            reconcileInFlight: _pendingReconcile,
             onConfirmDismiss: (_) async {
               await _confirmRemoveSavedDevice(device);
               return false;

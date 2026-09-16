@@ -172,7 +172,7 @@ Lint rules: `analysis_options.yaml` includes `package:flutter_lints/flutter.yaml
 
 ## Firebase (Pro validation)
 
-Android Pro IAP receipt validation uses a Firebase callable in `functions/`. Deploy and operator setup: `references/goals/goal-pro-receipt-validation-remote-setup.md`.
+Android Pro IAP receipt validation uses a Firebase callable in `functions/` (Node.js 24). Deploy to project `oneremote-497701` only (`--project oneremote-497701`). Operator setup: `references/goals/goal-pro-receipt-validation-remote-setup.md`.
 
 ## Documentation index
 

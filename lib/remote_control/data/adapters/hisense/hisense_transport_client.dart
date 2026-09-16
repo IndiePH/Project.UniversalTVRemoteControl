@@ -45,4 +45,13 @@ abstract class HisenseTransportClient
   /// to wipe; this exists so the next pair attempt re-enters the PIN gate
   /// within the same app session instead of resuming a cached auth.
   Future<void> clearPairing({required String deviceId});
+
+  /// Pauses this transport's own background connectivity poll for
+  /// [deviceId] without touching the underlying connection itself, which is
+  /// left to time out naturally on its own schedule.
+  Future<void> pauseMonitoring({required String deviceId});
+
+  /// Resumes polling paused by [pauseMonitoring] and triggers one immediate
+  /// fresh check.
+  Future<void> resumeMonitoring({required String deviceId});
 }
